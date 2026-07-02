@@ -10,10 +10,15 @@ import {
   canTransition,
   timestampPatchFor,
 } from "@/domain/appointment-status";
+import { createAppointmentEvent } from "@/repositories/appointment-repository";
 
 export class AppointmentNotFoundError extends Error {}
 export class InvalidTransitionError extends Error {}
 export class DuplicateActiveAppointmentError extends Error {}
+export class PatientProfileNotFoundError extends Error {}
+export class DoctorProfileNotFoundError extends Error {}
+export class ClinicNotFoundError extends Error {}
+export class InvalidScheduleInputError extends Error {}
 
 const APPOINTMENT_INCLUDE = {
   patient: { include: { user: { select: { phone_number: true } } } },
@@ -21,26 +26,86 @@ const APPOINTMENT_INCLUDE = {
   clinic: true,
 } satisfies Prisma.AppointmentInclude;
 
-export async function logAppointmentEvent(
-  tx: Prisma.TransactionClient,
-  appointmentId: string,
-  data: {
-    type: string;
-    from_status?: string | null;
-    to_status?: string | null;
-    note?: string | null;
-    actorUserId?: string | null;
+// Timeline writes moved to the repository layer; kept under the original
+// name so every existing call site (reception, walk-in) is unaffected.
+export const logAppointmentEvent = createAppointmentEvent;
+
+// Intentionally the historical subset accepted by the public booking route
+// since Sprint 0 — not the full status machine (see docs/technical-debt.md).
+const BOOKABLE_STATUSES = ["scheduled", "waiting", "in_consultation", "completed"];
+
+/**
+ * Books a new appointment (moved out of POST /api/appointments). Validation
+ * steps run in the exact order the route historically performed them —
+ * existence checks first, then date, then status — and the error messages
+ * are part of the public API contract. Do not reorder or reword.
+ */
+export async function scheduleAppointment(input: {
+  patientId: string;
+  doctorId: string;
+  clinicId: string;
+  scheduledTime: unknown;
+  status?: unknown;
+}) {
+  const patient = await prisma.patientProfile.findUnique({
+    where: { id: input.patientId },
+  });
+  if (!patient) {
+    throw new PatientProfileNotFoundError(
+      `Patient Profile with id ${input.patientId} not found.`
+    );
   }
-) {
-  return tx.appointmentEvent.create({
-    data: {
-      appointment_id: appointmentId,
-      type: data.type,
-      from_status: data.from_status ?? null,
-      to_status: data.to_status ?? null,
-      note: data.note ?? null,
-      actor_user_id: data.actorUserId ?? null,
-    },
+
+  const doctor = await prisma.staffProfile.findUnique({
+    where: { id: input.doctorId },
+  });
+  if (!doctor) {
+    throw new DoctorProfileNotFoundError(
+      `Doctor Profile with id ${input.doctorId} not found.`
+    );
+  }
+
+  const clinic = await prisma.clinic.findUnique({
+    where: { id: input.clinicId },
+  });
+  if (!clinic) {
+    throw new ClinicNotFoundError(
+      `Clinic with id ${input.clinicId} not found.`
+    );
+  }
+
+  const parsedDate = new Date(input.scheduledTime as string);
+  if (isNaN(parsedDate.getTime())) {
+    throw new InvalidScheduleInputError(
+      "Invalid date/time format for scheduled_time."
+    );
+  }
+
+  const finalStatus = (input.status as string) || "scheduled";
+  if (!BOOKABLE_STATUSES.includes(finalStatus)) {
+    throw new InvalidScheduleInputError(
+      `Invalid status. Must be one of: ${BOOKABLE_STATUSES.join(", ")}`
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const appointment = await tx.appointment.create({
+      data: {
+        patient_id: input.patientId,
+        doctor_id: input.doctorId,
+        clinic_id: input.clinicId,
+        scheduled_time: parsedDate,
+        status: finalStatus,
+      },
+      include: { patient: true, doctor: true, clinic: true },
+    });
+
+    await createAppointmentEvent(tx, appointment.id, {
+      type: "created",
+      to_status: finalStatus,
+    });
+
+    return appointment;
   });
 }
 

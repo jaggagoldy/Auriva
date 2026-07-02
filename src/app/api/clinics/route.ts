@@ -1,19 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
+import { listClinicsWithStaff } from '@/repositories/clinic-repository';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const clinics = await prisma.clinic.findMany({
-      include: {
-        staffProfiles: {
-          select: {
-            id: true,
-            full_name: true,
-            specialty: true,
-          },
-        },
-      },
-    });
+    const clinics = await listClinicsWithStaff();
 
     return NextResponse.json(clinics);
   } catch (error: any) {

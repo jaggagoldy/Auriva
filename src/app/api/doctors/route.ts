@@ -1,40 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { findStaffProfiles } from '@/repositories/staff-repository';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const specialty = searchParams.get('specialty');
-    const clinic_id = searchParams.get('clinic_id');
 
-    const where: any = {};
-    if (specialty) {
-      where.specialty = {
-        contains: specialty,
-      };
-    }
-    if (clinic_id) {
-      where.clinic_id = clinic_id;
-    }
-
-    const doctors = await prisma.staffProfile.findMany({
-      where,
-      include: {
-        clinic: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            email: true,
-            phone_number: true,
-          },
-        },
-      },
+    const doctors = await findStaffProfiles({
+      specialty: searchParams.get('specialty'),
+      clinicId: searchParams.get('clinic_id'),
     });
 
     return NextResponse.json(doctors);
