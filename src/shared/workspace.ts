@@ -1,6 +1,7 @@
 // Shared types and helpers for the Super Admin workspace console.
 // Shapes mirror the responses of GET /api/clinics and GET /api/doctors.
 
+import { memberRoleFromSpecialty } from "@/domain/organization";
 import { Doctor } from "@/shared/queue";
 
 export interface ClinicSummary {
@@ -39,9 +40,9 @@ export const ROLE_META: Record<StaffRole, { label: string; badge: string }> = {
 
 /**
  * Staff_Profiles has no role column — the role lives on the linked User,
- * which GET /api/doctors doesn't expose yet. Derive it from the specialty
- * until the API returns roles.
+ * which GET /api/doctors doesn't expose yet. Delegates to the single
+ * platform-wide heuristic in src/domain/organization.ts.
  */
 export function roleOf(staff: Doctor): StaffRole {
-  return staff.specialty ? "doctor" : "receptionist";
+  return memberRoleFromSpecialty(staff.specialty);
 }

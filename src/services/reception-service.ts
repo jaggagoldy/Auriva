@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { memberRoleFromSpecialty } from "@/domain/organization";
 import {
   AppointmentNotFoundError,
   InvalidTransitionError,
@@ -69,9 +70,11 @@ export async function getDashboardSummary(clinicId: string) {
     where: { clinic_id: clinicId },
     select: { id: true, full_name: true, specialty: true },
   });
-  // Staff_Profiles has no role column — a doctor is a staff member with a
-  // specialty, matching the same heuristic used by src/lib/workspace.ts.
-  const doctors = staff.filter((member) => Boolean(member.specialty));
+  // Staff_Profiles has no role column — role derivation is centralized in
+  // src/domain/organization.ts so all consumers agree.
+  const doctors = staff.filter(
+    (member) => memberRoleFromSpecialty(member.specialty) === "doctor"
+  );
 
   const doctorLoad = doctors.map((doctor) => {
     const appointmentsForDoctor = queue.filter((a) => a.doctor_id === doctor.id);

@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auriva Design System — v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   AURIVA DESIGN TOKENS  (the doc itself is built on them)
+   ============================================================ */
+:root{
+  /* Primary — Auriva Teal */
+  --teal-50:#F0FDFA; --teal-100:#CCFBF1; --teal-200:#99F6E4; --teal-300:#5EEAD4;
+  --teal-400:#2DD4BF; --teal-500:#14B8A6; --teal-600:#0D9488; --teal-700:#0F766E;
+  --teal-800:#115E59; --teal-900:#134E4A;
+  /* Neutral — Slate */
+  --slate-50:#F8FAFC; --slate-100:#F1F5F9; --slate-200:#E2E8F0; --slate-300:#CBD5E1;
+  --slate-400:#94A3B8; --slate-500:#64748B; --slate-600:#475569; --slate-700:#334155;
+  --slate-800:#1E293B; --slate-900:#0F172A;
+  /* Semantic */
+  --success:#16A34A; --success-bg:#F0FDF4; --success-border:#BBF7D0;
+  --warning:#D97706; --warning-bg:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626;  --danger-bg:#FEF2F2;  --danger-border:#FECACA;
+  --info:#0284C7;    --info-bg:#F0F9FF;    --info-border:#BAE6FD;
+  --blue:#2563EB;    --blue-bg:#EFF6FF;    --blue-border:#BFDBFE;
+  --indigo:#4F46E5;  --indigo-bg:#EEF2FF;  --indigo-border:#C7D2FE;
+  /* Surfaces */
+  --bg:#FFFFFF; --bg-subtle:#F8FAFC; --bg-page:#F5F7FA;
+  --border:#E2E8F0; --border-strong:#CBD5E1;
+  /* Text */
+  --text:#0F172A; --text-secondary:#475569; --text-muted:#94A3B8; --text-inverse:#FFFFFF;
+  /* Radius */
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  /* Shadows */
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-sm:0 1px 3px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.04);
+  --sh-md:0 4px 12px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.05);
+  --sh-lg:0 12px 32px rgba(15,23,42,.12), 0 4px 8px rgba(15,23,42,.05);
+  --ring:0 0 0 3px rgba(13,148,136,.25);
+  /* Type */
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* ============ DOC SHELL ============ */
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:600;width:20px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1040px;margin:0 auto;padding-top:72px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:30px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:15px;color:var(--text-secondary);max-width:640px;margin-bottom:36px}
+.sub{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:40px 0 6px}
+.sub-desc{font-size:13px;color:var(--text-secondary);margin-bottom:18px;max-width:620px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:28px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.col{display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:22px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--slate-100);padding:2px 7px;border-radius:5px;color:var(--slate-700)}
+
+/* ============ COVER ============ */
+.cover{min-height:520px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:80px 0 64px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:28px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:56px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:16px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:17px;color:var(--text-secondary);max-width:560px;margin-bottom:32px}
+.cover-meta{display:flex;gap:32px;font-size:12px;color:var(--text-muted)}
+.cover-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px}
+
+/* ============ PRINCIPLES ============ */
+.prin{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.prin-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-xs)}
+.prin-num{font-size:12px;font-weight:700;color:var(--teal-600);margin-bottom:10px}
+.prin-card h3{font-size:15px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em}
+.prin-card p{font-size:13px;color:var(--text-secondary)}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dd{border-radius:var(--r-xl);padding:22px;border:1px solid}
+.dd.do{background:var(--success-bg);border-color:var(--success-border)}
+.dd.dont{background:var(--danger-bg);border-color:var(--danger-border)}
+.dd h4{font-size:13px;font-weight:700;margin-bottom:10px}
+.dd.do h4{color:var(--success)} .dd.dont h4{color:var(--danger)}
+.dd li{font-size:13px;color:var(--text-secondary);margin-left:18px;margin-bottom:6px}
+
+/* ============ COLORS ============ */
+.scale{display:grid;grid-template-columns:repeat(10,1fr);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border)}
+.swatch{height:84px;padding:10px;display:flex;flex-direction:column;justify-content:flex-end;font-size:10.5px;font-weight:600}
+.swatch span{opacity:.75;font-weight:500;font-size:10px}
+.sem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.sem{border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;background:#fff}
+.sem-chip{height:64px}
+.sem-body{padding:12px 14px}
+.sem-body b{font-size:13px;display:block}
+.sem-body span{font-size:11px;color:var(--text-muted)}
+
+/* ============ TYPOGRAPHY ============ */
+.type-row{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--slate-100)}
+.type-row:last-child{border-bottom:none}
+.type-meta{font-size:11.5px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace}
+.type-meta b{display:block;font-family:var(--font);font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:2px}
+
+/* ============ COMPONENTS ============ */
+.btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font);font-weight:600;border-radius:var(--r-md);border:1px solid transparent;cursor:pointer;transition:.15s;font-size:13.5px;padding:9px 16px;line-height:1}
+.btn.sm{font-size:12.5px;padding:6px 12px}
+.btn.lg{font-size:14.5px;padding:12px 20px;border-radius:var(--r-lg)}
+.btn-primary{background:var(--teal-600);color:#fff;box-shadow:var(--sh-xs)}
+.btn-primary:hover{background:var(--teal-700)}
+.btn-secondary{background:#fff;color:var(--text);border-color:var(--border-strong);box-shadow:var(--sh-xs)}
+.btn-secondary:hover{background:var(--slate-50)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--slate-100);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-soft{background:var(--teal-50);color:var(--teal-700)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+.field{display:flex;flex-direction:column;gap:6px;max-width:320px}
+.field label{font-size:12.5px;font-weight:600;color:var(--slate-700)}
+.input{font-family:var(--font);font-size:13.5px;padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--r-md);background:#fff;color:var(--text);outline:none;transition:.15s;width:100%}
+.input::placeholder{color:var(--text-muted)}
+.input:focus{border-color:var(--teal-500);box-shadow:var(--ring)}
+.input.err{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.input:disabled{background:var(--slate-100);color:var(--text-muted)}
+.hint{font-size:11.5px;color:var(--text-muted)}
+.hint.err{color:var(--danger)}
+.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+
+.search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:9px 14px;max-width:420px;box-shadow:var(--sh-xs)}
+.search input{border:none;outline:none;font-family:var(--font);font-size:13.5px;flex:1;background:transparent}
+.kbd{font-size:10.5px;font-weight:600;color:var(--text-muted);border:1px solid var(--border);border-radius:5px;padding:2px 6px;background:var(--slate-50)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag{display:inline-flex;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:var(--r-sm);background:var(--slate-100);color:var(--slate-600)}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);background:var(--danger);color:#fff;font-size:10.5px;font-weight:700}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tab{padding:9px 14px;font-size:13px;font-weight:500;color:var(--text-secondary);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+.tab.active{color:var(--teal-700);border-color:var(--teal-600);font-weight:600}
+.seg{display:inline-flex;background:var(--slate-100);border-radius:var(--r-md);padding:3px;gap:2px}
+.seg button{border:none;background:transparent;font-family:var(--font);font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:6px;color:var(--text-secondary);cursor:pointer}
+.seg button.active{background:#fff;color:var(--text);font-weight:600;box-shadow:var(--sh-xs)}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:var(--r-lg);overflow:hidden}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:10px 16px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:13px 16px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--slate-50)}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs)}
+
+.avatar{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex-shrink:0}
+.avatar.sm{width:28px;height:28px;font-size:10.5px}
+.avatar.lg{width:48px;height:48px;font-size:16px}
+.avatar.xl{width:64px;height:64px;font-size:20px}
+.av-teal{background:var(--teal-100);color:var(--teal-800)}
+.av-blue{background:var(--blue-bg);color:var(--blue)}
+.av-indigo{background:var(--indigo-bg);color:var(--indigo)}
+.av-amber{background:var(--warning-bg);color:var(--warning)}
+.av-org{border-radius:var(--r-lg);background:var(--slate-900);color:#fff}
+.av-stack{display:flex}
+.av-stack .avatar{margin-left:-8px;border:2px solid #fff}
+.av-stack .avatar:first-child{margin-left:0}
+.presence{position:relative}
+.presence::after{content:'';position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:var(--success);border:2px solid #fff}
+
+.toast{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1px solid var(--border);border-left:3px solid;border-radius:var(--r-lg);padding:13px 16px;box-shadow:var(--sh-lg);max-width:380px}
+.toast b{font-size:13px;display:block;margin-bottom:1px}
+.toast span{font-size:12.5px;color:var(--text-secondary)}
+
+.modal-demo{background:rgba(15,23,42,.45);border-radius:var(--r-xl);padding:48px;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:var(--r-xl);box-shadow:var(--sh-lg);width:420px;padding:24px}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em}
+.modal p{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
+.drawer-demo{background:rgba(15,23,42,.45);border-radius:var(--r-xl);display:flex;justify-content:flex-end;overflow:hidden;height:320px}
+.drawer{background:#fff;width:340px;padding:24px;box-shadow:var(--sh-lg);display:flex;flex-direction:column}
+
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 24px}
+.empty-ic{width:56px;height:56px;border-radius:var(--r-xl);background:var(--slate-100);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.empty-ic .icon{width:24px;height:24px;stroke:var(--text-muted)}
+.empty b{font-size:14.5px;margin-bottom:4px}
+.empty span{font-size:13px;color:var(--text-muted);max-width:280px;margin-bottom:18px}
+.skel{background:linear-gradient(90deg,var(--slate-100) 25%,var(--slate-200) 50%,var(--slate-100) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.spinner{width:22px;height:22px;border:2.5px solid var(--slate-200);border-top-color:var(--teal-600);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ HEALTHCARE COMPONENTS ============ */
+.hcard{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:18px;box-shadow:var(--sh-xs)}
+.hcard-head{display:flex;align-items:center;gap:12px;margin-bottom:0}
+.hcard-head b{font-size:14px;display:block;letter-spacing:-.01em}
+.hcard-head span{font-size:12px;color:var(--text-muted)}
+.hr{height:1px;background:var(--slate-100);margin:14px 0}
+.meta-row{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary)}
+.meta-row .icon{width:14px;height:14px;stroke:var(--text-muted)}
+.stat{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-xs)}
+.stat .s-label{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.stat .s-val{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.stat .s-delta{font-size:11.5px;font-weight:600;margin-top:6px;display:inline-flex;align-items:center;gap:3px}
+.up{color:var(--success)} .down{color:var(--danger)}
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--slate-200);border-radius:2px}
+.tl-item{position:relative;padding-bottom:22px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2.5px solid;background:#fff}
+.tl-item b{font-size:13.5px;display:block;letter-spacing:-.01em}
+.tl-item .tl-when{font-size:11px;color:var(--text-muted);font-weight:500;margin-bottom:2px;display:block}
+.tl-item p{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+.rx{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-xs)}
+.rx-head{background:var(--slate-50);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+.rx-med{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--slate-100)}
+.rx-med:last-of-type{border-bottom:none}
+.rx-med b{font-size:13.5px;display:block}
+.rx-med span{font-size:12px;color:var(--text-muted)}
+.rx-dose{font-size:11.5px;font-weight:600;color:var(--teal-700);background:var(--teal-50);padding:3px 9px;border-radius:var(--r-full)}
+.queue-pos{width:44px;height:44px;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0}
+
+/* ============ LAYOUT WIREFRAMES ============ */
+.wf-wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.wf-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-top:10px;text-align:center}
+.wf-label span{display:block;font-weight:400;font-size:11px;color:var(--text-muted)}
+.phone{width:230px;height:460px;border:1px solid var(--border-strong);border-radius:28px;background:#fff;padding:8px;box-shadow:var(--sh-md)}
+.phone-in{height:100%;border-radius:21px;background:var(--bg-page);overflow:hidden;display:flex;flex-direction:column}
+.desk{width:460px;height:300px;border:1px solid var(--border-strong);border-radius:var(--r-lg);background:#fff;overflow:hidden;display:flex;box-shadow:var(--sh-md)}
+.wf-box{background:var(--slate-100);border-radius:6px}
+.wf-line{height:7px;border-radius:4px;background:var(--slate-200)}
+.wf-side{width:96px;background:var(--slate-50);border-right:1px solid var(--border);padding:10px 8px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.wf-nav-item{height:18px;border-radius:5px;background:var(--slate-200)}
+.wf-nav-item.on{background:var(--teal-200)}
+.wf-content{flex:1;display:flex;flex-direction:column}
+.wf-topbar{height:34px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 12px;background:#fff;flex-shrink:0}
+.wf-body{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg-page)}
+.ia-tree{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-xs)}
+.ia-tree h4{display:flex;align-items:center;gap:9px;font-size:14px;margin-bottom:14px;letter-spacing:-.01em}
+.ia-tree ul{list-style:none}
+.ia-tree li{font-size:13px;color:var(--text-secondary);padding:5px 0 5px 14px;border-left:2px solid var(--slate-200)}
+.ia-tree li b{color:var(--text);font-weight:600}
+.ia-tree li.h{border-left:2px solid var(--teal-400)}
+.ia-badge{width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
+.ia-badge .icon{width:14px;height:14px}
+
+/* ============ TOKEN TABLES ============ */
+.spc{display:flex;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--slate-100)}
+.spc:last-child{border:none}
+.spc .bar{height:18px;background:var(--teal-200);border-radius:4px}
+.sh-demo{background:#fff;border-radius:var(--r-lg);height:90px;display:flex;align-items:flex-end;padding:12px;font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.icon-cell{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border:1px solid var(--slate-100);border-radius:var(--r-md);font-size:11px;color:var(--text-muted)}
+.icon-cell .icon{width:20px;height:20px;stroke:var(--slate-700)}
+
+/* sidebar demo */
+.side-demo{width:240px;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:14px 10px;box-shadow:var(--sh-xs)}
+.side-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-md);font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:2px}
+.side-item .icon{width:16px;height:16px}
+.side-item.on{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.side-sec{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:14px 12px 6px}
+.topnav-demo{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 18px;display:flex;align-items:center;gap:16px;box-shadow:var(--sh-xs)}
+.bottom-tabs{display:flex;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:8px 6px;justify-content:space-around;max-width:340px;box-shadow:var(--sh-md)}
+.bt{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--text-muted);padding:4px 10px}
+.bt .icon{width:20px;height:20px}
+.bt.on{color:var(--teal-600)}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 20px 80px}.grid4,.grid3,.grid2,.prin,.sem-grid,.dodont{grid-template-columns:1fr}.scale{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ================= SIDEBAR NAV ================= -->
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>Design System v1.0</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#foundations"><span class="num">01</span> Foundations</a>
+  <a href="#colors"><span class="num">02</span> Colors</a>
+  <a href="#typography"><span class="num">03</span> Typography</a>
+  <a href="#components"><span class="num">04</span> Components</a>
+  <a href="#healthcare"><span class="num">04b</span> Healthcare Kit</a>
+  <a href="#layouts"><span class="num">05</span> Layouts</a>
+  <a href="#navigation"><span class="num">06</span> Navigation / IA</a>
+  <a href="#tokens"><span class="num">07</span> Design Tokens</a>
+  <a href="#icons"><span class="num">08</span> Icons</a>
+  <a href="#templates"><span class="num">09</span> Templates</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- ================= 00 COVER ================= -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> Design Foundation · v1.0 · July 2026</div>
+    <h1>Auriva<br><em>Healthcare, Simplified.</em></h1>
+    <p>The single source of truth for every screen we will ever ship. India's Healthcare Operating System — connecting patients, doctors, clinics, hospitals, diagnostics and pharmacies on one platform.</p>
+    <div class="cover-meta">
+      <div><b>Owner</b> Founding Design</div>
+      <div><b>Status</b> For Review</div>
+      <div><b>Scope</b> Foundation only — no feature screens</div>
+      <div><b>Horizon</b> Built for 10 years</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 01 FOUNDATIONS ================= -->
+<section class="doc-section" id="foundations">
+  <div class="sec-kicker">01 · Foundations</div>
+  <h2 class="sec-title">Design Principles</h2>
+  <p class="sec-desc">Auriva sits between a receptionist with 40 patients waiting, a doctor with 3 minutes per consult, and a patient who may be scared and non-technical. Every principle serves one of them.</p>
+
+  <div class="prin">
+    <div class="prin-card"><div class="prin-num">P1</div><h3>Calm over clever</h3><p>Healthcare is stressful. The UI is quiet, predictable, and never draws attention to itself. Whitespace is a feature. No gradients, no glass, no decoration without purpose.</p></div>
+    <div class="prin-card"><div class="prin-num">P2</div><h3>Speed is care</h3><p>Every core workflow — check-in, prescribe, book — completes in ≤ 3 clicks. Receptionist and doctor flows are keyboard-first with global search (⌘K) everywhere.</p></div>
+    <div class="prin-card"><div class="prin-num">P3</div><h3>Status is sacred</h3><p>In healthcare, ambiguity is dangerous. Appointment and queue states use one fixed, platform-wide color language. A status color never means two things.</p></div>
+    <div class="prin-card"><div class="prin-num">P4</div><h3>Patients own their data</h3><p>Patient-facing UI uses plain language, large touch targets, and progressive disclosure. Medical jargon is translated; records are always exportable and legible.</p></div>
+    <div class="prin-card"><div class="prin-num">P5</div><h3>Accessible by default</h3><p>WCAG 2.1 AA minimum. 4.5:1 contrast on all text, visible focus rings, 44px touch targets on mobile, full keyboard navigation, and status never conveyed by color alone.</p></div>
+    <div class="prin-card"><div class="prin-num">P6</div><h3>One system, four faces</h3><p>Patient, Doctor, Organization and Marketplace share one token set and one component library. Layouts change per workspace; the language never does.</p></div>
+  </div>
+
+  <div class="sub">Style direction</div>
+  <p class="sub-desc">Inspired by Apple, Linear, Stripe and Notion — engineered restraint, not visual excitement.</p>
+  <div class="dodont">
+    <div class="dd do"><h4>✓ We use</h4><ul>
+      <li>Generous whitespace and a strict 4px spacing grid</li>
+      <li>Inter typography with tight, confident headings</li>
+      <li>Soft layered shadows (never harsh borders + shadows together)</li>
+      <li>Rounded corners — 8px controls, 12–16px surfaces</li>
+      <li>One accent color (Auriva Teal) used sparingly</li>
+      <li>Real data hierarchy: name → status → time → detail</li>
+    </ul></div>
+    <div class="dd dont"><h4>✕ We never use</h4><ul>
+      <li>Glassmorphism, blur cards, neon glows</li>
+      <li>Multi-color gradients or decorative illustrations in workflows</li>
+      <li>Gaming UI, badges-as-rewards, confetti in clinical contexts</li>
+      <li>More than one primary action per view</li>
+      <li>Red for anything except danger / emergency</li>
+      <li>Dense dashboards that need a manual to read</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ================= 02 COLORS ================= -->
+<section class="doc-section" id="colors">
+  <div class="sec-kicker">02 · Colors</div>
+  <h2 class="sec-title">Color System</h2>
+  <p class="sec-desc">A single teal brand accent on a slate-neutral canvas. Teal signals health and trust without the cliché of hospital blue — and stays distinctive next to competitors. Semantic and status palettes are fixed platform-wide.</p>
+
+  <div class="panel">
+    <div class="label">Primary — Auriva Teal · <code class="tk">--teal-*</code> · Core: 600</div>
+    <div class="scale">
+      <div class="swatch" style="background:#F0FDFA;color:#134E4A">50<span>#F0FDFA</span></div>
+      <div class="swatch" style="background:#CCFBF1;color:#134E4A">100<span>#CCFBF1</span></div>
+      <div class="swatch" style="background:#99F6E4;color:#134E4A">200<span>#99F6E4</span></div>
+      <div class="swatch" style="background:#5EEAD4;color:#134E4A">300<span>#5EEAD4</span></div>
+      <div class="swatch" style="background:#2DD4BF;color:#134E4A">400<span>#2DD4BF</span></div>
+      <div class="swatch" style="background:#14B8A6;color:#fff">500<span>#14B8A6</span></div>
+      <div class="swatch" style="background:#0D9488;color:#fff">600 ★<span>#0D9488</span></div>
+      <div class="swatch" style="background:#0F766E;color:#fff">700<span>#0F766E</span></div>
+      <div class="swatch" style="background:#115E59;color:#fff">800<span>#115E59</span></div>
+      <div class="swatch" style="background:#134E4A;color:#fff">900<span>#134E4A</span></div>
+    </div>
+    <div class="label">Neutral — Slate · <code class="tk">--slate-*</code> · Text: 900 / 600 / 400</div>
+    <div class="scale">
+      <div class="swatch" style="background:#F8FAFC;color:#334155">50<span>#F8FAFC</span></div>
+      <div class="swatch" style="background:#F1F5F9;color:#334155">100<span>#F1F5F9</span></div>
+      <div class="swatch" style="background:#E2E8F0;color:#334155">200<span>#E2E8F0</span></div>
+      <div class="swatch" style="background:#CBD5E1;color:#334155">300<span>#CBD5E1</span></div>
+      <div class="swatch" style="background:#94A3B8;color:#fff">400<span>#94A3B8</span></div>
+      <div class="swatch" style="background:#64748B;color:#fff">500<span>#64748B</span></div>
+      <div class="swatch" style="background:#475569;color:#fff">600<span>#475569</span></div>
+      <div class="swatch" style="background:#334155;color:#fff">700<span>#334155</span></div>
+      <div class="swatch" style="background:#1E293B;color:#fff">800<span>#1E293B</span></div>
+      <div class="swatch" style="background:#0F172A;color:#fff">900<span>#0F172A</span></div>
+    </div>
+  </div>
+
+  <div class="sub">Semantic colors</div>
+  <p class="sub-desc">Each semantic color ships as a trio: solid, soft background, and border — so alerts, chips and banners are always consistent.</p>
+  <div class="sem-grid">
+    <div class="sem"><div class="sem-chip" style="background:#16A34A"></div><div class="sem-body"><b>Success</b><span>#16A34A · bg #F0FDF4</span></div></div>
+    <div class="sem"><div class="sem-chip" style="background:#D97706"></div><div class="sem-body"><b>Warning</b><span>#D97706 · bg #FFFBEB</span></div></div>
+    <div class="sem"><div class="sem-chip" style="background:#DC2626"></div><div class="sem-body"><b>Danger</b><span>#DC2626 · bg #FEF2F2</span></div></div>
+    <div class="sem"><div class="sem-chip" style="background:#0284C7"></div><div class="sem-body"><b>Info</b><span>#0284C7 · bg #F0F9FF</span></div></div>
+  </div>
+
+  <div class="sub">Appointment status colors</div>
+  <p class="sub-desc">Fixed across all four workspaces. Always rendered as a chip with dot + label — never color alone.</p>
+  <div class="panel"><div class="row">
+    <span class="chip" style="color:#64748B;background:#F1F5F9;border-color:#E2E8F0"><span class="dot"></span>Requested</span>
+    <span class="chip" style="color:#2563EB;background:#EFF6FF;border-color:#BFDBFE"><span class="dot"></span>Scheduled</span>
+    <span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Confirmed</span>
+    <span class="chip" style="color:#4F46E5;background:#EEF2FF;border-color:#C7D2FE"><span class="dot"></span>Checked-in</span>
+    <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>In Consultation</span>
+    <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Completed</span>
+    <span class="chip" style="color:#DC2626;background:#FEF2F2;border-color:#FECACA"><span class="dot"></span>Cancelled</span>
+    <span class="chip" style="color:#64748B;background:#F8FAFC;border-color:#E2E8F0;border-style:dashed"><span class="dot"></span>No-show</span>
+  </div></div>
+
+  <div class="sub">Queue status colors</div>
+  <p class="sub-desc">Used on the live queue board and receptionist views. Emergency is the only place pure red appears outside destructive actions.</p>
+  <div class="panel"><div class="row">
+    <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>Waiting</span>
+    <span class="chip" style="color:#2563EB;background:#EFF6FF;border-color:#BFDBFE"><span class="dot"></span>Called</span>
+    <span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>With Doctor</span>
+    <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Done</span>
+    <span class="chip" style="color:#64748B;background:#F1F5F9;border-color:#E2E8F0"><span class="dot"></span>Skipped</span>
+    <span class="chip" style="color:#fff;background:#DC2626;border-color:#DC2626"><span class="dot" style="background:#fff"></span>Emergency</span>
+  </div></div>
+</section>
+
+<!-- ================= 03 TYPOGRAPHY ================= -->
+<section class="doc-section" id="typography">
+  <div class="sec-kicker">03 · Typography</div>
+  <h2 class="sec-title">Typography</h2>
+  <p class="sec-desc"><b>Inter</b> everywhere — one family, five weights. Excellent Devanagari companion (Noto Sans Devanagari) for future Hindi/regional support. Numbers use tabular figures in tables, queues and vitals.</p>
+
+  <div class="panel">
+    <div class="type-row"><div class="type-meta"><b>Display</b>36 / 44 · Bold · -2%</div><div style="font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1.2">Healthcare, Simplified.</div></div>
+    <div class="type-row"><div class="type-meta"><b>H1</b>30 / 38 · Bold · -2%</div><div style="font-size:30px;font-weight:700;letter-spacing:-.02em">Good morning, Dr. Mehta</div></div>
+    <div class="type-row"><div class="type-meta"><b>H2</b>24 / 32 · Semibold · -1%</div><div style="font-size:24px;font-weight:600;letter-spacing:-.01em">Today's appointments</div></div>
+    <div class="type-row"><div class="type-meta"><b>H3</b>20 / 28 · Semibold</div><div style="font-size:20px;font-weight:600">Patient overview</div></div>
+    <div class="type-row"><div class="type-meta"><b>H4</b>16 / 24 · Semibold</div><div style="font-size:16px;font-weight:600">Vitals &amp; history</div></div>
+    <div class="type-row"><div class="type-meta"><b>Body Large</b>16 / 24 · Regular</div><div style="font-size:16px;color:var(--text-secondary)">Your appointment with Dr. Mehta is confirmed for tomorrow at 10:30 AM.</div></div>
+    <div class="type-row"><div class="type-meta"><b>Body</b> (default)14 / 20 · Regular</div><div style="font-size:14px;color:var(--text-secondary)">Paracetamol 500mg — twice daily after meals for 5 days.</div></div>
+    <div class="type-row"><div class="type-meta"><b>Body Small</b>13 / 18 · Regular</div><div style="font-size:13px;color:var(--text-secondary)">Last visited 12 Jun 2026 · Apollo Clinic, Koramangala</div></div>
+    <div class="type-row"><div class="type-meta"><b>Caption</b>12 / 16 · Medium</div><div style="font-size:12px;font-weight:500;color:var(--text-muted)">Token #A-42 · Est. wait 15 min</div></div>
+    <div class="type-row"><div class="type-meta"><b>Overline</b>11 / 14 · Semibold · +8% · Caps</div><div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">Medical History</div></div>
+  </div>
+  <div class="sub">Rules</div>
+  <div class="panel"><ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px">
+    <li>Weights: 400 body · 500 emphasis/labels · 600 headings/buttons · 700 page titles · 800 brand only.</li>
+    <li>Body text is <b>slate-600</b> on white; primary content and names are <b>slate-900</b>. Muted metadata is slate-400 — never lighter.</li>
+    <li>Patient-facing mobile bumps base size to 16px. Clinical desktop stays at 14px for density.</li>
+    <li>Line length ≤ 72ch. Headings never wrap more than 2 lines.</li>
+  </ul></div>
+</section>
+
+<!-- ================= 04 COMPONENTS ================= -->
+<section class="doc-section" id="components">
+  <div class="sec-kicker">04 · Components</div>
+  <h2 class="sec-title">Core Component Library</h2>
+  <p class="sec-desc">Every control in Auriva, in every state. One primary action per view; secondary and ghost carry everything else.</p>
+
+  <div class="panel">
+    <div class="label">Buttons — variants</div>
+    <div class="row">
+      <button class="btn btn-primary">Book appointment</button>
+      <button class="btn btn-secondary">View records</button>
+      <button class="btn btn-soft">Start consult</button>
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-danger">Delete record</button>
+      <button class="btn btn-primary" disabled>Disabled</button>
+    </div>
+    <div class="label">Buttons — sizes &amp; icons</div>
+    <div class="row">
+      <button class="btn btn-primary lg"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New appointment</button>
+      <button class="btn btn-primary">New appointment</button>
+      <button class="btn btn-primary sm">New appointment</button>
+      <button class="btn btn-secondary sm"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="label">Inputs</div>
+    <div class="row" style="gap:24px;align-items:flex-start">
+      <div class="field"><label>Patient name</label><input class="input" placeholder="e.g. Ananya Sharma"><span class="hint">As per government ID</span></div>
+      <div class="field"><label>Phone number</label><input class="input err" value="98450-1210"><span class="hint err">Enter a valid 10-digit mobile number</span></div>
+      <div class="field"><label>ABHA ID</label><input class="input" disabled value="Linked automatically"><span class="hint">Locked after verification</span></div>
+    </div>
+    <div class="label">Dropdown / Select</div>
+    <div class="row" style="gap:24px;align-items:flex-start">
+      <div class="field"><label>Speciality</label><select class="input select"><option>General Physician</option></select></div>
+      <div class="field"><label>Consultation type</label><select class="input select"><option>In-clinic visit</option></select></div>
+    </div>
+    <div class="label">Search — global ⌘K pattern</div>
+    <div class="search"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-muted)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search patients, doctors, records…"><span class="kbd">⌘K</span></div>
+    <div class="label">Filters</div>
+    <div class="row">
+      <span class="chip" style="color:var(--teal-700);background:var(--teal-50);border-color:var(--teal-200)">Today ✕</span>
+      <span class="chip" style="color:var(--teal-700);background:var(--teal-50);border-color:var(--teal-200)">Dr. Mehta ✕</span>
+      <span class="chip" style="color:var(--text-secondary);background:#fff;border-color:var(--border-strong)">+ Status</span>
+      <span class="chip" style="color:var(--text-secondary);background:#fff;border-color:var(--border-strong)">+ Department</span>
+      <button class="btn btn-ghost sm">Clear all</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="label">Tabs</div>
+    <div class="tabs" style="max-width:480px">
+      <div class="tab active">Overview</div><div class="tab">Timeline</div><div class="tab">Prescriptions</div><div class="tab">Reports</div><div class="tab">Billing</div>
+    </div>
+    <div class="label">Segmented control</div>
+    <div class="seg"><button class="active">Day</button><button>Week</button><button>Month</button></div>
+    <div class="label">Badges · Tags · Status chips</div>
+    <div class="row">
+      <span style="position:relative;display:inline-flex"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--slate-600)"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" style="position:absolute;top:-7px;right:-9px">3</span></span>
+      <span class="tag">Diabetic</span><span class="tag">Hypertension</span><span class="tag">Allergy: Penicillin</span>
+      <span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Verified</span>
+      <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>Pending KYC</span>
+    </div>
+    <div class="label">Avatars</div>
+    <div class="row" style="gap:18px">
+      <span class="avatar sm av-teal">AS</span>
+      <span class="avatar av-blue">RK</span>
+      <span class="avatar lg av-indigo presence">DM</span>
+      <span class="avatar xl av-amber">PJ</span>
+      <span class="avatar lg av-org">AH</span>
+      <span class="av-stack"><span class="avatar sm av-teal">AS</span><span class="avatar sm av-blue">RK</span><span class="avatar sm av-indigo">DM</span><span class="avatar sm" style="background:var(--slate-100);color:var(--slate-500)">+4</span></span>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">Patients = circles with initials · Doctors = circle + presence dot · Organizations = rounded-square. Photo optional, initials are the default.</div>
+  </div>
+
+  <div class="sub">Table</div>
+  <p class="sub-desc">The receptionist's home. Row height 48px, hover highlight, first column always the person, status always a chip.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Patient</th><th>Doctor</th><th>Time</th><th>Type</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><span class="avatar sm av-teal">AS</span><div><b>Ananya Sharma</b><div style="font-size:11.5px;color:var(--text-muted)">F · 34 · +91 98450 12210</div></div></div></td><td>Dr. Mehta</td><td><b>10:30</b> AM</td><td>Follow-up</td><td><span class="chip" style="color:#4F46E5;background:#EEF2FF;border-color:#C7D2FE"><span class="dot"></span>Checked-in</span></td><td><button class="btn btn-ghost sm">⋯</button></td></tr>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><span class="avatar sm av-blue">RK</span><div><b>Rohan Kapoor</b><div style="font-size:11.5px;color:var(--text-muted)">M · 52 · +91 99871 44031</div></div></div></td><td>Dr. Mehta</td><td><b>10:45</b> AM</td><td>New visit</td><td><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Confirmed</span></td><td><button class="btn btn-ghost sm">⋯</button></td></tr>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><span class="avatar sm av-amber">PJ</span><div><b>Priya Joshi</b><div style="font-size:11.5px;color:var(--text-muted)">F · 28 · +91 90080 77654</div></div></div></td><td>Dr. Iyer</td><td><b>11:00</b> AM</td><td>Lab review</td><td><span class="chip" style="color:#DC2626;background:#FEF2F2;border-color:#FECACA"><span class="dot"></span>Cancelled</span></td><td><button class="btn btn-ghost sm">⋯</button></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Overlays</div>
+  <div class="grid2">
+    <div>
+      <div class="label">Dialog — confirm pattern</div>
+      <div class="modal-demo"><div class="modal">
+        <h3>Cancel appointment?</h3>
+        <p>Ananya Sharma · Today, 10:30 AM with Dr. Mehta. The patient will be notified by SMS and the slot will reopen.</p>
+        <div class="row" style="justify-content:flex-end"><button class="btn btn-ghost">Keep it</button><button class="btn btn-danger">Cancel appointment</button></div>
+      </div></div>
+    </div>
+    <div>
+      <div class="label">Drawer — detail pattern (right, 400px)</div>
+      <div class="drawer-demo"><div class="drawer">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><b style="font-size:15px">Appointment details</b><button class="btn btn-ghost sm">✕</button></div>
+        <div class="hcard-head"><span class="avatar av-teal">AS</span><div><b>Ananya Sharma</b><span>F · 34 · MRN AUR-88231</span></div></div>
+        <div class="hr"></div>
+        <div class="col" style="gap:9px">
+          <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Today · 10:30 AM · Follow-up</div>
+          <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>Dr. Mehta · General Physician</div>
+        </div>
+        <div style="margin-top:auto;display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1">Reschedule</button><button class="btn btn-primary" style="flex:1">Check in</button></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="sub">Feedback — toasts, empty, loading, error</div>
+  <div class="grid2">
+    <div class="col">
+      <div class="toast" style="border-left-color:var(--success)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success);margin-top:1px"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg><div><b>Appointment booked</b><span>Ananya Sharma · Tomorrow 10:30 AM · SMS sent</span></div></div>
+      <div class="toast" style="border-left-color:var(--danger)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--danger);margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div><b>Couldn't save prescription</b><span>Connection lost. Your draft is safe — retry when online.</span></div></div>
+      <div class="row" style="margin-top:8px;gap:16px;align-items:center"><div class="spinner"></div><div class="col" style="gap:8px;flex:1"><div class="skel" style="height:12px;width:70%"></div><div class="skel" style="height:12px;width:45%"></div></div></div>
+      <div style="font-size:11.5px;color:var(--text-muted)">Loading = skeletons for content, spinner only for actions. Never a blank screen.</div>
+    </div>
+    <div class="panel" style="padding:0"><div class="empty">
+      <div class="empty-ic"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+      <b>No appointments today</b>
+      <span>When patients book or walk in, they'll appear here in real time.</span>
+      <button class="btn btn-primary sm">+ New appointment</button>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= 04b HEALTHCARE KIT ================= -->
+<section class="doc-section" id="healthcare">
+  <div class="sec-kicker">04b · Healthcare Kit</div>
+  <h2 class="sec-title">Healthcare Components</h2>
+  <p class="sec-desc">Domain components built from the core library. These are the atoms of every future Auriva screen — appointment cards, queue cards, timelines, prescriptions, and entity cards.</p>
+
+  <div class="grid3">
+    <div class="hcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div class="hcard-head"><span class="avatar av-indigo">DM</span><div><b>Dr. Arjun Mehta</b><span>General Physician</span></div></div>
+        <span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Confirmed</span>
+      </div>
+      <div class="col" style="gap:8px">
+        <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Tomorrow · 10:30 AM</div>
+        <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Apollo Clinic, Koramangala</div>
+      </div>
+      <div class="hr"></div>
+      <div class="row" style="gap:8px"><button class="btn btn-secondary sm" style="flex:1">Reschedule</button><button class="btn btn-primary sm" style="flex:1">Directions</button></div>
+      <div class="wf-label" style="margin-top:12px">Appointment Card <span>patient-facing</span></div>
+    </div>
+
+    <div class="hcard">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="queue-pos" style="background:var(--teal-50);color:var(--teal-700)">07</div>
+        <div style="flex:1"><b style="font-size:14px">Rohan Kapoor</b><div style="font-size:12px;color:var(--text-muted)">M · 52 · Token A-07 · Walk-in</div></div>
+        <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>Waiting</span>
+      </div>
+      <div class="hr"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Est. wait 15 min</div>
+        <div class="row" style="gap:6px"><button class="btn btn-ghost sm">Skip</button><button class="btn btn-primary sm">Call in</button></div>
+      </div>
+      <div class="wf-label" style="margin-top:12px">Queue Card <span>receptionist / doctor</span></div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-head"><span class="avatar av-teal">AS</span><div><b>Ananya Sharma</b><span>F · 34 · MRN AUR-88231</span></div></div>
+      <div class="hr"></div>
+      <div class="row" style="gap:6px;margin-bottom:12px"><span class="tag">Diabetic</span><span class="tag">Allergy: Penicillin</span></div>
+      <div class="col" style="gap:8px">
+        <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Last visit 12 Jun 2026 · Dr. Mehta</div>
+        <div class="meta-row"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.6 3a2 2 0 0 1-.5 1.9L7.9 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2-.5l3 .6a2 2 0 0 1 1.7 2z"/></svg>+91 98450 12210</div>
+      </div>
+      <div class="wf-label" style="margin-top:12px">Patient Card <span>clinical-facing</span></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="hcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="hcard-head"><span class="avatar lg av-indigo presence">DM</span><div><b>Dr. Arjun Mehta</b><span>General Physician · MBBS, MD</span>
+          <div style="display:flex;gap:10px;margin-top:4px;font-size:11.5px;color:var(--text-muted)"><span>★ 4.9 (1.2k)</span><span>12 yrs exp</span><span>₹600</span></div>
+        </div></div>
+        <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Available today</span>
+      </div>
+      <div class="hr"></div>
+      <div class="row" style="gap:6px"><span class="tag">English</span><span class="tag">Hindi</span><span class="tag">Kannada</span><span style="flex:1"></span><button class="btn btn-primary sm">Book slot</button></div>
+      <div class="wf-label" style="margin-top:12px">Doctor Card <span>marketplace</span></div>
+    </div>
+    <div class="hcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="hcard-head"><span class="avatar lg av-org">AH</span><div><b>Apollo Hospital, Koramangala</b><span>Multi-speciality · 24×7 Emergency</span>
+          <div style="display:flex;gap:10px;margin-top:4px;font-size:11.5px;color:var(--text-muted)"><span>★ 4.7</span><span>142 doctors</span><span>2.1 km</span></div>
+        </div></div>
+        <span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Auriva Verified</span>
+      </div>
+      <div class="hr"></div>
+      <div class="row" style="gap:6px"><span class="tag">Cardiology</span><span class="tag">Ortho</span><span class="tag">Diagnostics</span><span style="flex:1"></span><button class="btn btn-secondary sm">View profile</button></div>
+      <div class="wf-label" style="margin-top:12px">Hospital Card <span>marketplace</span></div>
+    </div>
+  </div>
+
+  <div class="sub">Medical Timeline</div>
+  <p class="sub-desc">The spine of the patient record — one chronological stream of visits, prescriptions, labs and vitals. Dot color follows event type.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot" style="border-color:var(--teal-500)"></span><span class="tl-when">TODAY · 10:52 AM</span><b>Consultation — Dr. Mehta</b><p>Viral fever, prescribed 3 medicines. Follow-up in 5 days.</p></div>
+        <div class="tl-item"><span class="tl-dot" style="border-color:var(--indigo)"></span><span class="tl-when">28 JUN 2026</span><b>Lab report — CBC Panel</b><p>Hemoglobin 11.2 g/dL <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A;font-size:10.5px;padding:1px 8px">Low</span></p></div>
+        <div class="tl-item"><span class="tl-dot" style="border-color:var(--blue)"></span><span class="tl-when">12 JUN 2026</span><b>Prescription — Metformin renewed</b><p>500mg · twice daily · 30 days</p></div>
+        <div class="tl-item"><span class="tl-dot" style="border-color:var(--slate-400)"></span><span class="tl-when">02 MAY 2026</span><b>Visit — Apollo Clinic</b><p>Routine diabetes review. HbA1c 6.8%.</p></div>
+      </div>
+    </div>
+    <div class="rx">
+      <div class="rx-head">
+        <div><b style="font-size:13.5px">Prescription · #RX-20431</b><div style="font-size:11.5px;color:var(--text-muted)">Dr. Arjun Mehta · Today, 10:52 AM</div></div>
+        <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Digitally signed</span>
+      </div>
+      <div class="rx-med"><div><b>Paracetamol 500mg</b><span>After meals · 5 days</span></div><span class="rx-dose">1-0-1</span></div>
+      <div class="rx-med"><div><b>Cetirizine 10mg</b><span>At night · 5 days</span></div><span class="rx-dose">0-0-1</span></div>
+      <div class="rx-med"><div><b>ORS Sachet</b><span>As needed when dehydrated</span></div><span class="rx-dose">SOS</span></div>
+      <div style="padding:12px 18px;background:var(--slate-50);border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary sm">Download PDF</button><button class="btn btn-primary sm">Send to pharmacy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">Dashboard widgets — stat cards</div>
+  <div class="grid4">
+    <div class="stat"><div class="s-label">Today's appointments</div><div class="s-val">42</div><span class="s-delta up">↑ 12% vs last week</span></div>
+    <div class="stat"><div class="s-label">Patients in queue</div><div class="s-val">7</div><span class="s-delta" style="color:var(--text-muted)">Avg wait 14 min</span></div>
+    <div class="stat"><div class="s-label">Revenue (today)</div><div class="s-val">₹48,200</div><span class="s-delta up">↑ 8%</span></div>
+    <div class="stat"><div class="s-label">No-show rate</div><div class="s-val">4.2%</div><span class="s-delta down">↑ 1.1% — needs attention</span></div>
+  </div>
+</section>
+
+<!-- ================= 05 LAYOUTS ================= -->
+<section class="doc-section" id="layouts">
+  <div class="sec-kicker">05 · Layouts</div>
+  <h2 class="sec-title">Workspace Layouts</h2>
+  <p class="sec-desc">Five reusable shells. Every future screen slots into one of these — no screen invents its own frame.</p>
+
+  <div class="wf-wrap">
+    <div>
+      <div class="phone"><div class="phone-in">
+        <div style="background:#fff;padding:14px 14px 10px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div class="wf-line" style="width:90px;height:10px;background:var(--slate-300)"></div><span class="avatar sm av-teal" style="width:24px;height:24px;font-size:9px">AS</span></div>
+        </div>
+        <div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:9px">
+          <div class="wf-box" style="height:64px;background:var(--teal-100)"></div>
+          <div class="wf-line" style="width:60%"></div>
+          <div class="wf-box" style="height:72px;background:#fff;border:1px solid var(--border)"></div>
+          <div class="wf-box" style="height:72px;background:#fff;border:1px solid var(--border)"></div>
+        </div>
+        <div style="background:#fff;border-top:1px solid var(--border);padding:8px 10px;display:flex;justify-content:space-around">
+          <div class="wf-box" style="width:30px;height:26px;background:var(--teal-200)"></div>
+          <div class="wf-box" style="width:30px;height:26px"></div>
+          <div class="wf-box" style="width:30px;height:26px"></div>
+          <div class="wf-box" style="width:30px;height:26px"></div>
+        </div>
+      </div></div>
+      <div class="wf-label">Patient — Mobile-first<span>Header · content feed · 4-tab bottom nav · FAB for booking</span></div>
+    </div>
+
+    <div class="col" style="gap:28px">
+      <div>
+        <div class="desk">
+          <div class="wf-side"><div class="wf-box" style="height:22px;background:var(--teal-200);margin-bottom:4px"></div><div class="wf-nav-item on"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div></div>
+          <div class="wf-content">
+            <div class="wf-topbar"><div class="wf-box" style="width:130px;height:16px"></div><span style="flex:1"></span><div class="wf-box" style="width:52px;height:16px;background:var(--teal-200)"></div></div>
+            <div class="wf-body" style="flex-direction:row">
+              <div style="flex:1.4;display:flex;flex-direction:column;gap:8px"><div class="wf-box" style="height:44px;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="height:44px;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="height:44px;background:#fff;border:1px solid var(--border)"></div></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px"><div class="wf-box" style="flex:1;background:#fff;border:1px solid var(--border)"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="wf-label">Doctor — Desktop<span>Slim sidebar · queue left · active patient context right</span></div>
+      </div>
+      <div>
+        <div class="desk">
+          <div class="wf-side" style="width:110px"><div class="wf-box" style="height:22px;background:var(--slate-800);margin-bottom:4px"></div><div class="wf-nav-item on"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div class="wf-nav-item"></div><div style="flex:1"></div><div class="wf-nav-item" style="height:14px"></div></div>
+          <div class="wf-content">
+            <div class="wf-topbar"><div class="wf-box" style="width:150px;height:16px"></div><span style="flex:1"></span><div class="wf-box" style="width:40px;height:16px"></div><div class="wf-box" style="width:52px;height:16px;background:var(--teal-200)"></div></div>
+            <div class="wf-body">
+              <div style="display:flex;gap:8px"><div class="wf-box" style="flex:1;height:38px;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="flex:1;height:38px;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="flex:1;height:38px;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="flex:1;height:38px;background:#fff;border:1px solid var(--border)"></div></div>
+              <div class="wf-box" style="flex:1;background:#fff;border:1px solid var(--border)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="wf-label">Organization — Desktop<span>Full sidebar with sections · stat row · data table workspace</span></div>
+      </div>
+    </div>
+
+    <div class="col" style="gap:28px">
+      <div>
+        <div class="desk" style="flex-direction:column">
+          <div class="wf-topbar" style="height:38px"><div class="wf-box" style="width:56px;height:16px;background:var(--teal-200)"></div><div class="wf-box" style="width:170px;height:18px;border-radius:9px"></div><span style="flex:1"></span><div class="wf-box" style="width:60px;height:16px"></div></div>
+          <div style="flex:1;padding:14px 28px;display:flex;flex-direction:column;gap:10px;background:var(--bg-page)">
+            <div class="wf-line" style="width:200px;height:12px;background:var(--slate-300)"></div>
+            <div style="display:flex;gap:10px;flex:1"><div class="wf-box" style="flex:1;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="flex:1;background:#fff;border:1px solid var(--border)"></div><div class="wf-box" style="flex:1;background:#fff;border:1px solid var(--border)"></div></div>
+          </div>
+        </div>
+        <div class="wf-label">Marketplace — Public<span>Top nav + prominent search · card grid · SEO-friendly, no sidebar</span></div>
+      </div>
+      <div>
+        <div class="desk">
+          <div style="flex:1;background:var(--teal-900);display:flex;flex-direction:column;justify-content:flex-end;padding:16px"><div class="wf-line" style="width:60%;background:var(--teal-700)"></div><div class="wf-line" style="width:40%;background:var(--teal-700);margin-top:6px"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px;gap:8px;background:#fff">
+            <div class="wf-line" style="width:55%;height:11px;background:var(--slate-300)"></div>
+            <div class="wf-box" style="height:26px;background:#fff;border:1px solid var(--border-strong)"></div>
+            <div class="wf-box" style="height:26px;background:#fff;border:1px solid var(--border-strong)"></div>
+            <div class="wf-box" style="height:26px;background:var(--teal-600)"></div>
+          </div>
+        </div>
+        <div class="wf-label">Authentication<span>Split: brand/trust panel left · single-column form right · OTP-first</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:28px">
+    <div class="label">Layout rules</div>
+    <ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px">
+      <li><b>Grid:</b> desktop 12-col / 1200px max content / 24px gutters. Mobile 4-col / 16px margins.</li>
+      <li><b>Sidebars:</b> Doctor 220px (slim, focus on patient), Organization 248px (deep nav with sections). Collapsible to 64px icon rail.</li>
+      <li><b>Detail views open in right drawers (400–480px)</b>, not new pages — receptionists never lose the list.</li>
+      <li><b>Patient mobile:</b> bottom tab bar (max 4 tabs + center action), content cards full-width, 16px radius.</li>
+      <li><b>Page background</b> is #F5F7FA; content surfaces are white cards. Never white-on-white.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 06 NAVIGATION / IA ================= -->
+<section class="doc-section" id="navigation">
+  <div class="sec-kicker">06 · Navigation</div>
+  <h2 class="sec-title">Product Information Architecture</h2>
+  <p class="sec-desc">Four workspaces, one account system. A user can hold multiple roles (a doctor is also a patient); the workspace switcher lives in the top-left account menu.</p>
+
+  <div class="grid2">
+    <div class="ia-tree">
+      <h4><span class="ia-badge" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></span>PATIENT · mobile-first</h4>
+      <ul>
+        <li class="h"><b>Home</b> — next appointment, active meds, quick actions</li>
+        <li class="h"><b>Care</b> — appointments, queue status, bookings</li>
+        <li class="h"><b>Health Records</b> — timeline, prescriptions, labs, vitals</li>
+        <li class="h"><b>Family</b> — linked members, switch profiles</li>
+        <li><b>Profile</b> — ABHA, insurance, settings (in header)</li>
+        <li>Center action: <b>+ Book</b> (doctor / lab / pharmacy)</li>
+      </ul>
+    </div>
+    <div class="ia-tree">
+      <h4><span class="ia-badge" style="background:var(--indigo-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg></span>DOCTOR · desktop-first</h4>
+      <ul>
+        <li class="h"><b>Today</b> — live queue + current patient (default view)</li>
+        <li class="h"><b>Schedule</b> — calendar, slots, availability</li>
+        <li class="h"><b>Patients</b> — my patient list, records</li>
+        <li class="h"><b>Consults</b> — notes, prescriptions, follow-ups</li>
+        <li><b>Earnings</b> — payouts, statements</li>
+        <li><b>Settings</b> — profile, clinics, fees</li>
+      </ul>
+    </div>
+    <div class="ia-tree">
+      <h4><span class="ia-badge" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>ORGANIZATION · desktop</h4>
+      <ul>
+        <li class="h"><b>Front Desk</b> — check-in, queue board, walk-ins</li>
+        <li class="h"><b>Appointments</b> — all bookings, calendars per doctor</li>
+        <li class="h"><b>Patients</b> — registry, records, ABHA linking</li>
+        <li class="h"><b>Doctors & Staff</b> — roster, schedules, roles</li>
+        <li><b>Departments</b> — OPD, diagnostics, pharmacy modules</li>
+        <li><b>Billing</b> — invoices, insurance, settlements</li>
+        <li><b>Insights</b> — occupancy, revenue, wait times</li>
+        <li><b>Settings</b> — org profile, branches, permissions</li>
+      </ul>
+    </div>
+    <div class="ia-tree">
+      <h4><span class="ia-badge" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>PUBLIC MARKETPLACE · web, SEO</h4>
+      <ul>
+        <li class="h"><b>Search</b> — doctors, clinics, hospitals, labs, pharmacies</li>
+        <li class="h"><b>Speciality hubs</b> — cardiology, derma, pediatrics…</li>
+        <li class="h"><b>Provider profiles</b> — verified info, slots, reviews</li>
+        <li><b>Book</b> — guest booking → OTP → becomes patient account</li>
+        <li><b>For Providers</b> — join Auriva (doctor / org onboarding)</li>
+        <li>Top nav only — no sidebar, fully crawlable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub">Navigation components</div>
+  <div class="row" style="gap:24px;align-items:flex-start">
+    <div>
+      <div class="label">Sidebar (Organization)</div>
+      <div class="side-demo">
+        <div style="display:flex;align-items:center;gap:9px;padding:4px 12px 14px"><span class="avatar sm av-org" style="border-radius:8px">AH</span><div style="font-size:12.5px;font-weight:600">Apollo Koramangala<div style="font-size:10.5px;color:var(--text-muted);font-weight:500">Organization ▾</div></div></div>
+        <div class="side-item on"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>Front Desk</div>
+        <div class="side-item"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Appointments</div>
+        <div class="side-item"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>Patients</div>
+        <div class="side-sec">Manage</div>
+        <div class="side-item"><svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Doctors &amp; Staff</div>
+        <div class="side-item"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Departments</div>
+        <div class="side-item"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-6 4 3 5-8"/></svg>Insights</div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:380px">
+      <div class="label">Top navigation (Marketplace)</div>
+      <div class="topnav-demo">
+        <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+        <div class="search" style="flex:1;max-width:none;padding:7px 12px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-muted)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search doctors, hospitals, labs…"></div>
+        <span style="font-size:13px;font-weight:500;color:var(--text-secondary)">For Providers</span>
+        <button class="btn btn-primary sm">Sign in</button>
+      </div>
+      <div class="label">Bottom tabs (Patient mobile)</div>
+      <div class="bottom-tabs">
+        <div class="bt on"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>Home</div>
+        <div class="bt"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Care</div>
+        <div class="bt"><span style="width:36px;height:36px;border-radius:50%;background:var(--teal-600);display:flex;align-items:center;justify-content:center;margin-top:-14px;box-shadow:var(--sh-md)"><svg class="icon" viewBox="0 0 24 24" style="stroke:#fff"><path d="M12 5v14M5 12h14"/></svg></span></div>
+        <div class="bt"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Records</div>
+        <div class="bt"><svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Family</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 TOKENS ================= -->
+<section class="doc-section" id="tokens">
+  <div class="sec-kicker">07 · Design Tokens</div>
+  <h2 class="sec-title">Design Tokens</h2>
+  <p class="sec-desc">The handoff contract between design and engineering. Names map 1:1 to CSS variables / Tailwind theme keys. Dark mode ships later by re-mapping surface + text tokens only.</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Spacing · 4px base</div>
+      <div class="spc"><code class="tk">space-1</code><div class="bar" style="width:4px"></div><span style="font-size:12px;color:var(--text-muted)">4 — icon gaps</span></div>
+      <div class="spc"><code class="tk">space-2</code><div class="bar" style="width:8px"></div><span style="font-size:12px;color:var(--text-muted)">8 — inside controls</span></div>
+      <div class="spc"><code class="tk">space-3</code><div class="bar" style="width:12px"></div><span style="font-size:12px;color:var(--text-muted)">12 — between related items</span></div>
+      <div class="spc"><code class="tk">space-4</code><div class="bar" style="width:16px"></div><span style="font-size:12px;color:var(--text-muted)">16 — card padding (mobile)</span></div>
+      <div class="spc"><code class="tk">space-6</code><div class="bar" style="width:24px"></div><span style="font-size:12px;color:var(--text-muted)">24 — card padding (desktop), gutters</span></div>
+      <div class="spc"><code class="tk">space-8</code><div class="bar" style="width:32px"></div><span style="font-size:12px;color:var(--text-muted)">32 — section gaps</span></div>
+      <div class="spc"><code class="tk">space-12</code><div class="bar" style="width:48px"></div><span style="font-size:12px;color:var(--text-muted)">48 — page sections</span></div>
+      <div class="spc"><code class="tk">space-16</code><div class="bar" style="width:64px"></div><span style="font-size:12px;color:var(--text-muted)">64 — hero / marketing</span></div>
+    </div>
+    <div class="panel">
+      <div class="label">Radius</div>
+      <div class="row" style="gap:14px">
+        <div style="text-align:center"><div style="width:56px;height:56px;background:var(--teal-100);border-radius:6px"></div><code class="tk" style="margin-top:6px;display:inline-block">sm 6</code><div style="font-size:10.5px;color:var(--text-muted)">chips, tags</div></div>
+        <div style="text-align:center"><div style="width:56px;height:56px;background:var(--teal-100);border-radius:8px"></div><code class="tk" style="margin-top:6px;display:inline-block">md 8</code><div style="font-size:10.5px;color:var(--text-muted)">buttons, inputs</div></div>
+        <div style="text-align:center"><div style="width:56px;height:56px;background:var(--teal-100);border-radius:12px"></div><code class="tk" style="margin-top:6px;display:inline-block">lg 12</code><div style="font-size:10.5px;color:var(--text-muted)">cards, tables</div></div>
+        <div style="text-align:center"><div style="width:56px;height:56px;background:var(--teal-100);border-radius:16px"></div><code class="tk" style="margin-top:6px;display:inline-block">xl 16</code><div style="font-size:10.5px;color:var(--text-muted)">modals, panels</div></div>
+        <div style="text-align:center"><div style="width:56px;height:56px;background:var(--teal-100);border-radius:999px"></div><code class="tk" style="margin-top:6px;display:inline-block">full</code><div style="font-size:10.5px;color:var(--text-muted)">avatars, pills</div></div>
+      </div>
+      <div class="label">Icon sizes</div>
+      <div class="row" style="gap:20px;align-items:flex-end">
+        <div style="text-align:center"><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--slate-700)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><div style="font-size:10.5px;color:var(--text-muted)">16 inline</div></div>
+        <div style="text-align:center"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--slate-700)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><div style="font-size:10.5px;color:var(--text-muted)">20 nav/buttons</div></div>
+        <div style="text-align:center"><svg class="icon" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:var(--slate-700)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><div style="font-size:10.5px;color:var(--text-muted)">24 mobile tabs</div></div>
+        <div style="text-align:center"><svg class="icon" viewBox="0 0 24 24" style="width:32px;height:32px;stroke:var(--slate-700)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><div style="font-size:10.5px;color:var(--text-muted)">32 empty states</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid4" style="margin-top:16px">
+    <div class="sh-demo" style="box-shadow:var(--sh-xs)">shadow-xs · rows</div>
+    <div class="sh-demo" style="box-shadow:var(--sh-sm)">shadow-sm · cards</div>
+    <div class="sh-demo" style="box-shadow:var(--sh-md)">shadow-md · dropdowns</div>
+    <div class="sh-demo" style="box-shadow:var(--sh-lg)">shadow-lg · modals</div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">Token reference (excerpt)</div>
+    <div class="tbl-wrap" style="box-shadow:none"><table class="tbl">
+      <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td><code class="tk">--color-primary</code></td><td>teal-600 #0D9488</td><td>Primary actions, active nav, links</td></tr>
+        <tr><td><code class="tk">--color-primary-hover</code></td><td>teal-700 #0F766E</td><td>Hover on primary</td></tr>
+        <tr><td><code class="tk">--color-bg-page</code></td><td>#F5F7FA</td><td>App canvas behind cards</td></tr>
+        <tr><td><code class="tk">--color-text</code> / <code class="tk">-secondary</code> / <code class="tk">-muted</code></td><td>slate-900 / 600 / 400</td><td>Content / supporting / metadata</td></tr>
+        <tr><td><code class="tk">--color-border</code></td><td>slate-200 #E2E8F0</td><td>Default hairlines, dividers</td></tr>
+        <tr><td><code class="tk">--radius-md</code></td><td>8px</td><td>Buttons, inputs, chips containers</td></tr>
+        <tr><td><code class="tk">--shadow-focus</code></td><td>0 0 0 3px rgba(13,148,136,.25)</td><td>Focus ring on all interactive elements</td></tr>
+        <tr><td><code class="tk">--status-appointment-*</code></td><td>8 fixed pairs (fg/bg)</td><td>See 02 · Colors — never restyled locally</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ================= 08 ICONS ================= -->
+<section class="doc-section" id="icons">
+  <div class="sec-kicker">08 · Icons</div>
+  <h2 class="sec-title">Iconography</h2>
+  <p class="sec-desc">Lucide icon set — 1.8px stroke, rounded caps, 24px grid. Outline everywhere; filled variants only for active mobile tabs. Never mix icon families.</p>
+  <div class="panel">
+    <div class="grid4" style="grid-template-columns:repeat(8,1fr)">
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V21H3z"/></svg>home</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>calendar</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>stethoscope</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7"/><path d="m8.5 8.5 7 7"/></svg>pill</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>file-report</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/></svg>heart</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>vitals</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>search</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>bell</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>patient</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>hospital</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M10 2v7.5L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9.5V2M7 2h10"/></svg>lab</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>clock</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-6 4 3 5-8"/></svg>insights</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>check</div>
+      <div class="icon-cell"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>alert</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 09 TEMPLATES ================= -->
+<section class="doc-section" id="templates">
+  <div class="sec-kicker">09 · Templates</div>
+  <h2 class="sec-title">Screen Templates — how future screens compose</h2>
+  <p class="sec-desc">No feature screens yet — only the recipes. Every Phase-2+ screen must declare which template it uses before design starts.</p>
+  <div class="panel">
+    <div class="tbl-wrap" style="box-shadow:none"><table class="tbl">
+      <thead><tr><th>Template</th><th>Shell</th><th>Composition</th><th>Used by (future)</th></tr></thead>
+      <tbody>
+        <tr><td><b>T1 · List + Drawer</b></td><td>Org / Doctor desktop</td><td>Filters row → data table → right detail drawer</td><td>Appointments, patients registry, billing</td></tr>
+        <tr><td><b>T2 · Live Board</b></td><td>Org desktop</td><td>Stat row → queue columns with queue cards</td><td>Front desk, OPD queue, lab queue</td></tr>
+        <tr><td><b>T3 · Workbench</b></td><td>Doctor desktop</td><td>Queue rail left → patient context center → actions right</td><td>Consultation, prescription writing</td></tr>
+        <tr><td><b>T4 · Record</b></td><td>Any desktop</td><td>Entity header → tabs → timeline / cards</td><td>Patient record, doctor profile (admin)</td></tr>
+        <tr><td><b>T5 · Feed</b></td><td>Patient mobile</td><td>Greeting header → action cards → timeline</td><td>Patient home, records, care plans</td></tr>
+        <tr><td><b>T6 · Flow</b></td><td>Mobile / modal</td><td>Stepper → single question per step → sticky CTA</td><td>Booking, onboarding, check-in</td></tr>
+        <tr><td><b>T7 · Explore</b></td><td>Marketplace</td><td>Search hero → filter rail → card grid → map toggle</td><td>Find doctors, hospitals, labs</td></tr>
+        <tr><td><b>T8 · Insights</b></td><td>Org desktop</td><td>Date range → stat cards → charts → breakdown table</td><td>Analytics, revenue, occupancy</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Next phase</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">Once this foundation is approved, Phase 2 designs the first real screens on top of it — recommended order: Authentication → Patient Home (T5) → Org Front Desk (T2) → Doctor Today (T3).</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>
