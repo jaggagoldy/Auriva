@@ -10,6 +10,7 @@ import { createHash, randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { isReceptionist } from "@/domain/authorization";
 
 export const SESSION_COOKIE_NAME = "auriva_staff_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours — a work shift
@@ -100,25 +101,26 @@ function forbidden(message: string) {
 }
 
 /**
- * Verifies the caller has an active session with an allowed role, and
- * resolves the clinic they're scoped to. Receptionists are always scoped to
- * their own StaffProfile's clinic (client-supplied clinic_id is ignored, to
- * prevent cross-clinic access); super_admins may operate on any clinic they
- * own, validated against `Clinic.super_admin_id`.
+ * Verifies the caller has an active session authorized by the given
+ * capability predicate (see src/domain/authorization.ts), and resolves the
+ * clinic they're scoped to. Receptionists are always scoped to their own
+ * StaffProfile's clinic (client-supplied clinic_id is ignored, to prevent
+ * cross-clinic access); super_admins may operate on any clinic they own,
+ * validated against `Clinic.super_admin_id`.
  */
 export async function requireStaffContext(
-  allowedRoles: StaffRole[],
+  authorize: (role: string) => boolean,
   requestedClinicId?: string | null
 ): Promise<StaffAuthResult> {
   const session = await readSession();
   if (!session) {
     return { ok: false, response: unauthorized("Sign in to continue.") };
   }
-  if (!allowedRoles.includes(session.role as StaffRole)) {
+  if (!authorize(session.role)) {
     return { ok: false, response: forbidden("Your role cannot access this resource.") };
   }
 
-  if (session.role === "receptionist") {
+  if (isReceptionist(session.role)) {
     const staffProfile = await prisma.staffProfile.findUnique({
       where: { user_id: session.userId },
     });

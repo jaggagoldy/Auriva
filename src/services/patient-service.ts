@@ -5,6 +5,7 @@
 
 import type { PrismaClient, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { isPatient } from "@/domain/authorization";
 
 export class PhoneNumberInUseError extends Error {}
 
@@ -21,7 +22,7 @@ export async function findOrCreatePatientByPhone(
   });
 
   if (existing) {
-    if (existing.role !== "patient") {
+    if (!isPatient(existing.role)) {
       throw new PhoneNumberInUseError(
         "This phone number is registered with a non-patient role."
       );

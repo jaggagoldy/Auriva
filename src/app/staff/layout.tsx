@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import prisma from "@/lib/prisma";
 import { getCurrentSession } from "@/api/session";
+import { canAccessReception } from "@/domain/authorization";
 import StaffShell from "@/components/staff/staff-shell";
 
 export default async function StaffLayout({
@@ -10,7 +11,7 @@ export default async function StaffLayout({
   children: React.ReactNode;
 }) {
   const session = await getCurrentSession();
-  if (!session || (session.role !== "receptionist" && session.role !== "super_admin")) {
+  if (!session || !canAccessReception(session.role)) {
     redirect("/login");
   }
 

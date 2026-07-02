@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffContext } from '@/api/session';
+import { canAccessReception } from '@/domain/authorization';
 import { getDashboardSummary } from '@/services/reception-service';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const requestedClinicId = searchParams.get('clinic_id');
 
-  const auth = await requireStaffContext(['receptionist', 'super_admin'], requestedClinicId);
+  const auth = await requireStaffContext(canAccessReception, requestedClinicId);
   if (!auth.ok) return auth.response;
 
   try {

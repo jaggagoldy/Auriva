@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { isPatient } from '@/domain/authorization';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!user || user.role !== 'patient') {
+    if (!user || !isPatient(user.role)) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Patient profile not found.' },
         { status: 404 }

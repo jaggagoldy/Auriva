@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffContext } from '@/api/session';
+import { canManageAppointments } from '@/domain/authorization';
 import { registerWalkIn, DoctorNotFoundError } from '@/services/walkin-service';
 import { DuplicateActiveAppointmentError } from '@/services/appointment-service';
 import { PhoneNumberInUseError } from '@/services/patient-service';
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const auth = await requireStaffContext(['receptionist', 'super_admin'], clinic_id);
+    const auth = await requireStaffContext(canManageAppointments, clinic_id);
     if (!auth.ok) return auth.response;
 
     const { appointment, isNewPatient } = await registerWalkIn({

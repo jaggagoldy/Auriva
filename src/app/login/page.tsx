@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+import { defaultWorkspacePathForRole } from '@/domain/authorization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -189,13 +190,12 @@ export default function UnifiedLoginGateway() {
         profile: data.staffProfile
       }));
 
-      // Redirect based on role
-      if (selectedRole === 'super_admin') {
-        router.push('/admin');
-      } else if (selectedRole === 'doctor') {
-        router.push('/doctor');
-      } else if (selectedRole === 'receptionist') {
-        router.push('/staff/dashboard');
+      // Redirect based on role (map centralized in src/domain/authorization)
+      const workspacePath = selectedRole
+        ? defaultWorkspacePathForRole(selectedRole)
+        : null;
+      if (workspacePath) {
+        router.push(workspacePath);
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to authenticate');

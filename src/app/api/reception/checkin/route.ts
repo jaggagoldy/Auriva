@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffContext } from '@/api/session';
+import { canManageAppointments } from '@/domain/authorization';
 import { checkIn } from '@/services/reception-service';
 import { AppointmentNotFoundError, InvalidTransitionError } from '@/services/appointment-service';
 
@@ -14,7 +15,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const auth = await requireStaffContext(['receptionist', 'super_admin'], clinic_id);
+    const auth = await requireStaffContext(canManageAppointments, clinic_id);
     if (!auth.ok) return auth.response;
 
     const updated = await checkIn(appointment_id, auth.clinicId, auth.session.userId);

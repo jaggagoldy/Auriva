@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireStaffContext } from '@/api/session';
+import { canManageAppointments } from '@/domain/authorization';
 import {
   AppointmentNotFoundError,
   InvalidTransitionError,
@@ -30,7 +31,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const auth = await requireStaffContext(['receptionist', 'super_admin'], clinic_id);
+    const auth = await requireStaffContext(canManageAppointments, clinic_id);
     if (!auth.ok) return auth.response;
 
     if (status !== undefined) {
