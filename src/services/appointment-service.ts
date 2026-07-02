@@ -9,7 +9,7 @@ import {
   AppointmentStatus,
   canTransition,
   timestampPatchFor,
-} from "@/lib/appointment-status";
+} from "@/domain/appointment-status";
 
 export class AppointmentNotFoundError extends Error {}
 export class InvalidTransitionError extends Error {}

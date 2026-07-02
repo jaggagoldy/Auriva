@@ -1,8 +1,8 @@
 // Shared types and helpers for the Doctor Live Queue console.
 // Shapes mirror the responses of GET /api/appointments and GET /api/doctors.
 
-import type { AppointmentStatus } from "@/lib/appointment-status";
-export type { AppointmentStatus } from "@/lib/appointment-status";
+import type { AppointmentStatus } from "@/domain/appointment-status";
+export type { AppointmentStatus } from "@/domain/appointment-status";
 
 export interface AppointmentEvent {
   id: string;

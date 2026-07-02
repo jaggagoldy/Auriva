@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireStaffContext } from '@/lib/session';
-import { getDashboardSummary } from '@/lib/services/reception-service';
+import { requireStaffContext } from '@/api/session';
+import { getDashboardSummary } from '@/services/reception-service';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

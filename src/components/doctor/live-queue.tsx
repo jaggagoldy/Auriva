@@ -30,7 +30,7 @@ import {
   formatTime,
   getInitials,
   isToday,
-} from "@/lib/queue";
+} from "@/shared/queue";
 import ConsultationPane from "./consultation-pane";
 import QueueSidebar, { QueueScope } from "./queue-sidebar";
 

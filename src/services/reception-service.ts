@@ -3,8 +3,8 @@ import {
   AppointmentNotFoundError,
   InvalidTransitionError,
   logAppointmentEvent,
-} from "@/lib/services/appointment-service";
-import { assignQueueNumber, getQueue, QUEUE_INCLUDE } from "@/lib/services/queue-service";
+} from "@/services/appointment-service";
+import { assignQueueNumber, getQueue, QUEUE_INCLUDE } from "@/services/queue-service";
 
 /**
  * Check-in transitions a scheduled appointment straight to "waiting" (see

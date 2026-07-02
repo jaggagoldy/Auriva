@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireStaffContext } from '@/lib/session';
+import { requireStaffContext } from '@/api/session';
 import {
   AppointmentNotFoundError,
   InvalidTransitionError,
   transitionStatus,
-} from '@/lib/services/appointment-service';
-import { QueueAppointmentNotFoundError, setPriority } from '@/lib/services/queue-service';
-import { isAppointmentStatus } from '@/lib/appointment-status';
+} from '@/services/appointment-service';
+import { QueueAppointmentNotFoundError, setPriority } from '@/services/queue-service';
+import { isAppointmentStatus } from '@/domain/appointment-status';
 
 // Also accepts a `priority`-only body (no `status`) to persist drag-and-drop
 // queue reordering — a pure ordering change, not a state transition, so it

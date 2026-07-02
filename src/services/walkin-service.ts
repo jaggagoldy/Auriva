@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
-import { findOrCreatePatientByPhone } from "@/lib/services/patient-service";
-import { assignQueueNumber, endOfDay, startOfDay, QUEUE_INCLUDE } from "@/lib/services/queue-service";
-import { DuplicateActiveAppointmentError, logAppointmentEvent } from "@/lib/services/appointment-service";
+import { findOrCreatePatientByPhone } from "@/services/patient-service";
+import { assignQueueNumber, endOfDay, startOfDay, QUEUE_INCLUDE } from "@/services/queue-service";
+import { DuplicateActiveAppointmentError, logAppointmentEvent } from "@/services/appointment-service";
 
 export class DoctorNotFoundError extends Error {}
 

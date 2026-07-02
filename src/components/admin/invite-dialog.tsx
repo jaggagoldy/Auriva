@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PendingInvite, ROLE_META } from "@/lib/workspace";
+import { PendingInvite, ROLE_META } from "@/shared/workspace";
 
 type InviteRole = PendingInvite["role"];
 

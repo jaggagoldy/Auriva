@@ -28,7 +28,7 @@ import {
   formatDay,
   formatTime,
   getInitials,
-} from "@/lib/queue";
+} from "@/shared/queue";
 import TimelineCard from "@/components/shared/timeline-card";
 
 interface AppointmentDrawerProps {

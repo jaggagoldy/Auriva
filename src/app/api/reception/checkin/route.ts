@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireStaffContext } from '@/lib/session';
-import { checkIn } from '@/lib/services/reception-service';
-import { AppointmentNotFoundError, InvalidTransitionError } from '@/lib/services/appointment-service';
+import { requireStaffContext } from '@/api/session';
+import { checkIn } from '@/services/reception-service';
+import { AppointmentNotFoundError, InvalidTransitionError } from '@/services/appointment-service';
 
 export async function PATCH(request: NextRequest) {
   try {

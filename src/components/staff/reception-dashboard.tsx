@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { formatDay } from "@/lib/queue";
+import { formatDay } from "@/shared/queue";
 import GlobalSearch from "@/components/staff/global-search";
 import SummaryCards from "@/components/staff/summary-cards";
 import DoctorAvailabilityPanel, { DoctorLoad } from "@/components/staff/doctor-availability-panel";

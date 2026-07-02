@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import prisma from "@/lib/prisma";
-import { getCurrentSession } from "@/lib/session";
+import { getCurrentSession } from "@/api/session";
 import StaffShell from "@/components/staff/staff-shell";
 
 export default async function StaffLayout({

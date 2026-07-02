@@ -4,8 +4,8 @@ import {
   InvalidTransitionError,
   getAppointmentWithEvents,
   transitionStatus,
-} from '@/lib/services/appointment-service';
-import { isAppointmentStatus } from '@/lib/appointment-status';
+} from '@/services/appointment-service';
+import { isAppointmentStatus } from '@/domain/appointment-status';
 
 // Not gated by the new staff session guard: this route is the doctor
 // console's existing (pre-Sprint-1) status-change call, and the doctor

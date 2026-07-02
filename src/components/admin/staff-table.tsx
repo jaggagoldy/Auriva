@@ -33,8 +33,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Doctor, formatDay, getInitials } from "@/lib/queue";
-import { PendingInvite, ROLE_META, roleOf } from "@/lib/workspace";
+import { Doctor, formatDay, getInitials } from "@/shared/queue";
+import { PendingInvite, ROLE_META, roleOf } from "@/shared/workspace";
 
 interface StaffTableProps {
   staff: Doctor[] | null;

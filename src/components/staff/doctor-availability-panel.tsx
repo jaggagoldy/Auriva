@@ -2,7 +2,7 @@ import { Stethoscope } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { getInitials } from "@/lib/queue";
+import { getInitials } from "@/shared/queue";
 
 export interface DoctorLoad {
   id: string;

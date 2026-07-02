@@ -19,7 +19,7 @@ import {
   AppointmentStatus,
   STATUS_META,
   formatTime,
-} from "@/lib/queue";
+} from "@/shared/queue";
 import CheckInButton from "@/components/staff/check-in-button";
 
 const TERMINAL_STATUSES: AppointmentStatus[] = ["completed", "cancelled", "no_show"];

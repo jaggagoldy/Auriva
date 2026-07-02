@@ -10,7 +10,7 @@ import DoctorFilter, { DoctorOption } from "@/components/staff/doctor-filter";
 import QueueColumn from "@/components/staff/queue-column";
 import WalkInModal from "@/components/staff/walkin-modal";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
-import { Appointment, AppointmentStatus, QUEUE_ORDER } from "@/lib/queue";
+import { Appointment, AppointmentStatus, QUEUE_ORDER } from "@/shared/queue";
 
 const POLL_INTERVAL_MS = 8_000;
 

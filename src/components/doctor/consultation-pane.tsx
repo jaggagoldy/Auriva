@@ -33,7 +33,7 @@ import {
   formatRelative,
   formatTime,
   getInitials,
-} from "@/lib/queue";
+} from "@/shared/queue";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
 
 interface ConsultationPaneProps {

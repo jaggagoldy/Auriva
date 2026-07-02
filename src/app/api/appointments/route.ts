@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { logAppointmentEvent } from '@/lib/services/appointment-service';
+import { logAppointmentEvent } from '@/services/appointment-service';
 
 // GET: Fetch appointments with optional filters
 export async function GET(request: NextRequest) {

@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { getInitials } from "@/lib/queue";
+import { getInitials } from "@/shared/queue";
 
 interface StaffShellProps {
   displayName: string;

@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Appointment, Doctor, formatDay, isToday } from "@/lib/queue";
-import { ClinicSummary, PendingInvite, roleOf } from "@/lib/workspace";
+import { Appointment, Doctor, formatDay, isToday } from "@/shared/queue";
+import { ClinicSummary, PendingInvite, roleOf } from "@/shared/workspace";
 import InviteStaffDialog from "./invite-dialog";
 import StaffTable from "./staff-table";
 

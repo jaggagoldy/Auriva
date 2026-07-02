@@ -1,8 +1,8 @@
 import { CalendarPlus, CheckCircle2, LogIn, RefreshCw, UserPlus, XCircle } from "lucide-react";
 
-import type { AppointmentEvent } from "@/lib/queue";
-import { STATUS_META, formatDay, formatTime } from "@/lib/queue";
-import { isAppointmentStatus } from "@/lib/appointment-status";
+import type { AppointmentEvent } from "@/shared/queue";
+import { STATUS_META, formatDay, formatTime } from "@/shared/queue";
+import { isAppointmentStatus } from "@/domain/appointment-status";
 import { cn } from "@/lib/utils";
 
 function describeEvent(event: AppointmentEvent): string {

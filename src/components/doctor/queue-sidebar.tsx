@@ -13,7 +13,7 @@ import {
   STATUS_META,
   formatRelative,
   formatTime,
-} from "@/lib/queue";
+} from "@/shared/queue";
 
 export type QueueScope = "today" | "all";
 

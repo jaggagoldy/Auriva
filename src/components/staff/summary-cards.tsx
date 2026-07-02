@@ -1,4 +1,4 @@
-import { STATUS_META, AppointmentStatus } from "@/lib/queue";
+import { STATUS_META, AppointmentStatus } from "@/shared/queue";
 import { cn } from "@/lib/utils";
 
 interface SummaryCardsProps {

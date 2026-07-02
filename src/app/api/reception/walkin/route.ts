@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireStaffContext } from '@/lib/session';
-import { registerWalkIn, DoctorNotFoundError } from '@/lib/services/walkin-service';
-import { DuplicateActiveAppointmentError } from '@/lib/services/appointment-service';
-import { PhoneNumberInUseError } from '@/lib/services/patient-service';
+import { requireStaffContext } from '@/api/session';
+import { registerWalkIn, DoctorNotFoundError } from '@/services/walkin-service';
+import { DuplicateActiveAppointmentError } from '@/services/appointment-service';
+import { PhoneNumberInUseError } from '@/services/patient-service';
 
 export async function POST(request: NextRequest) {
   try {

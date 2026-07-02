@@ -4,7 +4,7 @@ import * as React from "react";
 import { Reorder } from "framer-motion";
 
 import { cn } from "@/lib/utils";
-import { Appointment, AppointmentStatus, STATUS_META } from "@/lib/queue";
+import { Appointment, AppointmentStatus, STATUS_META } from "@/shared/queue";
 import QueueCard from "@/components/staff/queue-card";
 
 interface QueueColumnProps {

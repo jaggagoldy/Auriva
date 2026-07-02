@@ -1,7 +1,7 @@
 // Shared types and helpers for the Super Admin workspace console.
 // Shapes mirror the responses of GET /api/clinics and GET /api/doctors.
 
-import { Doctor } from "@/lib/queue";
+import { Doctor } from "@/shared/queue";
 
 export interface ClinicSummary {
   id: string;
