@@ -1,13 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { badRequest, mapDomainError, notFound, ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
 import { canManageAppointments } from '@/domain/authorization';
-import {
-  AppointmentNotFoundError,
-  InvalidTransitionError,
-  transitionStatus,
-} from '@/services/appointment-service';
-import { QueueAppointmentNotFoundError, setPriority } from '@/services/queue-service';
+import { transitionStatus } from '@/services/appointment-service';
+import { setPriority } from '@/services/queue-service';
 import { isAppointmentStatus } from '@/domain/appointment-status';
 
 // Also accepts a `priority`-only body (no `status`) to persist drag-and-drop
@@ -19,16 +16,10 @@ export async function PATCH(request: NextRequest) {
     const { appointment_id, status, clinic_id, note, priority } = body;
 
     if (!appointment_id || (status === undefined && priority === undefined)) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'appointment_id and either status or priority are required.' },
-        { status: 400 }
-      );
+      return badRequest('appointment_id and either status or priority are required.');
     }
     if (status !== undefined && !isAppointmentStatus(status)) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'status must be a valid appointment status.' },
-        { status: 400 }
-      );
+      return badRequest('status must be a valid appointment status.');
     }
 
     const auth = await requireStaffContext(canManageAppointments, clinic_id);
@@ -41,31 +32,18 @@ export async function PATCH(request: NextRequest) {
       // doctor console route.
       const appointment = await prisma.appointment.findUnique({ where: { id: appointment_id } });
       if (!appointment || appointment.clinic_id !== auth.clinicId) {
-        return NextResponse.json(
-          { error: 'Not Found', message: `Appointment ${appointment_id} not found.` },
-          { status: 404 }
-        );
+        return notFound(`Appointment ${appointment_id} not found.`);
       }
       const updated = await transitionStatus(appointment_id, status, {
         note,
         actorUserId: auth.session.userId,
       });
-      return NextResponse.json(updated);
+      return ok(updated);
     }
 
     const updated = await setPriority(appointment_id, auth.clinicId, Number(priority));
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    if (error instanceof AppointmentNotFoundError || error instanceof QueueAppointmentNotFoundError) {
-      return NextResponse.json({ error: 'Not Found', message: error.message }, { status: 404 });
-    }
-    if (error instanceof InvalidTransitionError) {
-      return NextResponse.json({ error: 'Conflict', message: error.message }, { status: 409 });
-    }
-    console.error('Error updating reception status:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(updated);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError('Error updating reception status', error);
   }
 }

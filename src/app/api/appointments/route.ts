@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { badRequest, mapDomainError, ok, serverError } from '@/api/http';
+import { hasRequiredFields } from '@/api/validation';
 import { searchAppointments } from '@/repositories/appointment-repository';
-import {
-  ClinicNotFoundError,
-  DoctorProfileNotFoundError,
-  InvalidScheduleInputError,
-  PatientProfileNotFoundError,
-  scheduleAppointment,
-} from '@/services/appointment-service';
+import { scheduleAppointment } from '@/services/appointment-service';
 
 // GET: Fetch appointments with optional filters
 export async function GET(request: NextRequest) {
@@ -20,13 +16,9 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status'),
     });
 
-    return NextResponse.json(appointments);
-  } catch (error: any) {
-    console.error('Error fetching appointments:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(appointments);
+  } catch (error) {
+    return serverError('Error fetching appointments', error);
   }
 }
 
@@ -34,49 +26,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { patient_id, doctor_id, clinic_id, scheduled_time, status } = body;
 
-    if (!patient_id || !doctor_id || !clinic_id || !scheduled_time) {
-      return NextResponse.json(
-        {
-          error: 'Bad Request',
-          message: 'Missing required fields: patient_id, doctor_id, clinic_id, scheduled_time are required.',
-        },
-        { status: 400 }
+    if (!hasRequiredFields(body, ['patient_id', 'doctor_id', 'clinic_id', 'scheduled_time'])) {
+      return badRequest(
+        'Missing required fields: patient_id, doctor_id, clinic_id, scheduled_time are required.'
       );
     }
 
     const newAppointment = await scheduleAppointment({
-      patientId: patient_id,
-      doctorId: doctor_id,
-      clinicId: clinic_id,
-      scheduledTime: scheduled_time,
-      status,
+      patientId: body.patient_id,
+      doctorId: body.doctor_id,
+      clinicId: body.clinic_id,
+      scheduledTime: body.scheduled_time,
+      status: body.status,
     });
 
-    return NextResponse.json(newAppointment, { status: 201 });
-  } catch (error: any) {
-    if (
-      error instanceof PatientProfileNotFoundError ||
-      error instanceof DoctorProfileNotFoundError ||
-      error instanceof ClinicNotFoundError
-    ) {
-      // Historical contract: label "Not Found" with HTTP 400.
-      return NextResponse.json(
-        { error: 'Not Found', message: error.message },
-        { status: 400 }
-      );
-    }
-    if (error instanceof InvalidScheduleInputError) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: error.message },
-        { status: 400 }
-      );
-    }
-    console.error('Error creating appointment:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(newAppointment, 201);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError('Error creating appointment', error);
   }
 }

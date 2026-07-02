@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
 import { canAccessReception } from '@/domain/authorization';
 import { getDashboardSummary } from '@/services/reception-service';
@@ -12,12 +13,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const summary = await getDashboardSummary(auth.clinicId);
-    return NextResponse.json(summary);
-  } catch (error: any) {
-    console.error('Error building reception dashboard:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(summary);
+  } catch (error) {
+    return serverError('Error building reception dashboard', error);
   }
 }

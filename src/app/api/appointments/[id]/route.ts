@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { badRequest, mapDomainError, notFound, ok, serverError } from '@/api/http';
 import {
-  AppointmentNotFoundError,
-  InvalidTransitionError,
   getAppointmentWithEvents,
   transitionStatus,
 } from '@/services/appointment-service';
@@ -9,7 +8,7 @@ import { isAppointmentStatus } from '@/domain/appointment-status';
 
 // Not gated by the new staff session guard: this route is the doctor
 // console's existing (pre-Sprint-1) status-change call, and the doctor
-// console has no session of its own yet — see src/lib/session.ts for the
+// console has no session of its own yet — see src/api/session.ts for the
 // scope boundary. Reception's equivalent action goes through the gated
 // PATCH /api/reception/status, which calls the same transitionStatus().
 
@@ -22,18 +21,11 @@ export async function GET(
     const { id } = await params;
     const appointment = await getAppointmentWithEvents(id);
     if (!appointment) {
-      return NextResponse.json(
-        { error: 'Not Found', message: `Appointment ${id} not found.` },
-        { status: 404 }
-      );
+      return notFound(`Appointment ${id} not found.`);
     }
-    return NextResponse.json(appointment);
-  } catch (error: any) {
-    console.error('Error fetching appointment:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(appointment);
+  } catch (error) {
+    return serverError('Error fetching appointment', error);
   }
 }
 
@@ -48,32 +40,13 @@ export async function PATCH(
     const { status, note } = body;
 
     if (!status || !isAppointmentStatus(status)) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'A valid status is required.' },
-        { status: 400 }
-      );
+      return badRequest('A valid status is required.');
     }
 
     const updated = await transitionStatus(id, status, { note });
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    if (error instanceof AppointmentNotFoundError) {
-      return NextResponse.json(
-        { error: 'Not Found', message: error.message },
-        { status: 404 }
-      );
-    }
-    if (error instanceof InvalidTransitionError) {
-      return NextResponse.json(
-        { error: 'Conflict', message: error.message },
-        { status: 409 }
-      );
-    }
-    console.error('Error updating appointment status:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(updated);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError('Error updating appointment status', error);
   }
 }
 
@@ -85,24 +58,8 @@ export async function DELETE(
   try {
     const { id } = await params;
     const updated = await transitionStatus(id, 'cancelled');
-    return NextResponse.json(updated);
-  } catch (error: any) {
-    if (error instanceof AppointmentNotFoundError) {
-      return NextResponse.json(
-        { error: 'Not Found', message: error.message },
-        { status: 404 }
-      );
-    }
-    if (error instanceof InvalidTransitionError) {
-      return NextResponse.json(
-        { error: 'Conflict', message: error.message },
-        { status: 409 }
-      );
-    }
-    console.error('Error cancelling appointment:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(updated);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError('Error cancelling appointment', error);
   }
 }

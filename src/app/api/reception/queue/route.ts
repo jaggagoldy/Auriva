@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { badRequest, ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
+import { parseDateOrNull } from '@/api/validation';
 import { canAccessReception } from '@/domain/authorization';
 import { getQueue } from '@/services/queue-service';
 
@@ -15,23 +17,17 @@ export async function GET(request: NextRequest) {
 
   let date: Date | undefined;
   if (dateParam) {
-    date = new Date(dateParam);
-    if (isNaN(date.getTime())) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'Invalid date.' },
-        { status: 400 }
-      );
+    const parsed = parseDateOrNull(dateParam);
+    if (!parsed) {
+      return badRequest('Invalid date.');
     }
+    date = parsed;
   }
 
   try {
     const queue = await getQueue({ clinicId: auth.clinicId, doctorId, date, search });
-    return NextResponse.json(queue);
-  } catch (error: any) {
-    console.error('Error fetching reception queue:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(queue);
+  } catch (error) {
+    return serverError('Error fetching reception queue', error);
   }
 }

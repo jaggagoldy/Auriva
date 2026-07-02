@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { apiError, badRequest, ok, serverError } from '@/api/http';
 import { createSession, setSessionCookie } from '@/api/session';
 
 export async function POST(request: NextRequest) {
@@ -7,10 +8,7 @@ export async function POST(request: NextRequest) {
     const { email, role } = await request.json();
 
     if (!email || !role) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'email and role are required.' },
-        { status: 400 }
-      );
+      return badRequest('email and role are required.');
     }
 
     const formattedEmail = email.trim().toLowerCase();
@@ -27,19 +25,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: `Invalid credentials. No ${role} found with email ${email}.` },
-        { status: 401 }
+      return apiError(
+        401,
+        'Unauthorized',
+        `Invalid credentials. No ${role} found with email ${email}.`
       );
     }
 
     // Issues a session cookie for the new /staff surface (receptionist,
     // super_admin). This does not change the credential check above — see
-    // src/lib/session.ts for what this session guard does and doesn't cover.
+    // src/api/session.ts for what this session guard does and doesn't cover.
     const { rawToken, expires_at } = await createSession(user.id, user.role);
     await setSessionCookie(rawToken, expires_at);
 
-    return NextResponse.json({
+    return ok({
       success: true,
       user: {
         id: user.id,
@@ -49,11 +48,7 @@ export async function POST(request: NextRequest) {
       },
       staffProfile: user.staffProfile,
     });
-  } catch (error: any) {
-    console.error('Error logging in B2B user:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return serverError('Error logging in B2B user', error);
   }
 }

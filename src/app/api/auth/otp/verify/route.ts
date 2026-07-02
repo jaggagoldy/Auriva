@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { apiError, badRequest, ok, serverError } from '@/api/http';
 import { isPatient } from '@/domain/authorization';
 
 export async function POST(request: NextRequest) {
@@ -7,20 +8,14 @@ export async function POST(request: NextRequest) {
     const { phone_number, code } = await request.json();
 
     if (!phone_number || !code) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'phone_number and code are required.' },
-        { status: 400 }
-      );
+      return badRequest('phone_number and code are required.');
     }
 
     const formattedPhone = phone_number.trim();
 
-    // Verify OTP
+    // Verify OTP. Historical quirk: label "Unauthorized" with HTTP 400.
     if (code !== '123456') {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid OTP code. Please enter 123456.' },
-        { status: 400 }
-      );
+      return apiError(400, 'Unauthorized', 'Invalid OTP code. Please enter 123456.');
     }
 
     // Find the user and patient profile
@@ -33,14 +28,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Historical quirk: label "Unauthorized" with HTTP 404.
     if (!user || !isPatient(user.role)) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Patient profile not found.' },
-        { status: 404 }
-      );
+      return apiError(404, 'Unauthorized', 'Patient profile not found.');
     }
 
-    return NextResponse.json({
+    return ok({
       success: true,
       user: {
         id: user.id,
@@ -50,11 +43,7 @@ export async function POST(request: NextRequest) {
       },
       patientProfile: user.patientProfile,
     });
-  } catch (error: any) {
-    console.error('Error verifying OTP:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return serverError('Error verifying OTP', error);
   }
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { ok, serverError } from '@/api/http';
 import { findStaffProfiles } from '@/repositories/staff-repository';
 
 export async function GET(request: NextRequest) {
@@ -10,12 +11,8 @@ export async function GET(request: NextRequest) {
       clinicId: searchParams.get('clinic_id'),
     });
 
-    return NextResponse.json(doctors);
-  } catch (error: any) {
-    console.error('Error fetching doctors:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    return ok(doctors);
+  } catch (error) {
+    return serverError('Error fetching doctors', error);
   }
 }

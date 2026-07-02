@@ -10,6 +10,7 @@ import { createHash, randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { forbidden, unauthorized } from "@/api/http";
 import { isReceptionist } from "@/domain/authorization";
 
 export const SESSION_COOKIE_NAME = "auriva_staff_session";
@@ -91,14 +92,6 @@ async function readSession(): Promise<ActiveSession | null> {
 type StaffAuthResult =
   | { ok: true; session: ActiveSession; clinicId: string }
   | { ok: false; response: NextResponse };
-
-function unauthorized(message: string) {
-  return NextResponse.json({ error: "Unauthorized", message }, { status: 401 });
-}
-
-function forbidden(message: string) {
-  return NextResponse.json({ error: "Forbidden", message }, { status: 403 });
-}
 
 /**
  * Verifies the caller has an active session authorized by the given
