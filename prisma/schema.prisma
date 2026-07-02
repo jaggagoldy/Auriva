@@ -1,0 +1,124 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String          @id @default(uuid())
+  role         String          // Enum: 'patient', 'super_admin', 'doctor', 'receptionist'
+  phone_number String          @unique
+  email        String?
+
+  // Relations
+  clinics      Clinic[]        @relation("ClinicSuperAdmin")
+  staffProfile StaffProfile?
+  patientProfile PatientProfile?
+  sessions     Session[]
+
+  @@map("Users")
+}
+
+// Minimal server-side session for the new /staff surface (Sprint 1). Scoped
+// narrowly: it does not replace or harden the existing email+role login
+// check, it only lets /api/reception/* and /staff/* verify who is calling.
+model Session {
+  id         String   @id @default(uuid())
+  token_hash String   @unique
+  user_id    String
+  role       String
+  created_at DateTime @default(now())
+  expires_at DateTime
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("Sessions")
+}
+
+model Clinic {
+  id             String         @id @default(uuid())
+  name           String
+  address        String
+  super_admin_id String
+  
+  // Relations
+  superAdmin     User           @relation("ClinicSuperAdmin", fields: [super_admin_id], references: [id], onDelete: Cascade)
+  staffProfiles  StaffProfile[]
+  appointments   Appointment[]
+
+  @@map("Clinics")
+}
+
+model StaffProfile {
+  id           String        @id @default(uuid())
+  user_id      String        @unique
+  clinic_id    String
+  specialty    String?       // e.g., 'Cardiologist'
+  full_name    String        // Added for UI display (Lead Dev decision)
+  
+  // Relations
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  clinic       Clinic        @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("Staff_Profiles")
+}
+
+model PatientProfile {
+  id           String        @id @default(uuid())
+  user_id      String        @unique
+  full_name    String
+  blood_group  String
+  
+  // Relations
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("Patient_Profiles")
+}
+
+model Appointment {
+  id             String         @id @default(uuid())
+  patient_id     String
+  doctor_id      String
+  clinic_id      String
+  scheduled_time DateTime
+  status         String         // 'scheduled' | 'checked_in' | 'waiting' | 'doctor_ready' | 'in_consultation' | 'completed' | 'no_show' | 'cancelled'
+
+  // Reception operations (Sprint 1)
+  queue_number   Int?
+  checked_in_at  DateTime?
+  started_at     DateTime?
+  completed_at   DateTime?
+  priority       Int            @default(0)
+  walk_in        Boolean        @default(false)
+  notes          String?
+
+  // Relations
+  patient        PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor         StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  clinic         Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  events         AppointmentEvent[]
+
+  @@map("Appointments")
+}
+
+// Activity timeline for Sprint 1 (Epic 8), and the seed of the future
+// platform-wide audit log (M6 in the roadmap) — one table serving both.
+model AppointmentEvent {
+  id             String      @id @default(uuid())
+  appointment_id String
+  type           String      // 'created' | 'checked_in' | 'status_changed' | 'walk_in_registered' | 'cancelled'
+  from_status    String?
+  to_status      String?
+  note           String?
+  actor_user_id  String?
+  created_at     DateTime    @default(now())
+
+  appointment    Appointment @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+
+  @@map("Appointment_Events")
+}
