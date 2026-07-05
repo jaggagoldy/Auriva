@@ -2,72 +2,15 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  Stethoscope,
-  Calendar,
-  Wallet,
-  HeartPulse,
-  BarChart3,
-  ShieldCheck,
-  Building2,
-  Hospital,
-  FlaskConical,
-  Pill,
-  Sparkles,
-  ShieldQuestion,
-  ScrollText,
-  Shield,
-} from 'lucide-react';
+import { ArrowRight, ShieldQuestion, ScrollText, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Container } from '@/components/marketing/container';
+import { PILLARS, ARCHETYPES, ENTRY_PATHS } from '@/components/marketing/content';
 
 // APS-031 Part 2 — homepage, matches design/aps-031-homepage.html.
 // Uses semantic design tokens (bg-background, text-foreground, bg-primary, ...)
 // rather than hardcoded hex, so the page is dark-mode-ready by construction.
-
-const PILLARS = [
-  {
-    icon: Stethoscope,
-    title: 'Clinical Excellence',
-    description: 'Appointments, queue, consultation, EMR, prescriptions, clinical timeline, follow-up.',
-  },
-  {
-    icon: Calendar,
-    title: 'Practice Operations',
-    description: 'Doctor availability, operational calendar, room scheduling, capacity, operational alerts.',
-  },
-  {
-    icon: Wallet,
-    title: 'Financial Operations',
-    description: 'Billing, payments, insurance, revenue, packages, invoices, settlement.',
-  },
-  {
-    icon: HeartPulse,
-    title: 'Patient Engagement',
-    description: 'Patient portal, online booking, digital forms, teleconsultation, communication, feedback.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Organization Intelligence',
-    description: 'Command Center, reports, analytics, operational KPIs, doctor productivity, clinic performance.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Platform Foundation',
-    description: 'Identity, authorization, event platform, audit, APIs, integration framework, notifications.',
-  },
-] as const;
-
-const ARCHETYPES = [
-  { icon: Building2, name: 'Independent Clinic', description: 'One doctor, one location, running like clockwork.' },
-  { icon: Stethoscope, name: 'Multi-specialty Clinic', description: 'Several specialties, one shared front desk and ledger.' },
-  { icon: Hospital, name: 'Hospital', description: 'Departments, beds, and OT lists on one operational spine.' },
-  { icon: FlaskConical, name: 'Diagnostic Center', description: 'Orders, samples, and results without lost paperwork.' },
-  { icon: Pill, name: 'Pharmacy Chain', description: 'Dispensing and stock across every store, one system.' },
-  { icon: Sparkles, name: 'Day Care Center', description: 'Recurring sessions and station boards, not one-off visits.' },
-] as const;
 
 const TRUST_ITEMS = [
   { icon: Shield, label: 'WCAG 2.2 AA accessible', href: '/security' },
@@ -79,36 +22,6 @@ const FACTS = [
   { value: '6', label: 'organization archetypes, one codebase' },
   { value: '9', label: 'operational primitives underneath' },
   { value: 'AA', label: 'WCAG 2.2 accessibility standard' },
-] as const;
-
-const ENTRY_PATHS = [
-  {
-    emoji: '🏥',
-    title: 'Healthcare Organization',
-    description: 'Stand up your clinic, hospital, or chain on Auriva.',
-    links: [
-      { label: 'Create Organization', href: '/register-org' },
-      { label: 'Book a demo first', href: '/book-demo' },
-    ],
-  },
-  {
-    emoji: '👩‍⚕️',
-    title: 'Healthcare Professional',
-    description: 'Joining a team that already runs on Auriva.',
-    links: [
-      { label: 'Accept an invitation', href: '/login' },
-      { label: 'Sign in', href: '/login' },
-    ],
-  },
-  {
-    emoji: '❤️',
-    title: 'Personal Health',
-    description: 'Book care for yourself or your family.',
-    links: [
-      { label: 'Book an appointment', href: '/login' },
-      { label: 'Sign in', href: '/login' },
-    ],
-  },
 ] as const;
 
 const fadeUp = {
