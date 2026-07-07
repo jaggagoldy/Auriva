@@ -1,8 +1,11 @@
 "use client";
 
-// Shared Admin Portal sidebar (Sprint 3). Extracted so the newer surfaces
-// (Settings, Departments) share one canonical navigation with the existing
-// Workspace and Command Center shells instead of each re-declaring their own.
+// Shared Organization Workspace sidebar (Sprint 3, regrouped for APS-031 #6).
+// Extracted so every admin surface shares one canonical navigation instead of
+// each re-declaring their own. Grouped Operate/Manage/Understand/Configure per
+// the APS-031 org-workspace mockup's IA — but only routes that are real today
+// get a link; everything else keeps the existing `soon` disabled pattern
+// rather than pointing at a page that doesn't exist yet.
 
 import * as React from "react";
 import Link from "next/link";
@@ -11,11 +14,15 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  FlaskConical,
   LayoutDashboard,
   Network,
+  ReceiptText,
   Rocket,
   Settings,
+  ShieldCheck,
   Stethoscope,
+  Users,
   Webhook,
 } from "lucide-react";
 
@@ -30,23 +37,54 @@ export type AdminNavKey =
   | "events"
   | "setup";
 
-const NAV: {
-  key: AdminNavKey;
+interface NavEntry {
+  key?: AdminNavKey;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  href: string;
-}[] = [
-  { key: "setup", icon: Rocket, label: "Setup", href: "/admin/setup" },
-  { key: "command-center", icon: LayoutDashboard, label: "Command Center", href: "/admin/command-center" },
-  { key: "workspace", icon: Building2, label: "Workspace", href: "/admin" },
-  { key: "departments", icon: Network, label: "Departments", href: "/admin/departments" },
-  { key: "events", icon: Webhook, label: "Event Platform", href: "/admin/events" },
-  { key: "settings", icon: Settings, label: "Settings", href: "/admin/settings" },
+  href?: string;
+  soon?: boolean;
+}
+
+const GROUPS: { title: string; items: NavEntry[] }[] = [
+  {
+    title: "Operate",
+    items: [
+      { icon: Stethoscope, label: "Live Queue", href: "/doctor" },
+      { icon: Users, label: "Walk-in Registration", href: "/staff/walkin" },
+      { icon: CalendarDays, label: "Appointments", soon: true },
+      { icon: FlaskConical, label: "Diagnostics", href: "/staff/lab" },
+    ],
+  },
+  {
+    title: "Manage",
+    items: [
+      { key: "workspace", icon: Building2, label: "People", href: "/admin" },
+      { key: "departments", icon: Network, label: "Departments", href: "/admin/departments" },
+      { icon: ReceiptText, label: "Billing", href: "/staff/billing" },
+      { icon: BarChart3, label: "Services & Pricing", soon: true },
+    ],
+  },
+  {
+    title: "Understand",
+    items: [
+      { key: "command-center", icon: LayoutDashboard, label: "Insights · Overview", href: "/admin/command-center" },
+      { icon: BarChart3, label: "Reports", soon: true },
+    ],
+  },
+  {
+    title: "Configure",
+    items: [
+      { key: "settings", icon: Settings, label: "Organization", href: "/admin/settings" },
+      { key: "events", icon: Webhook, label: "Event Platform", href: "/admin/events" },
+      { icon: ShieldCheck, label: "Access & Roles", soon: true },
+      { icon: Settings, label: "Communications", soon: true },
+    ],
+  },
 ];
 
 export function AdminSidebar({
   active,
-  subtitle = "Admin Portal",
+  subtitle = "Organization Workspace",
 }: {
   active: AdminNavKey;
   subtitle?: string;
@@ -63,19 +101,28 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 p-3">
-        {NAV.map((item) => (
-          <AdminNavItem
-            key={item.key}
-            icon={item.icon}
-            label={item.label}
-            href={item.href}
-            active={item.key === active}
-          />
+      <nav className="flex-1 space-y-3 overflow-y-auto p-3">
+        <AdminNavItem icon={Rocket} label="Setup" href="/admin/setup" active={active === "setup"} />
+
+        {GROUPS.map((group) => (
+          <div key={group.title}>
+            <div className="px-2.5 pb-1 text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+              {group.title}
+            </div>
+            <div className="space-y-0.5">
+              {group.items.map((item) => (
+                <AdminNavItem
+                  key={item.label}
+                  icon={item.icon}
+                  label={item.label}
+                  href={item.href}
+                  soon={item.soon}
+                  active={item.key !== undefined && item.key === active}
+                />
+              ))}
+            </div>
+          </div>
         ))}
-        <AdminNavItem icon={Stethoscope} label="Live Queue" href="/doctor" />
-        <AdminNavItem icon={CalendarDays} label="Appointments" soon />
-        <AdminNavItem icon={BarChart3} label="Reports" soon />
       </nav>
 
       <div className="flex items-center gap-2.5 border-t p-3">

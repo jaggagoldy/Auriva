@@ -1,22 +1,28 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
-  Activity,
-  BarChart3,
   Building2,
   CalendarDays,
-  LayoutDashboard,
+  ChevronRight,
   MapPin,
+  Plus,
   RefreshCw,
-  Settings,
-  Stethoscope,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -25,36 +31,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { Appointment, Doctor, formatDay, isToday } from "@/shared/queue";
-import { ClinicSummary, PendingInvite, roleOf } from "@/shared/workspace";
+import {
+  ClinicSummary,
+  PendingInvite,
+  pendingInviteFromApi,
+  roleOf,
+} from "@/shared/workspace";
+import ActivityBell from "./activity-panel";
+import { AdminSidebar } from "./admin-nav";
 import InviteStaffDialog from "./invite-dialog";
 import StaffTable from "./staff-table";
+import WhatsNew from "@/components/shared/whats-new";
 
 const CLINIC_STORAGE_KEY = "workspace_console_clinic_id";
-const INVITES_STORAGE_KEY = "workspace_pending_invites";
 
-async function fetchWorkspaceData(clinicId: string) {
-  const [staffRes, apptRes] = await Promise.all([
+async function fetchWorkspaceData(clinicId: string, organizationId: string) {
+  const [staffRes, apptRes, inviteRes] = await Promise.all([
     fetch(`/api/doctors?clinic_id=${clinicId}`, { cache: "no-store" }),
     fetch(`/api/appointments?clinic_id=${clinicId}`, { cache: "no-store" }),
+    fetch(`/api/organizations/${organizationId}/invitations`, { cache: "no-store" }),
   ]);
   if (!staffRes.ok || !apptRes.ok) throw new Error("Request failed");
   const staff: Doctor[] = await staffRes.json();
   const appointments: Appointment[] = await apptRes.json();
+  // Invitations may 403 for non-owners — treat that as "no pending invites"
+  // rather than a hard failure of the whole workspace.
+  const invites: PendingInvite[] = inviteRes.ok
+    ? (await inviteRes.json()).map(pendingInviteFromApi)
+    : [];
   return {
     staff,
+    invites,
     todayCount: appointments.filter((a) => isToday(a.scheduled_time)).length,
   };
-}
-
-function readInvites(): Record<string, PendingInvite[]> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(INVITES_STORAGE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
 }
 
 export default function AdminWorkspace() {
@@ -63,34 +73,47 @@ export default function AdminWorkspace() {
   const [staff, setStaff] = React.useState<Doctor[] | null>(null);
   const [todayCount, setTodayCount] = React.useState<number | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [invitesMap, setInvitesMap] = React.useState(readInvites);
+  const [invites, setInvites] = React.useState<PendingInvite[]>([]);
+  const [addClinicOpen, setAddClinicOpen] = React.useState(false);
+
+  const loadClinics = React.useCallback(async () => {
+    const res = await fetch("/api/clinics", { cache: "no-store" });
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    const data: ClinicSummary[] = await res.json();
+    setClinics(data);
+    if (data.length === 0) {
+      setError("No clinics found for this account.");
+      return null;
+    }
+    return data;
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/clinics", { cache: "no-store" });
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        const data: ClinicSummary[] = await res.json();
-        if (cancelled) return;
-        setClinics(data);
+    loadClinics()
+      .then((data) => {
+        if (cancelled || !data) return;
         const stored = localStorage.getItem(CLINIC_STORAGE_KEY);
-        const initial =
-          data.find((clinic) => clinic.id === stored) ?? data[0] ?? null;
+        const initial = data.find((clinic) => clinic.id === stored) ?? data[0] ?? null;
         setClinicId(initial?.id ?? null);
-        if (data.length === 0) setError("No clinics found for this account.");
-      } catch {
+      })
+      .catch(() => {
         if (!cancelled) setError("Could not load your clinics.");
-      }
-    })();
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadClinics]);
+
+  // Sprint 3: the organization is the real parent now — derived from any
+  // clinic's organization_id (every clinic in `clinics` belongs to the same
+  // organization, since GET /api/clinics is already scoped to "my org").
+  const organizationId = clinics?.[0]?.organization_id ?? null;
 
   const applyWorkspaceData = React.useCallback(
     (data: Awaited<ReturnType<typeof fetchWorkspaceData>>) => {
       setStaff(data.staff);
+      setInvites(data.invites);
       setTodayCount(data.todayCount);
       setError(null);
     },
@@ -98,9 +121,9 @@ export default function AdminWorkspace() {
   );
 
   React.useEffect(() => {
-    if (!clinicId) return;
+    if (!clinicId || !organizationId) return;
     let cancelled = false;
-    fetchWorkspaceData(clinicId)
+    fetchWorkspaceData(clinicId, organizationId)
       .then((data) => {
         if (!cancelled) applyWorkspaceData(data);
       })
@@ -110,11 +133,11 @@ export default function AdminWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [clinicId, applyWorkspaceData]);
+  }, [clinicId, organizationId, applyWorkspaceData]);
 
   const handleRefresh = () => {
-    if (!clinicId) return;
-    fetchWorkspaceData(clinicId)
+    if (!clinicId || !organizationId) return;
+    fetchWorkspaceData(clinicId, organizationId)
       .then(applyWorkspaceData)
       .catch(() => setError("Could not load workspace data."));
   };
@@ -123,115 +146,54 @@ export default function AdminWorkspace() {
     if (id === clinicId) return;
     setClinicId(id);
     setStaff(null);
+    setInvites([]);
     setTodayCount(null);
     setError(null);
     localStorage.setItem(CLINIC_STORAGE_KEY, id);
   };
 
   const clinic = clinics?.find((c) => c.id === clinicId) ?? null;
-  const invites = clinicId ? (invitesMap[clinicId] ?? []) : [];
 
-  const persistInvites = (next: Record<string, PendingInvite[]>) => {
-    setInvitesMap(next);
-    localStorage.setItem(INVITES_STORAGE_KEY, JSON.stringify(next));
+  const handleInvited = (joinUrl: string, fullName: string) => {
+    navigator.clipboard?.writeText(joinUrl).catch(() => {});
+    toast.success(`Invitation created for ${fullName}`, {
+      description: "Join link copied — share it so they can set a password and join.",
+    });
+    handleRefresh();
   };
 
-  const handleInvite = (invite: PendingInvite) => {
-    if (!clinicId) return;
-    persistInvites({
-      ...invitesMap,
-      [clinicId]: [invite, ...invites],
-    });
+  const handleRevokeInvite = async (id: string) => {
+    if (!organizationId) return;
+    setInvites((prev) => prev.filter((invite) => invite.id !== id)); // optimistic
+    try {
+      const res = await fetch(`/api/organizations/${organizationId}/invitations/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Invitation revoked");
+    } catch {
+      toast.error("Could not revoke invitation");
+      handleRefresh();
+    }
   };
 
-  const handleRevokeInvite = (id: string) => {
-    if (!clinicId) return;
-    persistInvites({
-      ...invitesMap,
-      [clinicId]: invites.filter((invite) => invite.id !== id),
-    });
-    toast.success("Invitation revoked");
+  const handleClinicAdded = async (newClinicId: string) => {
+    setAddClinicOpen(false);
+    const data = await loadClinics().catch(() => null);
+    if (data) handleClinicChange(newClinicId);
+    toast.success("Branch added");
   };
 
   const doctorCount = staff?.filter((s) => roleOf(s) === "doctor").length;
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
-      {/* High-contrast admin navigation rail */}
-      <aside className="flex w-64 shrink-0 flex-col bg-zinc-950 text-zinc-400">
-        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-white/10 px-4">
-          <div className="flex size-7 items-center justify-center rounded-md bg-white text-zinc-950">
-            <Activity className="size-4" />
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold text-zinc-100">
-              Aegis Clinic OS
-            </div>
-            <div className="text-[11px] text-zinc-500">Admin Portal</div>
-          </div>
-        </div>
-
-        <div className="border-b border-white/10 p-3">
-          <div className="mb-1.5 px-1 text-[10px] font-medium tracking-wider text-zinc-500 uppercase">
-            Workspace
-          </div>
-          <Select
-            value={clinicId}
-            onValueChange={(value) => handleClinicChange(value as string)}
-          >
-            <SelectTrigger
-              className="w-full border-white/10 bg-white/5 text-zinc-100 hover:bg-white/10 focus-visible:ring-white/20 dark:bg-white/5 dark:hover:bg-white/10"
-              aria-label="Workspace"
-            >
-              <SelectValue>
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Building2 className="size-3.5 shrink-0 text-zinc-500" />
-                  <span className="truncate">
-                    {clinic?.name ?? "Select workspace"}
-                  </span>
-                </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {(clinics ?? []).map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <nav className="flex-1 space-y-0.5 p-3">
-          <NavItem icon={LayoutDashboard} label="Workspace" active />
-          <NavItem icon={Stethoscope} label="Live Queue" href="/doctor" />
-          <NavItem icon={CalendarDays} label="Appointments" soon />
-          <NavItem icon={BarChart3} label="Reports" soon />
-          <NavItem icon={Settings} label="Settings" soon />
-        </nav>
-
-        <div className="flex items-center gap-2.5 border-t border-white/10 p-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-white/10 text-xs font-semibold text-zinc-100">
-              SA
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 leading-tight">
-            <div className="truncate text-sm font-medium text-zinc-100">
-              Super Admin
-            </div>
-            {/* Owner identity is mocked — the clinics API only exposes super_admin_id. */}
-            <div className="truncate text-[11px] text-zinc-500">
-              admin@aegiscare.com
-            </div>
-          </div>
-        </div>
-      </aside>
+      <AdminSidebar active="workspace" />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div>
-            <h1 className="text-sm font-semibold">Workspace Management</h1>
+            <h1 className="text-sm font-semibold">People</h1>
             <p className="text-[11px] text-muted-foreground">
               Clinic profile, staff and role access
             </p>
@@ -241,6 +203,8 @@ export default function AdminWorkspace() {
               <CalendarDays className="size-3.5" />
               <span>{formatDay(new Date())}</span>
             </div>
+            <WhatsNew />
+            <ActivityBell organizationId={organizationId} />
             <Button
               variant="outline"
               size="icon-sm"
@@ -252,6 +216,42 @@ export default function AdminWorkspace() {
             </Button>
           </div>
         </header>
+
+        <div className="flex h-10 shrink-0 items-center gap-1.5 border-b bg-muted/30 px-6 text-sm">
+          <span className="text-muted-foreground">Organization Workspace</span>
+          <ChevronRight className="size-3.5 text-muted-foreground/60" />
+          <Select
+            value={clinicId}
+            onValueChange={(value) => handleClinicChange(value as string)}
+          >
+            <SelectTrigger
+              className="h-7 w-auto gap-1.5 border-none bg-transparent px-2 font-medium shadow-none hover:bg-muted"
+              aria-label="Branch"
+            >
+              <SelectValue>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Building2 className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{clinic?.name ?? "Select branch"}</span>
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {(clinics ?? []).map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            onClick={() => setAddClinicOpen(true)}
+            aria-label="Add a branch"
+            className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="size-3.5" />
+            Add branch
+          </button>
+        </div>
 
         {error && clinics !== null && staff === null ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3">
@@ -283,6 +283,9 @@ export default function AdminWorkspace() {
                         <span className="rounded bg-muted px-1.5 py-0.5 font-mono">
                           {clinic.id.slice(0, 8)}
                         </span>
+                        {clinics && clinics.length > 1 && (
+                          <span className="ml-2">· {clinics.length} branches in this organization</span>
+                        )}
                       </p>
                     </>
                   ) : (
@@ -333,64 +336,112 @@ export default function AdminWorkspace() {
                     People with access to this workspace and their permissions
                   </p>
                 </div>
-                <InviteStaffDialog
-                  clinicName={clinic?.name ?? "this clinic"}
-                  onInvite={handleInvite}
-                />
+                {clinicId && organizationId && (
+                  <InviteStaffDialog
+                    clinicName={clinic?.name ?? "this clinic"}
+                    organizationId={organizationId}
+                    clinics={(clinics ?? []).map((c) => ({ id: c.id, name: c.name }))}
+                    defaultClinicId={clinicId}
+                    onInvited={handleInvited}
+                  />
+                )}
               </header>
               <StaffTable
                 staff={staff}
                 invites={invites}
+                organizationId={organizationId}
                 onRevokeInvite={handleRevokeInvite}
+                onStaffChanged={handleRefresh}
               />
             </section>
           </main>
         )}
       </div>
+
+      {organizationId && (
+        <AddClinicDialog
+          open={addClinicOpen}
+          onOpenChange={setAddClinicOpen}
+          organizationId={organizationId}
+          onAdded={handleClinicAdded}
+        />
+      )}
     </div>
   );
 }
 
-function NavItem({
-  icon: Icon,
-  label,
-  href,
-  active,
-  soon,
+function AddClinicDialog({
+  open,
+  onOpenChange,
+  organizationId,
+  onAdded,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href?: string;
-  active?: boolean;
-  soon?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  organizationId: string;
+  onAdded: (clinicId: string) => void;
 }) {
-  const className = cn(
-    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
-    active
-      ? "bg-white/10 font-medium text-white"
-      : soon
-        ? "cursor-default text-zinc-600"
-        : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+  const [name, setName] = React.useState("");
+  const [address, setAddress] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setName("");
+      setAddress("");
+    }
+  }, [open]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!name.trim() || !address.trim()) {
+      toast.error("Branch name and address are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/organizations/${organizationId}/clinics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), address: address.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? "Could not add branch");
+      onAdded(data.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add branch");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add a branch</DialogTitle>
+          <DialogDescription>
+            A second clinic under the same organization — its own queue, staff and schedule.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-clinic-name">Branch name</Label>
+            <Input id="new-clinic-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-clinic-address">Address</Label>
+            <Input id="new-clinic-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
+          <DialogFooter showCloseButton>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add branch"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-  const content = (
-    <>
-      <Icon className="size-4 shrink-0" />
-      <span className="flex-1 text-left">{label}</span>
-      {soon && (
-        <span className="rounded-full border border-white/10 px-1.5 text-[10px] text-zinc-600">
-          Soon
-        </span>
-      )}
-    </>
-  );
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {content}
-      </Link>
-    );
-  }
-  return <div className={className}>{content}</div>;
 }
 
 function StatTile({
