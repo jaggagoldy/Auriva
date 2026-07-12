@@ -2,16 +2,17 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Pill, FlaskConical, Receipt, CalendarCheck2, ChevronRight, Stethoscope } from "lucide-react";
+import { Pill, Receipt, CalendarCheck2, ChevronRight, Stethoscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePatientSession } from "@/components/patient/patient-session";
+import { HealthVault } from "@/components/patient/health-vault";
 import { Appointment, formatDay, parseMedicines } from "@/shared/queue";
 
 const TABS = [
   { id: "timeline", label: "Timeline" },
   { id: "rx", label: "Rx" },
   { id: "bills", label: "Bills" },
-  { id: "reports", label: "Reports" },
+  { id: "tests", label: "Tests" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -22,24 +23,6 @@ interface InvoiceRow {
   total: number;
   created_at: string;
   payments: { amount: number }[];
-}
-interface LabOrderRow {
-  id: string;
-  status: "ordered" | "resulted" | "cancelled";
-  tests_json: string;
-  result_values_json: string | null;
-  ordered_at: string;
-  resulted_at: string | null;
-  doctor: { full_name: string };
-}
-
-function parseTests(json: string): { name: string }[] {
-  try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 export default function PatientRecordsPage() {
@@ -58,7 +41,6 @@ function RecordsInner() {
 
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
   const [invoices, setInvoices] = React.useState<InvoiceRow[] | null>(null);
-  const [labOrders, setLabOrders] = React.useState<LabOrderRow[] | null>(null);
 
   React.useEffect(() => {
     fetch(`/api/appointments?patient_id=${patientProfile.id}`, { cache: "no-store" })
@@ -69,10 +51,6 @@ function RecordsInner() {
       .then((res) => (res.ok ? res.json() : []))
       .then(setInvoices)
       .catch(() => setInvoices([]));
-    fetch(`/api/patients/${patientProfile.id}/lab-orders`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setLabOrders)
-      .catch(() => setLabOrders([]));
   }, [patientProfile.id]);
 
   const timeline = (appointments ?? [])
@@ -106,7 +84,7 @@ function RecordsInner() {
         {tab === "timeline" && <TimelinePane appointments={appointments} timeline={timeline} />}
         {tab === "rx" && <RxPane loading={appointments === null} prescriptions={prescriptions} />}
         {tab === "bills" && <BillsPane invoices={invoices} />}
-        {tab === "reports" && <ReportsPane labOrders={labOrders} />}
+        {tab === "tests" && <HealthVault />}
       </div>
     </div>
   );
@@ -247,60 +225,6 @@ function BillsPane({ invoices }: { invoices: InvoiceRow[] | null }) {
               </div>
             }
           />
-        );
-      })}
-    </div>
-  );
-}
-
-function ReportsPane({ labOrders }: { labOrders: LabOrderRow[] | null }) {
-  if (labOrders === null) return <Skeleton n={2} h={72} />;
-  if (labOrders.length === 0)
-    return <Empty icon={FlaskConical} title="No lab reports yet" sub="Tests your doctor orders appear here." />;
-  return (
-    <div className="space-y-2.5">
-      {labOrders.map((order) => {
-        const tests = parseTests(order.tests_json).map((t) => t.name).join(", ");
-        const resulted = order.status === "resulted";
-        return (
-          <div key={order.id} className="rounded-[15px] border bg-card p-3.5">
-            <div className="flex items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent font-heading text-[12px] font-bold text-accent-foreground">
-                Lab
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-[15px] font-bold">{tests || "Lab test"}</p>
-                <p className="truncate text-[12.5px] text-muted-foreground">
-                  {order.doctor.full_name} · {formatDay(order.ordered_at)}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold",
-                  resulted ? "bg-success/15 text-success" : order.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-honey-soft text-honey-deep"
-                )}
-              >
-                {resulted ? "Ready" : order.status === "cancelled" ? "Cancelled" : "Awaiting"}
-              </span>
-            </div>
-            {resulted && order.result_values_json && (
-              <div className="mt-3 divide-y rounded-[12px] border">
-                {(() => {
-                  try {
-                    const values = JSON.parse(order.result_values_json) as { test: string; value: string; unit?: string; reference?: string }[];
-                    return values.map((v, i) => (
-                      <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-[12.5px]">
-                        <span className="font-medium">{v.test}</span>
-                        <span className="tabular-nums">{[v.value, v.unit].filter(Boolean).join(" ")}</span>
-                      </div>
-                    ));
-                  } catch {
-                    return null;
-                  }
-                })()}
-              </div>
-            )}
-          </div>
         );
       })}
     </div>

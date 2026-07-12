@@ -11,27 +11,17 @@ import { cn } from "@/lib/utils";
 
 const ACTIVE_STATUSES = ["scheduled", "checked_in", "waiting", "doctor_ready", "in_consultation"];
 
-interface LabOrderRow {
+interface Recommendation {
   id: string;
-  status: "ordered" | "resulted" | "cancelled";
-  tests_json: string;
-  ordered_at: string;
-  resulted_at: string | null;
-}
-
-function parseTestNames(json: string): string {
-  try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed.map((t) => t.name).join(", ") : "";
-  } catch {
-    return "";
-  }
+  test_name: string;
+  status: "pending" | "booked" | "completed" | "report_uploaded";
+  recommended_at: string;
 }
 
 export default function PatientHomePage() {
   const { patientProfile, linkedProfiles } = usePatientSession();
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
-  const [labOrders, setLabOrders] = React.useState<LabOrderRow[]>([]);
+  const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]);
 
   const fetchAppointments = React.useCallback(() => {
     return fetch(`/api/appointments?patient_id=${patientProfile.id}`, { cache: "no-store" })
@@ -42,10 +32,10 @@ export default function PatientHomePage() {
 
   React.useEffect(() => {
     fetchAppointments();
-    fetch(`/api/patients/${patientProfile.id}/lab-orders`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setLabOrders)
-      .catch(() => setLabOrders([]));
+    fetch(`/api/patient/recommendations`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => setRecommendations(d?.recommendations ?? []))
+      .catch(() => setRecommendations([]));
   }, [fetchAppointments, patientProfile.id]);
 
   const upcoming = (appointments ?? [])
@@ -54,10 +44,8 @@ export default function PatientHomePage() {
   const next = upcoming[0] ?? null;
 
   const visitCount = (appointments ?? []).filter((a) => a.status === "completed").length;
-  const recentLab = labOrders
-    .slice()
-    .sort((a, b) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime())[0] ?? null;
-  const newReports = labOrders.filter((l) => l.status === "resulted").length;
+  const recentTest = recommendations[0] ?? null;
+  const pendingTests = recommendations.filter((r) => r.status === "pending").length;
 
   const rescheduleDoctor: Doctor | null = next
     ? {
@@ -150,33 +138,31 @@ export default function PatientHomePage() {
         </p>
         <div className="grid grid-cols-2 gap-3">
           <Tile href="/patient/records?tab=rx" tone="honey" icon={Pill} name="Prescriptions" meta="Your medicines" />
-          <Tile href="/patient/records?tab=reports" tone="pine" icon={FlaskConical} name="Lab reports" meta={newReports ? `${newReports} ready` : "Results & scans"} />
+          <Tile href="/patient/records?tab=tests" tone="pine" icon={FlaskConical} name="Tests" meta={pendingTests ? `${pendingTests} to do` : "Recommended tests"} />
           <Tile href="/patient/records" tone="ok" icon={FileText} name="Records" meta={visitCount ? `${visitCount} visit${visitCount > 1 ? "s" : ""}` : "Your timeline"} />
           <Tile href="/patient/family" tone="sand" icon={Users} name="Family" meta={`${linkedProfiles.length} ${linkedProfiles.length === 1 ? "person" : "people"}`} />
         </div>
 
         {/* Recent */}
-        {(recentLab || visitCount > 0) && (
+        {recentTest && (
           <>
             <p className="mt-6 mb-3 px-1 text-[12px] font-bold tracking-[0.06em] text-muted-foreground uppercase">Recent</p>
             <div className="space-y-2.5">
-              {recentLab && (
-                <Link
-                  href="/patient/records?tab=reports"
-                  className="flex items-center gap-3 rounded-[15px] border bg-card p-3.5 transition hover:shadow-sm"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent text-[12px] font-bold text-accent-foreground">Lab</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-heading text-[15px] font-bold">{parseTestNames(recentLab.tests_json) || "Lab test"}</p>
-                    <p className="truncate text-[12.5px] text-muted-foreground">{formatDay(recentLab.ordered_at)}</p>
-                  </div>
-                  {recentLab.status === "resulted" ? (
-                    <span className="shrink-0 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-bold text-success">Ready</span>
-                  ) : (
-                    <ChevronRight className="size-5 shrink-0 text-muted-foreground/40" />
-                  )}
-                </Link>
-              )}
+              <Link
+                href="/patient/records?tab=tests"
+                className="flex items-center gap-3 rounded-[15px] border bg-card p-3.5 transition hover:shadow-sm"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent text-[12px] font-bold text-accent-foreground">Test</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading text-[15px] font-bold">{recentTest.test_name}</p>
+                  <p className="truncate text-[12.5px] text-muted-foreground">{formatDay(recentTest.recommended_at)}</p>
+                </div>
+                {recentTest.status === "pending" ? (
+                  <span className="shrink-0 rounded-full bg-honey-soft px-2.5 py-1 text-[11px] font-bold text-honey-deep">To do</span>
+                ) : (
+                  <ChevronRight className="size-5 shrink-0 text-muted-foreground/40" />
+                )}
+              </Link>
             </div>
           </>
         )}
