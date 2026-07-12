@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
+import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
@@ -958,6 +959,8 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
           <Button variant={ov.clinic.accepting_bookings ? "outline" : "default"} onClick={onToggle}>{ov.clinic.accepting_bookings ? "Pause" : "Resume"}</Button>
         </div>
       </Card>
+
+      <AvailabilitySettings doctorId={ov.doctorId} />
 
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Your profile</h2><SaveBadge state={profileSave} /></div>
