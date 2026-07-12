@@ -69,7 +69,7 @@ Dev server: `http://localhost:3000` · Provider login `+15550299001 / password12
 | Phase | Surface | Status | Notes |
 |---|---|---|---|
 | 3 Provider Workspace | `/clinic`, `/doctor/*` | 🟡 | Real frozen UX, warm; + "Grow to multi-clinic" card added |
-| 4 Patient Experience | `/patient/*` | 🟡 | Real, warm; honey-forward polish pending |
+| 4 Patient Experience | `/patient/*` | ✅ | **Rebuilt mobile-first (2026-07-12)** to `design/mockups/auriva-user.html`: centered phone shell + bottom nav **Home · Book · Records · Family · You** (one UX, no separate desktop layout). Home (next-visit card + tiles), Book (find-doctor → real booking dialog), Records (Timeline/Rx/Bills/Reports, ?tab= deep-links), Family (famcards + add-member), You (profile/health/settings/sign-out). Superseded routes redirect (find-care/doctors→book, profile→you, care→home). UI-only; all backend/auth/session preserved. Browser-verified 390+1280, 0 overflow/errors |
 | 5 Clinical | `/clinic` consult | ✅ | **Phase 5 built:** full consultation workbench (chief complaint, exam, diagnosis chips, structured Rx builder + templates, investigations, follow-up) matching `design/mockups/auriva-clinical.html` + signed printable visit summary. Rx persisted as structured data; **investigations → real LabOrder**; **Lab worklist** view in `/clinic` results them (`/api/clinic/lab`). Browser-verified 1280/390, 0 errors |
 | 6 Practice Ops | `/staff/*` | 🟡 | warm (multi-clinic) |
 | 6B Financial | `/staff/billing` | 🟡 | warm |
@@ -87,4 +87,4 @@ All marketing + auth routes browser-checked at **390px (mobile) and 1280px (desk
 
 ---
 
-_Last updated: 2026-07-12 — **PHASE 1 ✅** (responsiveness verified 390/1280) + **PHASE 5 clinical ✅** (consultation workbench + signed visit summary + structured Rx + investigations→LabOrder + `/clinic` Lab worklist; browser-verified) + auth **account-linking screen ✅** (`329a82e`). Prototype HTML mockups in `design/mockups/` (13 files). Working on branch `claude-code-work` (worktree `/Users/goldy/Desktop/healthcare-platform`); parallel branch `claude-web-work` (worktree `/Users/goldy/Desktop/Auriva-web`). Next: Phase 3/4 workspace pixel-match, then multi-clinic phases 6–11._
+_Last updated: 2026-07-12 — **PATIENT APP ✅ rebuilt mobile-first** (phone shell + bottom nav Home/Book/Records/Family/You; superseded routes redirected; browser-verified 390/1280) + **PHASE 1 ✅** (responsiveness verified 390/1280) + **PHASE 5 clinical ✅** (consultation workbench + signed visit summary + structured Rx + investigations→LabOrder + `/clinic` Lab worklist; browser-verified) + auth **account-linking screen ✅** (`329a82e`). Prototype HTML mockups in `design/mockups/` (13 files). Working on branch `claude-code-work` (worktree `/Users/goldy/Desktop/healthcare-platform`); parallel branch `claude-web-work` (worktree `/Users/goldy/Desktop/Auriva-web`). Next: Phase 3/4 workspace pixel-match, then multi-clinic phases 6–11._
