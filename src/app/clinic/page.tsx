@@ -9,7 +9,6 @@ import {
   Circle,
   Copy,
   ExternalLink,
-  FlaskConical,
   Home,
   Loader2,
   MessageCircle,
@@ -29,7 +28,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
@@ -38,7 +36,7 @@ import { ConsultationWorkbench } from "@/components/clinic/consultation-workbenc
 // entirely inside /clinic. Every screen answers one question and always offers
 // one obvious next action.
 
-type View = "home" | "today" | "lab" | "treatments" | "payments" | "settings";
+type View = "home" | "today" | "treatments" | "payments" | "settings";
 type Save = "idle" | "saving" | "saved";
 type Method = "cash" | "upi" | "card";
 
@@ -137,7 +135,6 @@ export default function MyClinicWorkspace() {
   const NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
     { key: "home", label: "My Clinic", q: "Am I ready?", icon: <Home className="size-4" /> },
     { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
-    { key: "lab", label: "Lab", q: "What tests are pending?", icon: <FlaskConical className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
     { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
@@ -195,8 +192,6 @@ export default function MyClinicWorkspace() {
               <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
               <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
-            ) : view === "lab" ? (
-              <LabView />
             ) : view === "treatments" ? (
               <TreatmentsView onChanged={refreshOverview} />
             ) : view === "payments" ? (
@@ -794,185 +789,6 @@ function PaymentsView() {
           </div>
         )}
       </Card>
-    </div>
-  );
-}
-
-// ── Lab worklist ────────────────────────────────────────────────────────────
-// The other half of the consult loop: investigations ordered during a visit
-// arrive here as a worklist. The owner results them at the desk (ordered →
-// resulted) — which files the values onto the patient's record and flags the
-// result back. One question: "What tests are pending?"
-interface LabOrderRow {
-  id: string;
-  status: "ordered" | "resulted" | "cancelled";
-  tests_json: string;
-  clinical_note: string | null;
-  result_values_json: string | null;
-  result_notes: string | null;
-  ordered_at: string;
-  resulted_at: string | null;
-  patient: { id: string; full_name: string } | null;
-  doctor: { id: string; full_name: string } | null;
-}
-
-function parseTests(json: string): string[] {
-  try {
-    const arr = JSON.parse(json) as { name?: string }[];
-    return Array.isArray(arr) ? arr.map((t) => t?.name ?? "").filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
-function LabView() {
-  const [orders, setOrders] = React.useState<LabOrderRow[] | null>(null);
-  const [openId, setOpenId] = React.useState<string | null>(null);
-
-  const load = React.useCallback(() => {
-    return fetch("/api/clinic/lab", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setOrders(d?.orders ?? []));
-  }, []);
-  React.useEffect(() => { load(); }, [load]);
-
-  if (!orders) return <div className="flex justify-center py-16 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
-
-  const pending = orders.filter((o) => o.status === "ordered");
-  const resulted = orders.filter((o) => o.status === "resulted");
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4"><div className="text-xl font-bold">{pending.length}</div><div className="text-xs text-muted-foreground">Waiting for results</div></Card>
-        <Card className="p-4"><div className="text-xl font-bold">{resulted.length}</div><div className="text-xs text-muted-foreground">Resulted</div></Card>
-      </div>
-
-      <Card className="p-5">
-        <h3 className="mb-3 text-sm font-semibold">To result</h3>
-        {pending.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            No tests waiting. Investigations you order during a consultation show up here to result.
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {pending.map((o) => (
-              <LabPendingRow
-                key={o.id}
-                order={o}
-                open={openId === o.id}
-                onToggle={() => setOpenId(openId === o.id ? null : o.id)}
-                onDone={() => { setOpenId(null); load(); }}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {resulted.length > 0 && (
-        <Card className="p-5">
-          <h3 className="mb-3 text-sm font-semibold">Recently resulted</h3>
-          <div className="divide-y">
-            {resulted.slice(0, 12).map((o) => {
-              const tests = parseTests(o.tests_json);
-              return (
-                <div key={o.id} className="flex items-center gap-3 py-2.5 text-sm">
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate font-medium">{o.patient?.full_name ?? "Patient"}</div>
-                    <div className="truncate text-xs text-muted-foreground">{tests.join(", ")}</div>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-bold text-success">
-                    Resulted{o.resulted_at ? ` · ${new Date(o.resulted_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}` : ""}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function LabPendingRow({ order, open, onToggle, onDone }: { order: LabOrderRow; open: boolean; onToggle: () => void; onDone: () => void }) {
-  const tests = React.useMemo(() => parseTests(order.tests_json), [order.tests_json]);
-  const [values, setValues] = React.useState<Record<string, string>>({});
-  const [notes, setNotes] = React.useState("");
-  const [saving, setSaving] = React.useState(false);
-
-  async function submit() {
-    const result_values = tests
-      .map((t) => ({ test: t, value: (values[t] ?? "").trim() }))
-      .filter((v) => v.value);
-    if (!result_values.length && !notes.trim()) {
-      toast.error("Enter at least one result value or a note.");
-      return;
-    }
-    setSaving(true);
-    const res = await fetch("/api/clinic/lab", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "result", lab_order_id: order.id, result_values, result_notes: notes.trim() || undefined }),
-    });
-    setSaving(false);
-    if (res.ok) { toast.success("Result filed to the patient's record"); onDone(); }
-    else toast.error("Couldn't save the result.");
-  }
-
-  async function cancel() {
-    setSaving(true);
-    const res = await fetch("/api/clinic/lab", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "cancel", lab_order_id: order.id }),
-    });
-    setSaving(false);
-    if (res.ok) { toast.success("Order cancelled"); onDone(); }
-    else toast.error("Couldn't cancel the order.");
-  }
-
-  return (
-    <div className="rounded-lg border">
-      <button onClick={onToggle} className="flex w-full items-center gap-3 p-3 text-left">
-        <div className="flex-1 min-w-0">
-          <div className="truncate text-sm font-medium">{order.patient?.full_name ?? "Patient"}</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {tests.map((t) => (
-              <span key={t} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">{t}</span>
-            ))}
-          </div>
-          {order.clinical_note && <div className="mt-1 truncate text-xs text-muted-foreground">Note: {order.clinical_note}</div>}
-        </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {new Date(order.ordered_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
-        </span>
-      </button>
-
-      {open && (
-        <div className="space-y-3 border-t p-3">
-          {tests.map((t) => (
-            <div key={t} className="flex items-center gap-2.5">
-              <span className="w-28 shrink-0 text-sm font-medium">{t}</span>
-              <Input
-                value={values[t] ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, [t]: e.target.value }))}
-                placeholder="Result value (e.g. 13.2 g/dL)"
-                className="flex-1"
-              />
-            </div>
-          ))}
-          <div className="space-y-1.5">
-            <Label htmlFor={`ln-${order.id}`}>Notes (optional)</Label>
-            <Textarea id={`ln-${order.id}`} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Interpretation or advice for this result." />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={submit} disabled={saving}>
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />} File result
-            </Button>
-            <Button size="sm" variant="ghost" onClick={cancel} disabled={saving} className="text-muted-foreground">
-              Cancel order
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
