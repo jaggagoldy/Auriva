@@ -5,6 +5,7 @@ import {
   Activity,
   Banknote,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   Circle,
   Copy,
@@ -31,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
+import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 
@@ -38,7 +40,7 @@ import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 // entirely inside /clinic. Every screen answers one question and always offers
 // one obvious next action.
 
-type View = "home" | "today" | "treatments" | "payments" | "settings";
+type View = "home" | "today" | "calendar" | "treatments" | "payments" | "settings";
 type Save = "idle" | "saving" | "saved";
 type Method = "cash" | "upi" | "card";
 
@@ -137,6 +139,7 @@ export default function MyClinicWorkspace() {
   const NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
     { key: "home", label: "My Clinic", q: "Am I ready?", icon: <Home className="size-4" /> },
     { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
+    { key: "calendar", label: "Calendar", q: "When am I free?", icon: <CalendarRange className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
     { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
@@ -194,6 +197,8 @@ export default function MyClinicWorkspace() {
               <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
               <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+            ) : view === "calendar" ? (
+              <ClinicCalendar doctorId={ov.doctorId} />
             ) : view === "treatments" ? (
               <TreatmentsView onChanged={refreshOverview} />
             ) : view === "payments" ? (
