@@ -194,6 +194,21 @@ model Clinic {
   latitude    Float?
   longitude   Float?
 
+  // --- P3 Practice Setup (clinic profile) ---
+  // Image URLs are opaque handles produced by the StorageService (local today,
+  // object storage later) — the UI just renders them. Gallery/documents are
+  // JSON arrays of { url, caption? }. Facilities/social are small JSON blobs.
+  logo_url           String?
+  cover_url          String?
+  about              String?   // longer clinic description
+  facilities_json    String?   // ["Wheelchair access", "Pharmacy", ...]
+  gallery_json       String?   // [{ url, caption? }]
+  documents_json     String?   // [{ url, name }] — awards / certificates / registrations
+  social_json        String?   // { website, instagram, facebook, youtube, ... }
+  reception_contact  String?   // front-desk phone (distinct from the public `phone`)
+  email              String?
+  website            String?
+
   // Relations
   organization   Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   superAdmin     User           @relation("ClinicSuperAdmin", fields: [super_admin_id], references: [id], onDelete: Cascade)
@@ -312,6 +327,10 @@ model StaffProfile {
   qualifications       String?
   registration_number String?
   consultation_fee    Int?      // INR, per Q5: fee lives per practice location (single clinic today)
+  // P3 Practice Setup: doctor profile photo. Stored via StorageService — the
+  // value is an opaque URL the UI renders; where the bytes live (local today,
+  // object storage later) is the storage layer's concern, not this column's.
+  photo_url           String?
   // Sprint 3 (OPS-001)
   follow_up_fee       Int?      // falls back to consultation_fee when null (a follow-up visit costs less, typically)
   department_id       String?
