@@ -33,6 +33,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
 import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
+import { PracticeSetup } from "@/components/clinic/practice-setup";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 
@@ -927,33 +928,10 @@ function TreatmentsView({ onChanged }: { onChanged: () => void }) {
 }
 
 function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
-  const [phone, setPhone] = React.useState(ov.clinic.phone ?? "");
-  const [phoneSave, setPhoneSave] = React.useState<Save>("idle");
-  const [bio, setBio] = React.useState("");
-  const [reg, setReg] = React.useState("");
-  const [profileSave, setProfileSave] = React.useState<Save>("idle");
-
-  function flash(set: (s: Save) => void) { set("saved"); setTimeout(() => set("idle"), 1500); }
-
-  async function saveContact() {
-    setPhoneSave("saving");
-    const res = await fetch(`/api/clinics/${ov.clinic.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
-    if (res.ok) { flash(setPhoneSave); onChanged(); } else { setPhoneSave("idle"); toast.error("Couldn't save contact number."); }
-  }
-  async function saveProfile() {
-    if (!ov.doctorId) return toast.error("No profile to update.");
-    setProfileSave("saving");
-    const res = await fetch(`/api/doctors/${ov.doctorId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio, registration_number: reg }) });
-    if (res.ok) { flash(setProfileSave); onChanged(); } else { setProfileSave("idle"); toast.error("Couldn't save profile."); }
-  }
-
   return (
     <div className="space-y-4">
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Clinic contact number</h2><SaveBadge state={phoneSave} /></div>
-        <p className="text-xs text-muted-foreground">Shown on your booking page. This is <strong>separate from your login</strong> — changing it never affects how you sign in.</p>
-        <div className="flex gap-2"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98450 12345" /><Button onClick={saveContact}>Save</Button></div>
-      </Card>
+      {/* P3 Practice Setup — the complete clinic + doctor profile module */}
+      <PracticeSetup onSaved={onChanged} />
 
       <Card className="space-y-3 p-5">
         <h2 className="text-base font-semibold">Online bookings</h2>
@@ -969,14 +947,6 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
       <AvailabilitySettings doctorId={ov.doctorId} clinicId={ov.clinic.id} />
 
       <TimeOffSettings doctorId={ov.doctorId} />
-
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Your profile</h2><SaveBadge state={profileSave} /></div>
-        <p className="text-xs text-muted-foreground">A short bio and registration number build patient trust on your booking page.</p>
-        <div className="space-y-1.5"><Label htmlFor="reg">Registration number</Label><Input id="reg" value={reg} onChange={(e) => setReg(e.target.value)} placeholder="e.g. KA-PT-10482" /></div>
-        <div className="space-y-1.5"><Label htmlFor="bio">Short bio</Label><Input id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="e.g. Physiotherapist, 12 years in sports & post-op rehab." /></div>
-        <Button onClick={saveProfile}>Save profile</Button>
-      </Card>
 
       {/* Scale path — a solo owner can see and act on growing to multi-clinic.
           Multi-doctor is the next edition (Coming soon); the request routes to a

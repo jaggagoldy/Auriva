@@ -96,7 +96,8 @@ export interface PracticeProfilePatch {
 export async function updatePracticeProfile(clinicId: string, ownerUserId: string, patch: PracticeProfilePatch) {
   const c = patch.clinic ?? {};
   const clinicData: Prisma.ClinicUpdateInput = {};
-  const clinicStrings = ["address", "phone", "email", "website", "about", "logo_url", "cover_url", "reception_contact", "working_days", "opens_at", "closes_at"] as const;
+  // Nullable text columns — empty clears to null.
+  const clinicStrings = ["phone", "email", "website", "about", "logo_url", "cover_url", "reception_contact", "working_days", "opens_at", "closes_at"] as const;
   for (const f of clinicStrings) {
     if (f in c) (clinicData as Record<string, unknown>)[f] = trimOrNull(c[f]);
   }
@@ -105,6 +106,8 @@ export async function updatePracticeProfile(clinicId: string, ownerUserId: strin
     if (!name) throw new PracticeProfileError("Clinic name is required.");
     clinicData.name = name;
   }
+  // `address` is a required (non-null) column — empty stays an empty string.
+  if ("address" in c) clinicData.address = typeof c.address === "string" ? c.address.trim() : "";
   if ("facilities" in c) clinicData.facilities_json = JSON.stringify((Array.isArray(c.facilities) ? c.facilities : []).filter((x) => typeof x === "string"));
   if ("gallery" in c) clinicData.gallery_json = JSON.stringify(normalizeGallery(c.gallery));
   if ("documents" in c) clinicData.documents_json = JSON.stringify(normalizeDocuments(c.documents));
