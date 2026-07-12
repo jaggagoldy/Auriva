@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Activity,
-  ArrowLeft,
   Banknote,
   CalendarDays,
   CheckCircle2,
@@ -31,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
@@ -223,6 +223,7 @@ export default function MyClinicWorkspace() {
       {visit && (
         <VisitOverlay
           visit={visit}
+          clinicName={ov?.clinic.name ?? "My Clinic"}
           onClose={() => setVisit(null)}
           onAdvance={(v) => setVisit(v)}
           onDone={() => { setVisit(null); setView("today"); refreshOverview(); }}
@@ -496,17 +497,10 @@ function TodayView({ bookingPath, onStart }: { bookingPath: string | null; onSta
   );
 }
 
-function VisitOverlay({ visit, onClose, onAdvance, onDone }: {
-  visit: Visit; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
+function VisitOverlay({ visit, clinicName, onClose, onAdvance, onDone }: {
+  visit: Visit; clinicName: string; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
 }) {
   const [services, setServices] = React.useState<Service[]>([]);
-  const [treatmentId, setTreatmentId] = React.useState("");
-  const [notes, setNotes] = React.useState("");
-  const [diagnosis, setDiagnosis] = React.useState("");
-  const [followUp, setFollowUp] = React.useState("");
-  const [method, setMethod] = React.useState<Method>("cash");
-  const [amount, setAmount] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -514,29 +508,34 @@ function VisitOverlay({ visit, onClose, onAdvance, onDone }: {
     return () => { cancelled = true; };
   }, []);
 
-  // Esc closes the flow (keyboard-first).
+  if (visit.step === "consult") {
+    return (
+      <ConsultationWorkbench
+        appointmentId={visit.appointmentId}
+        patientName={visit.patientName}
+        clinicName={clinicName}
+        services={services}
+        onCancel={onClose}
+        onCompleted={(inv) => onAdvance({ ...visit, step: "pay", invoiceId: inv.invoiceId, total: inv.total })}
+      />
+    );
+  }
+
+  return <PaymentStep visit={visit} onClose={onClose} onDone={onDone} />;
+}
+
+// Its own component so it mounts fresh at the pay step and can lazy-init the
+// amount from the treatment total — no setState-in-effect needed.
+function PaymentStep({ visit, onClose, onDone }: { visit: Visit; onClose: () => void; onDone: () => void }) {
+  const [method, setMethod] = React.useState<Method>("cash");
+  const [amount, setAmount] = React.useState(() => (visit.total != null ? String(visit.total) : ""));
+  const [busy, setBusy] = React.useState(false);
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  async function complete() {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/clinic/consultation", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "complete", appointment_id: visit.appointmentId,
-          notes, diagnosis, follow_up_date: followUp || undefined, treatment_id: treatmentId || undefined,
-        }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(d.message ?? "Couldn't complete the visit."); return; }
-      setAmount(String(d.total ?? ""));
-      onAdvance({ ...visit, step: "pay", invoiceId: d.invoiceId, total: d.total });
-    } finally { setBusy(false); }
-  }
 
   async function pay() {
     const amt = Number(amount);
@@ -557,59 +556,26 @@ function VisitOverlay({ visit, onClose, onAdvance, onDone }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
       <Card className="w-full max-w-lg space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
-        {visit.step === "consult" ? (
-          <>
-            <div className="flex items-center gap-2">
-              <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></button>
-              <div>
-                <h2 className="text-base font-semibold">Consultation</h2>
-                <p className="text-xs text-muted-foreground">{visit.patientName}</p>
-              </div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="notes">Notes</Label>
-              <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visit notes" autoFocus /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5"><Label htmlFor="dx">Diagnosis</Label>
-                <Input id="dx" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Optional" /></div>
-              <div className="space-y-1.5"><Label htmlFor="fu">Follow-up date</Label>
-                <Input id="fu" type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} /></div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="tx">Treatment (sets the price)</Label>
-              <select id="tx" value={treatmentId} onChange={(e) => setTreatmentId(e.target.value)}
-                className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-                <option value="">Consultation (default fee)</option>
-                {services.map((s) => <option key={s.id} value={s.id}>{s.name} — ₹{s.price.toLocaleString()}</option>)}
-              </select>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={onClose}>Cancel <span className="ml-1 text-[11px] text-muted-foreground">Esc</span></Button>
-              <Button disabled={busy} onClick={complete}>{busy && <Loader2 className="size-4 animate-spin" />} Complete &amp; collect payment</Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <h2 className="text-base font-semibold">Collect payment</h2>
-              <p className="text-xs text-muted-foreground">{visit.patientName}</p>
-            </div>
-            <div className="text-3xl font-bold">₹{Number(amount || visit.total || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn&apos;t process the money.</p>
-            <div className="space-y-1.5"><Label htmlFor="amt">Amount (₹)</Label>
-              <Input id="amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></div>
-            <div className="space-y-1.5"><Label>How did they pay?</Label>
-              <div className="inline-flex overflow-hidden rounded-lg border">
-                {(["cash", "upi", "card"] as Method[]).map((m) => (
-                  <button key={m} onClick={() => setMethod(m)}
-                    className={cn("px-4 py-2 text-sm font-medium capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}>{m}</button>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={onDone}>Skip</Button>
-              <Button disabled={busy} onClick={pay}>{busy && <Loader2 className="size-4 animate-spin" />} Record ₹{Number(amount || 0).toLocaleString()} received</Button>
-            </div>
-          </>
-        )}
+        <div>
+          <h2 className="text-base font-semibold">Collect payment</h2>
+          <p className="text-xs text-muted-foreground">{visit.patientName}</p>
+        </div>
+        <div className="text-3xl font-bold">₹{Number(amount || visit.total || 0).toLocaleString()}</div>
+        <p className="text-xs text-muted-foreground">Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn&apos;t process the money.</p>
+        <div className="space-y-1.5"><Label htmlFor="amt">Amount (₹)</Label>
+          <Input id="amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></div>
+        <div className="space-y-1.5"><Label>How did they pay?</Label>
+          <div className="inline-flex overflow-hidden rounded-lg border">
+            {(["cash", "upi", "card"] as Method[]).map((m) => (
+              <button key={m} onClick={() => setMethod(m)}
+                className={cn("px-4 py-2 text-sm font-medium capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}>{m}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" onClick={onDone}>Skip</Button>
+          <Button disabled={busy} onClick={pay}>{busy && <Loader2 className="size-4 animate-spin" />} Record ₹{Number(amount || 0).toLocaleString()} received</Button>
+        </div>
       </Card>
     </div>
   );

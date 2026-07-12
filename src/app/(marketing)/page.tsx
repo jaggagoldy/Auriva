@@ -17,6 +17,7 @@ import {
   IndianRupee,
   MessageCircle,
   MapPin,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/marketing/container';
@@ -28,7 +29,7 @@ import { Container } from '@/components/marketing/container';
 // text-honey-deep / bg-honey-soft, defined in globals.css) — the warm accent
 // from the Figma, used on patient surfaces, provider-money and highlights.
 
-const ECOSYSTEM = [
+const ECOSYSTEM: { icon: LucideIcon; name: string; live?: boolean; honey?: boolean; desc: string }[] = [
   { icon: Users, name: 'Patients', live: true, honey: true, desc: 'Book, keep records, care for family — always free.' },
   { icon: Stethoscope, name: 'Doctors', live: true, desc: 'Run a full clinic from one calm screen.' },
   { icon: Building2, name: 'Clinics', desc: 'Multiple doctors, a shared calendar, a front desk.' },
