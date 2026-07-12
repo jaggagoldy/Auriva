@@ -57,15 +57,34 @@ const DEFAULT_DAY: DayState = {
 const timeCls =
   "h-9 rounded-lg border border-border bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function AvailabilitySettings({ doctorId }: { doctorId: string | null }) {
+const SLOT_DURATIONS = [10, 15, 20, 30, 45, 60];
+const BUFFERS = [0, 5, 10, 15, 30];
+
+export function AvailabilitySettings({ doctorId, clinicId }: { doctorId: string | null; clinicId: string }) {
   const [days, setDays] = React.useState<Record<number, DayState>>(() =>
     Object.fromEntries(DAYS.map((d) => [d.dow, { ...DEFAULT_DAY }]))
   );
+  // Clinic-level scheduling knobs (default_slot_duration_minutes / buffer_minutes).
+  const [slotDuration, setSlotDuration] = React.useState(15);
+  const [buffer, setBuffer] = React.useState(0);
   // Only "loading" when there's actually a profile to fetch — avoids a
   // synchronous setState in the effect for the no-doctor case.
   const [loading, setLoading] = React.useState(() => doctorId != null);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+
+  // Clinic-level slot/buffer come from the clinic record.
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/clinics/${clinicId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c) => {
+        if (cancelled || !c) return;
+        if (typeof c.default_slot_duration_minutes === "number") setSlotDuration(c.default_slot_duration_minutes);
+        if (typeof c.buffer_minutes === "number") setBuffer(c.buffer_minutes);
+      });
+    return () => { cancelled = true; };
+  }, [clinicId]);
 
   React.useEffect(() => {
     if (!doctorId) return; // nothing to fetch; loading is already false
@@ -125,6 +144,18 @@ export function AvailabilitySettings({ doctorId }: { doctorId: string | null }) 
 
     setSaving(true);
     try {
+      // Clinic-level slot/buffer first — if it fails, don't half-save.
+      const clinicRes = await fetch(`/api/clinics/${clinicId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ default_slot_duration_minutes: slotDuration, buffer_minutes: buffer }),
+      });
+      if (!clinicRes.ok) {
+        const d = await clinicRes.json().catch(() => ({}));
+        toast.error(d.message ?? "Couldn't save slot duration.");
+        return;
+      }
+
       const res = await fetch(`/api/doctors/${doctorId}/availability`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -161,6 +192,21 @@ export function AvailabilitySettings({ doctorId }: { doctorId: string | null }) 
         <p className="py-4 text-center text-sm text-muted-foreground">No doctor profile is linked to this clinic yet.</p>
       ) : (
         <div className="space-y-2.5">
+          <div className="flex flex-wrap gap-4 rounded-xl border bg-muted/30 p-3">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Appointment length</span>
+              <select value={slotDuration} onChange={(e) => { setSlotDuration(Number(e.target.value)); setSaved(false); }} className={cn(timeCls, "w-28")}>
+                {SLOT_DURATIONS.map((m) => <option key={m} value={m}>{m} min</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Buffer between patients</span>
+              <select value={buffer} onChange={(e) => { setBuffer(Number(e.target.value)); setSaved(false); }} className={cn(timeCls, "w-28")}>
+                {BUFFERS.map((m) => <option key={m} value={m}>{m === 0 ? "None" : `${m} min`}</option>)}
+              </select>
+            </label>
+          </div>
+
           {DAYS.map(({ dow, label }) => {
             const d = days[dow];
             return (

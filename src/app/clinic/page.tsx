@@ -960,7 +960,7 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
         </div>
       </Card>
 
-      <AvailabilitySettings doctorId={ov.doctorId} />
+      <AvailabilitySettings doctorId={ov.doctorId} clinicId={ov.clinic.id} />
 
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Your profile</h2><SaveBadge state={profileSave} /></div>
