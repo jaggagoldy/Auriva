@@ -25,6 +25,13 @@ export interface PublicBookingInput {
   patientName: string;
   patientPhone: string;
   notes?: string;
+  /**
+   * The clinic booking on a patient's behalf from inside /clinic. Reuses the
+   * same find-or-create + schedule path, but skips the "Accepting Bookings"
+   * pause gate — that switch only governs public self-service, never the
+   * owner/reception (same rule as scheduleAppointment being ungated).
+   */
+  viaStaff?: boolean;
 }
 
 export interface PublicBookingResult {
@@ -54,7 +61,7 @@ export async function bookPublicAppointment(input: PublicBookingInput): Promise<
   // Clinic-wide "Accepting Bookings" switch — public self-service only. The
   // public read surface already hides slots when paused; this is the matching
   // server-side guard so a stale/replayed client can't book past a pause.
-  if (!doctor.clinic.accepting_bookings) {
+  if (!input.viaStaff && !doctor.clinic.accepting_bookings) {
     throw new BookingsPausedError(
       "This clinic isn't accepting online bookings right now. Please call the clinic to book an appointment."
     );

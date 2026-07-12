@@ -61,9 +61,10 @@ interface Appt {
   patient: { id: string; full_name: string } | null;
 }
 interface Today {
-  appointments: Appt[]; total: number; completed: number; remaining: number;
-  follow_ups: number; collected_today: number; outstanding_total: number; owner_name: string | null;
+  scope?: Scope; appointments: Appt[]; total: number; completed: number; remaining: number;
+  follow_ups: number; upcoming_count: number; collected_today: number; outstanding_total: number; owner_name: string | null;
 }
+type Scope = "today" | "upcoming" | "all";
 interface Visit {
   step: "consult" | "pay";
   appointmentId: string; patientName: string;
@@ -178,7 +179,7 @@ export default function MyClinicWorkspace() {
           ))}
         </aside>
 
-        <main className="flex-1 pb-16 sm:pb-0">
+        <main className="min-w-0 flex-1 pb-16 sm:pb-0">
           <Header ov={ov} onToggle={toggleAccepting} />
           <div className="p-5">
             {loading ? (
@@ -188,7 +189,7 @@ export default function MyClinicWorkspace() {
             ) : view === "home" ? (
               <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
-              <TodayView bookingPath={ov.bookingPath} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+              <TodayView bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
             ) : view === "lab" ? (
               <LabView />
             ) : view === "treatments" ? (
@@ -242,13 +243,14 @@ function Header({ ov, onToggle }: { ov: Overview | null; onToggle: () => void })
   const accepting = ov?.clinic.accepting_bookings ?? true;
   return (
     <header className="flex items-center gap-3 border-b bg-background px-5 py-3">
-      <PatientSearch />
-      <div className="flex-1" />
+      <div className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"><PatientSearch /></div>
+      <div className="hidden flex-1 sm:block" />
       <button onClick={onToggle}
-        className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
+        className={cn("flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap",
           accepting ? "border-primary/30 bg-primary/5 text-primary" : "border-destructive/30 bg-destructive/5 text-destructive")}>
-        <span className={cn("size-2 rounded-full", accepting ? "bg-primary" : "bg-destructive")} />
-        {accepting ? "Accepting bookings" : "Bookings paused"}
+        <span className={cn("size-2 shrink-0 rounded-full", accepting ? "bg-primary" : "bg-destructive")} />
+        <span className="hidden sm:inline">{accepting ? "Accepting bookings" : "Bookings paused"}</span>
+        <span className="sm:hidden">{accepting ? "Accepting" : "Paused"}</span>
       </button>
     </header>
   );
@@ -397,107 +399,261 @@ function greetingFor(hour: number) {
   return "Good evening";
 }
 
-function TodayView({ bookingPath, onStart }: { bookingPath: string | null; onStart: (appointmentId: string, patientName: string) => void }) {
+const SCOPES: { id: Scope; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "upcoming", label: "Upcoming" },
+  { id: "all", label: "All" },
+];
+
+function dayHeading(iso: string): string {
+  const d = new Date(iso);
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - t.getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+
+function computeDefaultWhen(): string {
+  const d = new Date(Date.now() + 15 * 60 * 1000);
+  d.setSeconds(0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function TodayView({ bookingPath, onBooked, onStart }: { bookingPath: string | null; onBooked: () => void; onStart: (appointmentId: string, patientName: string) => void }) {
   const [data, setData] = React.useState<Today | null>(null);
+  const [scope, setScope] = React.useState<Scope>("today");
   const [nextId, setNextId] = React.useState<string | null>(null);
   const [greeting, setGreeting] = React.useState("Hello");
+  // Holds the default datetime string while the Book dialog is open; null = closed.
+  const [bookingDefault, setBookingDefault] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    fetch("/api/clinic/today", { cache: "no-store" })
+  const load = React.useCallback((s: Scope) => {
+    return fetch(`/api/clinic/today?scope=${s}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: Today | null) => {
-        if (cancelled || !d) return;
+        if (!d) return;
         setData(d);
         setGreeting(greetingFor(new Date().getHours()));
-        const now = Date.now();
-        const n = d.appointments.find((a) => new Date(a.scheduled_time).getTime() >= now && a.status !== "completed");
-        setNextId(n?.id ?? null);
+        // Next patient (today's soonest active) computed here, not in render,
+        // so no impure clock read during paint.
+        if (s === "today") {
+          const now = Date.now();
+          const n = d.appointments.find((a) => new Date(a.scheduled_time).getTime() >= now && a.status !== "completed");
+          setNextId(n?.id ?? null);
+        } else {
+          setNextId(null);
+        }
       });
-    return () => { cancelled = true; };
   }, []);
+
+  React.useEffect(() => { load(scope); }, [scope, load]);
 
   if (!data) return <div className="flex justify-center py-16 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
 
-  const nextAppt = data.appointments.find((a) => a.id === nextId) ?? null;
+  const stale = data.scope !== scope; // fetch for the newly-selected tab in flight
+  const nextAppt = scope === "today" ? data.appointments.find((a) => a.id === nextId) ?? null : null;
+
+  // Group the list by calendar day for Upcoming/All.
+  const groups: { day: string; items: Appt[] }[] = [];
+  for (const a of data.appointments) {
+    const day = dayHeading(a.scheduled_time);
+    const g = groups[groups.length - 1];
+    if (g && g.day === day) g.items.push(a);
+    else groups.push({ day, items: [a] });
+  }
 
   return (
     <div className="space-y-4">
-      {/* Hero: the single most important thing is first — who's next and one
-          obvious action. Everything else (counts, money) sits underneath. */}
-      <Card className="p-5">
-        <p className="text-sm text-muted-foreground">{greeting}{data.owner_name ? `, ${data.owner_name}` : ""}.</p>
-        {nextAppt ? (
-          <div className="mt-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-primary">Your next patient</div>
-            <div className="mt-1.5 flex items-start gap-3">
-              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                {(nextAppt.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-lg font-semibold leading-tight">{nextAppt.patient?.full_name ?? "Patient"}</div>
-                <div className="text-sm text-muted-foreground">
-                  {new Date(nextAppt.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                  {nextAppt.notes ? <span className="line-clamp-1"> · {nextAppt.notes}</span> : null}
+      {/* Hero */}
+      <Card className="relative overflow-hidden border-none bg-[#0B4A41] p-5 text-white">
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-[240px] rounded-full" style={{ background: "radial-gradient(circle, rgba(232,162,76,.22), transparent 62%)" }} />
+        <div className="relative">
+          <p className="text-[13px] text-white/70">{greeting}{data.owner_name ? `, ${data.owner_name}` : ""}.</p>
+          {nextAppt ? (
+            <div className="mt-2">
+              <div className="text-[11px] font-bold tracking-[0.12em] text-honey uppercase">Your next patient</div>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-white/15 font-heading text-sm font-bold">
+                  {(nextAppt.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-heading text-lg leading-tight font-bold">{nextAppt.patient?.full_name ?? "Patient"}</div>
+                  <div className="truncate text-[13px] text-[#CFE3DC]">
+                    {new Date(nextAppt.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                    {nextAppt.notes ? ` · ${nextAppt.notes}` : ""}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => onStart(nextAppt.id, nextAppt.patient?.full_name ?? "Patient")}
+                className="mt-3 inline-flex h-10 items-center justify-center rounded-[12px] bg-white px-4 text-[14px] font-semibold text-[#083F37] transition hover:brightness-95"
+              >
+                Start consultation
+              </button>
             </div>
-            <Button className="mt-3 w-full sm:w-auto" onClick={() => onStart(nextAppt.id, nextAppt.patient?.full_name ?? "Patient")}>
-              Start consultation
-            </Button>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">
-            {data.total === 0 ? "You have no appointments today." : "All caught up — no one else waiting."}
-          </p>
-        )}
+          ) : (
+            <p className="mt-1.5 text-[14px] text-white/85">
+              {data.total === 0
+                ? data.upcoming_count > 0
+                  ? `No appointments today — you have ${data.upcoming_count} upcoming.`
+                  : "No appointments today."
+                : "All caught up — no one else waiting."}
+            </p>
+          )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
-          <span><strong className="text-foreground">{data.remaining}</strong> remaining</span>
-          <span><strong className="text-foreground">{data.completed}</strong> seen</span>
-          {data.follow_ups > 0 && <span><strong className="text-foreground">{data.follow_ups}</strong> follow-up{data.follow_ups === 1 ? "" : "s"}</span>}
-          <span><strong className="text-foreground">₹{data.collected_today.toLocaleString()}</strong> collected</span>
-          {data.outstanding_total > 0 && <span><strong className="text-foreground">₹{data.outstanding_total.toLocaleString()}</strong> outstanding</span>}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-white/15 pt-3 text-[12px] text-white/70">
+            <span><strong className="text-white">{data.remaining}</strong> remaining</span>
+            <span><strong className="text-white">{data.completed}</strong> seen</span>
+            {data.follow_ups > 0 && <span><strong className="text-white">{data.follow_ups}</strong> follow-up{data.follow_ups === 1 ? "" : "s"}</span>}
+            <span><strong className="text-white">₹{data.collected_today.toLocaleString()}</strong> collected</span>
+            {data.outstanding_total > 0 && <span><strong className="text-white">₹{data.outstanding_total.toLocaleString()}</strong> outstanding</span>}
+          </div>
         </div>
       </Card>
 
-      {data.total === 0 ? (
-        <Card className="space-y-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Your day is clear. Get your first patient in.</p>
-          {bookingPath && <Button onClick={() => window.open(bookingPath, "_blank")}>Book first patient</Button>}
-        </Card>
-      ) : (
-        <Card className="p-5">
-          <h3 className="mb-2 text-sm font-semibold">Today&apos;s schedule</h3>
-          <div className="divide-y">
-            {data.appointments.map((a) => {
-              const done = a.status === "completed";
-              return (
-                <div key={a.id} className="flex items-center gap-3 py-3">
-                  <div className={cn("grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold",
-                    done ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
-                    {(a.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{a.patient?.full_name ?? "Patient"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(a.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                      {a.walk_in ? " · walk-in" : ""} · {a.status.replace(/_/g, " ")}
-                    </div>
-                  </div>
-                  {done ? (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">Seen</span>
-                  ) : (
-                    <Button size="sm" variant={a.id === nextId ? "default" : "outline"} onClick={() => onStart(a.id, a.patient?.full_name ?? "Patient")}>
-                      Start consultation
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+      {/* Schedule with Today / Upcoming / All */}
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex gap-1 rounded-[12px] bg-secondary p-1">
+            {SCOPES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setScope(s.id)}
+                className={cn("rounded-[9px] px-3 py-1.5 text-[13px] font-semibold transition", scope === s.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}
+              >
+                {s.label}
+                {s.id === "upcoming" && data.upcoming_count > 0 && <span className="ml-1.5 text-honey-deep">{data.upcoming_count}</span>}
+              </button>
+            ))}
           </div>
-        </Card>
+          <Button size="sm" onClick={() => setBookingDefault(computeDefaultWhen())}><Plus className="size-4" /> Book</Button>
+        </div>
+
+        {stale ? (
+          <div className="flex justify-center py-10 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+        ) : data.appointments.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              {scope === "today"
+                ? data.upcoming_count > 0 ? "Nothing today. Check Upcoming for your next patients." : "Your day is clear. Get your first patient in."
+                : scope === "upcoming" ? "No upcoming appointments." : "No appointments yet."}
+            </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button onClick={() => setBookingDefault(computeDefaultWhen())}><Plus className="size-4" /> Book a patient</Button>
+              {bookingPath && (
+                <Button variant="outline" onClick={() => window.open(bookingPath, "_blank")}>
+                  <ExternalLink className="size-4" /> Share booking page
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groups.map((g) => (
+              <div key={g.day}>
+                {scope !== "today" && <p className="mb-1.5 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">{g.day}</p>}
+                <div className="divide-y">
+                  {g.items.map((a) => {
+                    const done = a.status === "completed";
+                    const cancelled = a.status === "cancelled" || a.status === "no_show";
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 py-3">
+                        <div className={cn("grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold", done || cancelled ? "bg-muted text-muted-foreground" : "bg-honey-soft text-honey-deep")}>
+                          {(a.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{a.patient?.full_name ?? "Patient"}</div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {scope !== "today" ? `${new Date(a.scheduled_time).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ` : ""}
+                            {new Date(a.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                            {a.walk_in ? " · walk-in" : ""} · {a.status.replace(/_/g, " ")}
+                          </div>
+                        </div>
+                        {done ? (
+                          <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">Seen</span>
+                        ) : cancelled ? (
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground capitalize">{a.status.replace(/_/g, " ")}</span>
+                        ) : (
+                          <Button size="sm" variant={a.id === nextAppt?.id ? "default" : "outline"} onClick={() => onStart(a.id, a.patient?.full_name ?? "Patient")}>
+                            Start
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {bookingDefault !== null && (
+        <BookPatientDialog
+          defaultWhen={bookingDefault}
+          onClose={() => setBookingDefault(null)}
+          onBooked={() => { setBookingDefault(null); load(scope); onBooked(); }}
+        />
       )}
+    </div>
+  );
+}
+
+// In-clinic booking — a patient by name + phone at a chosen time, no public
+// link, no new tab. On success it refreshes Today and the readiness checklist.
+function BookPatientDialog({ defaultWhen, onClose, onBooked }: { defaultWhen: string; onClose: () => void; onBooked: () => void }) {
+  const [name, setName] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [when, setWhen] = React.useState(defaultWhen);
+  const [reason, setReason] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function submit() {
+    if (name.trim().length < 2) return toast.error("Enter the patient's name.");
+    if (phone.replace(/\D/g, "").length < 7) return toast.error("Enter a valid phone number.");
+    if (!when) return toast.error("Pick a date and time.");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/clinic/book", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patient_name: name.trim(), patient_phone: phone.trim(), scheduled_time: new Date(when).toISOString(), notes: reason.trim() || undefined }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(d.message ?? "Couldn't book the patient."); return; }
+      toast.success(`Booked ${name.trim()}${d.is_new_patient ? " (new patient)" : ""}`);
+      onBooked();
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
+      <Card className="w-full max-w-md space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
+        <div>
+          <h2 className="font-heading text-base font-semibold">Book a patient</h2>
+          <p className="text-xs text-muted-foreground">New or returning — we match the phone number to an existing record.</p>
+        </div>
+        <div className="space-y-1.5"><Label htmlFor="bp-name">Patient name</Label>
+          <Input id="bp-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Priya Sharma" autoFocus /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-phone">Mobile number</Label>
+          <Input id="bp-phone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 98450 12210" /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-when">When</Label>
+          <Input id="bp-when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-reason">Reason <span className="font-normal text-muted-foreground">(optional)</span></Label>
+          <Input id="bp-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Tooth pain" /></div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button disabled={busy} onClick={submit}>{busy && <Loader2 className="size-4 animate-spin" />} Book patient</Button>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -121,26 +121,55 @@ export async function markBookingShared(clinicId: string) {
  * name for the greeting). No charts/KPIs, just what to do next. Local calendar
  * day, not UTC — matches getBookableSlots' timezone handling.
  */
-export async function getTodayAppointments(clinicId: string, ownerUserId?: string) {
+export type ScheduleScope = "today" | "upcoming" | "all";
+
+const APPOINTMENT_LIST_SELECT = {
+  id: true,
+  scheduled_time: true,
+  status: true,
+  queue_number: true,
+  walk_in: true,
+  notes: true, // visit reason — shown under the "next patient" hero
+  follow_up_source_appointment_id: true,
+  patient: { select: { id: true, full_name: true } },
+} as const;
+
+export async function getTodayAppointments(
+  clinicId: string,
+  ownerUserId?: string,
+  scope: ScheduleScope = "today",
+) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
+  const now = new Date();
 
-  const [appointments, money, owner] = await Promise.all([
+  // The displayed list follows the scope; the hero summary (seen/remaining/
+  // money) is always about *today*, so it's computed from a separate today
+  // query regardless of which tab is showing.
+  const listWhere =
+    scope === "today"
+      ? { clinic_id: clinicId, scheduled_time: { gte: start, lt: end } }
+      : scope === "upcoming"
+        ? { clinic_id: clinicId, scheduled_time: { gte: now }, status: { notIn: ["completed", "cancelled", "no_show"] } }
+        : { clinic_id: clinicId };
+
+  const [list, todaySummaryRows, futureCount, money, owner] = await Promise.all([
+    prisma.appointment.findMany({
+      where: listWhere,
+      orderBy: { scheduled_time: scope === "all" ? "desc" : "asc" },
+      take: scope === "all" ? 200 : undefined,
+      select: APPOINTMENT_LIST_SELECT,
+    }),
     prisma.appointment.findMany({
       where: { clinic_id: clinicId, scheduled_time: { gte: start, lt: end } },
-      orderBy: { scheduled_time: "asc" },
-      select: {
-        id: true,
-        scheduled_time: true,
-        status: true,
-        queue_number: true,
-        walk_in: true,
-        notes: true, // visit reason — shown under the "next patient" hero
-        follow_up_source_appointment_id: true,
-        patient: { select: { id: true, full_name: true } },
-      },
+      select: { status: true, follow_up_source_appointment_id: true },
+    }),
+    // Appointments on a future day (tomorrow onward) still to happen — powers
+    // the "no one today, but N upcoming" hint so the empty state never lies.
+    prisma.appointment.count({
+      where: { clinic_id: clinicId, scheduled_time: { gte: end }, status: { notIn: ["completed", "cancelled", "no_show"] } },
     }),
     billingDaySummary(clinicId),
     ownerUserId
@@ -148,15 +177,18 @@ export async function getTodayAppointments(clinicId: string, ownerUserId?: strin
       : Promise.resolve(null),
   ]);
 
-  const completed = appointments.filter((a) => a.status === "completed").length;
-  const followUps = appointments.filter((a) => a.follow_up_source_appointment_id != null).length;
+  const total = todaySummaryRows.length;
+  const completed = todaySummaryRows.filter((a) => a.status === "completed").length;
+  const followUps = todaySummaryRows.filter((a) => a.follow_up_source_appointment_id != null).length;
 
   return {
-    appointments,
-    total: appointments.length,
+    scope,
+    appointments: list,
+    total,
     completed,
-    remaining: appointments.length - completed,
+    remaining: total - completed,
     follow_ups: followUps,
+    upcoming_count: futureCount,
     collected_today: money.collected_today,
     outstanding_total: money.outstanding_total,
     owner_name: owner?.full_name ?? null,
