@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
+  Banknote,
   CheckCircle2,
   ClipboardList,
   Loader2,
@@ -109,6 +111,18 @@ export function ConsultationWorkbench({
   const [treatmentId, setTreatmentId] = React.useState("");
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [vitals, setVitals] = React.useState<VitalsState>({ bp: "", pulse: "", temp: "", spo2: "" });
+  const [context, setContext] = React.useState<ConsultContext | null>(null);
+
+  // Real clinical context for the left rail — scoped patient allergies /
+  // current medicines / past visits. No fake vitals: vitals are captured live
+  // by the clinician below and folded into the encounter note on complete.
+  React.useEffect(() => {
+    fetch(`/api/clinic/consultation?appointment_id=${appointmentId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ConsultContext | null) => { if (d) setContext(d); })
+      .catch(() => {});
+  }, [appointmentId]);
 
   const selectedService = services.find((s) => s.id === treatmentId) ?? null;
   const filledRx = rows.filter((r) => r.medicine.trim());
@@ -154,11 +168,21 @@ export function ConsultationWorkbench({
       duration: r.duration.trim(),
     }));
 
+    // Vitals captured this visit ride into the encounter note (no schema
+    // change) so they persist on the record and the printable summary.
+    const vitalsLine = [
+      vitals.bp.trim() && `BP ${vitals.bp.trim()}`,
+      vitals.pulse.trim() && `Pulse ${vitals.pulse.trim()}`,
+      vitals.temp.trim() && `Temp ${vitals.temp.trim()}`,
+      vitals.spo2.trim() && `SpO₂ ${vitals.spo2.trim()}`,
+    ].filter(Boolean).join(", ");
+    const notes = [vitalsLine && `Vitals: ${vitalsLine}`, exam.trim()].filter(Boolean).join("\n");
+
     return {
       action: "complete" as const,
       appointment_id: appointmentId,
       chief_complaint: complaint.trim() || undefined,
-      notes: exam.trim() || undefined,
+      notes: notes || undefined,
       diagnosis: diagnoses.join(", ") || undefined,
       prescription_notes: advice.trim() || undefined,
       prescription_medicines_json: medicines.length ? JSON.stringify(medicines) : undefined,
@@ -221,9 +245,12 @@ export function ConsultationWorkbench({
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto grid max-w-5xl gap-4 p-4 md:grid-cols-[1fr_300px] md:p-6">
+        <div className="grid gap-5 p-4 md:grid-cols-[288px_minmax(0,1fr)] md:p-6 lg:gap-6 xl:px-8">
+          {/* LEFT — real clinical context rail (matches the approved mockup) */}
+          <ContextRail context={context} vitals={vitals} onVitals={setVitals} />
+
           {/* Main documentation column */}
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <Section icon={<Stethoscope className="size-4" />} title="Chief complaint" hint="why they came in">
               <textarea
                 value={complaint}
@@ -391,46 +418,32 @@ export function ConsultationWorkbench({
                 rows={2}
               />
             </Section>
+
+            {/* Treatment & fee — the visit charge. Single-service for now;
+                multi-line-item billing is a later (P4) scope. */}
+            <Section icon={<Banknote className="size-4" />} title="Treatment &amp; fee">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <select
+                  value={treatmentId}
+                  onChange={(e) => setTreatmentId(e.target.value)}
+                  className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="">Consultation (default fee)</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — ₹{s.price.toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-baseline justify-between gap-3 sm:justify-end">
+                  <span className="text-sm text-muted-foreground">To collect</span>
+                  <span className="font-heading text-xl font-bold text-honey-deep">
+                    {selectedService ? `₹${selectedService.price.toLocaleString()}` : "Default fee"}
+                  </span>
+                </div>
+              </div>
+            </Section>
           </div>
-
-          {/* Right rail — honest live recap + treatment/fee (no fake vitals) */}
-          <aside className="space-y-4 md:sticky md:top-4 md:self-start">
-            <div className="rounded-2xl border bg-card p-4">
-              <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                Treatment &amp; fee
-              </div>
-              <select
-                value={treatmentId}
-                onChange={(e) => setTreatmentId(e.target.value)}
-                className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="">Consultation (default fee)</option>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — ₹{s.price.toLocaleString()}
-                  </option>
-                ))}
-              </select>
-              <div className="mt-3 flex items-baseline justify-between border-t pt-3">
-                <span className="text-sm text-muted-foreground">To collect</span>
-                <span className="text-xl font-bold text-honey-deep">
-                  {selectedService ? `₹${selectedService.price.toLocaleString()}` : "Default fee"}
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-4">
-              <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">This visit</div>
-              <RecapRow label="Diagnoses" value={diagnoses.length ? String(diagnoses.length) : "—"} />
-              <RecapRow label="Medicines" value={filledRx.length ? String(filledRx.length) : "—"} />
-              <RecapRow label="Investigations" value={investigations.length ? String(investigations.length) : "—"} />
-              <RecapRow label="Follow-up" value={followUpLabel ?? "—"} />
-            </div>
-
-            <Button className="w-full" onClick={() => setReviewOpen(true)}>
-              <CheckCircle2 className="size-4" /> Review &amp; complete
-            </Button>
-          </aside>
         </div>
       </div>
 
@@ -507,11 +520,129 @@ function SuggestChip({ children, onClick }: { children: React.ReactNode; onClick
   );
 }
 
-function RecapRow({ label, value }: { label: string; value: string }) {
+type VitalsState = { bp: string; pulse: string; temp: string; spo2: string };
+interface ConsultContext {
+  patient: {
+    full_name: string;
+    blood_group: string | null;
+    allergies: string | null;
+    chronic_conditions: string | null;
+    date_of_birth: string | null;
+    gender: string | null;
+  } | null;
+  current_medicines: { name: string; dosage?: string; frequency?: string; duration?: string }[];
+  past_visits: { id: string; date: string; title: string; subtitle: string }[];
+}
+
+// Left clinical-context rail (matches design/mockups/auriva-clinical.html):
+// real allergies / current meds / past visits, plus live vitals capture (no
+// fabricated readings — empty until the clinician enters them).
+function ContextRail({
+  context,
+  vitals,
+  onVitals,
+}: {
+  context: ConsultContext | null;
+  vitals: VitalsState;
+  onVitals: React.Dispatch<React.SetStateAction<VitalsState>>;
+}) {
+  const p = context?.patient;
+  const allergies = p?.allergies?.trim();
+  const conditions = p?.chronic_conditions?.trim();
   return (
-    <div className="flex items-center justify-between py-1 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <aside className="space-y-3 md:sticky md:top-4 md:self-start">
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">Vitals</span>
+          <span className="text-[10px] text-muted-foreground">this visit</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <VitalInput label="BP" unit="mmHg" placeholder="120/80" value={vitals.bp} onChange={(v) => onVitals((s) => ({ ...s, bp: v }))} />
+          <VitalInput label="Pulse" unit="bpm" placeholder="72" value={vitals.pulse} onChange={(v) => onVitals((s) => ({ ...s, pulse: v }))} />
+          <VitalInput label="Temp" unit="°F" placeholder="98.4" value={vitals.temp} onChange={(v) => onVitals((s) => ({ ...s, temp: v }))} />
+          <VitalInput label="SpO₂" unit="%" placeholder="98" value={vitals.spo2} onChange={(v) => onVitals((s) => ({ ...s, spo2: v }))} />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="mb-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">Allergies</div>
+        {allergies ? (
+          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-[13px] font-semibold text-destructive">
+            <AlertTriangle className="size-4 shrink-0" /> {allergies}
+          </div>
+        ) : (
+          <p className="text-[13px] text-muted-foreground">None recorded</p>
+        )}
+        {conditions && (
+          <p className="mt-2 text-[12px] text-muted-foreground">
+            <span className="font-semibold text-foreground">Conditions:</span> {conditions}
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="mb-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">Current medicines</div>
+        {context && context.current_medicines.length > 0 ? (
+          <div className="divide-y">
+            {context.current_medicines.map((m, i) => (
+              <div key={i} className="py-2 first:pt-0 last:pb-0">
+                <div className="text-[13px] font-semibold">{m.name}</div>
+                <div className="text-[11.5px] text-muted-foreground">{[m.frequency, m.duration].filter(Boolean).join(" · ") || "—"}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-muted-foreground">None on record</p>
+        )}
+      </div>
+
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="mb-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">Past visits</div>
+        {context && context.past_visits.length > 0 ? (
+          <div className="space-y-2.5">
+            {context.past_visits.map((v) => (
+              <div key={v.id} className="flex gap-2.5 text-[12.5px]">
+                <span className="w-11 shrink-0 font-heading font-bold text-primary">
+                  {new Date(v.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{v.title}</div>
+                  {v.subtitle && <div className="truncate text-muted-foreground">{v.subtitle}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-muted-foreground">First visit</p>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function VitalInput({
+  label,
+  unit,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border bg-background px-2.5 py-2">
+      <div className="text-[10px] font-bold tracking-wide text-muted-foreground uppercase">{label}</div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent font-heading text-[15px] font-bold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
+      />
+      <div className="text-[9.5px] text-muted-foreground">{unit}</div>
     </div>
   );
 }

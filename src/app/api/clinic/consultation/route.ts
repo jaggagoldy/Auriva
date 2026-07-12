@@ -2,7 +2,22 @@ import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
 import { withRequestId } from "@/api/logger";
-import { startConsultation, completeVisit } from "@/services/consultation-service";
+import { startConsultation, completeVisit, getConsultationContext } from "@/services/consultation-service";
+
+// The consultation workbench's left clinical rail:
+//   GET ?appointment_id= → { patient, current_medicines, past_visits }
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await requireStaffContext("reception");
+    if (!auth.ok) return auth.response;
+    const appointmentId = new URL(request.url).searchParams.get("appointment_id") ?? "";
+    if (!appointmentId) return badRequest("appointment_id is required.");
+    const context = await getConsultationContext(appointmentId, auth.clinicId);
+    return ok(context);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError("Error loading consultation context", error);
+  }
+}
 
 // Milestone 1 Batch 5: the solo visit's clinical steps, inside /clinic.
 //   POST { action: "start", appointment_id }

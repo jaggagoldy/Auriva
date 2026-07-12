@@ -31,6 +31,56 @@ async function requireClinicAppointment(appointmentId: string, clinicId: string)
   return appointment;
 }
 
+/** The left clinical-context rail for the consultation workbench — real,
+ * scoped patient data (no fake vitals): profile allergies/conditions, the
+ * medicines from their most recent visit, and their recent completed visits. */
+export async function getConsultationContext(appointmentId: string, clinicId: string) {
+  const appt = await requireClinicAppointment(appointmentId, clinicId);
+  const [patient, visits] = await Promise.all([
+    prisma.patientProfile.findUnique({
+      where: { id: appt.patient_id },
+      select: { full_name: true, blood_group: true, allergies: true, chronic_conditions: true, date_of_birth: true, gender: true },
+    }),
+    prisma.appointment.findMany({
+      where: { patient_id: appt.patient_id, id: { not: appt.id }, status: "completed" },
+      orderBy: { scheduled_time: "desc" },
+      take: 6,
+      select: { id: true, scheduled_time: true, diagnosis: true, prescription_notes: true, prescription_medicines_json: true, notes: true },
+    }),
+  ]);
+
+  function parseMeds(json: string | null): { name: string; dosage?: string; frequency?: string; duration?: string }[] {
+    if (!json) return [];
+    try {
+      const arr = JSON.parse(json);
+      return Array.isArray(arr) ? arr.filter((m) => m && typeof m.name === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return {
+    patient: patient
+      ? {
+          full_name: patient.full_name,
+          blood_group: patient.blood_group,
+          allergies: patient.allergies,
+          chronic_conditions: patient.chronic_conditions,
+          date_of_birth: patient.date_of_birth ? patient.date_of_birth.toISOString() : null,
+          gender: patient.gender,
+        }
+      : null,
+    // "Current medicines" = what was prescribed at the most recent completed visit.
+    current_medicines: visits.length ? parseMeds(visits[0].prescription_medicines_json) : [],
+    past_visits: visits.map((v) => ({
+      id: v.id,
+      date: v.scheduled_time.toISOString(),
+      title: v.diagnosis?.trim() || "Consultation",
+      subtitle: v.prescription_notes?.trim() || v.notes?.trim() || "",
+    })),
+  };
+}
+
 /** Start seeing the patient: scheduled/waiting → in_consultation. */
 export async function startConsultation(input: {
   appointmentId: string;
