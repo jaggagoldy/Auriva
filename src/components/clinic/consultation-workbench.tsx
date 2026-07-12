@@ -141,27 +141,31 @@ export function ConsultationWorkbench({
     setComplaint((prev) => (prev.trim() ? `${prev.replace(/\s+$/, "")}, ${word.toLowerCase()}` : word));
   }
 
-  // Serialize the structured UI into the existing string-based backend fields.
+  // Map the structured UI onto the real backend fields. Medicines go to the
+  // structured Prescription store (medicines_json) so they reach the printable
+  // prescription and the patient timeline; chief complaint has its own column;
+  // examination + investigations become the encounter note; advice rides on
+  // the prescription's notes line.
   function buildPayload() {
-    const noteParts: string[] = [];
-    if (complaint.trim()) noteParts.push(`Chief complaint: ${complaint.trim()}`);
-    if (exam.trim()) noteParts.push(`Examination: ${exam.trim()}`);
-    if (investigations.length) noteParts.push(`Investigations: ${investigations.join(", ")}`);
-    if (advice.trim()) noteParts.push(`Advice: ${advice.trim()}`);
+    const historyParts: string[] = [];
+    if (exam.trim()) historyParts.push(exam.trim());
+    if (investigations.length) historyParts.push(`Investigations: ${investigations.join(", ")}`);
 
-    const prescription = filledRx
-      .map((r) => {
-        const detail = [r.dosage.trim(), r.frequency.trim(), r.duration.trim()].filter(Boolean).join(" · ");
-        return detail ? `${r.medicine.trim()} — ${detail}` : r.medicine.trim();
-      })
-      .join("\n");
+    const medicines = filledRx.map((r) => ({
+      name: r.medicine.trim(),
+      dosage: r.dosage.trim(),
+      frequency: r.frequency.trim(),
+      duration: r.duration.trim(),
+    }));
 
     return {
       action: "complete" as const,
       appointment_id: appointmentId,
-      notes: noteParts.join("\n") || undefined,
+      chief_complaint: complaint.trim() || undefined,
+      notes: historyParts.join("\n") || undefined,
       diagnosis: diagnoses.join(", ") || undefined,
-      prescription_notes: prescription || undefined,
+      prescription_notes: advice.trim() || undefined,
+      prescription_medicines_json: medicines.length ? JSON.stringify(medicines) : undefined,
       follow_up_date: followUpDays != null ? isoDateInDays(followUpDays) : undefined,
       treatment_id: treatmentId || undefined,
     };

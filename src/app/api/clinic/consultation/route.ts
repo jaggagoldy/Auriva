@@ -35,10 +35,13 @@ export async function POST(request: NextRequest) {
           appointmentId,
           clinicId: auth.clinicId,
           actorUserId: auth.session.userId,
+          chiefComplaint: typeof body.chief_complaint === "string" ? body.chief_complaint : undefined,
           notes: typeof body.notes === "string" ? body.notes : undefined,
           diagnosis: typeof body.diagnosis === "string" ? body.diagnosis : undefined,
           followUpDate: typeof body.follow_up_date === "string" ? body.follow_up_date : undefined,
           prescriptionNotes: typeof body.prescription_notes === "string" ? body.prescription_notes : undefined,
+          prescriptionMedicinesJson:
+            typeof body.prescription_medicines_json === "string" ? body.prescription_medicines_json : undefined,
           treatmentId: typeof body.treatment_id === "string" ? body.treatment_id : null,
         });
         return ok({ success: true, ...result });

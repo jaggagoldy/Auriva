@@ -20,6 +20,7 @@ const clinicIds: string[] = [];
 afterAll(async () => {
   await prisma.payment.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.invoice.deleteMany({ where: { clinic_id: { in: clinicIds } } });
+  await prisma.prescription.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.appointment.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.service.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.patientProfile.deleteMany({ where: { registered_by_clinic_id: { in: clinicIds } } });
@@ -74,6 +75,39 @@ describe("solo visit flow", () => {
     const payments = await prisma.payment.findMany({ where: { invoice_id: completed.invoiceId } });
     expect(payments).toHaveLength(1);
     expect(payments[0].amount).toBe(800);
+  });
+
+  it("persists structured medicines + chief complaint to the Prescription store", async () => {
+    const { owner, clinic, appointment, patient } = await setupVisit();
+    const medicines = [
+      { name: "Amoxicillin 500mg", dosage: "1 tab", frequency: "1-0-1", duration: "5 days" },
+      { name: "Ibuprofen 400mg", dosage: "1 tab", frequency: "SOS", duration: "3 days" },
+    ];
+
+    await completeVisit({
+      appointmentId: appointment.id,
+      clinicId: clinic.id,
+      actorUserId: owner.id,
+      chiefComplaint: "Lower back pain, 3 days",
+      notes: "ROM reduced.",
+      diagnosis: "Mechanical LBP",
+      prescriptionNotes: "Rest and warm compress.",
+      prescriptionMedicinesJson: JSON.stringify(medicines),
+      followUpDate: "2026-07-20",
+    });
+
+    // Chief complaint lands on the encounter (appointment) column.
+    const appt = await prisma.appointment.findUnique({ where: { id: appointment.id } });
+    expect(appt?.chief_complaint).toBe("Lower back pain, 3 days");
+
+    // Structured medicines reach Prescription.medicines_json — the shape the
+    // printable prescription and the patient timeline read from.
+    const rx = await prisma.prescription.findUnique({ where: { appointment_id: appointment.id } });
+    expect(rx).not.toBeNull();
+    expect(rx?.patient_id).toBe(patient.id);
+    expect(JSON.parse(rx!.medicines_json)).toEqual(medicines);
+    expect(rx?.notes).toBe("Rest and warm compress.");
+    expect(rx?.follow_up_date?.toISOString().slice(0, 10)).toBe("2026-07-20");
   });
 
   it("keeps the fee-based invoice when no treatment is chosen", async () => {

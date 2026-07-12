@@ -49,10 +49,12 @@ export async function completeVisit(input: {
   appointmentId: string;
   clinicId: string;
   actorUserId: string;
+  chiefComplaint?: string | null;
   notes?: string | null;
   diagnosis?: string | null;
   followUpDate?: string | null;
   prescriptionNotes?: string | null;
+  prescriptionMedicinesJson?: string | null;
   treatmentId?: string | null;
 }) {
   const appointment = await requireClinicAppointment(input.appointmentId, input.clinicId);
@@ -70,18 +72,24 @@ export async function completeVisit(input: {
     if (!service) throw new ConsultationInputError("That treatment isn't available in this clinic.");
   }
 
-  // 2) Clinical documentation (only if anything was provided).
+  // 2) Clinical documentation (only if anything was provided). Structured
+  // medicines route to Prescription.medicines_json so they flow to the
+  // printable prescription and the patient timeline — not just free text.
   if (
+    input.chiefComplaint !== undefined ||
     input.notes !== undefined ||
     input.diagnosis !== undefined ||
     input.followUpDate !== undefined ||
-    input.prescriptionNotes !== undefined
+    input.prescriptionNotes !== undefined ||
+    input.prescriptionMedicinesJson !== undefined
   ) {
     await updateClinicalRecord(input.appointmentId, {
+      chief_complaint: input.chiefComplaint ?? undefined,
       history_notes: input.notes ?? undefined,
       diagnosis: input.diagnosis ?? undefined,
       follow_up_date: input.followUpDate ?? undefined,
       prescription_notes: input.prescriptionNotes ?? undefined,
+      prescription_medicines_json: input.prescriptionMedicinesJson ?? undefined,
     });
   }
 
