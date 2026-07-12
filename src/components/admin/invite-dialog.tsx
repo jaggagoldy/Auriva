@@ -31,19 +31,28 @@ const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 export default function InviteStaffDialog({
   clinicName,
-  onInvite,
+  organizationId,
+  clinics,
+  defaultClinicId,
+  onInvited,
 }: {
   clinicName: string;
-  onInvite: (invite: PendingInvite) => void;
+  organizationId: string;
+  /** Sprint 3: which branch within the org this invite assigns the staff member to — a picker only appears when there's more than one. */
+  clinics: { id: string; name: string }[];
+  defaultClinicId: string;
+  onInvited: (joinUrl: string, fullName: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [role, setRole] = React.useState<InviteRole | null>(null);
   const [specialty, setSpecialty] = React.useState("");
+  const [clinicId, setClinicId] = React.useState(defaultClinicId);
+  const [saving, setSaving] = React.useState(false);
 
   const valid =
-    fullName.trim().length > 1 && EMAIL_PATTERN.test(email) && role !== null;
+    fullName.trim().length > 1 && EMAIL_PATTERN.test(email) && role !== null && clinicId !== "";
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
@@ -52,25 +61,36 @@ export default function InviteStaffDialog({
       setEmail("");
       setRole(null);
       setSpecialty("");
+      setClinicId(defaultClinicId);
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!valid || !role) return;
-    onInvite({
-      id: crypto.randomUUID(),
-      full_name: fullName.trim(),
-      email: email.trim(),
-      role,
-      specialty: role === "doctor" && specialty.trim() ? specialty.trim() : null,
-      invited_at: new Date().toISOString(),
-    });
-    toast.success(`Invitation sent to ${fullName.trim()}`, {
-      description:
-        "Stored locally — it will sync once the staff invite API is live.",
-    });
-    setOpen(false);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/organizations/${organizationId}/invitations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          email: email.trim(),
+          role,
+          specialty: role === "doctor" && specialty.trim() ? specialty.trim() : null,
+          clinic_id: clinicId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? "Could not send invitation");
+      const joinUrl = `${window.location.origin}/join/${data.token}`;
+      onInvited(joinUrl, fullName.trim());
+      setOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send invitation");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -145,10 +165,28 @@ export default function InviteStaffDialog({
             </div>
           )}
 
+          {clinics.length > 1 && (
+            <div className="space-y-1.5">
+              <Label>Branch</Label>
+              <Select value={clinicId} onValueChange={(value) => setClinicId(value as string)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {clinics.find((c) => c.id === clinicId)?.name ?? <span className="text-muted-foreground">Select a branch</span>}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {clinics.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <DialogFooter showCloseButton>
-            <Button type="submit" disabled={!valid}>
+            <Button type="submit" disabled={!valid || saving}>
               <UserPlus />
-              Send Invitation
+              {saving ? "Sending…" : "Send Invitation"}
             </Button>
           </DialogFooter>
         </form>

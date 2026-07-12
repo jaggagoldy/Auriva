@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-015-A — Organization Workspace · Hi-Fi Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-500:#14B8A6;--teal-600:#0D9488;
+  --teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-bd:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-bd:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-bd:#FECACA;
+  --info:#0284C7;--info-bg:#F0F9FF;--info-bd:#BAE6FD;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-bd:#C7D2FE;
+  --bg:#F5F7FA;--bd:#E2E8F0;
+  --font:'Inter',-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--slate-800);font-size:14px;color:var(--slate-900);-webkit-font-smoothing:antialiased;min-width:1280px}
+
+/* ===== review toolbar (not part of the product UI) ===== */
+.review{background:var(--slate-900);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.review b{font-size:13px}
+.review span{font-size:11.5px;color:var(--slate-400)}
+.preset-tabs{display:flex;gap:6px;margin-left:auto}
+.preset-tab{background:var(--slate-700);border:1px solid var(--slate-600);color:var(--slate-300);font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer}
+.preset-tab.on{background:var(--teal-600);border-color:var(--teal-500);color:#fff}
+
+/* ===== shell (APS-007 L3) ===== */
+.shell{display:none;height:900px;background:var(--bg);position:relative;overflow:hidden}
+.shell.on{display:flex}
+.sidebar{width:248px;background:#fff;border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+.org-id{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.org-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.org-id b{font-size:13.5px;letter-spacing:-.01em;display:block;line-height:1.25}
+.org-id span{font-size:10.5px;color:var(--slate-400);font-weight:500}
+.nav{padding:12px 10px;overflow-y:auto;flex:1}
+.nav-sec{font-size:10px;font-weight:700;letter-spacing:.09em;color:var(--slate-400);padding:14px 10px 6px}
+.nav-sec:first-child{padding-top:2px}
+.nav-it{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--slate-600);cursor:pointer}
+.nav-it:hover{background:var(--slate-50)}
+.nav-it.on{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.nav-it .ic{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav-it .bdg{margin-left:auto;background:var(--teal-600);color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:1px 7px}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;padding:0 20px;flex-shrink:0}
+.loc-sw{display:flex;align-items:center;gap:7px;border:1px solid var(--bd);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--slate-700);cursor:pointer;background:#fff}
+.loc-sw svg{width:13px;height:13px;stroke:var(--slate-400);stroke-width:2;fill:none}
+.cmdk{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid var(--bd);border-radius:8px;padding:6px 12px;width:260px;color:var(--slate-400);font-size:12.5px;background:var(--slate-50)}
+.cmdk kbd{margin-left:auto;font-family:inherit;font-size:10.5px;background:#fff;border:1px solid var(--bd);border-radius:5px;padding:1px 6px;color:var(--slate-500)}
+.bell{position:relative;width:36px;height:36px;border-radius:8px;border:1px solid var(--bd);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.bell svg{width:17px;height:17px;stroke:var(--slate-500);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bell .dot{position:absolute;top:-5px;right:-5px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;padding:1px 5px;border:2px solid #fff}
+.avatar{width:32px;height:32px;border-radius:999px;background:var(--indigo-bg);color:var(--indigo);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+.scopebar{height:32px;background:var(--teal-50);border-bottom:1px solid var(--teal-200);display:flex;align-items:center;gap:8px;padding:0 20px;font-size:12px;color:var(--teal-800);flex-shrink:0}
+.scopebar b{font-weight:600}
+.scopebar a{color:var(--teal-700);font-weight:600;text-decoration:underline;cursor:pointer}
+
+.pagehead{height:64px;display:flex;align-items:center;gap:14px;padding:0 24px;flex-shrink:0}
+.pagehead h1{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.pagehead .cnt{font-size:12.5px;color:var(--slate-400);font-weight:500}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid transparent}
+.btn.pri{background:var(--teal-600);color:#fff;margin-left:auto}
+.btn.sec{background:#fff;border-color:var(--bd);color:var(--slate-700)}
+.filterbar{height:48px;display:flex;align-items:center;gap:8px;padding:0 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.fchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--bd);background:#fff;border-radius:999px;padding:5px 12px;color:var(--slate-600);cursor:pointer}
+.fchip.on{background:var(--slate-800);border-color:var(--slate-800);color:#fff}
+.fnote{margin-left:auto;font-size:11.5px;color:var(--slate-400)}
+.content{flex:1;overflow:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;min-height:0}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;flex-shrink:0}
+.stat{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:16px 18px}
+.stat .l{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-400)}
+.stat .v{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:4px;color:var(--teal-700);text-decoration:underline;text-decoration-color:transparent;cursor:pointer}
+.stat .v:hover{text-decoration-color:var(--teal-300,#5EEAD4)}
+.stat .d{font-size:11.5px;margin-top:2px;color:var(--slate-500)}
+.stat .d.up{color:var(--danger)} .stat .d.ok{color:var(--success)}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;border:1px solid}
+.chip .cd{width:6px;height:6px;border-radius:50%;background:currentColor}
+.c-wait{background:var(--warning-bg);border-color:var(--warning-bd);color:var(--warning)}
+.c-in{background:var(--teal-50);border-color:var(--teal-200);color:var(--teal-700)}
+.c-called{background:var(--info-bg);border-color:var(--info-bd);color:var(--info)}
+.c-done{background:var(--slate-100);border-color:var(--slate-200);color:var(--slate-500)}
+.c-warn{background:var(--warning-bg);border-color:var(--warning-bd);color:var(--warning)}
+.c-ok{background:var(--success-bg);border-color:var(--success-bd);color:var(--success)}
+.c-dng{background:var(--danger-bg);border-color:var(--danger-bd);color:var(--danger)}
+.c-q{background:var(--indigo-bg);border-color:var(--indigo-bd);color:var(--indigo)}
+
+/* board (T2) */
+.board{display:flex;gap:12px;align-items:flex-start;flex:1;min-height:0}
+.bcol{width:300px;flex-shrink:0;background:var(--slate-100);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;max-height:100%}
+.bcol-h{display:flex;align-items:center;gap:8px;padding:4px 6px 8px}
+.bcol-h .dr{font-size:13px;font-weight:700}
+.bcol-h .sp{font-size:11px;color:var(--slate-500);display:block;font-weight:400}
+.bcol-h .n{margin-left:auto;font-size:11px;font-weight:700;color:var(--slate-500);background:#fff;border-radius:999px;padding:2px 8px;border:1px solid var(--bd)}
+.drift{font-size:10.5px;font-weight:700;color:var(--warning);background:var(--warning-bg);border:1px solid var(--warning-bd);border-radius:6px;padding:1px 6px}
+.qcard{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 2px rgba(15,23,42,.05);cursor:pointer}
+.qcard:hover{border-color:var(--teal-500)}
+.tok{width:44px;height:44px;border-radius:10px;background:var(--slate-800);color:#fff;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qcard.now .tok{background:var(--teal-600)}
+.qcard .nm{font-size:13px;font-weight:600;line-height:1.3}
+.qcard .mt{font-size:11px;color:var(--slate-400)}
+.qcard .rt{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.qcard .w{font-size:11px;color:var(--slate-400)}
+.bempty{border:1.5px dashed var(--slate-300);border-radius:12px;padding:26px 12px;text-align:center;color:var(--slate-400);font-size:12px}
+.bempty b{display:block;color:var(--slate-500);font-size:12.5px;margin-bottom:2px}
+
+/* table (T1) */
+.tblwrap{background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden;flex-shrink:0}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+.t th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-400);background:var(--slate-50);padding:9px 14px;border-bottom:1px solid var(--bd)}
+.t td{padding:0 14px;height:48px;border-bottom:1px solid var(--slate-100);color:var(--slate-600);vertical-align:middle}
+.t tr:last-child td{border-bottom:none}
+.t td b{color:var(--slate-900);font-weight:600}
+.t tr.sel td{background:var(--teal-50)}
+.t tr{cursor:pointer}
+.t tr:hover td{background:var(--slate-50)}
+.t tr.sel:hover td{background:var(--teal-50)}
+.sla{font-variant-numeric:tabular-nums;font-weight:600}
+.sla.hot{color:var(--danger)} .sla.warm{color:var(--warning)} .sla.cool{color:var(--slate-500)}
+.pgbar{height:52px;display:flex;align-items:center;gap:16px;padding:0 24px;border-top:1px solid var(--bd);background:#fff;font-size:12px;color:var(--slate-500);flex-shrink:0}
+.pgbar .pgs{margin-left:auto;display:flex;gap:4px}
+.pgbar .pg{width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;cursor:pointer}
+.pgbar .pg.on{background:var(--slate-800);color:#fff;border-color:var(--slate-800)}
+
+/* drawer */
+.drawer{position:absolute;top:0;right:0;bottom:0;width:480px;background:#fff;border-left:1px solid var(--bd);box-shadow:-8px 0 24px rgba(15,23,42,.08);display:flex;flex-direction:column;z-index:20}
+.dr-h{padding:18px 22px 14px;border-bottom:1px solid var(--bd)}
+.dr-h .crumb{font-size:11px;color:var(--slate-400);margin-bottom:6px}
+.dr-h h2{font-size:16.5px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.dr-h .sub{font-size:12px;color:var(--slate-500);margin-top:3px}
+.dr-x{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;border:1px solid var(--bd);background:#fff;color:var(--slate-500);font-size:15px;cursor:pointer}
+.dr-b{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:18px}
+.dr-f{padding:14px 22px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end}
+.lbl{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--slate-400);margin-bottom:8px}
+.machine{display:flex;align-items:center;gap:0}
+.mstep{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--slate-400)}
+.mstep .mdot{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--slate-300);display:flex;align-items:center;justify-content:center;font-size:10px;background:#fff}
+.mstep.done .mdot{background:var(--teal-600);border-color:var(--teal-600);color:#fff}
+.mstep.done{color:var(--teal-700)}
+.mstep.cur .mdot{border-color:var(--warning);color:var(--warning);background:var(--warning-bg)}
+.mstep.cur{color:var(--warning)}
+.mline{width:26px;height:1.5px;background:var(--slate-200);margin:0 4px}
+.check{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--bd);border-radius:8px;font-size:12.5px;color:var(--slate-700)}
+.check+.check{margin-top:6px}
+.check .ok{color:var(--success);font-weight:700}
+.check.miss{background:var(--danger-bg);border-color:var(--danger-bd)}
+.check.miss .ok{color:var(--danger)}
+.check a{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--teal-700);cursor:pointer;text-decoration:underline}
+.lineage{display:flex;gap:8px;flex-wrap:wrap}
+.lin{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border:1px solid var(--bd);background:var(--slate-50);border-radius:8px;padding:5px 10px;color:var(--slate-600);cursor:pointer}
+.lin:hover{border-color:var(--teal-500);color:var(--teal-700)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:7px 14px;font-size:12.5px}
+.kv .k{color:var(--slate-400)} .kv .v{color:var(--slate-800);font-weight:500}
+.audit{font-size:11px;color:var(--slate-400);border-top:1px dashed var(--slate-200);padding-top:10px}
+
+/* station grid (Δ-3) */
+.grid{background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden;flex-shrink:0}
+.grow{display:grid;grid-template-columns:150px repeat(3,1fr);border-bottom:1px solid var(--slate-100)}
+.grow:last-child{border-bottom:none}
+.grow.head{background:var(--slate-50);border-bottom:1px solid var(--bd)}
+.grow.head>div{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate-400);padding:9px 14px}
+.stn{padding:10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--slate-100)}
+.stn b{font-size:13px}
+.stn span{font-size:11px;color:var(--slate-400)}
+.cell{padding:8px;border-right:1px solid var(--slate-100);min-height:64px;display:flex}
+.cell:last-child,.stn:last-child{border-right:none}
+.sess{flex:1;border-radius:9px;padding:8px 11px;font-size:12px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer}
+.sess b{font-size:12.5px;font-weight:600}
+.sess .s{font-size:10.5px;font-weight:600}
+.se-live{background:var(--teal-50);border:1px solid var(--teal-200)} .se-live .s{color:var(--teal-700)}
+.se-done{background:var(--slate-50);border:1px solid var(--slate-200);color:var(--slate-500)} .se-done .s{color:var(--slate-400)}
+.se-open{border:1.5px dashed var(--slate-300);color:var(--slate-400);align-items:center;text-align:center} .se-open .s{color:var(--teal-700);text-decoration:underline}
+.se-ns{background:var(--warning-bg);border:1px solid var(--warning-bd)} .se-ns .s{color:var(--warning)}
+.se-mx{background:var(--danger-bg);border:1px solid var(--danger-bd);align-items:center;text-align:center;color:var(--danger);font-weight:600;font-size:11.5px}
+
+/* approvals tray */
+.tray{position:absolute;top:56px;right:0;bottom:0;width:400px;background:#fff;border-left:1px solid var(--bd);box-shadow:-8px 0 24px rgba(15,23,42,.10);z-index:40;display:none;flex-direction:column}
+.tray.open{display:flex}
+.tray-tabs{display:flex;border-bottom:1px solid var(--bd)}
+.tray-tab{flex:1;text-align:center;padding:12px;font-size:12.5px;font-weight:600;color:var(--slate-400);cursor:pointer;border-bottom:2px solid transparent}
+.tray-tab.on{color:var(--teal-700);border-bottom-color:var(--teal-600)}
+.tray-b{flex:1;overflow:auto;padding:12px}
+.tr-it{border:1px solid var(--bd);border-radius:10px;padding:11px 13px;margin-bottom:8px}
+.tr-it .h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600}
+.tr-it .m{font-size:11.5px;color:var(--slate-500);margin-top:3px}
+.tr-it .acts{display:flex;gap:8px;margin-top:9px}
+.tr-it .a{font-size:11.5px;font-weight:600;border-radius:7px;padding:5px 12px;cursor:pointer;border:1px solid var(--bd);background:#fff;color:var(--slate-600)}
+.tr-it .a.ok{background:var(--teal-600);border-color:var(--teal-600);color:#fff}
+.tr-it .t{margin-left:auto;font-size:10.5px;color:var(--slate-400);font-weight:400}
+</style>
+</head>
+<body>
+
+<div class="review">
+  <b>APS-015-A · Organization Workspace — Hi-Fi Mockup (annex to APS-015)</b>
+  <span>Shell per APS-007 L3 · content per APS-014/015 · switching preset changes the sidebar = module activation (APS-013 P1). Click the bell for the Approvals tray (Δ-2).</span>
+  <div class="preset-tabs">
+    <button class="preset-tab on" onclick="show(0,this)">Clinic · Front Desk</button>
+    <button class="preset-tab" onclick="show(1,this)">Hospital · Claims</button>
+    <button class="preset-tab" onclick="show(2,this)">Day Care · Therapy Floor</button>
+  </div>
+</div>
+
+<!-- ================= VIEW 1 · CLINIC ================= -->
+<div class="shell on" id="v0">
+  <aside class="sidebar">
+    <div class="org-id"><div class="org-mark">S</div><div><b>Sunrise Family Clinic</b><span>Independent Clinic · HSR Layout</span></div></div>
+    <nav class="nav">
+      <div class="nav-sec">OPERATE</div>
+      <div class="nav-it on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg>Front Desk<span class="bdg">12</span></div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Appointments</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>Patients</div>
+      <div class="nav-sec">MANAGE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Billing</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Services &amp; Pricing</div>
+      <div class="nav-sec">UNDERSTAND</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Insights</div>
+      <div class="nav-sec">CONFIGURE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</div>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="loc-sw"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>HSR Layout</div>
+      <div class="cmdk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Search patients, tokens, actions…<kbd>⌘K</kbd></div>
+      <div class="bell" onclick="tray(this)"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg><span class="dot">2</span></div>
+      <div class="avatar">RS</div>
+    </div>
+    <div class="pagehead"><h1>Queue Board</h1><span class="cnt">Thursday 3 Jul · 12 waiting across 3 doctors</span><button class="btn sec">Check-in</button><button class="btn pri">+ Walk-in registration</button></div>
+    <div class="filterbar">
+      <span class="fchip on">All doctors</span><span class="fchip">Dr. Meera</span><span class="fchip">Dr. Arjun</span><span class="fchip">Dr. Kavita</span>
+      <span class="fnote">Token display: mirroring · live</span>
+    </div>
+    <div class="content">
+      <div class="stats">
+        <div class="stat"><div class="l">In queue now</div><div class="v">12</div><div class="d">across 3 doctors</div></div>
+        <div class="stat"><div class="l">Avg wait right now</div><div class="v">24 min</div><div class="d up">↑ 6 min vs last 4 Thursdays</div></div>
+        <div class="stat"><div class="l">Checked in today</div><div class="v">47</div><div class="d ok">follow-up recalls: 9 of them</div></div>
+        <div class="stat"><div class="l">No-shows today</div><div class="v">2</div><div class="d">both notified for re-book</div></div>
+      </div>
+      <div class="board">
+        <div class="bcol">
+          <div class="bcol-h"><div><span class="dr">Dr. Meera Nair</span><span class="sp">General Medicine · Room 2</span></div><span class="drift">+15 min</span><span class="n">6</span></div>
+          <div class="qcard now"><div class="tok">A-41</div><div><div class="nm">Lakshmi Venkatesh</div><div class="mt">F · 58 · follow-up (free window)</div></div><div class="rt"><span class="chip c-in"><span class="cd"></span>In consult</span><span class="w">08 min in</span></div></div>
+          <div class="qcard"><div class="tok">A-42</div><div><div class="nm">Imran Sheikh</div><div class="mt">M · 34 · walk-in</div></div><div class="rt"><span class="chip c-called"><span class="cd"></span>Called</span><span class="w">wait 22 min</span></div></div>
+          <div class="qcard"><div class="tok">A-43</div><div><div class="nm">Ritu Malhotra</div><div class="mt">F · 41 · booked 11:00</div></div><div class="rt"><span class="chip c-wait"><span class="cd"></span>Waiting</span><span class="w">~15 min</span></div></div>
+          <div class="qcard"><div class="tok">A-44</div><div><div class="nm">Suresh Gowda</div><div class="mt">M · 63 · diabetes recall</div></div><div class="rt"><span class="chip c-wait"><span class="cd"></span>Waiting</span><span class="w">~25 min</span></div></div>
+        </div>
+        <div class="bcol">
+          <div class="bcol-h"><div><span class="dr">Dr. Arjun Rao</span><span class="sp">Pediatrics · Room 3</span></div><span class="n">5</span></div>
+          <div class="qcard now"><div class="tok">B-17</div><div><div class="nm">Advik Kulkarni</div><div class="mt">M · 4 · with mother</div></div><div class="rt"><span class="chip c-in"><span class="cd"></span>In consult</span><span class="w">03 min in</span></div></div>
+          <div class="qcard"><div class="tok">B-18</div><div><div class="nm">Sara Thomas</div><div class="mt">F · 7 · vaccination</div></div><div class="rt"><span class="chip c-wait"><span class="cd"></span>Waiting</span><span class="w">~10 min</span></div></div>
+          <div class="qcard"><div class="tok">B-19</div><div><div class="nm">Mohammed Ayaan</div><div class="mt">M · 2 · booked 11:15</div></div><div class="rt"><span class="chip c-wait"><span class="cd"></span>Waiting</span><span class="w">~20 min</span></div></div>
+        </div>
+        <div class="bcol">
+          <div class="bcol-h"><div><span class="dr">Dr. Kavita Iyer</span><span class="sp">Dermatology · Room 4</span></div><span class="n">0</span></div>
+          <div class="bempty"><b>No patients waiting</b>Next appointment 11:30 — Priya N.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VIEW 2 · HOSPITAL ================= -->
+<div class="shell" id="v1">
+  <aside class="sidebar">
+    <div class="org-id"><div class="org-mark">K</div><div><b>Kaveri Multispecialty</b><span>Hospital · 4 locations</span></div></div>
+    <nav class="nav">
+      <div class="nav-sec">OPERATE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg>Front Desk</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Appointments</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>Patients</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Encounters<span class="bdg">31</span></div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M10 2v7L4 20a1 1 0 001 2h14a1 1 0 001-2l-6-11V2M8 2h8"/></svg>Diagnostics</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="9"/></svg>Pharmacy</div>
+      <div class="nav-sec">MANAGE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/></svg>People</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Billing</div>
+      <div class="nav-it on"><svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Claims &amp; Payers<span class="bdg">7</span></div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M16 8a4 4 0 11-8 0 4 4 0 018 0zM3 21h18"/></svg>Settlements</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg>Inventory</div>
+      <div class="nav-sec">UNDERSTAND</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Insights</div>
+      <div class="nav-sec">CONFIGURE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Settings</div>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="loc-sw"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>2 locations ▾</div>
+      <div class="cmdk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Search claims, patients, invoices…<kbd>⌘K</kbd></div>
+      <div class="bell" onclick="tray(this)"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg><span class="dot">3</span></div>
+      <div class="avatar">PD</div>
+    </div>
+    <div class="scopebar">Viewing: <b>Jayanagar + Whitefield</b> · <a>Change scope</a></div>
+    <div class="pagehead"><h1>Pre-authorizations</h1><span class="cnt">14 pending · 3 in query · sorted by admission time</span><button class="btn pri">+ New pre-auth</button></div>
+    <div class="filterbar">
+      <span class="fchip on">Pending</span><span class="fchip">In query</span><span class="fchip">Approved today</span><span class="fchip">All payers</span>
+      <span class="fnote">Saved view: “Surgery list — next 48h”</span>
+    </div>
+    <div class="content" style="padding-right:504px">
+      <div class="tblwrap"><table class="t">
+        <tr><th>Patient</th><th>Procedure</th><th>Payer</th><th>Location</th><th>Payer clock</th><th>Status</th></tr>
+        <tr><td><b>Shobha Krishnan</b> · F 52</td><td>Lap. cholecystectomy</td><td>Star Health (NHCX)</td><td>Jayanagar</td><td class="sla hot">4h 10m to admission</td><td><span class="chip c-warn"><span class="cd"></span>Query received</span></td></tr>
+        <tr class="sel"><td><b>Ramesh Patil</b> · M 61</td><td>TKR — right knee</td><td>PM-JAY</td><td>Whitefield</td><td class="sla warm">Tomorrow 07:00</td><td><span class="chip c-q"><span class="cd"></span>Submitted</span></td></tr>
+        <tr><td><b>Fatima Begum</b> · F 45</td><td>Hysterectomy</td><td>ICICI Lombard (NHCX)</td><td>Jayanagar</td><td class="sla warm">Tomorrow 09:30</td><td><span class="chip c-q"><span class="cd"></span>Submitted</span></td></tr>
+        <tr><td><b>Joseph Mathew</b> · M 68</td><td>CABG</td><td>HDFC Ergo (TPA portal)</td><td>Whitefield</td><td class="sla cool">Fri 06:00</td><td><span class="chip c-done"><span class="cd"></span>Draft</span></td></tr>
+        <tr><td><b>Anita Deshmukh</b> · F 38</td><td>Septoplasty</td><td>Star Health (NHCX)</td><td>Jayanagar</td><td class="sla cool">Fri 11:00</td><td><span class="chip c-ok"><span class="cd"></span>Approved</span></td></tr>
+        <tr><td><b>Gopal Reddy</b> · M 57</td><td>PCI — single stent</td><td>PM-JAY</td><td>Whitefield</td><td class="sla cool">Sat 08:00</td><td><span class="chip c-done"><span class="cd"></span>Draft</span></td></tr>
+      </table></div>
+      <div class="pgbar">Showing 1–6 of 14 · rows per page 25<div class="pgs"><span class="pg on">1</span><span class="pg">2</span><span class="pg">3</span></div></div>
+    </div>
+    <div class="drawer">
+      <button class="dr-x">✕</button>
+      <div class="dr-h">
+        <div class="crumb">Claims &amp; Payers / Pre-authorizations / PA-2026-0847</div>
+        <h2>Ramesh Patil <span class="chip c-q"><span class="cd"></span>Submitted</span></h2>
+        <div class="sub">M · 61 · UHID KV-118203 · TKR right knee · PM-JAY package HBP-2.4 · Whitefield</div>
+      </div>
+      <div class="dr-b">
+        <div>
+          <div class="lbl">Status</div>
+          <div class="machine">
+            <span class="mstep done"><span class="mdot">✓</span>Draft</span><span class="mline"></span>
+            <span class="mstep done"><span class="mdot">✓</span>Submitted</span><span class="mline"></span>
+            <span class="mstep cur"><span class="mdot">…</span>Payer review</span><span class="mline"></span>
+            <span class="mstep"><span class="mdot"></span>Approved</span>
+          </div>
+        </div>
+        <div>
+          <div class="lbl">Requirements — assembled from the record</div>
+          <div class="check"><span class="ok">✓</span>Clinical notes — Dr. S. Hegde, OPD consult 28 Jun</div>
+          <div class="check"><span class="ok">✓</span>X-ray report — right knee AP/lateral, 28 Jun</div>
+          <div class="check"><span class="ok">✓</span>Package estimate — ₹1,04,500 (HBP-2.4 rate card)</div>
+          <div class="check miss"><span class="ok">✕</span>Pre-anesthesia checkup — not yet filed<a>Open PAC order</a></div>
+        </div>
+        <div>
+          <div class="lbl">Lineage</div>
+          <div class="lineage">
+            <span class="lin">⤷ Encounter ENC-30412 (planned admission)</span>
+            <span class="lin">⤷ Estimate EST-8841 · ₹1,04,500</span>
+            <span class="lin">⤷ Patient record — Ramesh Patil</span>
+          </div>
+        </div>
+        <div>
+          <div class="lbl">Submission</div>
+          <div class="kv">
+            <span class="k">Channel</span><span class="v">NHCX · txn 8f3a-…-c21</span>
+            <span class="k">Submitted</span><span class="v">Today 09:42 · by Priya D. (TPA desk)</span>
+            <span class="k">Payer SLA</span><span class="v">6h response · 3h 05m remaining</span>
+          </div>
+        </div>
+        <div class="audit">Last change: status → Submitted · today 09:42 · Priya D. · full trail in Audit Log</div>
+      </div>
+      <div class="dr-f"><button class="btn sec">Add document</button><button class="btn pri">Respond to query</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VIEW 3 · DAY CARE ================= -->
+<div class="shell" id="v2">
+  <aside class="sidebar">
+    <div class="org-id"><div class="org-mark">N</div><div><b>NeoRenal Day Care</b><span>Day Care Center · Indiranagar</span></div></div>
+    <nav class="nav">
+      <div class="nav-sec">OPERATE</div>
+      <div class="nav-it on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Therapy Floor<span class="bdg">2</span></div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Recurring Rosters</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>Patients</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Encounters</div>
+      <div class="nav-sec">MANAGE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/></svg>People</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Billing</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Claims &amp; Payers</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/></svg>Inventory</div>
+      <div class="nav-sec">UNDERSTAND</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Insights</div>
+      <div class="nav-sec">CONFIGURE</div>
+      <div class="nav-it"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Settings</div>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="loc-sw"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Indiranagar</div>
+      <div class="cmdk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Search patients, sessions, stations…<kbd>⌘K</kbd></div>
+      <div class="bell" onclick="tray(this)"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg><span class="dot">2</span></div>
+      <div class="avatar">SM</div>
+    </div>
+    <div class="pagehead"><h1>Station Board</h1><span class="cnt">Thursday 3 Jul · shift 2 of 3 in progress</span><button class="btn sec">Absence &amp; backfill</button><button class="btn pri">+ Schedule session</button></div>
+    <div class="filterbar">
+      <span class="fchip on">Today</span><span class="fchip">Tomorrow</span><span class="fchip">HD only</span><span class="fchip">HDF only</span>
+      <span class="fnote">Nephrologist on call: Dr. Prakash Menon</span>
+    </div>
+    <div class="content">
+      <div class="stats">
+        <div class="stat"><div class="l">Utilization today</div><div class="v">87%</div><div class="d ok">↑ 4 pts vs last 4 Thursdays</div></div>
+        <div class="stat"><div class="l">Sessions</div><div class="v">34 / 39</div><div class="d">2 open slots · shift 3</div></div>
+        <div class="stat"><div class="l">No-shows</div><div class="v">2</div><div class="d up">1 unreachable — flagged clinical</div></div>
+        <div class="stat"><div class="l">Machines down</div><div class="v">1</div><div class="d">Chair 6 · AMC eng. ETA 14:00</div></div>
+      </div>
+      <div class="grid">
+        <div class="grow head"><div>Station</div><div>Shift 1 · 07:00–11:00</div><div>Shift 2 · 11:30–15:30</div><div>Shift 3 · 16:00–20:00</div></div>
+        <div class="grow">
+          <div class="stn"><b>Chair 1</b><span>Fresenius 4008S</span></div>
+          <div class="cell"><div class="sess se-done"><b>Venkatesh R.</b><span class="s">Completed · 4h 00m</span></div></div>
+          <div class="cell"><div class="sess se-live"><b>Salma Khatoon</b><span class="s">In session · 1h 40m elapsed</span></div></div>
+          <div class="cell"><div class="sess se-done" style="background:#fff"><b>Devraj S.</b><span class="s" style="color:var(--slate-500)">Confirmed · transport booked</span></div></div>
+        </div>
+        <div class="grow">
+          <div class="stn"><b>Chair 2</b><span>Fresenius 4008S</span></div>
+          <div class="cell"><div class="sess se-done"><b>Mary D'Souza</b><span class="s">Completed · 3h 55m</span></div></div>
+          <div class="cell"><div class="sess se-live"><b>Abdul Rahman</b><span class="s">In session · 0h 55m elapsed</span></div></div>
+          <div class="cell"><div class="sess se-open"><span class="s">Open slot — offer to waitlist (3)</span></div></div>
+        </div>
+        <div class="grow">
+          <div class="stn"><b>Chair 3</b><span>Nipro Surdial</span></div>
+          <div class="cell"><div class="sess se-done"><b>Krishnappa B.</b><span class="s">Completed · 4h 05m</span></div></div>
+          <div class="cell"><div class="sess se-ns"><b>Shanti Devi</b><span class="s">No-show · grace over — backfill?</span></div></div>
+          <div class="cell"><div class="sess se-done" style="background:#fff"><b>Rehana P.</b><span class="s" style="color:var(--slate-500)">Confirmed</span></div></div>
+        </div>
+        <div class="grow">
+          <div class="stn"><b>Chair 4</b><span>Fresenius 6008</span></div>
+          <div class="cell"><div class="sess se-done"><b>Peter J.</b><span class="s">Completed · 4h 00m</span></div></div>
+          <div class="cell"><div class="sess se-live"><b>Nagaraj T.</b><span class="s">In session · 2h 10m elapsed</span></div></div>
+          <div class="cell"><div class="sess se-done" style="background:#fff"><b>Sunil K.</b><span class="s" style="color:var(--slate-500)">Confirmed · PM-JAY pre-auth ✓</span></div></div>
+        </div>
+        <div class="grow">
+          <div class="stn"><b>Chair 5</b><span>Nipro Surdial</span></div>
+          <div class="cell"><div class="sess se-done"><b>Gita Rani</b><span class="s">Completed · 3h 50m</span></div></div>
+          <div class="cell"><div class="sess se-live"><b>Farooq A.</b><span class="s">In session · 1h 05m elapsed</span></div></div>
+          <div class="cell"><div class="sess se-open"><span class="s">Open slot — offer to waitlist (3)</span></div></div>
+        </div>
+        <div class="grow">
+          <div class="stn"><b>Chair 6</b><span>Fresenius 4008S</span></div>
+          <div class="cell"><div class="sess se-mx">Under maintenance — water line · AMC ticket #482 · ETA 14:00</div></div>
+          <div class="cell"><div class="sess se-mx">Under maintenance</div></div>
+          <div class="cell"><div class="sess se-open"><span class="s">Reopens shift 3 — assign from waitlist</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== approvals tray (shared) ===== -->
+<div class="tray" id="tray">
+  <div class="tray-tabs"><div class="tray-tab" onclick="ttab(0,this)">Alerts</div><div class="tray-tab on" onclick="ttab(1,this)">Approvals <b>· 3</b></div></div>
+  <div class="tray-b" id="tray-alerts" style="display:none">
+    <div class="tr-it"><div class="h"><span class="chip c-dng"><span class="cd"></span>Critical</span>Lab critical value — K⁺ 6.8<span class="t">2 min</span></div><div class="m">Salma Khatoon · flagged to Dr. Menon · awaiting acknowledgement</div></div>
+    <div class="tr-it"><div class="h"><span class="chip c-warn"><span class="cd"></span>Ops</span>NHCX query received<span class="t">18 min</span></div><div class="m">PA-2026-0851 · Star Health asks for implant invoice</div></div>
+    <div class="tr-it"><div class="h"><span class="chip c-warn"><span class="cd"></span>Ops</span>Stockout risk — heparin 5000 IU<span class="t">1 h</span></div><div class="m">4 sessions of cover left · reorder point crossed</div></div>
+  </div>
+  <div class="tray-b" id="tray-approvals">
+    <div class="tr-it"><div class="h">Discount above authority<span class="t">12 min</span></div><div class="m">₹1,800 (12%) on INV-20471 · requested by front desk · your ladder limit applies</div><div class="acts"><button class="a ok">Approve</button><button class="a">Deny</button><button class="a">Open invoice</button></div></div>
+    <div class="tr-it"><div class="h">Expiry write-off<span class="t">1 h</span></div><div class="m">14 units — iron sucrose · batch IS-2205 expires 10 Jul · value ₹6,300</div><div class="acts"><button class="a ok">Approve</button><button class="a">Deny</button></div></div>
+    <div class="tr-it"><div class="h">Access request — Billing<span class="t">3 h</span></div><div class="m">Ravi S. (front desk) requests “Billing · Manage invoices” · via locked deep-link</div><div class="acts"><button class="a ok">Grant</button><button class="a">Deny</button></div></div>
+  </div>
+</div>
+
+<script>
+function show(i,btn){
+  document.querySelectorAll('.shell').forEach((s,j)=>s.classList.toggle('on',i===j));
+  document.querySelectorAll('.preset-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tray').classList.remove('open');
+}
+function tray(){document.getElementById('tray').classList.toggle('open')}
+function ttab(i,el){
+  document.querySelectorAll('.tray-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tray-alerts').style.display=i===0?'block':'none';
+  document.getElementById('tray-approvals').style.display=i===1?'block':'none';
+}
+</script>
+</body>
+</html>

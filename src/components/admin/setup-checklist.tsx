@@ -119,7 +119,7 @@ export default function SetupChecklist() {
                       <p className="text-sm font-medium">{activation.nextStep.label}</p>
                     </>
                   ) : (
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-success">
                       <PartyPopper className="size-4" />
                       Organization fully activated
                     </p>
@@ -131,7 +131,7 @@ export default function SetupChecklist() {
                 {activation.steps.map((step) => (
                   <li key={step.key} className="flex items-center gap-3 px-4 py-3">
                     {step.done ? (
-                      <CheckCircle2 className="size-4.5 shrink-0 text-emerald-500" />
+                      <CheckCircle2 className="size-4.5 shrink-0 text-success" />
                     ) : (
                       <Circle className="size-4.5 shrink-0 text-muted-foreground/40" />
                     )}

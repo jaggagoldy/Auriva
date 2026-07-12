@@ -45,9 +45,9 @@ function timeAgo(iso: string): string {
 }
 
 const STATUS_DOT: Record<EventRow["status"], string> = {
-  completed: "bg-emerald-500",
-  pending: "bg-amber-500",
-  dead_letter: "bg-rose-500",
+  completed: "bg-success",
+  pending: "bg-warning",
+  dead_letter: "bg-destructive",
   no_subscribers: "bg-muted-foreground/40",
 };
 

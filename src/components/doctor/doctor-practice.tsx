@@ -75,7 +75,7 @@ export default function DoctorPractice() {
             <Card className="rounded-xl">
               <CardContent className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <Building2 className="size-4" />
                   </div>
                   <div>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-003 — Auriva Platform Information Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-400:#2DD4BF;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --info:#0284C7;--info-bg:#F0F9FF;--info-border:#BAE6FD;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:600;width:20px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1060px;margin:0 auto;padding-top:72px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:30px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:15px;color:var(--text-secondary);max-width:660px;margin-bottom:36px}
+.sub{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:40px 0 6px}
+.sub-desc{font-size:13px;color:var(--text-secondary);margin-bottom:18px;max-width:640px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:26px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:22px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;background:var(--slate-100);padding:2px 7px;border-radius:5px;color:var(--slate-700)}
+.cover{min-height:420px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:80px 0 56px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:28px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:16px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:16px;color:var(--text-secondary);max-width:620px;margin-bottom:28px}
+.cover-meta{display:flex;gap:32px;font-size:12px;color:var(--text-muted)}
+.cover-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.lv{display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;border-radius:5px;padding:1px 5px;margin-left:8px;letter-spacing:.03em;vertical-align:1px}
+.lv1{background:var(--teal-100);color:var(--teal-800)}
+.lv2{background:var(--blue-bg);color:var(--blue)}
+.lv3{background:var(--indigo-bg);color:var(--indigo)}
+.lv4{background:var(--warning-bg);color:var(--warning)}
+.mod{display:inline-flex;font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:5px;padding:1px 6px;margin-left:8px;background:var(--slate-100);color:var(--slate-500);text-transform:uppercase}
+.mod.flow{background:var(--warning-bg);color:var(--warning)}
+.mod.drawer{background:var(--indigo-bg);color:var(--indigo)}
+.mod.ext{background:var(--blue-bg);color:var(--blue)}
+.mod.shared{background:var(--teal-50);color:var(--teal-700)}
+
+/* tree */
+.tree{font-size:13px}
+.tree ul{list-style:none;padding-left:24px;position:relative}
+.tree ul::before{content:'';position:absolute;left:8px;top:0;bottom:12px;width:1.5px;background:var(--slate-200)}
+.tree li{position:relative;padding:4px 0 4px 12px;color:var(--text-secondary)}
+.tree ul li::before{content:'';position:absolute;left:-16px;top:15px;width:20px;height:1.5px;background:var(--slate-200)}
+.tree>li{padding-left:0}
+.tree b{color:var(--text);font-weight:600}
+.tree .root{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--text);background:var(--slate-50);border:1px solid var(--border);border-radius:var(--r-md);padding:6px 14px;margin-bottom:6px}
+.tree .note{font-size:11px;color:var(--text-muted)}
+
+/* workspace headers */
+.ws-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ws-badge{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ws-head h3{font-size:17px;letter-spacing:-.01em}
+.ws-head span{font-size:12px;color:var(--text-muted);display:block;font-weight:400}
+.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* tables */
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+
+/* platform model diagram */
+.model{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.model-card{border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;background:#fff}
+.model-card b{font-size:13px;display:block;margin-bottom:3px}
+.model-card span{font-size:11.5px;color:var(--text-muted)}
+.model-core{border:1.5px solid var(--teal-300,#5EEAD4);background:var(--teal-50);border-radius:var(--r-lg);padding:16px;text-align:center}
+.model-core b{color:var(--teal-900);font-size:13px}
+.model-core span{font-size:11.5px;color:var(--teal-800)}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.pill{font-size:11px;font-weight:600;background:#fff;border:1px solid var(--teal-200);color:var(--teal-800);border-radius:var(--r-full);padding:3px 10px}
+
+.prin-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-xs)}
+.prin-num{font-size:12px;font-weight:700;color:var(--teal-600);margin-bottom:8px}
+.prin-card h3{font-size:14.5px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.prin-card p{font-size:12.5px;color:var(--text-secondary)}
+.prin{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.crumb{display:inline-flex;align-items:center;gap:8px;background:var(--slate-50);border:1px solid var(--border);border-radius:var(--r-md);padding:7px 12px;font-size:12.5px;color:var(--text-muted)}
+.crumb b{color:var(--text);font-weight:600}
+.crumb a{color:var(--teal-700);font-weight:500;text-decoration:none}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 20px 80px}.grid2,.prin,.model{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-003 · Information Architecture</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#model"><span class="num">01</span> Platform Model</a>
+  <a href="#sitemap"><span class="num">02</span> Complete Site Map</a>
+  <a href="#hierarchy"><span class="num">03</span> Module Hierarchy</a>
+  <a href="#shared"><span class="num">04</span> Shared Modules</a>
+  <a href="#crossnav"><span class="num">05</span> Cross-Navigation</a>
+  <a href="#deps"><span class="num">06</span> Feature Dependencies</a>
+  <a href="#grouping"><span class="num">07</span> Screen Grouping</a>
+  <a href="#breadcrumbs"><span class="num">08</span> Breadcrumb Strategy</a>
+  <a href="#principles"><span class="num">09</span> Navigation Principles</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- 00 COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-003 · Phase 1 — Product Blueprint · For Review</div>
+    <h1>Platform<br><em>Information Architecture</em></h1>
+    <p>The complete structural map of Auriva — every workspace, module, and screen group, and how they relate — defined before a single screen is designed. This document is structure only; visual design follows the approved APS-002 system.</p>
+    <div class="cover-meta">
+      <div><b>Depends on</b> APS-001 Vision · APS-002 Design System</div>
+      <div><b>Feeds</b> APS-004 Journeys · APS-005 Screen Inventory · APS-006 Navigation</div>
+      <div><b>Status</b> For Review</div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 PLATFORM MODEL -->
+<section class="doc-section" id="model">
+  <div class="sec-kicker">01 · Platform Model</div>
+  <h2 class="sec-title">One platform, four workspaces, one identity</h2>
+  <p class="sec-desc">Auriva is entity-centric, not app-centric. Four workspaces are four <em>views over the same shared entities</em> (patients, appointments, prescriptions, queues). A person holds one Auriva ID and may hold multiple roles — a doctor is also a patient; a clinic owner is also a doctor.</p>
+
+  <div class="model">
+    <div class="model-card"><span class="chip" style="color:var(--blue);background:var(--blue-bg);border-color:var(--blue-border);margin-bottom:8px"><span class="dot"></span>Public</span><b>Marketplace</b><span>Anonymous · SEO-indexed · discovery &amp; acquisition · <code class="tk">auriva.in/*</code></span></div>
+    <div class="model-card"><span class="chip" style="color:var(--teal-700);background:var(--teal-50);border-color:var(--teal-200);margin-bottom:8px"><span class="dot"></span>Consumer</span><b>Patient Workspace</b><span>Mobile-first · role: patient · <code class="tk">/app/patient/*</code></span></div>
+    <div class="model-card"><span class="chip" style="color:var(--indigo);background:var(--indigo-bg);border-color:var(--indigo-border);margin-bottom:8px"><span class="dot"></span>Professional</span><b>Doctor Workspace</b><span>Desktop-first · role: doctor · <code class="tk">/app/doctor/*</code></span></div>
+    <div class="model-card"><span class="chip" style="color:var(--slate-600);background:var(--slate-100);border-color:var(--slate-200);margin-bottom:8px"><span class="dot"></span>Business</span><b>Organization Workspace</b><span>Desktop · roles: owner/admin/reception/lab/pharmacy · <code class="tk">/app/org/{orgId}/*</code></span></div>
+  </div>
+  <div class="model-core">
+    <b>SHARED PLATFORM CORE — one source of truth</b><br><span>Every workspace is a role-scoped projection of these entities</span>
+    <div class="pill-row">
+      <span class="pill">Auriva ID (auth &amp; roles)</span><span class="pill">Patient Record</span><span class="pill">Appointment</span><span class="pill">Queue</span><span class="pill">Consult</span><span class="pill">Prescription</span><span class="pill">Lab Order / Report</span><span class="pill">Invoice</span><span class="pill">Notification</span><span class="pill">Consent (ABDM)</span><span class="pill">Search</span>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">Structural rules</div>
+    <ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px">
+      <li><b>Workspace = top-level namespace.</b> A user is always in exactly one workspace; switching happens only via the account menu (top-left), never via inline links.</li>
+      <li><b>Entities are shared; screens are not.</b> The same appointment appears in three workspaces, each with its own screen, permissions and vocabulary.</li>
+      <li><b>Navigation depth caps:</b> Marketplace ≤ 3 · Patient ≤ 3 · Doctor ≤ 3 · Organization ≤ 4. Nothing on the platform is ever deeper than 4 levels.</li>
+      <li><b>Org workspace is multi-branch:</b> <code class="tk">{orgId}</code> scopes everything; a branch switcher sits in the org sidebar header.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 02 SITE MAP -->
+<section class="doc-section" id="sitemap">
+  <div class="sec-kicker">02 · Site Map</div>
+  <h2 class="sec-title">Complete Site Map &amp; Navigation Trees</h2>
+  <p class="sec-desc">Every node in the platform. Legend: <span class="lv lv1">L1</span> primary nav <span class="lv lv2">L2</span> secondary <span class="lv lv3">L3</span> detail <span class="lv lv4">L4</span> deepest (org only) — <span class="mod flow">FLOW</span> stepper, not a destination · <span class="mod drawer">DRAWER</span> opens over parent · <span class="mod ext">EXT</span> external surface · <span class="mod shared">SHARED</span> projection of a shared entity.</p>
+
+  <!-- MARKETPLACE -->
+  <div class="panel">
+    <div class="ws-head">
+      <span class="ws-badge" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <h3>1 · Public Marketplace <span>auriva.in — anonymous, crawlable, conversion-oriented. Primary nav: top bar. Secondary nav: none (breadcrumbs + footer).</span></h3>
+    </div>
+    <ul class="tree">
+      <li><span class="root">auriva.in</span>
+        <ul>
+          <li><b>Home</b><span class="lv lv1">L1</span> <span class="note">— search hero, speciality shortcuts, trust strip</span></li>
+          <li><b>Find Care</b><span class="lv lv1">L1</span> <span class="note">— unified search across five provider types</span>
+            <ul>
+              <li>Search Results<span class="lv lv2">L2</span> <span class="note">— tabs: Doctors · Clinics · Hospitals · Labs · Pharmacies; filters are URL state, not pages</span></li>
+              <li>Speciality Hubs<span class="lv lv2">L2</span> <span class="note">— /cardiology, /dermatology… curated + SEO</span></li>
+              <li>City / Locality Pages<span class="lv lv2">L2</span> <span class="note">— /bangalore/koramangala… SEO landing</span></li>
+            </ul>
+          </li>
+          <li><b>Provider Profiles</b><span class="lv lv2">L2</span> <span class="note">— canonical public pages, linked from everywhere</span>
+            <ul>
+              <li>Doctor Profile<span class="lv lv3">L3</span> <span class="note">— bio, clinics, slots, reviews → Book</span></li>
+              <li>Hospital / Clinic Profile<span class="lv lv3">L3</span> <span class="note">— departments, doctors, facilities → Book</span></li>
+              <li>Lab Profile<span class="lv lv3">L3</span> <span class="note">— test catalog, home collection → Book test</span></li>
+              <li>Pharmacy Profile<span class="lv lv3">L3</span> <span class="note">— delivery area, upload Rx</span></li>
+            </ul>
+          </li>
+          <li><b>Booking</b><span class="mod flow">FLOW</span> <span class="note">— slot → patient details → OTP → confirmed. Completing it creates/logs into a Patient account and hands off to /app/patient</span></li>
+          <li><b>Health Library</b><span class="lv lv1">L1</span> <span class="note">— articles, conditions A–Z (SEO)</span>
+            <ul><li>Article / Condition page<span class="lv lv2">L2</span></li></ul>
+          </li>
+          <li><b>For Providers</b><span class="lv lv1">L1</span> <span class="note">— marketing + entry to onboarding</span>
+            <ul>
+              <li>Join as Doctor<span class="mod flow">FLOW</span> <span class="note">— verify → profile → clinics → live</span></li>
+              <li>Register Organization<span class="mod flow">FLOW</span> <span class="note">— org KYC → branches → staff invite</span></li>
+            </ul>
+          </li>
+          <li><b>Sign in / Sign up</b><span class="mod flow">FLOW</span> <span class="note">— OTP-first, single Auriva ID for all roles</span></li>
+          <li><b>Support &amp; Legal</b> <span class="note">— help centre, contact, privacy, terms (footer only)</span></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- PATIENT -->
+  <div class="panel">
+    <div class="ws-head">
+      <span class="ws-badge" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></span>
+      <h3>2 · Patient Workspace <span>/app/patient — mobile-first. Primary nav: 4 bottom tabs + center Book action. Secondary nav: in-page tabs &amp; lists. Profile lives in the header, not a tab.</span></h3>
+    </div>
+    <ul class="tree">
+      <li><span class="root">/app/patient</span>
+        <ul>
+          <li><b>Home</b><span class="lv lv1">L1</span> <span class="note">— next appointment, active meds, follow-ups due, quick actions</span>
+            <ul><li>Notifications Centre<span class="lv lv2">L2</span> <span class="note">— header bell; deep-links into items below</span></li></ul>
+          </li>
+          <li><b>Care</b><span class="lv lv1">L1</span> <span class="note">— everything scheduled or in progress</span>
+            <ul>
+              <li>Appointments (Upcoming / Past)<span class="lv lv2">L2</span>
+                <ul><li>Appointment Detail<span class="lv lv3">L3</span><span class="mod shared">SHARED</span> <span class="note">— incl. live queue position on visit day; reschedule/cancel</span></li></ul>
+              </li>
+              <li>Lab Bookings<span class="lv lv2">L2</span>
+                <ul><li>Booking Detail<span class="lv lv3">L3</span> <span class="note">— sample status → report ready link</span></li></ul>
+              </li>
+              <li>Care Plans &amp; Follow-ups<span class="lv lv2">L2</span></li>
+            </ul>
+          </li>
+          <li><b>+ Book</b><span class="mod flow">FLOW</span> <span class="note">— center action: Doctor / Lab / Pharmacy → provider → slot → confirm (re-uses marketplace inventory)</span></li>
+          <li><b>Records</b><span class="lv lv1">L1</span> <span class="note">— the patient-owned health locker</span>
+            <ul>
+              <li>Health Timeline<span class="lv lv2">L2</span><span class="mod shared">SHARED</span> <span class="note">— unified stream: visits, Rx, labs, vitals</span></li>
+              <li>Prescriptions<span class="lv lv2">L2</span> → Detail<span class="lv lv3">L3</span><span class="mod shared">SHARED</span></li>
+              <li>Lab Reports<span class="lv lv2">L2</span> → Report Detail<span class="lv lv3">L3</span> <span class="note">— values, ranges, trend per parameter</span></li>
+              <li>Vitals &amp; Trackers<span class="lv lv2">L2</span></li>
+              <li>Documents<span class="lv lv2">L2</span> <span class="note">— patient uploads, external records</span></li>
+              <li>Consents &amp; Sharing<span class="lv lv2">L2</span> <span class="note">— ABHA/ABDM consent manager, share links, access log</span></li>
+            </ul>
+          </li>
+          <li><b>Family</b><span class="lv lv1">L1</span> <span class="note">— manage dependents' health from one account</span>
+            <ul>
+              <li>Member Profile<span class="lv lv2">L2</span> <span class="note">— switching context re-scopes Home/Care/Records to that member</span></li>
+              <li>Add / Invite Member<span class="mod flow">FLOW</span></li>
+            </ul>
+          </li>
+          <li><b>Profile &amp; Settings</b><span class="lv lv2">L2</span> <span class="note">— header avatar: personal details, ABHA ID, insurance, addresses, payments, language, notification prefs, help</span></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- DOCTOR -->
+  <div class="panel">
+    <div class="ws-head">
+      <span class="ws-badge" style="background:var(--indigo-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg></span>
+      <h3>3 · Doctor Workspace <span>/app/doctor — desktop-first. Primary nav: slim sidebar (6 items). Secondary nav: tabs inside records. Today is the default landing view.</span></h3>
+    </div>
+    <ul class="tree">
+      <li><span class="root">/app/doctor</span>
+        <ul>
+          <li><b>Today</b><span class="lv lv1">L1</span> <span class="note">— default view: live queue rail + consult workbench</span>
+            <ul>
+              <li>Live Queue<span class="lv lv2">L2</span><span class="mod shared">SHARED</span> <span class="note">— doctor's slice of the org queue; call / skip</span></li>
+              <li>Consult Workbench<span class="lv lv2">L2</span> <span class="note">— current patient: summary · notes · Rx composer · lab orders · follow-up. One screen, zero navigation during consult</span></li>
+            </ul>
+          </li>
+          <li><b>Schedule</b><span class="lv lv1">L1</span>
+            <ul>
+              <li>Calendar (day/week)<span class="lv lv2">L2</span> → Appointment Detail<span class="mod drawer">DRAWER</span><span class="mod shared">SHARED</span></li>
+              <li>Availability &amp; Slots<span class="lv lv2">L2</span> <span class="note">— per clinic affiliation</span></li>
+              <li>Requests<span class="lv lv2">L2</span> <span class="note">— pending approvals, reschedules</span></li>
+              <li>Time Off<span class="lv lv2">L2</span></li>
+            </ul>
+          </li>
+          <li><b>Patients</b><span class="lv lv1">L1</span>
+            <ul>
+              <li>My Patients List<span class="lv lv2">L2</span>
+                <ul><li>Patient Record — clinical projection<span class="lv lv3">L3</span><span class="mod shared">SHARED</span> <span class="note">— tabs: Overview · Timeline · Prescriptions · Reports · Notes</span></li></ul>
+              </li>
+            </ul>
+          </li>
+          <li><b>Consults</b><span class="lv lv1">L1</span>
+            <ul>
+              <li>Consult History<span class="lv lv2">L2</span> → Consult Detail<span class="lv lv3">L3</span></li>
+              <li>Follow-ups Due<span class="lv lv2">L2</span></li>
+              <li>Rx Templates<span class="lv lv2">L2</span> <span class="note">— doctor's favourite prescriptions for speed</span></li>
+            </ul>
+          </li>
+          <li><b>Earnings</b><span class="lv lv1">L1</span>
+            <ul><li>Overview · Payouts · Statements<span class="lv lv2">L2</span></li></ul>
+          </li>
+          <li><b>Settings</b><span class="lv lv1">L1</span>
+            <ul><li>Public Profile (marketplace listing) · Clinics &amp; Affiliations · Fees · Notifications<span class="lv lv2">L2</span></li></ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ORGANIZATION -->
+  <div class="panel">
+    <div class="ws-head">
+      <span class="ws-badge" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+      <h3>4 · Organization Workspace <span>/app/org/{orgId} — desktop. Primary nav: sectioned sidebar (Operate / Manage / Understand / Configure). The only workspace allowed depth 4. Visibility is role-scoped: reception sees Operate; owner sees all.</span></h3>
+    </div>
+    <ul class="tree">
+      <li><span class="root">/app/org/{orgId} <span style="font-weight:500;font-size:11px;color:var(--text-muted)">· branch switcher in sidebar header</span></span>
+        <ul>
+          <li><span class="note" style="font-weight:700;letter-spacing:.06em;color:var(--slate-400)">OPERATE — the daily floor</span>
+            <ul>
+              <li><b>Front Desk</b><span class="lv lv1">L1</span> <span class="note">— reception's home</span>
+                <ul>
+                  <li>Queue Board<span class="lv lv2">L2</span><span class="mod shared">SHARED</span> <span class="note">— live, columns per doctor/department</span></li>
+                  <li>Check-in<span class="lv lv2">L2</span> <span class="note">— search booking → confirm → token</span></li>
+                  <li>Walk-in Registration<span class="mod flow">FLOW</span> <span class="note">— fast patient create + queue add, &lt; 60 seconds</span></li>
+                  <li>Token Display<span class="mod ext">EXT</span> <span class="note">— full-screen waiting-room screen, read-only</span></li>
+                </ul>
+              </li>
+              <li><b>Appointments</b><span class="lv lv1">L1</span>
+                <ul>
+                  <li>All Appointments (list + calendar)<span class="lv lv2">L2</span> → Detail<span class="mod drawer">DRAWER</span><span class="mod shared">SHARED</span></li>
+                  <li>Per-doctor Calendars<span class="lv lv2">L2</span></li>
+                  <li>Requests &amp; Reschedules<span class="lv lv2">L2</span></li>
+                </ul>
+              </li>
+              <li><b>Patients</b><span class="lv lv1">L1</span>
+                <ul>
+                  <li>Registry<span class="lv lv2">L2</span>
+                    <ul><li>Patient Record — admin projection<span class="lv lv3">L3</span><span class="mod shared">SHARED</span> <span class="note">— tabs: Demographics · Visits · Billing · Documents · Consents</span></li></ul>
+                  </li>
+                  <li>ABHA Linking · Duplicates &amp; Merge<span class="lv lv2">L2</span></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><span class="note" style="font-weight:700;letter-spacing:.06em;color:var(--slate-400)">MANAGE — people, services, money</span>
+            <ul>
+              <li><b>Doctors &amp; Staff</b><span class="lv lv1">L1</span>
+                <ul>
+                  <li>Doctors Roster<span class="lv lv2">L2</span> → Doctor Profile &amp; Schedule<span class="lv lv3">L3</span></li>
+                  <li>Staff<span class="lv lv2">L2</span> → Roles &amp; Permissions<span class="lv lv3">L3</span></li>
+                  <li>Shifts &amp; Rosters<span class="lv lv2">L2</span></li>
+                </ul>
+              </li>
+              <li><b>Departments</b><span class="lv lv1">L1</span>
+                <ul>
+                  <li>OPD Settings<span class="lv lv2">L2</span></li>
+                  <li>Diagnostics<span class="lv lv2">L2</span>
+                    <ul><li>Test Catalog<span class="lv lv3">L3</span></li><li>Orders Worklist<span class="lv lv3">L3</span> → Order Detail / Results Entry<span class="lv lv4">L4</span><span class="mod shared">SHARED</span></li><li>Sample Tracking<span class="lv lv3">L3</span></li></ul>
+                  </li>
+                  <li>Pharmacy<span class="lv lv2">L2</span>
+                    <ul><li>Catalog &amp; Inventory<span class="lv lv3">L3</span></li><li>Dispense Queue<span class="lv lv3">L3</span> → Dispense Detail<span class="lv lv4">L4</span><span class="mod shared">SHARED</span></li><li>Purchase Orders<span class="lv lv3">L3</span></li></ul>
+                  </li>
+                </ul>
+              </li>
+              <li><b>Billing</b><span class="lv lv1">L1</span>
+                <ul>
+                  <li>Invoices<span class="lv lv2">L2</span> → Invoice Detail<span class="lv lv3">L3</span><span class="mod shared">SHARED</span></li>
+                  <li>Payments · Insurance Claims · Price Lists · Daily Settlement<span class="lv lv2">L2</span></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><span class="note" style="font-weight:700;letter-spacing:.06em;color:var(--slate-400)">UNDERSTAND</span>
+            <ul>
+              <li><b>Insights</b><span class="lv lv1">L1</span>
+                <ul><li>Overview · Appointments · Revenue · Operations (wait time, occupancy) · Doctor Performance<span class="lv lv2">L2</span> <span class="note">— read-only, exports</span></li></ul>
+              </li>
+            </ul>
+          </li>
+          <li><span class="note" style="font-weight:700;letter-spacing:.06em;color:var(--slate-400)">CONFIGURE</span>
+            <ul>
+              <li><b>Settings</b><span class="lv lv1">L1</span>
+                <ul><li>Org Profile &amp; Branches · Services Catalog · Booking Rules · Roles &amp; Permissions · Print/SMS Templates · Integrations (ABDM, payments) · Audit Log<span class="lv lv2">L2</span></li></ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 03 MODULE HIERARCHY -->
+<section class="doc-section" id="hierarchy">
+  <div class="sec-kicker">03 · Module Hierarchy</div>
+  <h2 class="sec-title">Module Hierarchy &amp; Parent–Child Relationships</h2>
+  <p class="sec-desc">The formal containment model. Level 0 = workspace, Level 1 = module (primary nav), Level 2 = sub-module (secondary nav), Level 3/4 = record detail. A child never appears in navigation without its parent; records are reached only through their owning list.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:120px">Level</th><th>What it is</th><th>Navigation surface</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><b>L0 Workspace</b></td><td>Role-scoped namespace</td><td>Workspace switcher (account menu)</td><td>Marketplace · Patient · Doctor · Organization</td></tr>
+      <tr><td><b>L1 Module</b></td><td>A job-to-be-done cluster</td><td>Primary nav — bottom tabs / sidebar / top bar</td><td>Care · Records · Today · Front Desk · Billing</td></tr>
+      <tr><td><b>L2 Sub-module</b></td><td>A list, board or tool inside a module</td><td>Secondary nav — in-page tabs, sidebar children</td><td>Appointments list · Queue board · Rx Templates</td></tr>
+      <tr><td><b>L3 Record</b></td><td>One entity instance</td><td>Row click → page (mobile) or drawer (desktop)</td><td>Appointment detail · Patient record · Invoice</td></tr>
+      <tr><td><b>L4 Sub-record</b></td><td>Work item inside a record (org only)</td><td>Within-record navigation</td><td>Lab results entry · Dispense detail</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Parent–child rules</div>
+  <div class="panel">
+    <ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:8px">
+      <li><b>Single parent:</b> every screen has exactly one canonical parent for breadcrumbs and back behaviour, even if it is linked from many places. A prescription's parent is always <code class="tk">Records → Prescriptions</code> (patient) or <code class="tk">Consult</code> (doctor), never the notification that opened it.</li>
+      <li><b>Tabs are children, not siblings:</b> tabs inside a record (Overview / Timeline / Reports) are L3 sections of one record, share one URL prefix, and never appear in sidebars.</li>
+      <li><b>Flows have no children:</b> steppers (booking, walk-in registration, onboarding) are modal journeys that exit back to their launching parent. You cannot deep-link into step 3.</li>
+      <li><b>Drawers don't change level:</b> a drawer shows an L3 record over its L2 list; the list stays the location. Closing the drawer restores list state (filters, scroll).</li>
+      <li><b>Cross-links open the target's canonical location</b> in the current workspace — e.g. a lab report referenced in a consult opens under Reports, with back returning to the consult.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 04 SHARED MODULES -->
+<section class="doc-section" id="shared">
+  <div class="sec-kicker">04 · Shared Modules</div>
+  <h2 class="sec-title">Shared Modules — one entity, many projections</h2>
+  <p class="sec-desc">These modules exist once in the platform core and surface differently per workspace. This table is the contract that keeps the four workspaces consistent — and tells engineering what is truly shared.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Shared module</th><th>Patient sees</th><th>Doctor sees</th><th>Organization sees</th><th>Marketplace sees</th></tr></thead>
+    <tbody>
+      <tr><td><b>Patient Record</b></td><td>Own locker — full, plain language, exportable</td><td>Clinical projection — history, notes, allergies</td><td>Admin projection — demographics, visits, billing</td><td>—</td></tr>
+      <tr><td><b>Appointment</b></td><td>My visit — time, doctor, directions, queue position</td><td>Calendar entry + consult context</td><td>Operational row — check-in, token, status</td><td>Slot inventory (availability only)</td></tr>
+      <tr><td><b>Queue</b></td><td>"You are #7 · ~15 min" (read-only)</td><td>My queue — call / skip</td><td>Full board — all doctors, reorder, emergency</td><td>—</td></tr>
+      <tr><td><b>Prescription</b></td><td>Readable card + PDF, send to pharmacy</td><td>Composer + issued history</td><td>Pharmacy dispense source</td><td>—</td></tr>
+      <tr><td><b>Lab Order / Report</b></td><td>Report with trends</td><td>Order composer + result review</td><td>Worklist, sample tracking, results entry</td><td>Test catalog (bookable)</td></tr>
+      <tr><td><b>Invoice / Payment</b></td><td>My bills &amp; receipts</td><td>Earnings source</td><td>Billing module (full)</td><td>Price display</td></tr>
+      <tr><td><b>Provider Profile</b></td><td>View → book again</td><td>Own listing (edit in Settings)</td><td>Doctors roster entries</td><td>Canonical public page</td></tr>
+      <tr><td><b>Notifications</b></td><td>Push/SMS + centre</td><td>In-app + digest</td><td>In-app operational alerts</td><td>—</td></tr>
+      <tr><td><b>Consent (ABDM)</b></td><td>Owner — grant/revoke, access log</td><td>Request access</td><td>Request access, compliance log</td><td>—</td></tr>
+      <tr><td><b>Global Search ⌘K</b></td><td>My records &amp; providers</td><td>My patients, consults, Rx</td><td>Patients, appointments, invoices, staff</td><td>Public providers &amp; content</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 05 CROSS-NAV -->
+<section class="doc-section" id="crossnav">
+  <div class="sec-kicker">05 · Cross-Navigation</div>
+  <h2 class="sec-title">Cross-Navigation Rules</h2>
+  <p class="sec-desc">How movement between workspaces is allowed, and deliberately constrained. The default is isolation; crossing is explicit and rare.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:64px">Rule</th><th>Statement</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td><b>X1</b></td><td><b>Workspace switching only via the account menu.</b> No inline link ever silently moves a user between workspaces.</td><td>A receptionist mid-check-in must never "fall into" their patient account.</td></tr>
+      <tr><td><b>X2</b></td><td><b>Marketplace → Patient is the only automatic crossing.</b> Completing a booking or sign-in hands off to <code class="tk">/app/patient</code> with the booked appointment in view.</td><td>Conversion path must be seamless; it is the product's front door.</td></tr>
+      <tr><td><b>X3</b></td><td><b>Entity links resolve inside the current workspace's projection.</b> A doctor clicking a patient name gets the clinical record, never the org-admin or patient view.</td><td>Permissions and vocabulary stay role-appropriate.</td></tr>
+      <tr><td><b>X4</b></td><td><b>Public provider profiles are canonical.</b> When a patient views a doctor from an appointment, it opens the marketplace profile (new context), not a private copy.</td><td>One source of truth for provider identity; SEO benefits.</td></tr>
+      <tr><td><b>X5</b></td><td><b>Doctor ↔ Organization share live objects, not navigation.</b> The doctor's queue is a filtered view of the org queue board; neither workspace links into the other's screens.</td><td>Same data, different jobs. No privilege leakage.</td></tr>
+      <tr><td><b>X6</b></td><td><b>Notifications deep-link into the recipient-role's workspace</b> and land on the entity's canonical location.</td><td>Predictable landing; back button behaves.</td></tr>
+      <tr><td><b>X7</b></td><td><b>Back always returns to the originating list with state preserved</b> (filters, scroll, selection) — across drawers, records and flows.</td><td>Receptionist speed; zero re-orientation cost.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 06 DEPENDENCIES -->
+<section class="doc-section" id="deps">
+  <div class="sec-kicker">06 · Dependencies</div>
+  <h2 class="sec-title">Feature Dependencies</h2>
+  <p class="sec-desc">What must exist before what. This graph drives both the design order (APS-004/005) and the engineering build order — anything lower in the chain can ship without anything higher.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Module</th><th>Hard dependencies (must exist first)</th><th>Enables (unblocked next)</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Auriva ID</b> (auth, roles)</td><td>—</td><td>Everything</td></tr>
+      <tr><td><b>2 · Provider onboarding</b> (doctor + org setup, services, availability)</td><td>Auriva ID</td><td>Marketplace listings, Booking</td></tr>
+      <tr><td><b>3 · Marketplace discovery</b></td><td>Provider profiles</td><td>Booking, SEO acquisition</td></tr>
+      <tr><td><b>4 · Booking</b></td><td>Availability + services + patient identity</td><td>Appointments, Patient workspace value</td></tr>
+      <tr><td><b>5 · Front Desk / Check-in</b></td><td>Appointments (+ walk-in patient create)</td><td>Queue</td></tr>
+      <tr><td><b>6 · Queue</b></td><td>Check-in</td><td>Consult, patient live status</td></tr>
+      <tr><td><b>7 · Consult workbench</b></td><td>Queue + Patient record</td><td>Prescription, Lab orders, Follow-ups</td></tr>
+      <tr><td><b>8 · Prescription</b></td><td>Consult</td><td>Pharmacy dispense, patient Records</td></tr>
+      <tr><td><b>9 · Diagnostics</b> (orders → results)</td><td>Consult or Front Desk order + test catalog</td><td>Lab reports in patient Records</td></tr>
+      <tr><td><b>10 · Pharmacy</b> (inventory, dispense)</td><td>Prescription + catalog</td><td>Billing line items</td></tr>
+      <tr><td><b>11 · Billing</b></td><td>Services + appointments (+ dispense/orders if present)</td><td>Settlements, Earnings, Insights revenue</td></tr>
+      <tr><td><b>12 · Family accounts</b></td><td>Patient identity + Records</td><td>Dependent booking &amp; records</td></tr>
+      <tr><td><b>13 · Consent / ABDM</b></td><td>Patient Records</td><td>Cross-provider record sharing</td></tr>
+      <tr><td><b>14 · Insights</b></td><td>Reads all of the above — read-only, no writes</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:13.5px;color:var(--teal-900)">The critical path is 1 → 4 → 5 → 6 → 7 → 8.</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">Identity → Booking → Check-in → Queue → Consult → Prescription is the spine of Auriva: one patient flowing through one visit. Every other module attaches to this spine. Design and build it first, end to end.</p>
+  </div>
+</section>
+
+<!-- 07 SCREEN GROUPING -->
+<section class="doc-section" id="grouping">
+  <div class="sec-kicker">07 · Screen Grouping</div>
+  <h2 class="sec-title">Screen Grouping — IA nodes → screen templates</h2>
+  <p class="sec-desc">Every L2/L3 node above maps to one of the eight templates defined in APS-002. This is the bridge into APS-005 Screen Inventory: if a future screen doesn't fit a group here, the IA — not the screen — gets revisited.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Template (APS-002)</th><th>Screen group</th><th>IA nodes covered</th><th style="width:70px">≈ Screens</th></tr></thead>
+    <tbody>
+      <tr><td><b>T1 · List + Drawer</b></td><td>Operational lists</td><td>Org Appointments · Patients registry · Invoices · Staff · Doctor Schedule/Requests · Diagnostics worklist · Dispense queue</td><td>~9</td></tr>
+      <tr><td><b>T2 · Live Board</b></td><td>Real-time ops</td><td>Front Desk queue board · Token display (EXT)</td><td>~2</td></tr>
+      <tr><td><b>T3 · Workbench</b></td><td>Clinical focus</td><td>Doctor Today (queue + consult) · Lab results entry</td><td>~2</td></tr>
+      <tr><td><b>T4 · Record</b></td><td>Entity records</td><td>Patient record ×3 projections · Consult detail · Doctor profile (org) · Invoice detail</td><td>~6</td></tr>
+      <tr><td><b>T5 · Feed</b></td><td>Patient surfaces</td><td>Patient Home · Health Timeline · Care lists · Family</td><td>~5</td></tr>
+      <tr><td><b>T6 · Flow</b></td><td>Steppers</td><td>Booking (market + patient) · Walk-in registration · Check-in · Onboarding ×2 · Auth/OTP · Add family member</td><td>~7</td></tr>
+      <tr><td><b>T7 · Explore</b></td><td>Discovery</td><td>Marketplace home · Search results · Speciality/City hubs · Provider profiles ×4</td><td>~8</td></tr>
+      <tr><td><b>T8 · Insights</b></td><td>Analytics</td><td>Org Insights (5 views) · Doctor Earnings</td><td>~6</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub-desc" style="margin-top:14px">≈ 45 core screens for the full v1 platform — a deliberately small number for a system this broad. Reuse of templates and shared projections is what keeps it that small. Exact list lands in APS-005.</p>
+</section>
+
+<!-- 08 BREADCRUMBS -->
+<section class="doc-section" id="breadcrumbs">
+  <div class="sec-kicker">08 · Breadcrumbs</div>
+  <h2 class="sec-title">Breadcrumb Strategy</h2>
+  <p class="sec-desc">Breadcrumbs reflect the canonical parent chain (§03), never browsing history. Each surface gets exactly the wayfinding it needs — no more.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Surface</th><th>Strategy</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><b>Marketplace</b></td><td>Full breadcrumbs on all L2+ pages, with <code class="tk">BreadcrumbList</code> structured data for SEO. Home is always the anchor.</td><td><span class="crumb"><a>Home</a> / <a>Cardiology</a> / <a>Bangalore</a> / <b>Dr. Arjun Mehta</b></span></td></tr>
+      <tr><td><b>Patient (mobile)</b></td><td><b>No breadcrumbs.</b> Back button + descriptive page titles. Depth ≤ 3 makes trails redundant; tabs re-anchor instantly.</td><td><span class="crumb">← <b>Prescription · 12 Jun</b></span></td></tr>
+      <tr><td><b>Doctor (desktop)</b></td><td>Breadcrumbs from L3 only (records). L1/L2 are visible in the sidebar, so repeating them is noise. Current page is plain text, not a link.</td><td><span class="crumb"><a>Patients</a> / <b>Ananya Sharma</b></span></td></tr>
+      <tr><td><b>Organization (desktop)</b></td><td>Breadcrumbs from L3, mandatory at L4. Module root is the first crumb; branch context shows in the sidebar, not the trail.</td><td><span class="crumb"><a>Diagnostics</a> / <a>Orders</a> / <b>ORD-4412 · Results</b></span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">Universal rules</div>
+    <ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px">
+      <li>Drawers never add a crumb — the underlying list remains the location.</li>
+      <li>Record tabs never appear in the trail (<code class="tk">Patients / Ananya Sharma</code>, not <code class="tk">… / Timeline</code>).</li>
+      <li>Flows show a stepper, not breadcrumbs; exiting returns to the launching parent.</li>
+      <li>Trails are max 3 links + current page — guaranteed by the depth caps in §01.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 09 PRINCIPLES -->
+<section class="doc-section" id="principles">
+  <div class="sec-kicker">09 · Principles</div>
+  <h2 class="sec-title">Navigation Principles</h2>
+  <p class="sec-desc">Eight rules every future screen must pass before it enters APS-005. These operationalize the APS-002 UX principles at the structural level.</p>
+
+  <div class="prin">
+    <div class="prin-card"><div class="prin-num">N1</div><h3>Three clicks to any job</h3><p>From workspace landing to completing a core action (check-in, prescribe, book, view report) in ≤ 3 interactions. The IA is shaped backwards from this.</p></div>
+    <div class="prin-card"><div class="prin-num">N2</div><h3>Depth is capped, forever</h3><p>Marketplace/Patient/Doctor ≤ 3 levels, Organization ≤ 4. A new feature that "needs" level 5 is a mis-modelled feature.</p></div>
+    <div class="prin-card"><div class="prin-num">N3</div><h3>One home per workspace</h3><p>Patient → Home, Doctor → Today, Org → Front Desk, Marketplace → Search. The logo always returns there. Landing views answer "what needs me now?"</p></div>
+    <div class="prin-card"><div class="prin-num">N4</div><h3>Lists own their records</h3><p>Desktop records open in drawers over their list; the list keeps filters and scroll. Full pages are reserved for workbenches and deep records.</p></div>
+    <div class="prin-card"><div class="prin-num">N5</div><h3>Filters are state, not places</h3><p>Search, filters and tabs mutate URL state on one screen. We never create "Cancelled Appointments" as a separate IA node.</p></div>
+    <div class="prin-card"><div class="prin-num">N6</div><h3>Role hides, never disables</h3><p>Navigation shows only what the role can use — a receptionist sees Operate, not a greyed-out Billing. Fewer items beats explained items.</p></div>
+    <div class="prin-card"><div class="prin-num">N7</div><h3>⌘K is the escape hatch</h3><p>Global search in every workspace, scoped to that workspace's entities. Power users navigate by typing; the tree exists for everyone else.</p></div>
+    <div class="prin-card"><div class="prin-num">N8</div><h3>Structure survives features</h3><p>New capability lands inside an existing module or extends the shared core — it never adds a fifth workspace or a new top-level pattern without revisiting this document.</p></div>
+  </div>
+
+  <div class="panel" style="margin-top:28px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Next: APS-004 — User Journey Maps</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">With the structure fixed, APS-004 traces the critical-path journeys across it (patient books → front desk checks in → doctor consults → prescription reaches the patient), which then generates the exact screen list for APS-005.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

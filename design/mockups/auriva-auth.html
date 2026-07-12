@@ -1,0 +1,934 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-2:#0F8171; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41; --night-2:#0E5A4F;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --fm:'SF Mono', ui-monospace, Menlo, monospace;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.32);
+    --shadow-l:0 40px 80px -34px rgba(36,31,26,.44);
+    --bar:52px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  a{color:var(--pine);text-decoration:none;font-weight:650}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700;text-wrap:balance}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+
+  /* ===== REVIEW CHROME (scaffolding, not product) ===== */
+  .reviewbar{position:fixed;top:0;left:0;right:0;height:var(--bar);z-index:100;background:#14100D;color:#EDE7DE;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:13px}
+  .reviewbar .rb-logo{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:700;font-size:14px;color:#fff}
+  .reviewbar .rb-logo .mk{width:22px;height:22px;border-radius:7px;background:var(--pine);display:grid;place-items:center}
+  .reviewbar .rb-logo .mk svg{width:13px;height:13px}
+  .reviewbar .tag{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--honey);background:rgba(232,162,76,.14);border:1px solid rgba(232,162,76,.28);border-radius:99px;padding:3px 9px}
+  .reviewbar .spacer{flex:1}
+  .reviewbar select{font-family:var(--fb);font-size:13px;font-weight:600;color:#fff;background:#26201B;border:1px solid #3A322B;border-radius:9px;padding:7px 10px;max-width:230px}
+  .reviewbar .nvb{width:34px;height:34px;border-radius:9px;background:#26201B;border:1px solid #3A322B;color:#EDE7DE;display:grid;place-items:center}
+  .reviewbar .nvb:hover{background:#332B24}
+  .reviewbar .nvb svg{width:17px;height:17px}
+  .reviewbar .count{font-variant-numeric:tabular-nums;color:#B3A99C;font-weight:600;min-width:44px;text-align:center}
+  @media (max-width:640px){.reviewbar .tag{display:none}.reviewbar select{max-width:150px}}
+
+  /* ===== STAGE ===== */
+  .stage{padding-top:var(--bar)}
+  .screen{display:none}
+  .screen.active{display:block;animation:sin .45s cubic-bezier(.2,.8,.2,1)}
+  @keyframes sin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.screen.active{animation:none}}
+
+  /* ===== AUTH SHELL ===== */
+  .ashell{display:grid;grid-template-columns:1.05fr 1fr;min-height:calc(100vh - var(--bar))}
+  .abrand{position:relative;overflow:hidden;background:linear-gradient(158deg,var(--night) 0%,#0A423A 60%,#093B34 100%);color:#fff;padding:clamp(34px,4vw,60px);display:flex;flex-direction:column;justify-content:space-between}
+  .abrand::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.18),transparent 62%);right:-150px;top:-160px;pointer-events:none}
+  .abrand::before{content:"";position:absolute;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(14,116,102,.5),transparent 64%);left:-120px;bottom:-120px;pointer-events:none}
+  .ab-top{position:relative;z-index:1}
+  .ab-logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-weight:700;font-size:19px}
+  .ab-logo .mk{width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.14);display:grid;place-items:center}
+  .ab-logo .mk svg{width:17px;height:17px}
+  .ab-mid{position:relative;z-index:1;margin:auto 0}
+  .ab-ey{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--honey)}
+  .ab-h{font-size:clamp(26px,2.9vw,40px);line-height:1.08;margin-top:16px;max-width:15ch}
+  .ab-h em{font-style:normal;color:var(--honey)}
+  .ab-sub{color:#DCEAE5;margin-top:16px;font-size:15.5px;line-height:1.6;max-width:42ch}
+  .ab-card{position:relative;z-index:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:16px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:13px;margin-top:30px;max-width:360px}
+  .ab-card .av{width:42px;height:42px;border-radius:12px;background:var(--honey);color:#3B2708;display:grid;place-items:center;font-family:var(--fd);font-weight:700;flex:0 0 auto}
+  .ab-card .nm{font-family:var(--fd);font-weight:700;font-size:14px}
+  .ab-card .mt{font-size:12.5px;color:#C7DBD4;margin-top:2px;line-height:1.4}
+  .ab-trust{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px 18px;color:#C7DBD4;font-size:12.5px;font-weight:500}
+  .ab-trust span{display:inline-flex;align-items:center;gap:7px}
+  .ab-trust svg{width:15px;height:15px;color:var(--honey)}
+
+  /* form column */
+  .aform{display:flex;flex-direction:column;justify-content:center;padding:clamp(30px,4vw,56px)}
+  .apanel{width:100%;max-width:420px;margin:0 auto}
+  .mobrand{display:none}
+  .astep-back{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:650;color:var(--muted);margin-bottom:22px}
+  .astep-back:hover{color:var(--pine)}
+  .astep-back svg{width:15px;height:15px}
+  .aform h1{font-size:clamp(24px,2.5vw,30px);line-height:1.12}
+  .aform .lede{color:var(--body);font-size:15px;margin-top:10px;line-height:1.55}
+  .aform .lede b{color:var(--ink)}
+
+  .fld{display:flex;flex-direction:column;gap:7px;margin-top:18px}
+  .fld label{font-size:12.5px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld .inp{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:13px;padding:0 14px;transition:border-color .16s,box-shadow .16s}
+  .fld .inp:focus-within{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .fld .inp .pre{color:var(--muted);font-size:14.5px;font-weight:600;white-space:nowrap}
+  .fld .inp svg{width:18px;height:18px;color:var(--muted);flex:0 0 auto}
+  .fld input{flex:1;border:none;background:none;outline:none;font-family:var(--fb);font-size:15.5px;color:var(--ink);padding:13px 0}
+  .fld .eye{color:var(--muted);cursor:pointer;padding:4px}
+  .fld .hint{font-size:12px;color:var(--muted)}
+  .fld.err .inp{border-color:var(--rose);box-shadow:0 0 0 4px var(--rose-tint)}
+  .fld .emsg{font-size:12px;color:var(--rose);font-weight:600;display:none;align-items:center;gap:6px}
+  .fld.err .emsg{display:flex}
+  .fld .emsg svg{width:14px;height:14px}
+  .fld.ok .inp{border-color:var(--ok)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:13px;border:none;font-family:var(--fd);font-weight:650;font-size:15.5px;transition:transform .12s,filter .2s,box-shadow .25s,background .2s,border-color .2s}
+  .btn svg{width:18px;height:18px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn.block{width:100%}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 14px 30px -12px rgba(14,116,102,.62)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-honey{background:var(--honey);color:#4A3413;box-shadow:0 14px 30px -12px rgba(232,162,76,.6)}
+  .btn-ghost{background:none;color:var(--pine-deep)}
+  .btn-ghost:hover{background:var(--pine-tint)}
+  .btn-danger{background:var(--rose);color:#fff}
+  .cta-row{margin-top:22px}
+  .subline{margin-top:20px;font-size:13.5px;color:var(--body);text-align:center}
+
+  .divider{display:flex;align-items:center;gap:14px;margin:20px 0;color:var(--muted);font-size:12px;font-weight:600}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--line-2)}
+
+  .legal{margin-top:24px;font-size:12px;color:var(--muted);line-height:1.5;text-align:center}
+  .toglink{background:none;border:none;color:var(--pine);font-weight:650;font-size:inherit;font-family:var(--fb);padding:0;cursor:pointer}
+
+  /* PathChooser */
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .pathcard{position:relative;text-align:left;background:var(--surface);border:1.5px solid var(--line-2);border-radius:16px;padding:18px;transition:border-color .18s,box-shadow .18s,transform .18s}
+  .pathcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-s)}
+  .pathcard.sel{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-tint)}
+  .pathcard .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:12px}
+  .pathcard.prov .ic{background:var(--pine-tint);color:var(--pine-deep)}
+  .pathcard.pat .ic{background:var(--honey-soft);color:var(--honey-deep)}
+  .pathcard .ic svg{width:21px;height:21px}
+  .pathcard b{font-family:var(--fd);font-size:15px;display:block}
+  .pathcard span{font-size:12px;color:var(--muted);margin-top:3px;display:block;line-height:1.4}
+  .pathcard .tick{position:absolute;top:14px;right:14px;width:20px;height:20px;border-radius:50%;background:var(--pine);color:#fff;display:none;place-items:center}
+  .pathcard.sel .tick{display:grid}
+  .pathcard .tick svg{width:13px;height:13px}
+
+  /* OTP */
+  .otp{display:flex;gap:10px;margin-top:22px}
+  .otp input{width:100%;aspect-ratio:1;text-align:center;font-family:var(--fd);font-weight:700;font-size:24px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line-2);border-radius:13px;outline:none;transition:border-color .15s,box-shadow .15s;min-width:0}
+  .otp input:focus{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .otp input.filled{border-color:var(--pine);background:var(--pine-tint)}
+  .resend{margin-top:18px;font-size:13.5px;color:var(--body);display:flex;align-items:center;gap:6px}
+  .resend .t{font-variant-numeric:tabular-nums;color:var(--muted)}
+  .devnote{margin-top:16px;background:var(--honey-tint);border:1px solid var(--honey-soft);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--honey-deep);display:flex;align-items:center;gap:9px}
+  .devnote svg{width:16px;height:16px;flex:0 0 auto}
+  .devnote b{font-family:var(--fm);letter-spacing:.1em}
+
+  .chk{display:flex;align-items:flex-start;gap:10px;margin-top:20px;cursor:pointer;font-size:13.5px;color:var(--body)}
+  .chk input{position:absolute;opacity:0;width:0;height:0}
+  .chk .box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:0 0 auto;transition:.15s;margin-top:1px}
+  .chk .box svg{width:13px;height:13px;color:#fff;opacity:0;transition:.15s}
+  .chk input:checked + .box{background:var(--pine);border-color:var(--pine)}
+  .chk input:checked + .box svg{opacity:1}
+
+  /* Workspace cards */
+  .wlist{display:flex;flex-direction:column;gap:11px;margin-top:22px}
+  .wcard{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:15px;padding:15px 16px;text-align:left;width:100%;transition:border-color .16s,box-shadow .18s,transform .16s}
+  .wcard:hover{border-color:var(--pine);box-shadow:var(--shadow-s);transform:translateY(-2px)}
+  .wcard .av{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:16px;flex:0 0 auto}
+  .wcard .nm{font-family:var(--fd);font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px}
+  .wcard .rl{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .wcard .arr{margin-left:auto;color:var(--line-2);transition:color .18s,transform .18s}
+  .wcard:hover .arr{color:var(--pine);transform:translateX(2px)}
+  .wcard .arr svg{width:20px;height:20px}
+  .lastused{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ok);background:var(--ok-tint);border-radius:99px;padding:2px 7px}
+  .rolechip{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:99px;padding:3px 9px}
+  .rolechip.own{background:var(--honey-soft);color:var(--honey-deep)}
+  .rolechip.doc{background:var(--pine-tint);color:var(--pine-deep)}
+  .rolechip.rec{background:var(--sand2);color:var(--body)}
+
+  /* Stepper */
+  .stepper{margin-top:6px}
+  .strail{display:flex;align-items:center;gap:0;margin-bottom:26px}
+  .stp{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+  .stp .d{width:30px;height:30px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-2);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:13px;color:var(--muted);transition:.25s}
+  .stp .d svg{width:15px;height:15px;color:#fff}
+  .stp .nm{font-size:12.5px;font-weight:650;color:var(--muted);transition:.2s}
+  .stp.on .d{background:var(--pine);border-color:var(--pine);color:#fff}
+  .stp.on .nm{color:var(--ink)}
+  .stp.done .d{background:var(--pine-tint);border-color:var(--pine);color:var(--pine-deep)}
+  .stp-line{height:2px;flex:1;background:var(--line-2);margin:0 8px;border-radius:2px;min-width:14px}
+  .stp-line.fill{background:var(--pine)}
+  .stpane{display:none}
+  .stpane.on{display:block;animation:sin .35s ease}
+  @media (max-width:520px){.stp .nm{display:none}}
+
+  /* Invite banner */
+  .invb{display:flex;align-items:center;gap:14px;background:var(--pine-tint);border:1px solid #CFE4DE;border-radius:16px;padding:16px;margin-top:22px}
+  .invb .av{width:48px;height:48px;border-radius:14px;background:var(--pine);color:#fff;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:17px;flex:0 0 auto}
+  .invb .t b{font-family:var(--fd)}
+  .invb .t{font-size:14px;color:var(--ink);line-height:1.45}
+  .invmeta{display:flex;gap:9px;margin-top:20px;flex-wrap:wrap}
+  .invmeta .m{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 13px;font-size:13px;color:var(--body)}
+  .invmeta .m svg{width:16px;height:16px;color:var(--pine)}
+  .invmeta .m b{color:var(--ink);font-weight:650}
+
+  /* StatusState (centered) */
+  .state{min-height:calc(100vh - var(--bar));display:flex;align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden}
+  .state::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 50% -10%,#FBEBD3 0,rgba(251,235,211,0) 60%);pointer-events:none}
+  .state .inner{position:relative;max-width:440px;text-align:center}
+  .state .badge{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;margin:0 auto 22px;box-shadow:var(--shadow)}
+  .state .badge svg{width:36px;height:36px}
+  .state .badge.ok{background:var(--ok-tint);color:var(--ok)}
+  .state .badge.err{background:var(--rose-tint);color:var(--rose)}
+  .state .badge.warn{background:var(--honey-tint);color:var(--honey-deep)}
+  .state .badge.lock{background:var(--pine-tint);color:var(--pine-deep)}
+  .state h1{font-size:clamp(24px,2.6vw,32px)}
+  .state .lede{color:var(--body);font-size:15.5px;margin-top:12px;line-height:1.6}
+  .state .acts{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .state .foot{margin-top:20px;font-size:13px;color:var(--muted)}
+  .ab-logo.dark{color:var(--ink);position:absolute;top:26px;left:26px;z-index:2}
+  .ab-logo.dark .mk{background:var(--pine)}
+
+  /* Component library (states screen) */
+  .lib{max-width:1080px;margin:0 auto;padding:clamp(30px,4vw,54px) 26px}
+  .lib h2{font-size:clamp(22px,2.4vw,30px)}
+  .lib .sub{color:var(--body);margin-top:10px;max-width:60ch;font-size:15px}
+  .libgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:26px}
+  .libcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow-s)}
+  .libcard .lh{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .mini-state{text-align:center;padding:14px 0}
+  .mini-state .mb{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;margin:0 auto 12px}
+  .mini-state .mb svg{width:26px;height:26px}
+  .mini-state b{font-family:var(--fd);font-size:16px}
+  .mini-state p{font-size:13px;color:var(--body);margin-top:5px}
+  .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line-2);border-top-color:var(--pine);animation:spin 1s linear infinite;margin:8px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .toastdemo{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .swatch{display:flex;flex-direction:column;gap:9px}
+  .inlinefield{background:var(--paper);border:1.5px solid var(--line-2);border-radius:11px;padding:12px 13px;font-size:14px;color:var(--body)}
+  .inlinefield.e{border-color:var(--rose);box-shadow:0 0 0 3px var(--rose-tint)}
+  .inlinefield.g{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-tint)}
+  .imsg{font-size:12px;font-weight:600;margin-top:7px;display:flex;align-items:center;gap:6px}
+  .imsg svg{width:14px;height:14px}
+  .imsg.e{color:var(--rose)}.imsg.g{color:var(--ok)}
+
+  /* Toasts */
+  .toastwrap{position:fixed;top:calc(var(--bar) + 14px);right:16px;z-index:200;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-left-width:4px;border-radius:13px;box-shadow:var(--shadow);padding:13px 16px;min-width:250px;max-width:340px;font-size:14px;font-weight:600;color:var(--ink);animation:tin .35s cubic-bezier(.2,.8,.2,1);pointer-events:auto}
+  .toast.out{animation:tout .3s ease forwards}
+  .toast .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:16px;height:16px}
+  .toast.ok{border-left-color:var(--ok)}.toast.ok .ic{background:var(--ok-tint);color:var(--ok)}
+  .toast.err{border-left-color:var(--rose)}.toast.err .ic{background:var(--rose-tint);color:var(--rose)}
+  .toast.info{border-left-color:var(--pine)}.toast.info .ic{background:var(--pine-tint);color:var(--pine-deep)}
+  @keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  @keyframes tout{to{opacity:0;transform:translateX(20px)}}
+
+  /* ===== GET STARTED HUB ===== */
+  .hublist{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+  .hubopt{display:flex;align-items:center;gap:15px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:16px;padding:17px 18px;text-align:left;width:100%;transition:border-color .16s,box-shadow .18s,transform .16s}
+  .hubopt:hover{border-color:var(--pine);box-shadow:var(--shadow-s);transform:translateY(-2px)}
+  .hubopt .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto}
+  .hubopt .ic svg{width:23px;height:23px}
+  .hubopt.prov .ic{background:var(--pine-tint);color:var(--pine-deep)}
+  .hubopt.pat .ic{background:var(--honey-soft);color:var(--honey-deep)}
+  .hubopt.lab .ic{background:var(--sand2);color:var(--muted)}
+  .hubopt .nm{font-family:var(--fd);font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px}
+  .hubopt .ds{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .hubopt .arr{margin-left:auto;color:var(--line-2);transition:color .18s,transform .18s;flex:0 0 auto}
+  .hubopt:hover .arr{color:var(--pine);transform:translateX(2px)}
+  .hubopt .arr svg{width:20px;height:20px}
+  .st-live{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ok);background:var(--ok-tint);border-radius:99px;padding:2px 8px}
+  .st-soon{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sand2);border:1px solid var(--line-2);border-radius:99px;padding:2px 8px}
+  .st-talk{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--pine-deep);background:var(--pine-tint);border-radius:99px;padding:2px 8px}
+  /* org type cards */
+  .otlist{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .otcard{text-align:left;background:var(--surface);border:1.5px solid var(--line-2);border-radius:16px;padding:18px;transition:border-color .16s,box-shadow .18s,transform .16s}
+  .otcard:hover{border-color:var(--pine);box-shadow:var(--shadow-s);transform:translateY(-2px)}
+  .otcard.soft{background:var(--sand);border-style:dashed}
+  .ot-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ot-h .nm{font-family:var(--fd);font-weight:700;font-size:15px}
+  .otcard .ds{font-size:12.5px;color:var(--body);margin-top:6px;line-height:1.4}
+  .featmini{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .featmini span{font-size:11px;font-weight:600;color:var(--body);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:3px 8px}
+  /* compare table */
+  .ctab-wrap{overflow-x:auto;margin-top:24px;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-s)}
+  .ctab{width:100%;border-collapse:collapse;min-width:600px;background:var(--surface)}
+  .ctab th,.ctab td{padding:13px 18px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
+  .ctab thead th{background:var(--sand);font-family:var(--fd);font-size:13px;color:var(--ink);vertical-align:bottom}
+  .ctab thead th small{display:block;margin-top:6px}
+  .ctab tbody td:first-child{font-weight:600;color:var(--ink)}
+  .ctab tbody tr:last-child td{border-bottom:none}
+  .ctab td.mk{text-align:center}
+  .ctab td.mk svg{color:var(--ok)}
+  .ctab .ck{color:var(--ok)}.ctab .dash{color:var(--line-2)}
+  .ctab .soon2{color:var(--honey-deep);font-size:10.5px;font-weight:700;letter-spacing:.04em}
+  .ctab td svg{width:19px;height:19px}
+  .wlform{max-width:370px;margin:22px auto 0;text-align:left}
+  /* ===== PROFILE FOUND (account linking) ===== */
+  .foundcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-s);padding:18px;margin-top:22px}
+  .foundcard .fc-top{display:flex;align-items:center;gap:13px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .foundcard .fc-top .av{width:46px;height:46px;border-radius:13px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;flex:0 0 auto}
+  .foundcard .fc-top .nm{font-family:var(--fd);font-weight:700;font-size:15.5px}
+  .foundcard .fc-top .mt{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .foundcard .fc-rows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
+  .foundcard .fc-rows > div{display:flex;flex-direction:column;gap:3px}
+  .foundcard .fc-rows .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .foundcard .fc-rows .v{font-size:14px;font-weight:650;color:var(--ink)}
+  @media (max-width:860px){
+    .ashell{grid-template-columns:1fr}
+    .abrand{display:none}
+    .mobrand{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:700;font-size:17px;margin-bottom:24px}
+    .mobrand .mk{width:28px;height:28px;border-radius:9px;background:var(--pine);display:grid;place-items:center}
+    .mobrand .mk svg{width:16px;height:16px}
+    .aform{min-height:calc(100vh - var(--bar));padding-top:32px}
+    .paths{grid-template-columns:1fr}
+    .otlist{grid-template-columns:1fr}
+    .libgrid{grid-template-columns:1fr}
+  }
+</style>
+
+<!-- REVIEW CHROME -->
+<div class="reviewbar">
+  <span class="rb-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</span>
+  <span class="tag">Phase 2 · Authentication</span>
+  <span class="spacer"></span>
+  <button class="nvb" id="prev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <select id="picker" aria-label="Jump to screen"></select>
+  <button class="nvb" id="next" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+  <span class="count" id="count">1 / 12</span>
+</div>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<div class="stage">
+
+<!-- ============ 1 · SIGN IN ============ -->
+<section class="screen" data-s="signin" data-title="1 · Sign In">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Welcome back</p>
+        <h2 class="ab-h">Your clinic, <em>ready when you are.</em></h2>
+        <p class="ab-sub">Sign in to pick up your day exactly where you left it — queue, notes and all.</p>
+        <div class="ab-card"><span class="av">AR</span><div><div class="nm">Dr. Anjali Rao</div><div class="mt">SmileCare Dental · 8 patients waiting today</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Encrypted &amp; private</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>You own your data</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <h1>Sign in to Auriva</h1>
+      <p class="lede">Enter your phone number and we'll send a one-time code.</p>
+      <div class="fld">
+        <label>Phone number</label>
+        <div class="inp"><span class="pre">🇮🇳 +91</span><input type="tel" inputmode="numeric" placeholder="98765 43210" value="98765 43210"></div>
+      </div>
+      <div class="pw-wrap" style="display:none">
+        <div class="fld"><label>Password</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><input type="password" placeholder="Your password" value="••••••••"><span class="eye" data-eye><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div><a data-go="forgot" style="font-size:12.5px;align-self:flex-end">Forgot password?</a></div>
+      </div>
+      <div class="cta-row"><button class="btn btn-primary block" data-go="otp">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <p class="subline">Staff or admin? <button class="toglink" data-pwtoggle>Sign in with a password</button></p>
+      <div class="divider">new to Auriva</div>
+      <button class="btn btn-line block" data-go="start">Create an account</button>
+      <p class="legal">By continuing you agree to Auriva's <a>Terms</a> and <a>Privacy Policy</a>.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 2 · GET STARTED HUB ============ -->
+<section class="screen" data-s="start" data-title="Get Started">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Welcome to Auriva</p>
+        <h2 class="ab-h">Let's get you to <em>the right place.</em></h2>
+        <p class="ab-sub">One platform for everyone in healthcare. Tell us who you are and we'll set you up in minutes.</p>
+        <div class="ab-card"><span class="av">₹0</span><div><div class="nm">Free to start</div><div class="mt">Solo Practice free forever · patients always free</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Grow from solo to network — same account</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <h1>How do you want to get started?</h1>
+      <p class="lede">Pick the path that fits you — you can always add more later.</p>
+      <div class="hublist">
+        <button class="hubopt prov" data-go="orgtype"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span><div><div class="nm">Build your clinic or hospital</div><div class="ds">For doctors &amp; healthcare organizations</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        <button class="hubopt pat" data-go="patient-signup"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div><div class="nm">Register as a user</div><div class="ds">Book care &amp; keep your records — for you and your family</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        <button class="hubopt lab" data-go="waitlist" data-edition="Labs &amp; Pharmacy"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><div><div class="nm">Register your lab or pharmacy <span class="st-soon">Soon</span></div><div class="ds">Diagnostics &amp; dispensing — joining the platform</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+      </div>
+      <p class="subline">Already have an account? <button class="toglink" data-go="signin">Sign in</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 3 · ORG TYPE CHOOSER ============ -->
+<section class="screen" data-s="orgtype" data-title="What you're setting up">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Build your practice</p>
+        <h2 class="ab-h">One platform, <em>every kind of practice.</em></h2>
+        <p class="ab-sub">Start with what you run today. As you grow, you unlock more — on the very same account. You never migrate.</p>
+        <div class="ab-card"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#3B2708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg></span><div><div class="nm">Start solo, grow to a network</div><div class="mt">Your patients &amp; history come with you</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Independent Clinic is live today</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <h1>What are you setting up?</h1>
+      <p class="lede">Choose what you run today — Auriva grows with you.</p>
+      <div class="otlist">
+        <button class="otcard" data-go="create"><div class="ot-h"><span class="nm">Independent Clinic</span><span class="st-live">Live</span></div><p class="ds">Just you, running your own clinic — simply.</p><div class="featmini"><span>Appointments &amp; queue</span><span>Prescriptions</span><span>Billing &amp; UPI</span></div></button>
+        <button class="otcard soft" data-go="waitlist" data-edition="Multi-specialty Clinic"><div class="ot-h"><span class="nm">Multi-specialty Clinic</span><span class="st-soon">Soon</span></div><p class="ds">Several doctors and a front desk.</p><div class="featmini"><span>Multiple doctors</span><span>Reception</span><span>Shared calendar</span></div></button>
+        <button class="otcard soft" data-go="waitlist" data-edition="Hospital"><div class="ot-h"><span class="nm">Hospital</span><span class="st-soon">Soon</span></div><p class="ds">Departments, admissions &amp; enterprise ops.</p><div class="featmini"><span>Departments</span><span>Admissions</span><span>Beds &amp; rooms</span></div></button>
+        <button class="otcard soft" data-go="contact"><div class="ot-h"><span class="nm">Groups / Enterprise</span><span class="st-talk">Talk to us</span></div><p class="ds">Multiple locations &amp; central operations.</p><div class="featmini"><span>Multi-location</span><span>Central ops</span><span>Custom</span></div></button>
+      </div>
+      <p class="subline"><button class="toglink" data-go="compare">Compare what each edition includes &#8594;</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 4 · COMPARE EDITIONS ============ -->
+<section class="screen" data-s="compare" data-title="Compare editions">
+  <div class="lib">
+    <button class="astep-back" data-go="orgtype"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back to selection</button>
+    <p class="ab-ey" style="color:var(--pine)">Editions</p>
+    <h2>Every edition, one platform.</h2>
+    <p class="sub">Start with what you need today. Everything below lives on the same account — as new editions go live, you simply unlock more. You never migrate, never re-buy.</p>
+    <div class="ctab-wrap">
+      <table class="ctab">
+        <thead><tr><th>Capability</th><th>Independent<small class="st-live">Live</small></th><th>Multi-specialty<small class="st-soon">Soon</small></th><th>Hospital<small class="st-soon">Soon</small></th></tr></thead>
+        <tbody>
+          <tr><td>Appointments &amp; live queue</td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Consultation notes &amp; prescriptions</td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Billing, invoices &amp; UPI</td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Patient portal &amp; records</td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Online booking page</td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Multiple doctors</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Front desk &amp; reception</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Shared clinic calendar</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Practice analytics</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Departments</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Admissions, beds &amp; rooms</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+          <tr><td>Insurance &amp; cashless claims</td><td class="mk"><span class="dash" style="font-size:16px">&minus;</span></td><td class="mk"><span class="soon2">SOON</span></td><td class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:26px"><button class="btn btn-primary" data-go="create">Start with an Independent Clinic<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+  </div>
+</section>
+
+<!-- ============ 5 · PATIENT SIGN UP ============ -->
+<section class="screen" data-s="patient-signup" data-title="User Sign Up">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">For you · always free</p>
+        <h2 class="ab-h">Your health, <em>in one place.</em></h2>
+        <p class="ab-sub">Book your doctor, keep every prescription and report, and care for your family — all in one calm, private place.</p>
+        <div class="ab-card"><span class="av h" style="background:var(--honey);color:#3B2708">❤</span><div><div class="nm">One timeline, every doctor</div><div class="mt">Records that follow you, for life</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Private by default</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <h1>Create your account</h1>
+      <p class="lede">Just your name and phone — that's all we need.</p>
+      <div class="fld"><label>Full name</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg><input type="text" placeholder="Priya Sharma"></div></div>
+      <div class="fld"><label>Phone number</label><div class="inp"><span class="pre">&#127470;&#127475; +91</span><input type="tel" inputmode="numeric" placeholder="98765 43210"></div><span class="hint">We'll send a one-time code to verify it's you.</span></div>
+      <div class="cta-row"><button class="btn btn-honey block" data-go="otp" data-otp-next="found">Send code<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <p class="subline">Already have an account? <button class="toglink" data-go="signin">Sign in</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ · PROFILE FOUND (account linking) ============ -->
+<section class="screen" data-s="found" data-title="Profile Found">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Welcome back</p>
+        <h2 class="ab-h">We already <em>know you.</em></h2>
+        <p class="ab-sub">A clinic you visited registered you on Auriva. There's nothing to set up — your details and history are already here.</p>
+        <div class="ab-card"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#3B2708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><div class="nm">No forms to fill</div><div class="mt">Your record follows you between clinics</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Private &amp; yours to control</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <h1>We found your profile</h1>
+      <p class="lede">Good news — you don't need to fill anything in. A clinic you visited already registered you with these details.</p>
+      <div class="foundcard">
+        <div class="fc-top"><span class="av">PS</span><div><div class="nm">Priya Sharma</div><div class="mt">+91 98765 &bull;&bull;&bull;10</div></div><span class="lastused" style="margin-left:auto">Verified</span></div>
+        <div class="fc-rows">
+          <div><span class="k">Gender</span><span class="v">Female</span></div>
+          <div><span class="k">Age</span><span class="v">32 yrs</span></div>
+          <div><span class="k">First seen at</span><span class="v">SmileCare Dental</span></div>
+        </div>
+      </div>
+      <div class="cta-row"><button class="btn btn-honey block" data-toast="ok:Welcome back, Priya!">Yes, that's me — continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <p class="subline">Not you? <button class="toglink" data-go="start">Use a different number</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 6 · COMING SOON / WAITLIST ============ -->
+<section class="screen" data-s="waitlist" data-title="Coming Soon / Waitlist">
+  <div class="ab-logo dark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+  <div class="state"><div class="inner">
+    <div class="badge warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/><path d="M8 3h8"/></svg></div>
+    <h1>Auriva <span data-wl-name>Multi-specialty Clinic</span> is coming soon</h1>
+    <p class="lede">We're building it right now — on the same platform you can start with today. Join the waitlist and we'll invite you the moment it's ready, on the very same account.</p>
+    <div class="wlform">
+      <div class="fld"><label>Email</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><input type="email" placeholder="you@clinic.in"></div></div>
+      <button class="btn btn-primary block" data-toast="ok:You're on the waitlist — we'll be in touch.">Join the waitlist</button>
+    </div>
+    <p class="foot">Ready to start today? <a data-go="create">Set up an Independent Clinic &#8594;</a></p>
+  </div></div>
+</section>
+
+<!-- ============ 7 · CONTACT SALES ============ -->
+<section class="screen" data-s="contact" data-title="Contact Sales">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Groups &amp; enterprise</p>
+        <h2 class="ab-h">Let's build <em>your network.</em></h2>
+        <p class="ab-sub">Running multiple locations or a large organization? Our team will help you roll out Auriva across every clinic on one connected platform.</p>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Dedicated onboarding &amp; support</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="orgtype"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <h1>Talk to our team</h1>
+      <p class="lede">Tell us a little about your organization and we'll set up a call.</p>
+      <div class="fld"><label>Your name</label><div class="inp"><input type="text" placeholder="Dr. Anjali Rao"></div></div>
+      <div class="fld"><label>Organization</label><div class="inp"><input type="text" placeholder="Sunrise Group of Clinics"></div></div>
+      <div class="fld"><label>Number of locations</label><div class="inp"><input type="text" inputmode="numeric" placeholder="e.g. 6"></div></div>
+      <div class="fld"><label>Phone or email</label><div class="inp"><input type="text" placeholder="anjali@sunrise.in"></div></div>
+      <div class="cta-row"><button class="btn btn-primary block" data-toast="ok:Thanks — our team will reach out within one working day.">Request a call<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 3 · FORGOT PASSWORD ============ -->
+<section class="screen" data-s="forgot" data-title="3 · Forgot Password">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Account recovery</p>
+        <h2 class="ab-h">Locked out? <em>We'll get you back in.</em></h2>
+        <p class="ab-sub">Happens to everyone. Enter your email and we'll send a secure link to reset your password.</p>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Link expires in 30 min</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="signin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back to sign in</button>
+      <h1>Reset your password</h1>
+      <p class="lede">Enter the email on your account and we'll send you a reset link.</p>
+      <div class="fld"><label>Email address</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><input type="email" placeholder="anjali@clinic.in" value="anjali@clinic.in"></div></div>
+      <div class="cta-row"><button class="btn btn-primary block" data-toast="info:Reset link sent to anjali@clinic.in">Send reset link<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+      <p class="subline">Remembered it? <button class="toglink" data-go="signin">Sign in</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 4 · OTP VERIFICATION ============ -->
+<section class="screen" data-s="otp" data-title="4 · OTP Verification">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Verify it's you</p>
+        <h2 class="ab-h">Check your phone <em>for a 6-digit code.</em></h2>
+        <p class="ab-sub">We sent it over SMS and WhatsApp. It expires in 5 minutes.</p>
+        <div class="ab-card"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#3B2708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2z"/></svg></span><div><div class="nm">WhatsApp · Auriva</div><div class="mt">Your Auriva code is 4 8 2 9 1 5</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Codes expire fast</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="signin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Change number</button>
+      <h1>Enter your code</h1>
+      <p class="lede">Sent to <b>+91 98765 •••10</b></p>
+      <div class="otp" data-otp>
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6">
+      </div>
+      <div class="devnote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>Dev mode — your code is <b>482915</b></span></div>
+      <div class="resend"><span data-resend-idle style="display:none">Didn't get it? <button class="toglink" data-resend-btn>Resend code</button></span><span data-resend-wait>Resend available in <span class="t" data-resend-t>30s</span></span></div>
+      <div class="cta-row"><button class="btn btn-primary block" data-otp-verify data-go="workspace">Verify &amp; continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 5 · TWO-FACTOR ============ -->
+<section class="screen" data-s="twofa" data-title="5 · Two-Factor Auth">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Extra protection</p>
+        <h2 class="ab-h">One more step, <em>for safety.</em></h2>
+        <p class="ab-sub">Your account has admin access, so we ask for a second factor. It keeps patient data safe.</p>
+        <div class="ab-card"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#3B2708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><div><div class="nm">Admin · SmileCare Dental</div><div class="mt">Two-factor is on for this account</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Protects patient records</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <button class="astep-back" data-go="signin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+      <h1>Two-factor authentication</h1>
+      <p class="lede">Enter the code from your authenticator app.</p>
+      <div class="otp" data-otp>
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6">
+      </div>
+      <div class="bk-wrap" style="display:none">
+        <div class="fld" style="margin-top:22px"><label>Backup code</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0110 0v3"/></svg><input type="text" placeholder="XXXX-XXXX"></div><span class="hint">Each backup code works once.</span></div>
+      </div>
+      <label class="chk"><input type="checkbox" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>Trust this device for 30 days</span></label>
+      <div class="cta-row"><button class="btn btn-primary block" data-go="workspace">Verify<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <p class="subline">Lost your device? <button class="toglink" data-bktoggle>Use a backup code</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 6 · WORKSPACE SELECTION ============ -->
+<section class="screen" data-s="workspace" data-title="6 · Workspace Selection">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">You're in</p>
+        <h2 class="ab-h">Where would you <em>like to work?</em></h2>
+        <p class="ab-sub">You have access to a few places. Pick one — you can switch anytime from the top bar.</p>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Switch anytime</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <h1>Choose your workspace</h1>
+      <p class="lede">Signed in as <b>Dr. Anjali Rao</b></p>
+      <div class="wlist">
+        <button class="wcard" data-toast="ok:Entering SmileCare Dental…"><span class="av" style="background:var(--honey-soft);color:var(--honey-deep)">SC</span><div><div class="nm">SmileCare Dental <span class="lastused">Last used</span></div><div class="rl">HSR Layout, Bengaluru</div></div><span class="rolechip own">Owner</span><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        <button class="wcard" data-toast="ok:Entering HSR Family Clinic…"><span class="av" style="background:var(--pine-tint);color:var(--pine-deep)">HF</span><div><div class="nm">HSR Family Clinic</div><div class="rl">Sector 2, Bengaluru</div></div><span class="rolechip doc">Doctor</span><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+        <button class="wcard" data-toast="ok:Entering Sunrise Physio…"><span class="av" style="background:var(--sand2);color:var(--body)">SP</span><div><div class="nm">Sunrise Physio</div><div class="rl">Koramangala, Bengaluru</div></div><span class="rolechip rec">Reception</span><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></button>
+      </div>
+      <div class="divider">or</div>
+      <button class="btn btn-line block" data-go="orgtype"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Create a new practice</button>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 7 · ACCOUNT CREATION (STEPPER) ============ -->
+<section class="screen" data-s="create" data-title="7 · Account Creation">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">Set up your practice</p>
+        <h2 class="ab-h">Your first <em>successful day.</em></h2>
+        <p class="ab-sub">It's just you — no staff to add, no roles to manage. Four quick steps and you're taking bookings.</p>
+        <div class="ab-card"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#3B2708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><div class="nm">Most clinics go live in under 5 minutes</div><div class="mt">No IT team required</div></div></div>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Change anything later</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <div class="stepper" data-stepper>
+        <div class="strail">
+          <div class="stp on" data-dot="0"><span class="d">1</span><span class="nm">Practice</span></div>
+          <div class="stp-line" data-line="0"></div>
+          <div class="stp" data-dot="1"><span class="d">2</span><span class="nm">Services</span></div>
+          <div class="stp-line" data-line="1"></div>
+          <div class="stp" data-dot="2"><span class="d">3</span><span class="nm">Hours</span></div>
+          <div class="stp-line" data-line="2"></div>
+          <div class="stp" data-dot="3"><span class="d">4</span><span class="nm">Live</span></div>
+        </div>
+
+        <div class="stpane on" data-pane="0">
+          <h1>Tell us about your practice</h1>
+          <p class="lede">This is what patients will see when they book.</p>
+          <div class="fld"><label>Practice name</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13"/><path d="M14 21v-8l6 3v5"/></svg><input type="text" placeholder="SmileCare Dental" value="SmileCare Dental"></div></div>
+          <div class="fld"><label>Your specialty</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg><input type="text" placeholder="Dentist" value="Dentist"></div></div>
+          <div class="fld"><label>City</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg><input type="text" placeholder="HSR Layout, Bengaluru" value="HSR Layout, Bengaluru"></div></div>
+        </div>
+
+        <div class="stpane" data-pane="1">
+          <h1>What do you offer?</h1>
+          <p class="lede">Add a service or two — you can add more later.</p>
+          <div class="fld"><label>Service</label><div class="inp"><input type="text" placeholder="Consultation" value="Consultation"></div></div>
+          <div class="fld"><label>Fee (₹)</label><div class="inp"><span class="pre">₹</span><input type="text" inputmode="numeric" placeholder="600" value="600"></div></div>
+          <div class="fld"><label>Follow-up window</label><div class="inp"><input type="text" placeholder="7 days" value="7 days"></div><span class="hint">We'll remind patients automatically.</span></div>
+        </div>
+
+        <div class="stpane" data-pane="2">
+          <h1>When are you open?</h1>
+          <p class="lede">Set your clinic hours so patients only book real slots.</p>
+          <div class="fld"><label>Working days</label><div class="inp"><input type="text" value="Mon – Sat"></div></div>
+          <div class="fld"><label>Hours</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><input type="text" value="9:30 AM – 6:00 PM"></div></div>
+          <label class="chk"><input type="checkbox" checked><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>Accept online bookings right away</span></label>
+        </div>
+
+        <div class="stpane" data-pane="3">
+          <div class="state" style="min-height:auto;padding:10px 0"><div class="inner" style="text-align:left">
+            <div class="badge ok" style="margin:0 0 20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+            <h1>You're live, Dr. Rao. 🎉</h1>
+            <p class="lede">SmileCare Dental is ready to take bookings — and your workspace is one calm, single screen. No roles, no clutter. Your first patient can book right now.</p>
+          </div></div>
+        </div>
+
+        <div class="cta-row" style="display:flex;gap:11px">
+          <button class="btn btn-line" data-step-back style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Back</button>
+          <button class="btn btn-primary block" data-step-next>Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="btn btn-primary block" data-step-done style="display:none" data-toast="ok:Welcome to your workspace!">Go to my workspace<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 8 · INVITATION ACCEPTANCE ============ -->
+<section class="screen" data-s="invite" data-title="8 · Invitation Acceptance">
+  <div class="ashell">
+    <aside class="abrand">
+      <div class="ab-top"><div class="ab-logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div></div>
+      <div class="ab-mid">
+        <p class="ab-ey">You're invited</p>
+        <h2 class="ab-h">Join your team <em>on Auriva.</em></h2>
+        <p class="ab-sub">Dr. Anjali Rao has invited you to help run SmileCare Dental. Accept to set up your login.</p>
+      </div>
+      <div class="ab-trust"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Takes under a minute</span></div>
+    </aside>
+    <div class="aform"><div class="apanel">
+      <div class="mobrand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+      <h1>You've been invited</h1>
+      <div class="invb"><span class="av">AR</span><div class="t"><b>Dr. Anjali Rao</b> invited you to join <b>SmileCare Dental</b></div></div>
+      <div class="invmeta">
+        <span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13"/></svg>SmileCare Dental</span>
+        <span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Role · <b>Reception</b></span>
+      </div>
+      <div class="fld" style="margin-top:22px"><label>Your name</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg><input type="text" placeholder="Meera Nair" value="Meera Nair"></div></div>
+      <div class="fld"><label>Phone number</label><div class="inp"><span class="pre">🇮🇳 +91</span><input type="tel" inputmode="numeric" placeholder="98765 43210"></div><span class="hint">We'll text a code to verify it's you.</span></div>
+      <div class="cta-row"><button class="btn btn-primary block" data-go="otp">Accept &amp; set up<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      <p class="subline"><button class="toglink" data-toast="info:Invitation declined">Decline invitation</button></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 9 · SESSION EXPIRED ============ -->
+<section class="screen" data-s="expired" data-title="9 · Session Expired">
+  <div class="ab-logo dark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+  <div class="state"><div class="inner">
+    <div class="badge warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
+    <h1>Your session expired</h1>
+    <p class="lede">For your security we signed you out after a period of inactivity. <b>Your work is saved</b> — sign back in to pick up where you left off.</p>
+    <div class="acts"><button class="btn btn-primary" data-go="signin">Sign in again<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <p class="foot">Not you? <a data-toast="info:If this wasn't you, contact your admin.">Secure your account</a></p>
+  </div></div>
+</section>
+
+<!-- ============ 10 · UNAUTHORIZED ============ -->
+<section class="screen" data-s="denied" data-title="10 · Access Denied">
+  <div class="ab-logo dark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+  <div class="state"><div class="inner">
+    <div class="badge lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+    <h1>You don't have access here</h1>
+    <p class="lede">This area is limited to certain roles at your clinic. If you think you should have access, your practice admin can grant it in a moment.</p>
+    <div class="acts"><button class="btn btn-primary" data-go="workspace">Go to my workspace</button><button class="btn btn-line" data-toast="info:Request sent to your admin.">Ask admin for access</button></div>
+    <p class="foot">Signed in as <b>meera@smilecare.in</b> · <a data-go="signin">Switch account</a></p>
+  </div></div>
+</section>
+
+<!-- ============ 11 · EMAIL VERIFICATION ============ -->
+<section class="screen" data-s="verify" data-title="11 · Email Verification">
+  <div class="ab-logo dark"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</div>
+  <div class="state">
+    <div class="inner" data-verify-inbox>
+      <div class="badge lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
+      <h1>Verify your email</h1>
+      <p class="lede">We sent a verification link to <b>anjali@clinic.in</b>. Click it to confirm your address and receive receipts and records.</p>
+      <div class="acts"><button class="btn btn-primary" data-verify-confirm>I've verified<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></button><button class="btn btn-line" data-toast="info:Verification email resent.">Resend email</button></div>
+      <p class="foot">Wrong address? <a data-toast="info:You can change your email in Settings.">Change email</a></p>
+    </div>
+    <div class="inner" data-verify-done style="display:none">
+      <div class="badge ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+      <h1>Email verified</h1>
+      <p class="lede">Thanks — <b>anjali@clinic.in</b> is confirmed. You'll now get receipts, records and reminders here.</p>
+      <div class="acts"><button class="btn btn-primary" data-go="workspace">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 · SUCCESS & ERROR STATES (LIBRARY) ============ -->
+<section class="screen" data-s="states" data-title="12 · Success &amp; Error States">
+  <div class="lib">
+    <p class="ab-ey" style="color:var(--pine)">Component library</p>
+    <h2>Success &amp; error states</h2>
+    <p class="sub">One visual grammar for every outcome across Auriva — full-page states, inline field feedback and transient toasts. Reused by every phase after this one.</p>
+    <div class="libgrid">
+      <div class="libcard"><div class="lh">Full-page · Success</div><div class="mini-state"><div class="mb" style="background:var(--ok-tint);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div><b>All done</b><p>Your changes have been saved.</p></div></div>
+      <div class="libcard"><div class="lh">Full-page · Error</div><div class="mini-state"><div class="mb" style="background:var(--rose-tint);color:var(--rose)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></div><b>Something went wrong</b><p>We couldn't reach the server. Try again.</p></div></div>
+      <div class="libcard"><div class="lh">Full-page · Empty</div><div class="mini-state"><div class="mb" style="background:var(--sand2);color:var(--muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div><b>No appointments yet</b><p>New bookings will show up here.</p></div></div>
+      <div class="libcard"><div class="lh">Full-page · Loading</div><div class="mini-state"><div class="spin"></div><b>Just a moment</b><p>Loading your workspace…</p></div></div>
+      <div class="libcard"><div class="lh">Inline field · Error &amp; success</div>
+        <div class="swatch">
+          <div><div class="inlinefield e">98765</div><div class="imsg e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Enter a valid 10-digit number</div></div>
+          <div><div class="inlinefield g">98765 43210</div><div class="imsg g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Looks good</div></div>
+        </div>
+      </div>
+      <div class="libcard"><div class="lh">Toasts · transient feedback</div>
+        <p style="font-size:13px;color:var(--body);margin-bottom:6px">Try them — top-right of the screen.</p>
+        <div class="toastdemo">
+          <button class="btn btn-line" style="height:42px;font-size:14px" data-toast="ok:Appointment confirmed">Success</button>
+          <button class="btn btn-line" style="height:42px;font-size:14px" data-toast="err:Payment failed — try again">Error</button>
+          <button class="btn btn-line" style="height:42px;font-size:14px" data-toast="info:Reminder scheduled">Info</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var otpNext="workspace";
+  var screens=[].slice.call(document.querySelectorAll(".screen"));
+  var picker=document.getElementById("picker"),count=document.getElementById("count");
+  var idx=0;
+  screens.forEach(function(s,i){var o=document.createElement("option");o.value=s.dataset.s;o.textContent=(i+1)+" · "+s.dataset.title.replace(/^\d+\s*\u00b7\s*/,"");picker.appendChild(o);});
+
+  function show(i,push){
+    if(i<0)i=0;if(i>screens.length-1)i=screens.length-1;idx=i;
+    screens.forEach(function(s,k){s.classList.toggle("active",k===i);});
+    picker.value=screens[i].dataset.s;
+    count.textContent=(i+1)+" / "+screens.length;
+    window.scrollTo(0,0);
+    if(push!==false){var h="#/"+screens[i].dataset.s;if(location.hash!==h)history.replaceState(null,"",h);}
+    // reset transient state on the shown screen
+    var _vb=screens[i].querySelector("[data-otp-verify]");if(_vb)_vb.setAttribute("data-go",otpNext);
+    resetOtp(screens[i]);resetVerify(screens[i]);
+  }
+  function goTo(name){for(var i=0;i<screens.length;i++){if(screens[i].dataset.s===name){show(i);return;}}}
+  function setEdition(ed){[].forEach.call(document.querySelectorAll("[data-wl-name]"),function(n){n.textContent=ed;});}
+  picker.addEventListener("change",function(){goTo(picker.value);});
+  document.getElementById("prev").addEventListener("click",function(){show(idx-1);});
+  document.getElementById("next").addEventListener("click",function(){show(idx+1);});
+  document.addEventListener("keydown",function(e){if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;if(e.key==="ArrowLeft")show(idx-1);if(e.key==="ArrowRight")show(idx+1);});
+
+  // ---- Toasts ----
+  var tw=document.getElementById("toasts");
+  var ticons={ok:'<path d="M5 12l5 5L20 7"/>',err:'<path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>'};
+  function toast(type,msg){
+    var t=document.createElement("div");t.className="toast "+type;
+    t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(ticons[type]||ticons.info)+'</svg></span><span>'+msg+'</span>';
+    tw.appendChild(t);
+    setTimeout(function(){t.classList.add("out");setTimeout(function(){t.remove();},300);},2800);
+  }
+
+  // ---- Global delegated clicks (router links + toasts + toggles) ----
+  document.addEventListener("click",function(e){
+    var go=e.target.closest?e.target.closest("[data-go]"):null;
+    if(go){e.preventDefault();var _ed=go.getAttribute("data-edition");if(_ed)setEdition(_ed);otpNext=go.getAttribute("data-otp-next")||"workspace";goTo(go.getAttribute("data-go"));return;}
+    var tt=e.target.closest?e.target.closest("[data-toast]"):null;
+    if(tt){var v=tt.getAttribute("data-toast");var c=v.indexOf(":");toast(v.slice(0,c),v.slice(c+1));return;}
+    var pw=e.target.closest?e.target.closest("[data-pwtoggle]"):null;
+    if(pw){var w=document.querySelector('[data-s="signin"] .pw-wrap');if(w)w.style.display=w.style.display==="none"?"block":"none";return;}
+    var bk=e.target.closest?e.target.closest("[data-bktoggle]"):null;
+    if(bk){var b=document.querySelector('[data-s="twofa"] .bk-wrap');if(b)b.style.display=b.style.display==="none"?"block":"none";return;}
+    var eye=e.target.closest?e.target.closest("[data-eye]"):null;
+    if(eye){var inp=eye.parentNode.querySelector("input");if(inp)inp.type=inp.type==="password"?"text":"password";return;}
+    var pc=e.target.closest?e.target.closest("[data-path]"):null;
+    if(pc){var group=pc.parentNode.querySelectorAll("[data-path]");[].forEach.call(group,function(g){g.classList.remove("sel");});pc.classList.add("sel");return;}
+    var vc=e.target.closest?e.target.closest("[data-verify-confirm]"):null;
+    if(vc){var sc=vc.closest(".screen");sc.querySelector("[data-verify-inbox]").style.display="none";sc.querySelector("[data-verify-done]").style.display="block";return;}
+  });
+
+  // ---- OTP inputs ----
+  function resetOtp(scope){
+    [].forEach.call(scope.querySelectorAll("[data-otp] input"),function(i){i.value="";i.classList.remove("filled");});
+    var wait=scope.querySelector("[data-resend-wait]"),idle=scope.querySelector("[data-resend-idle]");
+    if(wait&&idle){startResend(scope);}
+  }
+  function startResend(scope){
+    var wait=scope.querySelector("[data-resend-wait]"),idle=scope.querySelector("[data-resend-idle]"),tEl=scope.querySelector("[data-resend-t]");
+    if(!wait)return;var n=30;wait.style.display="inline";idle.style.display="none";tEl.textContent="30s";
+    clearInterval(scope._rt);
+    scope._rt=setInterval(function(){n--;if(n<=0){clearInterval(scope._rt);wait.style.display="none";idle.style.display="inline";}else{tEl.textContent=n+"s";}},1000);
+  }
+  [].forEach.call(document.querySelectorAll("[data-otp]"),function(box){
+    var inputs=[].slice.call(box.querySelectorAll("input"));
+    inputs.forEach(function(inp,i){
+      inp.addEventListener("input",function(){
+        inp.value=inp.value.replace(/[^0-9]/g,"").slice(0,1);
+        inp.classList.toggle("filled",!!inp.value);
+        if(inp.value&&inputs[i+1])inputs[i+1].focus();
+      });
+      inp.addEventListener("keydown",function(e){
+        if(e.key==="Backspace"&&!inp.value&&inputs[i-1]){inputs[i-1].focus();}
+        if(e.key==="ArrowLeft"&&inputs[i-1])inputs[i-1].focus();
+        if(e.key==="ArrowRight"&&inputs[i+1])inputs[i+1].focus();
+      });
+      inp.addEventListener("paste",function(e){
+        e.preventDefault();var d=(e.clipboardData||window.clipboardData).getData("text").replace(/[^0-9]/g,"").slice(0,inputs.length);
+        for(var k=0;k<d.length;k++){if(inputs[i+k]){inputs[i+k].value=d[k];inputs[i+k].classList.add("filled");}}
+        var next=Math.min(i+d.length,inputs.length-1);inputs[next].focus();
+      });
+    });
+  });
+  document.addEventListener("click",function(e){var rb=e.target.closest?e.target.closest("[data-resend-btn]"):null;if(rb){var sc=rb.closest(".screen");startResend(sc);toast("info","New code sent");}});
+
+  // ---- Verify reset ----
+  function resetVerify(scope){var a=scope.querySelector("[data-verify-inbox]"),b=scope.querySelector("[data-verify-done]");if(a&&b){a.style.display="block";b.style.display="none";}}
+
+  // ---- Stepper ----
+  [].forEach.call(document.querySelectorAll("[data-stepper]"),function(st){
+    var panes=[].slice.call(st.querySelectorAll("[data-pane]"));
+    var dots=[].slice.call(st.querySelectorAll("[data-dot]"));
+    var lines=[].slice.call(st.querySelectorAll("[data-line]"));
+    var back=st.querySelector("[data-step-back]"),next=st.querySelector("[data-step-next]"),done=st.querySelector("[data-step-done]");
+    var cur=0;
+    function render(){
+      panes.forEach(function(p,i){p.classList.toggle("on",i===cur);});
+      dots.forEach(function(d,i){d.classList.toggle("on",i===cur);d.classList.toggle("done",i<cur);});
+      lines.forEach(function(l,i){l.classList.toggle("fill",i<cur);});
+      back.style.display=cur===0?"none":"inline-flex";
+      var last=cur===panes.length-1;
+      next.style.display=last?"none":"inline-flex";
+      done.style.display=last?"inline-flex":"none";
+      next.classList.toggle("block",cur===0);
+    }
+    next.addEventListener("click",function(){if(cur<panes.length-1){cur++;render();}});
+    back.addEventListener("click",function(){if(cur>0){cur--;render();}});
+    render();
+  });
+
+  // init from hash
+  var start=(location.hash||"").replace(/^#\/?/,"");
+  var si=0;screens.forEach(function(s,i){if(s.dataset.s===start)si=i;});
+  show(si,false);
+})();
+</script>

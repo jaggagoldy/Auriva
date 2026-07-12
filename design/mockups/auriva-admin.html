@@ -1,0 +1,296 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --nav:76px; --top:64px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  input,select{font-family:var(--fb)}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+
+  .app{display:grid;grid-template-columns:var(--nav) 1fr;grid-template-rows:var(--top) 1fr;min-height:100vh}
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 20px;background:rgba(251,248,244,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .tb-clinic{display:flex;align-items:center;gap:11px}
+  .tb-clinic .lg{width:34px;height:34px;border-radius:11px;background:var(--pine);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(14,116,102,.7)}
+  .tb-clinic .lg svg{width:19px;height:19px}
+  .tb-clinic .nm{font-family:var(--fd);font-weight:700;font-size:16px;line-height:1.1}
+  .tb-clinic .rl{font-size:11.5px;color:var(--muted)}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .tb-av{width:38px;height:38px;border-radius:12px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px}
+
+  .nav{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;position:sticky;top:var(--top);height:calc(100vh - var(--top))}
+  .navb{width:56px;height:60px;border-radius:15px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9.5px;font-weight:650;transition:.15s;text-align:center;line-height:1.1}
+  .navb svg{width:22px;height:22px}
+  .navb:hover{background:var(--sand);color:var(--ink)}
+  .navb.on{background:var(--pine-tint);color:var(--pine-deep)}
+
+  .main{padding:clamp(18px,2.5vw,30px);max-width:1140px;width:100%}
+  .view{display:none;animation:vin .4s cubic-bezier(.2,.8,.2,1)}
+  .view.on{display:block}
+  @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+
+  .vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .vh .eyebrow{font-size:12px;font-weight:700;color:var(--muted)}
+  .vh h1{font-size:clamp(23px,3vw,30px);margin-top:4px}
+  .vh .sub{color:var(--body);font-size:14px;margin-top:5px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 17px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14.5px;transition:transform .12s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:17px;height:17px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 12px 26px -12px rgba(14,116,102,.6)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:36px;font-size:13px;padding:0 12px}
+  .btn-xs{height:30px;font-size:12px;padding:0 10px;border-radius:9px}
+  .btn-ghost{background:none;color:var(--pine-deep)}.btn-ghost:hover{background:var(--pine-tint)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .pad{padding:20px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .stat .ic{width:36px;height:36px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;margin-bottom:12px}
+  .stat .ic svg{width:19px;height:19px}
+  .stat .n{font-family:var(--fd);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* clinic cards */
+  .cliniclist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .clinic{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .clinic .top{display:flex;align-items:center;gap:12px}
+  .clinic .av{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;flex:0 0 auto}
+  .clinic .nm{font-family:var(--fd);font-weight:700;font-size:15.5px}
+  .clinic .loc{font-size:12px;color:var(--muted);margin-top:1px}
+  .clinic .meta{display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .clinic .meta .k{font-size:11px;color:var(--muted)}
+  .clinic .meta .v{font-family:var(--fd);font-weight:700;font-size:15px;margin-top:1px}
+  .hqtag{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--pine-deep);background:var(--pine-tint);border-radius:99px;padding:2px 8px;margin-left:auto}
+
+  /* staff / list rows */
+  .lrow{display:flex;align-items:center;gap:14px;padding:14px 4px;border-top:1px solid var(--line)}
+  .lrow:first-of-type{border-top:none}
+  .lrow .av{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:15px;flex:0 0 auto}
+  .lrow .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .lrow .mt{font-size:12px;color:var(--muted);margin-top:1px}
+  .lrow .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .rolechip{font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:99px;padding:4px 11px}
+  .rolechip.own{background:var(--honey-soft);color:var(--honey-deep)}
+  .rolechip.doc{background:var(--pine-tint);color:var(--pine-deep)}
+  .rolechip.rec{background:var(--sand2);color:var(--body)}
+  .rolechip.acc{background:#E7EDF6;color:#3A5178}
+  .statustag{font-size:11px;font-weight:700;border-radius:99px;padding:3px 9px}
+  .statustag.active{background:var(--ok-tint);color:var(--ok)}
+  .statustag.invited{background:var(--honey-tint);color:var(--honey-deep)}
+
+  /* permission matrix */
+  .mtx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+  .mtx{width:100%;border-collapse:collapse;min-width:640px}
+  .mtx th,.mtx td{padding:14px 16px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:center}
+  .mtx thead th{background:var(--sand);font-family:var(--fd);font-size:13px;vertical-align:bottom}
+  .mtx thead th small{display:block;font-weight:500;font-size:11px;color:var(--muted);margin-top:3px}
+  .mtx tbody td:first-child,.mtx thead th:first-child{text-align:left;font-weight:650;color:var(--ink)}
+  .mtx tbody tr:last-child td{border-bottom:none}
+  .mtx .ck{color:var(--ok)}.mtx .dash{color:var(--line-2)}
+  .mtx .ck svg{width:19px;height:19px}
+  .mtx .rc{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:99px;padding:3px 9px}
+
+  /* departments */
+  .deprow{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
+  .deprow:first-child{border-top:none}
+  .deprow .ic{width:38px;height:38px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto}
+  .deprow .ic svg{width:19px;height:19px}
+  .deprow .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .deprow .mt{font-size:12px;color:var(--muted)}
+
+  /* modal */
+  .backdrop{position:fixed;inset:0;background:rgba(20,16,13,.46);backdrop-filter:blur(3px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:44px 16px;overflow-y:auto}
+  .backdrop.on{display:flex;animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);width:100%;max-width:460px;animation:pop .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .mhead{display:flex;align-items:center;padding:20px 22px 6px}
+  .mhead h3{font-size:19px}
+  .x{margin-left:auto;width:34px;height:34px;border-radius:10px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center}
+  .x svg{width:17px;height:17px}
+  .mbody{padding:8px 22px 4px}
+  .fld{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+  .fld label{font-size:12.5px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld .inp{display:flex;align-items:center;gap:9px;background:var(--paper);border:1.5px solid var(--line-2);border-radius:11px;padding:0 13px}
+  .fld .inp:focus-within{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .fld .inp .pre{color:var(--muted);font-size:14px;font-weight:600}
+  .fld input{flex:1;border:none;background:none;outline:none;font-size:14.5px;padding:11px 0}
+  .rolepick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:2px}
+  .rp{padding:12px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--surface);text-align:left}
+  .rp.on{border-color:var(--pine);background:var(--pine-tint)}
+  .rp .rn{font-family:var(--fd);font-weight:700;font-size:13.5px}
+  .rp .rd{font-size:11px;color:var(--muted);margin-top:2px}
+  .mfoot{display:flex;gap:10px;padding:18px 22px;border-top:1px solid var(--line);background:var(--paper);border-radius:0 0 20px 20px;margin-top:16px}
+
+  .toastwrap{position:fixed;top:76px;right:16px;z-index:80;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:12px 15px;font-size:13.5px;font-weight:600;animation:tin .3s}
+  .toast .ic{width:24px;height:24px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  .mobnav{display:none}
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}.nav{display:none}
+    .stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}
+    .main{padding-bottom:88px}
+    .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:50;padding:6px 4px;justify-content:space-around}
+    .mobnav .navb{width:auto;height:auto;padding:6px 8px;flex:1}
+  }
+</style>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="tb-clinic"><span class="lg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><div><div class="nm">Sunrise Health Group</div><div class="rl">Organization admin</div></div></div>
+    <div class="tb-right"><button class="btn btn-primary btn-sm" data-modal-open="invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Invite staff</button><span class="tb-av">AR</span></div>
+  </div>
+
+  <nav class="nav">
+    <button class="navb on" data-view="org"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-4 6 4v13M15 21v-8l6 4v4"/></svg>Org</button>
+    <button class="navb" data-view="clinics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>Clinics</button>
+    <button class="navb" data-view="staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9"/></svg>Staff</button>
+    <button class="navb" data-view="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Roles</button>
+  </nav>
+
+  <main class="main">
+    <!-- ===== ORG ===== -->
+    <section class="view on" data-v="org">
+      <div class="vh"><div><div class="eyebrow">Sunrise Health Group</div><h1>Organization</h1><div class="sub">Your clinics, team and structure — all in one place.</div></div></div>
+      <div class="stats">
+        <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/></svg></span><div class="n">3</div><div class="l">Clinics</div></div>
+        <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div class="n">14</div><div class="l">Team members</div></div>
+        <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span><div class="n">6</div><div class="l">Doctors</div></div>
+        <div class="stat"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span><div class="n">4</div><div class="l">Departments</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card pad">
+          <h3 style="font-size:16px;margin-bottom:6px">Departments</h3>
+          <div class="deprow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-3-3-8-1-8 4 0 6 4 10 5 10s1-3 3-3 2 3 3 3 5-4 5-10c0-5-5-7-8-4z"/></svg></span><div><div class="nm">Dental</div><div class="mt">2 doctors · Room 1, 4</div></div><button class="btn btn-ghost btn-xs" style="margin-left:auto" data-toast="Manage Dental">Manage</button></div>
+          <div class="deprow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0116 0M8 12v4a4 4 0 008 0v-4"/></svg></span><div><div class="nm">Physiotherapy</div><div class="mt">2 doctors · Room 3</div></div><button class="btn btn-ghost btn-xs" style="margin-left:auto" data-toast="Manage Physio">Manage</button></div>
+          <div class="deprow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1118 0 9 9 0 01-18 0zM8 10h.01M16 10h.01"/></svg></span><div><div class="nm">Dermatology</div><div class="mt">1 doctor · Room 2</div></div><button class="btn btn-ghost btn-xs" style="margin-left:auto" data-toast="Manage Derma">Manage</button></div>
+          <div class="deprow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/></svg></span><div><div class="nm">General Medicine</div><div class="mt">1 doctor · Room 5</div></div><button class="btn btn-ghost btn-xs" style="margin-left:auto" data-toast="Manage GM">Manage</button></div>
+        </div>
+        <div class="card pad">
+          <h3 style="font-size:16px;margin-bottom:6px">Plan &amp; details</h3>
+          <div class="lrow"><div><div class="nm">Plan</div><div class="mt">Multi-clinic · billed monthly</div></div><span class="rolechip doc" style="margin-left:auto">₹999 × 6</span></div>
+          <div class="lrow"><div><div class="nm">Owner</div><div class="mt">Dr. Anjali Rao</div></div></div>
+          <div class="lrow"><div><div class="nm">Created</div><div class="mt">March 2024 · Bengaluru</div></div></div>
+          <button class="btn btn-line btn-sm" style="margin-top:14px" data-toast="Organization settings — Phase 11">Organization settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CLINICS ===== -->
+    <section class="view" data-v="clinics">
+      <div class="vh"><div><div class="eyebrow">Locations</div><h1>Clinics</h1><div class="sub">Every location in your group, on one account.</div></div>
+        <button class="btn btn-primary" data-toast="Add a clinic — routes through org-type setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add clinic</button>
+      </div>
+      <div class="cliniclist">
+        <div class="clinic"><div class="top"><span class="av" style="background:var(--honey-soft);color:var(--honey-deep)">SC</span><div><div class="nm">SmileCare Dental</div><div class="loc">HSR Layout</div></div><span class="hqtag">HQ</span></div><div class="meta"><div><div class="k">Doctors</div><div class="v">3</div></div><div><div class="k">Staff</div><div class="v">6</div></div><div><div class="k">Rooms</div><div class="v">4</div></div></div></div>
+        <div class="clinic"><div class="top"><span class="av" style="background:var(--pine-tint);color:var(--pine-deep)">HF</span><div><div class="nm">HSR Family Clinic</div><div class="loc">Sector 2</div></div></div><div class="meta"><div><div class="k">Doctors</div><div class="v">2</div></div><div><div class="k">Staff</div><div class="v">4</div></div><div><div class="k">Rooms</div><div class="v">3</div></div></div></div>
+        <div class="clinic"><div class="top"><span class="av" style="background:var(--sand2);color:var(--body)">SP</span><div><div class="nm">Sunrise Physio</div><div class="loc">Koramangala</div></div></div><div class="meta"><div><div class="k">Doctors</div><div class="v">1</div></div><div><div class="k">Staff</div><div class="v">4</div></div><div><div class="k">Rooms</div><div class="v">2</div></div></div></div>
+      </div>
+    </section>
+
+    <!-- ===== STAFF ===== -->
+    <section class="view" data-v="staff">
+      <div class="vh"><div><div class="eyebrow">Team</div><h1>Staff &amp; roles</h1><div class="sub">Who's on your team, what they can do, and their status.</div></div>
+        <button class="btn btn-primary" data-modal-open="invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Invite staff</button>
+      </div>
+      <div class="card pad">
+        <div class="lrow"><span class="av" style="background:var(--honey-soft);color:var(--honey-deep)">AR</span><div><div class="nm">Dr. Anjali Rao</div><div class="mt">anjali@sunrise.in · SmileCare</div></div><div class="right"><span class="rolechip own">Owner</span><span class="statustag active">Active</span></div></div>
+        <div class="lrow"><span class="av" style="background:var(--pine-tint);color:var(--pine-deep)">VS</span><div><div class="nm">Dr. Vikram Shah</div><div class="mt">vikram@sunrise.in · Sunrise Physio</div></div><div class="right"><span class="rolechip doc">Doctor</span><span class="statustag active">Active</span></div></div>
+        <div class="lrow"><span class="av" style="background:var(--pine-tint);color:var(--pine-deep)">MI</span><div><div class="nm">Dr. Meera Iyer</div><div class="mt">meera.i@sunrise.in · HSR Family</div></div><div class="right"><span class="rolechip doc">Doctor</span><span class="statustag active">Active</span></div></div>
+        <div class="lrow"><span class="av" style="background:var(--sand2);color:var(--body)">MN</span><div><div class="nm">Meera Nair</div><div class="mt">meera.n@sunrise.in · HSR Family</div></div><div class="right"><span class="rolechip rec">Reception</span><span class="statustag active">Active</span></div></div>
+        <div class="lrow"><span class="av" style="background:#E7EDF6;color:#3A5178">RG</span><div><div class="nm">Ravi Gupta</div><div class="mt">ravi@sunrise.in · All clinics</div></div><div class="right"><span class="rolechip acc">Accountant</span><span class="statustag active">Active</span></div></div>
+        <div class="lrow"><span class="av" style="background:var(--sand2);color:var(--muted)">SK</span><div><div class="nm">Suresh Kumar</div><div class="mt">suresh@sunrise.in · SmileCare</div></div><div class="right"><span class="rolechip rec">Reception</span><span class="statustag invited">Invited</span><button class="btn btn-ghost btn-xs" data-toast="Invite resent">Resend</button></div></div>
+      </div>
+    </section>
+
+    <!-- ===== ROLES / PERMISSIONS ===== -->
+    <section class="view" data-v="roles">
+      <div class="vh"><div><div class="eyebrow">Authorization</div><h1>Roles &amp; permissions</h1><div class="sub">What each role can see and do. Everyone sees only what they should.</div></div></div>
+      <div class="mtx-wrap"><table class="mtx">
+        <thead><tr><th>Permission</th><th><span class="rc" style="background:var(--honey-soft);color:var(--honey-deep)">Owner</span></th><th><span class="rc" style="background:var(--pine-tint);color:var(--pine-deep)">Doctor</span></th><th><span class="rc" style="background:var(--sand2);color:var(--body)">Reception</span></th><th><span class="rc" style="background:#E7EDF6;color:#3A5178">Accountant</span></th></tr></thead>
+        <tbody>
+          <tr><td>View appointments &amp; queue</td><td class="ck">CK</td><td class="ck">CK</td><td class="ck">CK</td><td class="dash">—</td></tr>
+          <tr><td>Register &amp; manage patients</td><td class="ck">CK</td><td class="ck">CK</td><td class="ck">CK</td><td class="dash">—</td></tr>
+          <tr><td>Consult, notes &amp; prescriptions</td><td class="ck">CK</td><td class="ck">CK</td><td class="dash">—</td><td class="dash">—</td></tr>
+          <tr><td>Create invoices &amp; collect</td><td class="ck">CK</td><td class="ck">CK</td><td class="ck">CK</td><td class="ck">CK</td></tr>
+          <tr><td>View revenue &amp; reports</td><td class="ck">CK</td><td class="dash">—</td><td class="dash">—</td><td class="ck">CK</td></tr>
+          <tr><td>Manage staff &amp; roles</td><td class="ck">CK</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td></tr>
+          <tr><td>Organization settings</td><td class="ck">CK</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:14px">A solo Independent Clinic skips all of this — one person, one role, no matrix. It appears only when you add a team.</p>
+    </section>
+  </main>
+</div>
+
+<nav class="mobnav">
+  <button class="navb on" data-view="org"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-4 6 4v13"/></svg>Org</button>
+  <button class="navb" data-view="clinics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/></svg>Clinics</button>
+  <button class="navb" data-view="staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Staff</button>
+  <button class="navb" data-view="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Roles</button>
+</nav>
+
+<!-- INVITE MODAL -->
+<div class="backdrop" id="invite">
+  <div class="modal">
+    <div class="mhead"><h3>Invite a team member</h3><button class="x" data-modal-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mbody">
+      <div class="fld"><label>Email or phone</label><div class="inp"><input placeholder="name@clinic.in"></div></div>
+      <div class="fld"><label>Clinic</label><div class="inp"><input value="SmileCare Dental" readonly></div></div>
+      <div class="fld"><label>Role</label>
+        <div class="rolepick" id="rolepick">
+          <button class="rp on" data-rp><div class="rn">Doctor</div><div class="rd">Consult &amp; prescribe</div></button>
+          <button class="rp" data-rp><div class="rn">Reception</div><div class="rd">Front desk &amp; billing</div></button>
+          <button class="rp" data-rp><div class="rn">Accountant</div><div class="rd">Billing &amp; reports</div></button>
+          <button class="rp" data-rp><div class="rn">Owner</div><div class="rd">Full access</div></button>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot"><button class="btn btn-line" data-modal-close style="flex:1">Cancel</button><button class="btn btn-primary" style="flex:1.4" data-toast="Invitation sent · they'll get a link to join" data-modal-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Send invite</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tw=document.getElementById("toasts");
+  function toast(msg){var t=document.createElement("div");t.className="toast";t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';tw.appendChild(t);setTimeout(function(){t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(function(){t.remove();},300);},2500);}
+  function setView(v){[].forEach.call(document.querySelectorAll(".view"),function(s){s.classList.toggle("on",s.dataset.v===v);});[].forEach.call(document.querySelectorAll(".navb"),function(b){b.classList.toggle("on",b.dataset.view===v);});window.scrollTo(0,0);}
+
+  // replace CK/dash placeholders in matrix
+  document.querySelectorAll(".mtx td.ck").forEach(function(td){td.innerHTML='<span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span>';});
+
+  document.addEventListener("click",function(e){
+    var nv=e.target.closest("[data-view]");if(nv){setView(nv.getAttribute("data-view"));return;}
+    var mo=e.target.closest("[data-modal-open]");if(mo){document.getElementById(mo.getAttribute("data-modal-open")).classList.add("on");return;}
+    var mc=e.target.closest("[data-modal-close]");if(mc){mc.closest(".backdrop").classList.remove("on");return;}
+    if(e.target.classList&&e.target.classList.contains("backdrop")){e.target.classList.remove("on");return;}
+    var rp=e.target.closest("[data-rp]");if(rp){[].forEach.call(rp.parentNode.children,function(c){c.classList.remove("on");});rp.classList.add("on");return;}
+    var tt=e.target.closest("[data-toast]");if(tt){toast(tt.getAttribute("data-toast"));return;}
+  });
+})();
+</script>

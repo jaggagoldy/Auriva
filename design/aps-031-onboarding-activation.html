@@ -1,0 +1,660 @@
+<!-- APS-031 Part 4 + Part 7 — Organization Onboarding Wizard + Activation Dashboard (both previously unbuilt). Static design mockup only, no production code. -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APS-031 · Onboarding &amp; Activation — Auriva</title>
+<style>
+:root{
+  --surface-page:#F5F7FA; --surface-card:#FFFFFF; --surface-sunken:#F1F5F9;
+  --border-default:#E2E8F0; --border-strong:#CBD5E1;
+  --text-primary:#0F172A; --text-secondary:#475569; --text-tertiary:#94A3B8;
+  --accent:#0D9488; --accent-hover:#0F766E;
+  --success:#16A34A; --success-bg:#F0FDF4; --success-border:#BBF7D0;
+  --warning:#D97706; --warning-bg:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626; --danger-bg:#FEF2F2; --danger-border:#FECACA;
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  --el-2:0 4px 12px rgba(15,23,42,.10); --el-3:0 12px 32px rgba(15,23,42,.16);
+}
+body{margin:0;background:var(--surface-page);color:var(--text-primary);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;}
+
+/* --- extended tokens / dark mode (additive, does not alter the base block above) --- */
+[data-theme="dark"]{
+  --surface-page:#0B1220; --surface-card:#111827; --surface-sunken:#0F172A;
+  --border-default:#1E293B; --border-strong:#334155;
+  --text-primary:#F1F5F9; --text-secondary:#94A3B8; --text-tertiary:#64748B;
+  --accent:#2DD4BF; --accent-hover:#5EEAD4;
+  --success:#4ADE80; --success-bg:#052E1B; --success-border:#14532D;
+  --warning:#FBBF24; --warning-bg:#3A2A05; --warning-border:#78350F;
+  --danger:#F87171; --danger-bg:#3A0D0D; --danger-border:#7F1D1D;
+}
+*{box-sizing:border-box;}
+h1,h2,h3{font-weight:700;margin:0 0 4px;}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--surface-card);border-bottom:1px solid var(--border-default);}
+.topbar .brand{font-weight:800;font-size:16px;letter-spacing:-.02em;}
+.topbar .brand span.dot{color:var(--accent);}
+.topbar .brand .ticket{color:var(--text-tertiary);font-weight:400;font-size:12px;margin-left:8px;}
+.theme-toggle{border:1px solid var(--border-default);background:var(--surface-page);color:var(--text-primary);padding:7px 14px;border-radius:var(--r-full);cursor:pointer;font:inherit;font-size:12px;font-weight:500;}
+
+/* shell layout */
+.shell{display:flex;align-items:flex-start;max-width:1360px;margin:0 auto;}
+.sidenav{width:236px;flex-shrink:0;padding:20px 12px;position:sticky;top:49px;height:calc(100vh - 49px);overflow-y:auto;}
+.nav-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);padding:14px 12px 6px;}
+.nav-item{display:block;width:100%;text-align:left;background:none;border:none;font:inherit;font-size:13px;color:var(--text-secondary);padding:8px 12px;border-radius:var(--r-md);cursor:pointer;margin-bottom:2px;}
+.nav-item:hover{background:var(--surface-sunken);color:var(--text-primary);}
+.nav-item.active{background:var(--surface-sunken);color:var(--accent);font-weight:600;}
+.nav-item .n{display:inline-block;width:18px;color:var(--text-tertiary);font-variant-numeric:tabular-nums;}
+.nav-item.active .n{color:var(--accent);}
+
+.stage{flex:1;min-width:0;padding:28px 32px 100px;}
+
+/* progress header (persistent across the 12-step journey) */
+.progress-header{max-width:720px;margin:0 auto 28px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:16px 20px;}
+.progress-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.progress-current-label{font-size:13px;font-weight:600;}
+.saved-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--success);background:var(--success-bg);border:1px solid var(--success-border);padding:4px 10px;border-radius:var(--r-full);}
+.saved-indicator .pulse{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.progress-track{display:flex;align-items:center;}
+.progress-step{flex:1;display:flex;align-items:center;}
+.progress-step:last-child{flex:none;}
+.progress-dot{width:20px;height:20px;border-radius:50%;background:var(--surface-sunken);border:2px solid var(--border-strong);color:var(--text-tertiary);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.progress-step.done .progress-dot{background:var(--accent);border-color:var(--accent);color:#fff;}
+.progress-step.current .progress-dot{background:var(--surface-card);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.15);}
+.progress-line{flex:1;height:2px;background:var(--border-default);margin:0 3px;}
+.progress-step.done .progress-line{background:var(--accent);}
+.progress-caption{margin-top:8px;font-size:11px;color:var(--text-tertiary);}
+
+/* wizard card */
+.wizard-card{max-width:720px;margin:0 auto;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-xl);box-shadow:var(--el-2);padding:36px 40px;}
+.wizard-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:6px;}
+.wizard-title{font-size:22px;margin-bottom:6px;}
+.wizard-sub{color:var(--text-secondary);margin:0 0 24px;max-width:56ch;}
+.wizard-footer{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--border-default);}
+
+/* buttons / fields / badges (shared component vocabulary) */
+.btn{font:inherit;font-weight:600;font-size:13px;border-radius:var(--r-md);padding:10px 18px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:transparent;border-color:var(--border-strong);color:var(--text-primary);}
+.btn-secondary:hover{background:var(--surface-sunken);}
+.btn-lg{padding:13px 28px;font-size:14px;width:100%;justify-content:center;}
+.btn-tertiary{background:transparent;color:var(--accent);padding:8px 4px;border:none;}
+
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:13px;font-weight:500;}
+.field input,.field select{font:inherit;font-size:14px;padding:9px 12px;border-radius:var(--r-sm);border:1px solid var(--border-strong);background:var(--surface-card);color:var(--text-primary);}
+.field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.field .helper{font-size:12px;color:var(--text-tertiary);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--r-full);border:1px solid;}
+.badge .dot{width:6px;height:6px;border-radius:50%;}
+.badge.success{color:var(--success);background:var(--success-bg);border-color:var(--success-border);}
+.badge.success .dot{background:var(--success);}
+.badge.warning{color:var(--warning);background:var(--warning-bg);border-color:var(--warning-border);}
+.badge.warning .dot{background:var(--warning);}
+.badge.neutral{color:var(--text-secondary);background:var(--surface-sunken);border-color:var(--border-default);}
+.badge.neutral .dot{background:var(--text-tertiary);}
+
+.callout{border-radius:var(--r-md);padding:12px 14px;font-size:12px;display:flex;gap:8px;align-items:flex-start;}
+.callout.info{background:var(--surface-sunken);color:var(--text-secondary);border:1px solid var(--border-default);}
+.callout.roadmap{background:var(--warning-bg);color:#92620A;border:1px solid var(--warning-border);}
+[data-theme="dark"] .callout.roadmap{color:var(--warning);}
+
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;color:var(--text-tertiary);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border-default);text-transform:uppercase;letter-spacing:.03em;}
+td{padding:11px 10px;font-size:13px;border-bottom:1px solid var(--border-default);}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;}
+
+/* screen 2: org type cards */
+.org-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.org-type-card{border:2px solid var(--border-default);border-radius:var(--r-lg);padding:14px 16px;cursor:pointer;position:relative;}
+.org-type-card .icon{font-size:20px;margin-bottom:6px;}
+.org-type-card .name{font-weight:600;font-size:13.5px;margin-bottom:3px;}
+.org-type-card .desc{font-size:12px;color:var(--text-secondary);line-height:1.4;}
+.org-type-card.selected{border-color:var(--accent);background:var(--success-bg);}
+.org-type-card.selected::after{content:"✓";position:absolute;top:10px;right:12px;color:var(--accent);font-weight:700;}
+
+/* screen 3: specialty checkboxes */
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.check-item{display:flex;align-items:center;gap:10px;border:1px solid var(--border-default);border-radius:var(--r-md);padding:10px 12px;font-size:13px;}
+.check-item input{width:16px;height:16px;accent-color:var(--accent);}
+
+/* screen 5: locations compare */
+.compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.compare-col{border:1px solid var(--border-default);border-radius:var(--r-lg);padding:16px;background:var(--surface-sunken);}
+.compare-col h4{font-size:13px;margin-bottom:2px;}
+.compare-col .instruction{font-size:12px;color:var(--accent-hover);font-weight:600;margin-bottom:12px;}
+[data-theme="dark"] .compare-col .instruction{color:var(--accent);}
+.dept-row{display:flex;gap:8px;margin-bottom:8px;}
+.dept-row input{flex:1;}
+.same-engine-badge{display:flex;align-items:center;gap:8px;justify-content:center;margin:14px 0 18px;font-size:11px;color:var(--text-tertiary);}
+.same-engine-badge .line{flex:1;height:1px;background:var(--border-default);}
+.other-archetypes{margin-top:18px;border-top:1px dashed var(--border-strong);padding-top:14px;}
+.other-archetypes table td:first-child{color:var(--text-secondary);font-weight:600;width:38%;}
+
+/* screen 6: hours */
+.hours-row{display:grid;grid-template-columns:110px 90px 1fr 12px 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-default);}
+.hours-row:last-child{border-bottom:none;}
+.hours-row .day{font-weight:600;font-size:13px;}
+.hours-row select{width:100%;}
+.hours-row .to{text-align:center;color:var(--text-tertiary);font-size:12px;}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;}
+
+/* screen 8 team invite table */
+.role-select-note{font-size:11px;color:var(--text-tertiary);margin-top:4px;}
+
+/* screen 10 review */
+.review-row{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border-default);gap:16px;}
+.review-row:last-child{border-bottom:none;}
+.review-row .k{font-size:12px;color:var(--text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:.03em;width:130px;flex-shrink:0;}
+.review-row .v{font-size:13px;flex:1;}
+.review-row a.edit{font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;}
+
+/* screen 11 confirmation */
+.confirm-wrap{text-align:center;padding:20px 0 4px;}
+.confirm-check{width:56px;height:56px;border-radius:50%;background:var(--success-bg);border:2px solid var(--success-border);color:var(--success);font-size:28px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+.exit-safe-box{margin-top:24px;display:inline-flex;align-items:center;gap:10px;background:var(--surface-sunken);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:14px 18px;text-align:left;max-width:520px;}
+.exit-safe-box .ic{font-size:18px;}
+.exit-safe-box .t{font-size:12.5px;color:var(--text-secondary);}
+.exit-safe-box .t b{color:var(--text-primary);}
+
+/* screen 12 dashboard */
+.dashboard-wrap{max-width:980px;margin:0 auto;}
+.dash-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;}
+.dash-head h2{font-size:22px;}
+.dash-head p{margin:0;color:var(--text-secondary);font-size:13px;}
+.milestone-card{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-xl);padding:26px 28px;margin-bottom:20px;}
+.milestone-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.milestone-count{font-size:15px;font-weight:700;}
+.milestone-pct{font-size:13px;color:var(--text-tertiary);}
+.milestone-bar{display:flex;gap:4px;height:10px;margin-bottom:22px;}
+.milestone-bar .seg{flex:1;border-radius:3px;background:var(--surface-sunken);}
+.milestone-bar .seg.filled{background:var(--accent);}
+.milestone-list{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;}
+.milestone-item{display:flex;align-items:center;gap:10px;font-size:13px;padding:6px 0;}
+.milestone-item .ic{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.milestone-item.done .ic{background:var(--success);color:#fff;}
+.milestone-item.done span{color:var(--text-secondary);}
+.milestone-item.pending .ic{background:var(--surface-sunken);border:1.5px solid var(--border-strong);color:transparent;}
+.milestone-item.pending span{color:var(--text-primary);}
+
+.next-action{display:flex;align-items:center;justify-content:space-between;gap:20px;background:linear-gradient(135deg, var(--success-bg), var(--surface-card));border:1.5px solid var(--accent);border-radius:var(--r-lg);padding:18px 22px;margin-bottom:24px;}
+.next-action .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:4px;}
+.next-action .title{font-size:15px;font-weight:700;margin-bottom:2px;}
+.next-action .desc{font-size:12.5px;color:var(--text-secondary);}
+
+.stat-strip-label{font-size:12px;color:var(--text-tertiary);margin:4px 0 10px;}
+.stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.stat-tile{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:16px;}
+.stat-tile .label{font-size:12px;color:var(--text-secondary);}
+.stat-tile .value{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0;}
+.stat-tile .delta{font-size:11.5px;font-weight:600;color:var(--text-tertiary);}
+
+.screen{display:none;}
+.screen.active{display:block;}
+.footer-note{max-width:720px;margin:40px auto 0;color:var(--text-tertiary);font-size:11px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Auriva<span class="dot"> · </span>Onboarding &amp; Activation<span class="ticket">APS-031 · design mockup, not production code</span></div>
+  <button class="theme-toggle" onclick="var h=document.documentElement;h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark')">Toggle dark mode</button>
+</div>
+
+<div class="shell">
+  <nav class="sidenav" id="sidenav">
+    <div class="nav-group-label">Part A — Setup Wizard</div>
+    <button class="nav-item" data-screen="1"><span class="n">1</span>Welcome</button>
+    <button class="nav-item" data-screen="2"><span class="n">2</span>Organization Type</button>
+    <button class="nav-item" data-screen="3"><span class="n">3</span>Specialty</button>
+    <button class="nav-item" data-screen="4"><span class="n">4</span>Brand</button>
+    <button class="nav-item" data-screen="5"><span class="n">5</span>Locations</button>
+    <button class="nav-item" data-screen="6"><span class="n">6</span>Working Hours</button>
+    <button class="nav-item" data-screen="7"><span class="n">7</span>Services</button>
+    <button class="nav-item" data-screen="8"><span class="n">8</span>Team</button>
+    <button class="nav-item" data-screen="9"><span class="n">9</span>Verification</button>
+    <button class="nav-item" data-screen="10"><span class="n">10</span>Launch</button>
+    <button class="nav-item" data-screen="11"><span class="n">11</span>Confirmation</button>
+    <div class="nav-group-label">Part B — Activation</div>
+    <button class="nav-item" data-screen="12"><span class="n">12</span>Activation Dashboard</button>
+  </nav>
+
+  <main class="stage">
+
+    <!-- persistent progress header, shared by screens 1-12 -->
+    <div class="progress-header" id="progressHeader">
+      <div class="progress-header-top">
+        <div class="progress-current-label" id="progressLabel">Step 1 of 12 · Welcome</div>
+        <div class="saved-indicator"><span class="pulse"></span>Saved automatically</div>
+      </div>
+      <div class="progress-track" id="progressTrack"></div>
+      <div class="progress-caption">Every step saves automatically — closing the browser and returning later resumes exactly here.</div>
+    </div>
+
+    <!-- SCREEN 1 — Welcome -->
+    <div class="screen" id="screen-1">
+      <div class="wizard-card" style="text-align:center;">
+        <div class="wizard-eyebrow">Get started</div>
+        <h1 class="wizard-title">Let's get Sunrise Clinic live in Auriva</h1>
+        <p class="wizard-sub" style="margin-left:auto;margin-right:auto;">This takes about 15 minutes — we'll set up your organization, locations, services and team so you can see your first patient today.</p>
+        <div class="wizard-footer" style="justify-content:center;border-top:none;margin-top:20px;padding-top:0;">
+          <button class="btn btn-primary btn-lg" style="max-width:220px;" onclick="go(2)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2 — Organization Type -->
+    <div class="screen" id="screen-2">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 2 of 12</div>
+        <h2 class="wizard-title">What kind of organization are you?</h2>
+        <p class="wizard-sub">This choice tailors the rest of setup — locations, starter services and terminology — but every organization runs on the same Auriva engine underneath.</p>
+        <div class="org-type-grid">
+          <div class="org-type-card">
+            <div class="icon">🩺</div>
+            <div class="name">Independent Clinic</div>
+            <div class="desc">A single doctor-led practice with one location and hands-on care.</div>
+          </div>
+          <div class="org-type-card selected">
+            <div class="icon">🏥</div>
+            <div class="name">Multi-specialty Clinic</div>
+            <div class="desc">Multiple specialties under one roof, coordinated across departments.</div>
+          </div>
+          <div class="org-type-card">
+            <div class="icon">🏨</div>
+            <div class="name">Hospital</div>
+            <div class="desc">Inpatient and outpatient care across departments, wards and beds.</div>
+          </div>
+          <div class="org-type-card">
+            <div class="icon">🧪</div>
+            <div class="name">Diagnostic Center</div>
+            <div class="desc">Lab and imaging services built around tests, samples and reports.</div>
+          </div>
+          <div class="org-type-card">
+            <div class="icon">💊</div>
+            <div class="name">Pharmacy Chain</div>
+            <div class="desc">Retail and dispensing operations across one or more outlets.</div>
+          </div>
+          <div class="org-type-card">
+            <div class="icon">🧸</div>
+            <div class="name">Day Care Center</div>
+            <div class="desc">Short-stay procedures and observation without overnight admission.</div>
+          </div>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(1)">Back</button>
+          <button class="btn btn-primary" onclick="go(3)">Continue with Multi-specialty Clinic</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3 — Specialty -->
+    <div class="screen" id="screen-3">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 3 of 12</div>
+        <h2 class="wizard-title">Which specialties does Sunrise offer?</h2>
+        <p class="wizard-sub">Because you selected <b>Multi-specialty Clinic</b>, tell us which departments to set up. This shapes your starter services and team roles later.</p>
+        <div class="check-grid">
+          <label class="check-item"><input type="checkbox" checked>Cardiology</label>
+          <label class="check-item"><input type="checkbox" checked>Pediatrics</label>
+          <label class="check-item"><input type="checkbox" checked>Orthopedics</label>
+          <label class="check-item"><input type="checkbox">Dermatology</label>
+          <label class="check-item"><input type="checkbox">ENT</label>
+          <label class="check-item"><input type="checkbox">General Medicine</label>
+          <label class="check-item"><input type="checkbox">Gynecology</label>
+          <label class="check-item"><input type="checkbox">Psychiatry</label>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(2)">Back</button>
+          <button class="btn btn-primary" onclick="go(4)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4 — Brand -->
+    <div class="screen" id="screen-4">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 4 of 12</div>
+        <h2 class="wizard-title">Brand your workspace</h2>
+        <p class="wizard-sub">This is how Sunrise appears to patients and staff — on the portal, invoices and prescriptions.</p>
+        <div class="field" style="margin-bottom:18px;">
+          <label>Organization display name</label>
+          <input type="text" value="Sunrise Multi-specialty Clinic">
+        </div>
+        <div class="field">
+          <label>Logo</label>
+          <div style="border:2px dashed var(--border-strong);border-radius:var(--r-lg);padding:28px;text-align:center;color:var(--text-tertiary);font-size:12px;">
+            <div style="font-size:22px;margin-bottom:6px;">🖼️</div>
+            Drop logo here or browse<br>PNG or SVG, 512×512 recommended
+          </div>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(3)">Back</button>
+          <button class="btn btn-primary" onclick="go(5)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5 — Locations (archetype-aware, key screen) -->
+    <div class="screen" id="screen-5">
+      <div class="wizard-card" style="max-width:720px;">
+        <div class="wizard-eyebrow">Step 5 of 12</div>
+        <h2 class="wizard-title">Add your locations</h2>
+        <p class="wizard-sub">Same step, same template — the fields shown are driven entirely by the Organization Type chosen in Step 2. Nothing here is a separate product.</p>
+
+        <div class="compare-wrap">
+          <div class="compare-col">
+            <h4>If Step 2 = Independent Clinic</h4>
+            <div class="instruction">"Add your clinic address"</div>
+            <div class="field" style="margin-bottom:10px;"><label>Address line</label><input type="text" placeholder="12, MG Road"></div>
+            <div class="field-row">
+              <div class="field"><label>City</label><input type="text" placeholder="Bengaluru"></div>
+              <div class="field"><label>Pincode</label><input type="text" placeholder="560001"></div>
+            </div>
+          </div>
+          <div class="compare-col">
+            <h4>Step 2 = Hospital <span class="badge neutral" style="margin-left:4px;">this org</span></h4>
+            <div class="instruction">"Add your departments and bed capacity"</div>
+            <div class="dept-row"><input type="text" value="General Medicine"><input type="text" value="40 beds" style="max-width:90px;"></div>
+            <div class="dept-row"><input type="text" value="Cardiology ICU"><input type="text" value="12 beds" style="max-width:90px;"></div>
+            <div class="dept-row"><input type="text" value="Emergency"><input type="text" value="20 beds" style="max-width:90px;"></div>
+            <button class="btn btn-tertiary" style="padding-left:0;">+ Add department</button>
+          </div>
+        </div>
+
+        <div class="same-engine-badge"><span class="line"></span>one onboarding engine, archetype-flavored copy<span class="line"></span></div>
+
+        <div class="other-archetypes">
+          <table>
+            <tr><td>Multi-specialty Clinic</td><td style="color:var(--text-secondary);">"Add your clinic locations — one or more branches"</td></tr>
+            <tr><td>Diagnostic Center</td><td style="color:var(--text-secondary);">"Add your lab and sample collection centers"</td></tr>
+            <tr><td>Pharmacy Chain</td><td style="color:var(--text-secondary);">"Add your outlets"</td></tr>
+            <tr><td>Day Care Center</td><td style="color:var(--text-secondary);">"Add your day-care facility address"</td></tr>
+          </table>
+        </div>
+
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(4)">Back</button>
+          <button class="btn btn-primary" onclick="go(6)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 6 — Working Hours -->
+    <div class="screen" id="screen-6">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 6 of 12</div>
+        <h2 class="wizard-title">Set your working hours</h2>
+        <p class="wizard-sub">Used for appointment slots, queue capacity and operational alerts. You can override hours per doctor later.</p>
+        <div>
+          <div class="hours-row"><div class="day">Monday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>18:00</option></select></div>
+          <div class="hours-row"><div class="day">Tuesday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>18:00</option></select></div>
+          <div class="hours-row"><div class="day">Wednesday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>18:00</option></select></div>
+          <div class="hours-row"><div class="day">Thursday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>18:00</option></select></div>
+          <div class="hours-row"><div class="day">Friday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>18:00</option></select></div>
+          <div class="hours-row"><div class="day">Saturday</div><label class="toggle"><input type="checkbox" checked>Open</label><select><option>09:00</option></select><div class="to">to</div><select><option>14:00</option></select></div>
+          <div class="hours-row"><div class="day">Sunday</div><label class="toggle"><input type="checkbox">Open</label><select disabled><option>—</option></select><div class="to">to</div><select disabled><option>—</option></select></div>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(5)">Back</button>
+          <button class="btn btn-primary" onclick="go(7)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 7 — Services -->
+    <div class="screen" id="screen-7">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 7 of 12</div>
+        <h2 class="wizard-title">Your starter price list</h2>
+        <div class="callout info" style="margin-bottom:16px;">
+          <span>ℹ️</span><span>Pre-filled from your organization type — edit anytime. Nothing here is blank by default.</span>
+        </div>
+        <table>
+          <tr><th>Service</th><th style="text-align:right;">Price</th><th></th></tr>
+          <tr><td>Cardiology Consultation</td><td class="num">₹800</td><td style="text-align:right;color:var(--text-tertiary);">✎</td></tr>
+          <tr><td>Pediatrics Consultation</td><td class="num">₹600</td><td style="text-align:right;color:var(--text-tertiary);">✎</td></tr>
+          <tr><td>Orthopedics Consultation</td><td class="num">₹700</td><td style="text-align:right;color:var(--text-tertiary);">✎</td></tr>
+          <tr><td>ECG</td><td class="num">₹350</td><td style="text-align:right;color:var(--text-tertiary);">✎</td></tr>
+          <tr><td>Follow-up Visit</td><td class="num">₹300</td><td style="text-align:right;color:var(--text-tertiary);">✎</td></tr>
+        </table>
+        <button class="btn btn-tertiary" style="padding-left:0;margin-top:10px;">+ Add service</button>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(6)">Back</button>
+          <button class="btn btn-primary" onclick="go(8)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 8 — Team -->
+    <div class="screen" id="screen-8">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 8 of 12</div>
+        <h2 class="wizard-title">Invite your team</h2>
+        <p class="wizard-sub">Send invites now — they can accept anytime. You can add more people later from Staff Management.</p>
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field"><label>Name</label><input type="text" placeholder="Dr. Ananya Rao"></div>
+          <div class="field"><label>Email</label><input type="text" placeholder="ananya.rao@sunrise.clinic"></div>
+        </div>
+        <div class="field" style="max-width:240px;margin-bottom:6px;">
+          <label>Role</label>
+          <select>
+            <option>Doctor</option>
+            <option>Receptionist</option>
+            <option>Nurse</option>
+            <option>Lab Technician</option>
+            <option>Pharmacist</option>
+            <option>Finance</option>
+          </select>
+        </div>
+        <div class="role-select-note">Some roles (Lab Technician, Pharmacist, Finance) are onboarding targets — workflows for them are still being built.</div>
+        <button class="btn btn-secondary" style="margin-top:14px;">+ Send another invite</button>
+
+        <table style="margin-top:20px;">
+          <tr><th>Name</th><th>Role</th><th>Status</th></tr>
+          <tr><td>Dr. Ananya Rao</td><td>Doctor</td><td><span class="badge warning"><span class="dot"></span>Pending</span></td></tr>
+          <tr><td>Meera Iyer</td><td>Receptionist</td><td><span class="badge success"><span class="dot"></span>Accepted</span></td></tr>
+        </table>
+
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(7)">Back</button>
+          <button class="btn btn-primary" onclick="go(9)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 9 — Verification -->
+    <div class="screen" id="screen-9">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 9 of 12</div>
+        <h2 class="wizard-title">Verify your primary doctor</h2>
+        <p class="wizard-sub">Required once before patients can book with this doctor.</p>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Medical Registration Number — Dr. Ananya Rao</label>
+          <input type="text" value="MCI-KA-2014-0417-A">
+          <div class="helper">Issuing council: Karnataka Medical Council</div>
+        </div>
+        <div class="callout roadmap">
+          <span>🛠️</span><span><b>Roadmap:</b> automated verification via state medical council APIs — currently a manual review by the Auriva team, typically 1-2 business days. Sunrise can continue setup in the meantime.</span>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" onclick="go(8)">Back</button>
+          <button class="btn btn-primary" onclick="go(10)">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 10 — Launch -->
+    <div class="screen" id="screen-10">
+      <div class="wizard-card">
+        <div class="wizard-eyebrow">Step 10 of 12</div>
+        <h2 class="wizard-title">Review &amp; go live</h2>
+        <p class="wizard-sub">Everything below can be changed later from Settings — nothing is locked in.</p>
+        <div>
+          <div class="review-row"><div class="k">Org type</div><div class="v">Multi-specialty Clinic</div><a class="edit" onclick="go(2)">Edit</a></div>
+          <div class="review-row"><div class="k">Name</div><div class="v">Sunrise Multi-specialty Clinic</div><a class="edit" onclick="go(4)">Edit</a></div>
+          <div class="review-row"><div class="k">Specialties</div><div class="v">Cardiology, Pediatrics, Orthopedics</div><a class="edit" onclick="go(3)">Edit</a></div>
+          <div class="review-row"><div class="k">Locations</div><div class="v">1 branch — MG Road, Bengaluru</div><a class="edit" onclick="go(5)">Edit</a></div>
+          <div class="review-row"><div class="k">Hours</div><div class="v">Mon–Sat, 9:00–18:00</div><a class="edit" onclick="go(6)">Edit</a></div>
+          <div class="review-row"><div class="k">Services</div><div class="v">5 starter services seeded</div><a class="edit" onclick="go(7)">Edit</a></div>
+          <div class="review-row"><div class="k">Team</div><div class="v">2 invited (1 accepted, 1 pending)</div><a class="edit" onclick="go(8)">Edit</a></div>
+          <div class="review-row"><div class="k">Verification</div><div class="v">Submitted — pending manual review</div><a class="edit" onclick="go(9)">Edit</a></div>
+        </div>
+        <div class="wizard-footer" style="flex-direction:column;gap:14px;align-items:stretch;">
+          <button class="btn btn-primary btn-lg" onclick="go(11)">Go live</button>
+          <button class="btn btn-secondary" style="align-self:flex-start;" onclick="go(9)">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 11 — Confirmation / exit-safe annotation -->
+    <div class="screen" id="screen-11">
+      <div class="wizard-card confirm-wrap">
+        <div class="confirm-check">✓</div>
+        <h2 class="wizard-title">You're live!</h2>
+        <p class="wizard-sub" style="margin-left:auto;margin-right:auto;">Sunrise Multi-specialty Clinic is now active in Auriva. Your team can start accepting invites and your first patient can be booked today.</p>
+        <div class="exit-safe-box">
+          <div class="ic">💾</div>
+          <div class="t"><b>Saved automatically at every step</b> — this is why closing your browser at any point during setup never loses progress. There was nothing to "finish before leaving."</div>
+        </div>
+        <div style="margin-top:26px;">
+          <button class="btn btn-primary btn-lg" style="max-width:260px;margin:0 auto;" onclick="go(12)">Go to Activation Dashboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 12 — Activation Dashboard -->
+    <div class="screen" id="screen-12">
+      <div class="dashboard-wrap">
+        <div class="dash-head">
+          <div>
+            <h2>Activation Dashboard</h2>
+            <p>Sunrise Multi-specialty Clinic · live since today</p>
+          </div>
+          <span class="badge success"><span class="dot"></span>Organization active</span>
+        </div>
+
+        <div class="milestone-card">
+          <div class="milestone-top">
+            <div class="milestone-count">3 of 8 milestones complete</div>
+            <div class="milestone-pct">38%</div>
+          </div>
+          <div class="milestone-bar">
+            <div class="seg filled"></div><div class="seg filled"></div><div class="seg filled"></div>
+            <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+          </div>
+          <div class="milestone-list">
+            <div class="milestone-item done"><div class="ic">✓</div><span>Branch created</span></div>
+            <div class="milestone-item done"><div class="ic">✓</div><span>Doctor invited</span></div>
+            <div class="milestone-item done"><div class="ic">✓</div><span>Invite accepted</span></div>
+            <div class="milestone-item pending"><div class="ic"></div><span>Appointment booked</span></div>
+            <div class="milestone-item pending"><div class="ic"></div><span>Consultation completed</span></div>
+            <div class="milestone-item pending"><div class="ic"></div><span>Invoice generated</span></div>
+            <div class="milestone-item pending"><div class="ic"></div><span>Payment received</span></div>
+            <div class="milestone-item pending"><div class="ic"></div><span>Sustained weekly usage</span></div>
+          </div>
+        </div>
+
+        <div class="next-action">
+          <div>
+            <div class="label">What to do next</div>
+            <div class="title">Book your first appointment</div>
+            <div class="desc">This unlocks consultation, invoicing and payment milestones — the fastest path to seeing Auriva in action.</div>
+          </div>
+          <button class="btn btn-primary">Book appointment</button>
+        </div>
+
+        <div class="stat-strip-label">Live once your first real appointment is booked — these are not seeded or sample numbers.</div>
+        <div class="stat-strip">
+          <div class="stat-tile">
+            <div class="label">Appointments booked</div>
+            <div class="value">0</div>
+            <div class="delta">Live once your first real appointment is booked</div>
+          </div>
+          <div class="stat-tile">
+            <div class="label">Consultations completed</div>
+            <div class="value">0</div>
+            <div class="delta">Live once your first real appointment is booked</div>
+          </div>
+          <div class="stat-tile">
+            <div class="label">Revenue collected</div>
+            <div class="value">₹0</div>
+            <div class="delta">Live once your first real appointment is booked</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">APS-031 · Part 4 (Organization Setup Wizard) + Part 7 (Activation Dashboard) · static design mockup for Product Owner review — no production code.</div>
+  </main>
+</div>
+
+<script>
+var STEP_LABELS = ["Welcome","Organization Type","Specialty","Brand","Locations","Working Hours","Services","Team","Verification","Launch","Confirmation","Activation Dashboard"];
+var current = 1;
+
+function buildProgress(){
+  var track = document.getElementById('progressTrack');
+  track.innerHTML = '';
+  for (var i=1;i<=12;i++){
+    var step = document.createElement('div');
+    step.className = 'progress-step';
+    var dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.textContent = i;
+    step.appendChild(dot);
+    if (i<12){
+      var line = document.createElement('div');
+      line.className = 'progress-line';
+      step.appendChild(line);
+    }
+    track.appendChild(step);
+  }
+  updateProgress();
+}
+
+function updateProgress(){
+  var steps = document.querySelectorAll('#progressTrack .progress-step');
+  steps.forEach(function(el, idx){
+    var n = idx+1;
+    el.classList.remove('done','current');
+    if (n < current) el.classList.add('done');
+    if (n === current){
+      el.classList.add('current');
+      el.querySelector('.progress-dot').textContent = n;
+    } else if (n < current){
+      el.querySelector('.progress-dot').textContent = '✓';
+    } else {
+      el.querySelector('.progress-dot').textContent = n;
+    }
+  });
+  document.getElementById('progressLabel').textContent = 'Step ' + current + ' of 12 · ' + STEP_LABELS[current-1];
+}
+
+function go(n){
+  current = n;
+  document.querySelectorAll('.screen').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('screen-'+n).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(el){
+    el.classList.toggle('active', parseInt(el.getAttribute('data-screen'),10) === n);
+  });
+  updateProgress();
+  window.scrollTo(0,0);
+}
+
+document.querySelectorAll('.nav-item').forEach(function(el){
+  el.addEventListener('click', function(){ go(parseInt(el.getAttribute('data-screen'),10)); });
+});
+
+buildProgress();
+go(1);
+</script>
+
+</body>
+</html>

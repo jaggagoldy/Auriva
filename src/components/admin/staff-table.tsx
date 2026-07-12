@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   Copy,
@@ -8,6 +9,7 @@ import {
   Send,
   Stethoscope,
   Trash2,
+  UserCheck,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +41,11 @@ import { PendingInvite, ROLE_META, roleOf } from "@/shared/workspace";
 interface StaffTableProps {
   staff: Doctor[] | null;
   invites: PendingInvite[];
+  /** Sprint 3: needed to call the org-scoped staff-management API. */
+  organizationId: string | null;
   onRevokeInvite: (id: string) => void;
+  /** Sprint 3: refresh the roster after a staff member is (de)activated. */
+  onStaffChanged: () => void;
 }
 
 async function copyToClipboard(value: string, label: string) {
@@ -50,7 +56,9 @@ async function copyToClipboard(value: string, label: string) {
 export default function StaffTable({
   staff,
   invites,
+  organizationId,
   onRevokeInvite,
+  onStaffChanged,
 }: StaffTableProps) {
   return (
     <Table>
@@ -102,7 +110,12 @@ export default function StaffTable({
               />
             ))}
             {staff.map((member) => (
-              <StaffRow key={member.id} member={member} />
+              <StaffRow
+                key={member.id}
+                member={member}
+                organizationId={organizationId}
+                onStaffChanged={onStaffChanged}
+              />
             ))}
           </>
         )}
@@ -116,10 +129,46 @@ function RoleBadge({ role }: { role: keyof typeof ROLE_META }) {
   return <Badge className={cn("font-medium", meta.badge)}>{meta.label}</Badge>;
 }
 
-function StaffRow({ member }: { member: Doctor }) {
+function StaffRow({
+  member,
+  organizationId,
+  onStaffChanged,
+}: {
+  member: Doctor;
+  organizationId: string | null;
+  onStaffChanged: () => void;
+}) {
   const role = roleOf(member);
+  const [busy, setBusy] = React.useState(false);
+  // Sprint 3: is_active comes from the staff-management API; treat a legacy
+  // payload without the field as active (the pre-Sprint-3 default).
+  const active = member.is_active !== false;
+
+  async function setActive(isActive: boolean) {
+    if (!organizationId) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/organizations/${organizationId}/staff/${member.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: isActive }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message ?? "Could not update staff member");
+      toast.success(isActive ? `${member.full_name} reactivated` : `${member.full_name} deactivated`);
+      onStaffChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update staff member");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <TableRow>
+    <TableRow className={cn(!active && "opacity-60")}>
       <TableCell className="pl-4">
         <div className="flex items-center gap-3 py-1">
           <Avatar className="size-8">
@@ -144,10 +193,17 @@ function StaffRow({ member }: { member: Doctor }) {
         {member.specialty ?? "—"}
       </TableCell>
       <TableCell>
-        <span className="flex items-center gap-1.5 text-sm">
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          Active
-        </span>
+        {active ? (
+          <span className="flex items-center gap-1.5 text-sm">
+            <span className="size-1.5 rounded-full bg-success" />
+            Active
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-muted-foreground/40" />
+            Inactive
+          </span>
+        )}
       </TableCell>
       <TableCell className="pr-4 text-right">
         <DropdownMenu>
@@ -156,6 +212,7 @@ function StaffRow({ member }: { member: Doctor }) {
               <Button
                 variant="ghost"
                 size="icon-sm"
+                disabled={busy}
                 aria-label={`Actions for ${member.full_name}`}
               />
             }
@@ -189,17 +246,24 @@ function StaffRow({ member }: { member: Doctor }) {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() =>
-                toast.error("Removing staff requires the staff API", {
-                  description: "The backend team hasn't shipped it yet.",
-                })
-              }
-            >
-              <Trash2 />
-              Remove from workspace
-            </DropdownMenuItem>
+            {active ? (
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={!organizationId || busy}
+                onClick={() => setActive(false)}
+              >
+                <UserX />
+                Deactivate access
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                disabled={!organizationId || busy}
+                onClick={() => setActive(true)}
+              >
+                <UserCheck />
+                Reactivate access
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
@@ -215,7 +279,7 @@ function InviteRow({
   onRevoke: () => void;
 }) {
   return (
-    <TableRow className="bg-amber-500/[0.04]">
+    <TableRow className="bg-warning/[0.04]">
       <TableCell className="pl-4">
         <div className="flex items-center gap-3 py-1">
           <Avatar className="size-8">
@@ -241,7 +305,7 @@ function InviteRow({
       </TableCell>
       <TableCell>
         <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-amber-500" />
+          <span className="size-1.5 rounded-full bg-warning" />
           Invited {formatDay(invite.invited_at)}
         </span>
       </TableCell>
@@ -260,14 +324,19 @@ function InviteRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Pending invitation</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() =>
-                toast.success(`Invitation re-sent to ${invite.email}`)
-              }
-            >
-              <Send />
-              Resend invitation
-            </DropdownMenuItem>
+            {invite.token && (
+              <DropdownMenuItem
+                onClick={() =>
+                  copyToClipboard(
+                    `${window.location.origin}/join/${invite.token}`,
+                    "Join link"
+                  )
+                }
+              >
+                <Send />
+                Copy join link
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onRevoke}>
               <Trash2 />

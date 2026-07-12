@@ -8,7 +8,18 @@ import prisma from "@/lib/prisma";
 /** List/include shape of the public GET /api/appointments contract. */
 export const APPOINTMENT_LIST_INCLUDE = {
   patient: {
-    select: { id: true, full_name: true, blood_group: true, user_id: true },
+    select: {
+      id: true,
+      full_name: true,
+      blood_group: true,
+      user_id: true,
+      date_of_birth: true,
+      gender: true,
+      allergies: true,
+      chronic_conditions: true,
+      emergency_contact_name: true,
+      emergency_contact_phone: true,
+    },
   },
   doctor: {
     select: {
@@ -22,6 +33,9 @@ export const APPOINTMENT_LIST_INCLUDE = {
   clinic: {
     select: { id: true, name: true, address: true },
   },
+  // APS-043: the Prescription object rides along; the service layer projects
+  // it onto the legacy prescription_* columns for pre-existing consumers.
+  prescription: true,
 } satisfies Prisma.AppointmentInclude;
 
 export interface AppointmentSearchFilters {

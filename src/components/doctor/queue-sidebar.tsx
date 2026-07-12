@@ -188,7 +188,7 @@ export default function QueueSidebar({
                                 {appointment.patient.full_name}
                               </span>
                               {appointment.priority > 0 && (
-                                <Star className="size-3 shrink-0 fill-amber-400 text-amber-400" />
+                                <Star className="size-3 shrink-0 fill-amber-400 text-warning" />
                               )}
                             </div>
                             <div className="truncate text-[11px] text-muted-foreground">

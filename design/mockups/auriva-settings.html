@@ -1,0 +1,250 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --top:64px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  input,select{font-family:var(--fb)}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+
+  .topbar{height:var(--top);display:flex;align-items:center;gap:14px;padding:0 22px;background:rgba(251,248,244,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .tb-clinic{display:flex;align-items:center;gap:11px}
+  .tb-clinic .lg{width:34px;height:34px;border-radius:11px;background:var(--pine);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(14,116,102,.7)}
+  .tb-clinic .lg svg{width:19px;height:19px}
+  .tb-clinic .nm{font-family:var(--fd);font-weight:700;font-size:16px;line-height:1.1}
+  .tb-clinic .rl{font-size:11.5px;color:var(--muted)}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .saved{font-size:12px;color:var(--ok);font-weight:650;display:inline-flex;align-items:center;gap:6px}
+  .saved svg{width:14px;height:14px}
+  .tb-av{width:38px;height:38px;border-radius:12px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:clamp(22px,3vw,34px) 22px 70px;display:grid;grid-template-columns:230px 1fr;gap:26px;align-items:start}
+  h1.page{font-size:clamp(24px,3vw,30px);margin-bottom:6px}
+  .lead{color:var(--body);font-size:14px;margin-bottom:22px}
+
+  .catnav{position:sticky;top:calc(var(--top) + 22px);display:flex;flex-direction:column;gap:3px}
+  .catb{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:11px;border:none;background:none;font-family:var(--fd);font-weight:650;font-size:13.5px;color:var(--body);text-align:left;transition:.14s;width:100%}
+  .catb svg{width:18px;height:18px;color:var(--muted)}
+  .catb:hover{background:var(--sand)}
+  .catb.on{background:var(--pine-tint);color:var(--pine-deep)}
+  .catb.on svg{color:var(--pine-deep)}
+
+  .panel{display:none;animation:vin .35s cubic-bezier(.2,.8,.2,1)}
+  .panel.on{display:block}
+  @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.panel.on{animation:none}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .pad{padding:22px}
+  .card + .card{margin-top:16px}
+  .sh{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 17px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14px;transition:transform .12s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:16px;height:16px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 12px 26px -12px rgba(14,116,102,.6)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:34px;font-size:12.5px;padding:0 11px}
+  .btn-danger{background:none;color:var(--rose);border:1.5px solid #EFC7BF}
+
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .fld{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+  .fld:last-child{margin-bottom:0}
+  .fld label{font-size:12.5px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld .inp{display:flex;align-items:center;gap:9px;background:var(--paper);border:1.5px solid var(--line-2);border-radius:11px;padding:0 13px}
+  .fld .inp:focus-within{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .fld .inp .pre{color:var(--muted);font-size:14px;font-weight:600}
+  .fld input,.fld select{flex:1;border:none;background:none;outline:none;font-size:14.5px;padding:11px 0;color:var(--ink)}
+  .avatar-edit{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+  .avatar-edit .av{width:64px;height:64px;border-radius:18px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:24px}
+
+  .togrow{display:flex;align-items:center;gap:14px;padding:15px 0;border-top:1px solid var(--line)}
+  .togrow:first-child{border-top:none}
+  .togrow .nm{font-family:var(--fd);font-weight:700;font-size:14px}
+  .togrow .mt{font-size:12px;color:var(--muted);margin-top:1px}
+  .tgl{width:44px;height:26px;border-radius:99px;background:var(--ok);position:relative;border:none;flex:0 0 auto;margin-left:auto}
+  .tgl::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 2px 5px rgba(0,0,0,.2);transform:translateX(18px)}
+  .tgl.off{background:var(--line-2)}.tgl.off::after{transform:translateX(0)}
+
+  .svc{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+  .svc:first-of-type{border-top:none}
+  .svc .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .svc .mt{font-size:12px;color:var(--muted)}
+  .svc .fee{font-family:var(--fd);font-weight:700;font-size:15px;margin-left:auto}
+  .svc .del{width:30px;height:30px;border-radius:9px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center}
+  .svc .del:hover{background:var(--rose-tint);color:var(--rose)}
+  .svc .del svg{width:15px;height:15px}
+
+  /* theme picker */
+  .themes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+  .theme{border:2px solid var(--line-2);border-radius:14px;padding:12px;cursor:pointer;transition:.15s;background:var(--surface)}
+  .theme.on{border-color:var(--pine)}
+  .theme .sw{height:44px;border-radius:9px;display:flex;overflow:hidden;margin-bottom:9px}
+  .theme .sw span{flex:1}
+  .theme .tn{font-family:var(--fd);font-weight:700;font-size:13px}
+  .accents{display:flex;gap:10px;margin-top:8px}
+  .acc{width:34px;height:34px;border-radius:10px;cursor:pointer;border:2px solid transparent}
+  .acc.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+
+  .toastwrap{position:fixed;top:76px;right:16px;z-index:80;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:12px 15px;font-size:13.5px;font-weight:600;animation:tin .3s}
+  .toast .ic{width:24px;height:24px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  @media (max-width:820px){
+    .wrap{grid-template-columns:1fr;gap:16px}
+    .catnav{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}
+    .catb{flex:0 0 auto}
+    .frow{grid-template-columns:1fr}
+    .themes{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="topbar">
+  <div class="tb-clinic"><span class="lg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><div><div class="nm">SmileCare Dental</div><div class="rl">Settings</div></div></div>
+  <div class="tb-right"><span class="saved" id="saved" style="opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Saved</span><span class="tb-av">AR</span></div>
+</div>
+
+<div class="wrap">
+  <nav class="catnav">
+    <button class="catb on" data-cat="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>Profile</button>
+    <button class="catb" data-cat="clinic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13"/></svg>Clinic details</button>
+    <button class="catb" data-cat="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Services &amp; fees</button>
+    <button class="catb" data-cat="booking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4"/></svg>Booking</button>
+    <button class="catb" data-cat="notif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg>Notifications</button>
+    <button class="catb" data-cat="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Appearance</button>
+    <button class="catb" data-cat="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Data &amp; privacy</button>
+  </nav>
+
+  <div class="content">
+    <!-- PROFILE -->
+    <section class="panel on" data-p="profile">
+      <h1 class="page">Profile</h1><p class="lead">How you appear across Auriva.</p>
+      <div class="card pad">
+        <div class="avatar-edit"><span class="av">AR</span><div><button class="btn btn-line btn-sm" data-toast="Upload a photo">Change photo</button><p style="font-size:12px;color:var(--muted);margin-top:6px">JPG or PNG, up to 2 MB</p></div></div>
+        <div class="frow"><div class="fld"><label>Full name</label><div class="inp"><input value="Dr. Anjali Rao"></div></div><div class="fld"><label>Specialty</label><div class="inp"><input value="Dentist"></div></div></div>
+        <div class="frow"><div class="fld"><label>Phone</label><div class="inp"><span class="pre">+91</span><input value="98765 43210"></div></div><div class="fld"><label>Email</label><div class="inp"><input value="anjali@clinic.in"></div></div></div>
+        <div class="fld"><label>Registration number</label><div class="inp"><input value="KA/2018/0472"></div></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn btn-primary" data-save>Save changes</button></div>
+    </section>
+
+    <!-- CLINIC -->
+    <section class="panel" data-p="clinic">
+      <h1 class="page">Clinic details</h1><p class="lead">Your clinic's name, address and hours — shown to patients.</p>
+      <div class="card pad">
+        <div class="fld"><label>Clinic name</label><div class="inp"><input value="SmileCare Dental"></div></div>
+        <div class="fld"><label>Address</label><div class="inp"><input value="24, 2nd Main, HSR Layout, Bengaluru 560102"></div></div>
+        <div class="frow"><div class="fld"><label>Working days</label><div class="inp"><input value="Mon – Sat"></div></div><div class="fld"><label>Hours</label><div class="inp"><input value="9:30 AM – 6:00 PM"></div></div></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn btn-primary" data-save>Save changes</button></div>
+    </section>
+
+    <!-- SERVICES -->
+    <section class="panel" data-p="services">
+      <h1 class="page">Services &amp; fees</h1><p class="lead">What you offer and what it costs.</p>
+      <div class="card pad">
+        <div class="svc"><div><div class="nm">Consultation</div><div class="mt">Follow-up within 7 days</div></div><span class="fee">₹600</span><button class="del" data-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="svc"><div><div class="nm">Scaling &amp; cleaning</div><div class="mt">45 min</div></div><span class="fee">₹1,200</span><button class="del" data-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="svc"><div><div class="nm">Root canal</div><div class="mt">Per sitting</div></div><span class="fee">₹3,500</span><button class="del" data-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <button class="btn btn-line btn-sm" style="margin-top:16px" data-toast="Add a service"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add service</button>
+      </div>
+    </section>
+
+    <!-- BOOKING -->
+    <section class="panel" data-p="booking">
+      <h1 class="page">Booking</h1><p class="lead">How patients book you online.</p>
+      <div class="card pad">
+        <div class="togrow"><div><div class="nm">Accept online bookings</div><div class="mt">Patients can book from your public page</div></div><button class="tgl" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Allow walk-ins</div><div class="mt">Front desk can add walk-ins to the queue</div></div><button class="tgl" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Require confirmation</div><div class="mt">Patients confirm via WhatsApp before the slot holds</div></div><button class="tgl off" data-tgl></button></div>
+      </div>
+      <div class="card pad">
+        <div class="sh">Slot length</div>
+        <div class="frow"><div class="fld"><label>Minutes per appointment</label><div class="inp"><input value="15"></div></div><div class="fld"><label>Buffer between slots</label><div class="inp"><input value="0"></div></div></div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section class="panel" data-p="notif">
+      <h1 class="page">Notifications</h1><p class="lead">What Auriva tells you about. Full patient messaging lives in Communication.</p>
+      <div class="card pad">
+        <div class="togrow"><div><div class="nm">New booking</div><div class="mt">When a patient books online</div></div><button class="tgl" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Cancellations</div><div class="mt">When a patient cancels or reschedules</div></div><button class="tgl" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Daily summary</div><div class="mt">A morning recap of your day</div></div><button class="tgl" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Payment received</div><div class="mt">When an invoice is paid</div></div><button class="tgl off" data-tgl></button></div>
+      </div>
+    </section>
+
+    <!-- APPEARANCE -->
+    <section class="panel" data-p="appearance">
+      <h1 class="page">Appearance</h1><p class="lead">Make Auriva feel like yours.</p>
+      <div class="card pad">
+        <div class="sh">Theme</div>
+        <div class="themes">
+          <div class="theme on" data-theme><div class="sw"><span style="background:#FBF8F4"></span><span style="background:#E4EFEC"></span><span style="background:#0E7466"></span></div><div class="tn">Warm (default)</div></div>
+          <div class="theme" data-theme><div class="sw"><span style="background:#fff"></span><span style="background:#F1F3F5"></span><span style="background:#2A6FB0"></span></div><div class="tn">Cool light</div></div>
+          <div class="theme" data-theme><div class="sw"><span style="background:#1A1714"></span><span style="background:#2A2420"></span><span style="background:#E8A24C"></span></div><div class="tn">Dark</div></div>
+        </div>
+        <div class="sh" style="margin-top:22px">Accent</div>
+        <div class="accents">
+          <span class="acc on" style="background:#0E7466" data-acc></span>
+          <span class="acc" style="background:#2A6FB0" data-acc></span>
+          <span class="acc" style="background:#7A5AF0" data-acc></span>
+          <span class="acc" style="background:#C9584E" data-acc></span>
+          <span class="acc" style="background:#E8A24C" data-acc></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA -->
+    <section class="panel" data-p="data">
+      <h1 class="page">Data &amp; privacy</h1><p class="lead">Your practice, your data — always.</p>
+      <div class="card pad">
+        <div class="togrow"><div><div class="nm">Export your data</div><div class="mt">Download all patients, records and invoices</div></div><button class="btn btn-line btn-sm" style="margin-left:auto" data-toast="Preparing export…">Export</button></div>
+        <div class="togrow"><div><div class="nm">Two-factor authentication</div><div class="mt">Extra protection for your account</div></div><button class="tgl off" data-tgl></button></div>
+        <div class="togrow"><div><div class="nm">Audit log</div><div class="mt">Every access &amp; change, tamper-evident</div></div><button class="btn btn-line btn-sm" style="margin-left:auto" data-toast="Opening audit log — Phase 8">View</button></div>
+      </div>
+      <div class="card pad">
+        <div class="sh" style="color:var(--rose)">Danger zone</div>
+        <div class="togrow" style="border:none;padding-top:0"><div><div class="nm">Close this practice</div><div class="mt">Export first — this cannot be undone</div></div><button class="btn btn-danger btn-sm" style="margin-left:auto" data-toast="Are you sure? (demo)">Close practice</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tw=document.getElementById("toasts");
+  function toast(msg){var t=document.createElement("div");t.className="toast";t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';tw.appendChild(t);setTimeout(function(){t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(function(){t.remove();},300);},2200);}
+  function showSaved(){var s=document.getElementById("saved");s.style.transition="opacity .2s";s.style.opacity="1";setTimeout(function(){s.style.opacity="0";},1800);}
+  function setCat(c){[].forEach.call(document.querySelectorAll(".panel"),function(p){p.classList.toggle("on",p.dataset.p===c);});[].forEach.call(document.querySelectorAll(".catb"),function(b){b.classList.toggle("on",b.dataset.cat===c);});window.scrollTo(0,0);}
+  document.addEventListener("click",function(e){
+    var cb=e.target.closest("[data-cat]");if(cb){setCat(cb.getAttribute("data-cat"));return;}
+    var tg=e.target.closest("[data-tgl]");if(tg){tg.classList.toggle("off");showSaved();return;}
+    if(e.target.closest("[data-save]")){showSaved();toast("Changes saved");return;}
+    if(e.target.closest("[data-del]")){e.target.closest(".svc").remove();showSaved();return;}
+    var th=e.target.closest("[data-theme]");if(th){[].forEach.call(th.parentNode.children,function(c){c.classList.remove("on");});th.classList.add("on");showSaved();return;}
+    var ac=e.target.closest("[data-acc]");if(ac){[].forEach.call(ac.parentNode.children,function(c){c.classList.remove("on");});ac.classList.add("on");showSaved();return;}
+    var tt=e.target.closest("[data-toast]");if(tt){toast(tt.getAttribute("data-toast"));return;}
+  });
+})();
+</script>

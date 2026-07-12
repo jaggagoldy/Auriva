@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-008 — Auriva Interaction Patterns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:12.5px;font-weight:500;margin-bottom:1px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:10.5px;color:var(--text-muted);font-weight:600;width:20px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1040px;margin:0 auto;padding-top:60px;scroll-margin-top:20px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:26px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14px;color:var(--text-secondary);max-width:680px;margin-bottom:24px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:18px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--slate-100);padding:2px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.kbd{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--slate-600);border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 7px;background:var(--slate-50);white-space:nowrap}
+.cover{min-height:360px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+ul.rules{font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px}
+ul.rules b{color:var(--text)}
+.dont{border-left:3px solid var(--danger);background:var(--danger-bg);border-radius:0 var(--r-md) var(--r-md) 0;padding:10px 14px;font-size:12.5px;color:#991B1B;margin-top:12px}
+.dont b{font-weight:700}
+/* state machine */
+.sm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:16px;background:var(--slate-50);border:1.5px dashed var(--slate-300);border-radius:var(--r-lg)}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:var(--r-full);border:1px solid;line-height:1.4;white-space:nowrap}
+.st .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.sm-arr{color:var(--slate-400);font-size:13px;font-weight:700}
+.sm-note{font-size:9.5px;font-weight:700;color:var(--indigo);background:var(--indigo-bg);border-radius:4px;padding:1px 6px;letter-spacing:.02em;white-space:nowrap}
+.ph-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ph-head h2{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.ph-head span{font-size:12px;color:var(--text-muted);display:block}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-008 · Interaction Patterns</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#principles"><span class="num">01</span> Principles &amp; Timing</a>
+  <a href="#buttons"><span class="num">02</span> Buttons</a>
+  <a href="#forms"><span class="num">03</span> Forms &amp; Validation</a>
+  <a href="#loading"><span class="num">04</span> Loading &amp; Feedback</a>
+  <a href="#finding"><span class="num">05</span> Search · Filter · Sort · Paginate</a>
+  <a href="#surfaces"><span class="num">06</span> Tables &amp; Cards</a>
+  <a href="#overlays"><span class="num">07</span> Dialogs &amp; Drawers</a>
+  <a href="#notifications"><span class="num">08</span> Notifications &amp; Toasts</a>
+  <a href="#status"><span class="num">09</span> Status State Machines</a>
+  <a href="#clinical"><span class="num">10</span> Timeline · Rx · Sharing</a>
+  <a href="#identity"><span class="num">11</span> OTP &amp; Org Switching</a>
+  <a href="#close"><span class="num">12</span> Phase 1 Close-out</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-008 · Phase 1 — Product Blueprint · For Review · Final document</div>
+    <h1>Interaction <em>Patterns</em></h1>
+    <p>How Auriva behaves — one consistent UX language for every control, surface, flow and clinical state. APS-002 defined how things look; APS-007 defined where they sit; this document defines what they do when touched. Every future screen is bound by these patterns.</p>
+  </div>
+</section>
+
+<!-- 01 PRINCIPLES -->
+<section class="doc-section" id="principles">
+  <div class="sec-kicker">01 · Foundations</div>
+  <h2 class="sec-title">Interaction principles &amp; timing standards</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Response-time budget</div>
+      <div class="tbl-wrap"><table class="tbl"><tbody>
+        <tr><td><b>&lt; 100ms</b></td><td>Every press acknowledges instantly: state change, ripple-free (no material ripples), pressed style.</td></tr>
+        <tr><td><b>&lt; 1s</b></td><td>Result appears, or skeleton takes over (B6). No spinners in content areas.</td></tr>
+        <tr><td><b>&gt; 1s</b></td><td>Named progress ("Verifying registration…") + the UI stays interactive elsewhere.</td></tr>
+        <tr><td><b>&gt; 10s / async</b></td><td>Convert to a background job with a status surface (e.g. KYC review card) — never a held spinner.</td></tr>
+      </tbody></table></div>
+      <div class="label">Motion</div>
+      <ul class="rules">
+        <li>Durations: 150ms (hover, chips, toasts in), 250ms (drawers, sheets), 300ms (state-change row highlight). Easing <code class="tk">ease-out</code> in, <code class="tk">ease-in</code> out.</li>
+        <li>Motion explains causality only — nothing animates for delight in clinical contexts. <code class="tk">prefers-reduced-motion</code> collapses all motion to fades.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Write strategy — optimistic vs. pessimistic</div>
+      <div class="tbl-wrap"><table class="tbl"><tbody>
+        <tr><td><b>Optimistic</b> (apply now, sync behind)</td><td>Mark read, toggle filters, reorder queue, notes autosave, check-in. Failure → revert + toast with retry.</td></tr>
+        <tr><td><b>Pessimistic</b> (server confirms first)</td><td>Sign Rx, publish lab result, payments, cancel appointment, consent grants. Button holds loading state; no UI change until confirmed.</td></tr>
+      </tbody></table></div>
+      <div class="label">Undo over confirm</div>
+      <ul class="rules">
+        <li>Reversible actions execute immediately with a 5s <b>Undo</b> toast (skip patient, archive, mark read).</li>
+        <li>Confirm dialogs are reserved for: destructive (delete), clinical (sign, publish), outward-facing (notify patients), and money.</li>
+        <li>Clinical actions are <b>never</b> optimistic and <b>never</b> undoable-silently — reversal is a new, logged action.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 02 BUTTONS -->
+<section class="doc-section" id="buttons">
+  <div class="sec-kicker">02 · Controls</div>
+  <h2 class="sec-title">Buttons</h2>
+  <div class="panel">
+    <ul class="rules">
+      <li><b>States:</b> default → hover (bg shift) → pressed (darken) → focus (ring, always visible) → loading → disabled. Loading replaces the label with a spinner <b>at fixed width</b> — buttons never resize mid-action.</li>
+      <li><b>One primary per view</b> (APS-002). Everything else: secondary, soft, ghost. Destructive style only for destructive verbs.</li>
+      <li><b>Submit protection:</b> on press the button disables and the request is idempotent — double-tap can never double-book or double-bill.</li>
+      <li><b>Disabled vs hidden:</b> hidden when the role can't ever use it (N6); disabled only when a state makes it temporarily unavailable — with a tooltip saying why ("Select a slot first").</li>
+      <li><b>Icon-only buttons</b> require tooltip (600ms delay) + <code class="tk">aria-label</code>. Minimum touch target 44px even when the glyph is 20px.</li>
+      <li><b>Verb labels:</b> buttons say what they do — "Book appointment", "Sign &amp; complete", never "OK" / "Yes" / "Submit".</li>
+    </ul>
+    <div class="dont"><b>Don't:</b> stack two primaries · use danger color for emphasis · show a disabled primary with no explanation · let a loading button be re-clickable.</div>
+  </div>
+</section>
+
+<!-- 03 FORMS -->
+<section class="doc-section" id="forms">
+  <div class="sec-kicker">03 · Input</div>
+  <h2 class="sec-title">Forms &amp; Validation</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Form behavior</div>
+      <ul class="rules">
+        <li>First field autofocused on open (desktop &amp; drawers; mobile only inside flows).</li>
+        <li>Labels above fields, always visible — no floating labels, no placeholder-as-label.</li>
+        <li><span class="kbd">⏎</span> submits single-field steps; <span class="kbd">⌘⏎</span> submits multi-field forms; <span class="kbd">Tab</span> order follows visual order.</li>
+        <li>Formatting is automatic while typing (phone grouping, ₹ amounts); the user never types formatting characters.</li>
+        <li>Drafts: clinical and long forms autosave every 2s of idle + on blur; "Draft saved" chip timestamps it (B4 exempts these from guards).</li>
+        <li>Multi-step flows validate per step; Back never loses entered data; steps are revisitable before final submit.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Validation choreography</div>
+      <ul class="rules">
+        <li><b>Never on first keystroke.</b> Validate on blur; once a field has errored, re-validate on every change so the error clears the moment it's fixed.</li>
+        <li><b>Error anatomy:</b> red border + 12.5px message below the field, replacing the helper text. Message says how to fix, not what failed ("Enter a valid 10-digit mobile number").</li>
+        <li><b>Submit with errors:</b> scroll to first error, focus it, and summarize count for screen readers. The button un-disables — users may always attempt submit.</li>
+        <li><b>Async validation</b> (phone dedupe, ABHA lookup): inline spinner in the field suffix, result within 1s; success may show a positive hint ("Existing patient — Ananya S. will be linked").</li>
+        <li><b>Warnings ≠ errors:</b> amber, non-blocking ("Fee differs from price list"); errors block, warnings inform.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 04 LOADING -->
+<section class="doc-section" id="loading">
+  <div class="sec-kicker">04 · Feedback</div>
+  <h2 class="sec-title">Loading &amp; system feedback</h2>
+  <div class="panel">
+    <ul class="rules">
+      <li><b>Skeleton-first everywhere</b> (B6): skeletons mirror the real geometry (APS-007 per-layout specs). After one shimmer cycle with no data (~3s), swap to a quiet "Still loading… Retry" state.</li>
+      <li><b>Spinners live only inside buttons</b> and field suffixes. Full-page spinners do not exist in Auriva.</li>
+      <li><b>Streaming:</b> where partial data is useful it renders progressively — slot grids fill in, search results append, insights charts draw when ready. Never block a page on its slowest widget.</li>
+      <li><b>Retry policy:</b> failed reads auto-retry once silently, then show an inline error region with Retry. Failed writes never auto-retry — they surface immediately (toast for optimistic, inline for pessimistic).</li>
+      <li><b>Stale &amp; live:</b> realtime surfaces (queue, board) show "Updated 12:04" when the socket drops and a reconnect banner (z-500) if offline &gt; 10s. Cached data is shown greyed, never hidden.</li>
+      <li><b>Success feedback ladder:</b> in-place state change (best) → toast (when the result is elsewhere) → success screen (only ends of flows, e.g. booking confirmed).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 05 FINDING -->
+<section class="doc-section" id="finding">
+  <div class="sec-kicker">05 · Finding</div>
+  <h2 class="sec-title">Search · Filters · Sorting · Pagination</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Search</div>
+      <ul class="rules">
+        <li>Debounce 250ms · min 2 chars (1 for numeric/phone) · matches highlighted in results.</li>
+        <li>⌘K palette: results grouped by type, <span class="kbd">↑</span><span class="kbd">↓</span> + <span class="kbd">⏎</span>, <span class="kbd">⌘⏎ </span> primary action, recents when empty (APS-006 §06).</li>
+        <li>In-list search boxes filter the current list only and combine with active filters (AND).</li>
+        <li>Clearing search restores prior scroll position, not the top.</li>
+      </ul>
+      <div class="label">Sorting</div>
+      <ul class="rules">
+        <li>Column header click cycles <b>asc → desc → default</b>; arrow indicator on the active column only. Single-column sort in V1.</li>
+        <li>Every list declares a default sort with time-relevance (queues by position, appointments by time, registries by recent activity).</li>
+        <li>Sort is URL state (N5/B1) and persists per list per session (B3).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Filters</div>
+      <ul class="rules">
+        <li>Applied filters render as removable chips (✕); "+ Filter" opens a popover of facets; <b>desktop applies instantly</b>, mobile sheets batch behind an Apply button.</li>
+        <li>"Clear all" appears with 2+ chips. Filter state is URL state — shareable, restorable, never a separate page (N5).</li>
+        <li>Facet options show result counts where cheap ("Confirmed · 12"); zero-count options remain visible but muted.</li>
+        <li>Saved views (org lists): name the current filter+sort set; role-private in V1.</li>
+      </ul>
+      <div class="label">Pagination</div>
+      <ul class="rules">
+        <li>Tables paginate: 25 default (25/50/100), range label "1–25 of 412", pager keeps position on drawer open/close.</li>
+        <li>Infinite scroll only on patient-mobile feeds (timeline, notifications) with day separators as anchors.</li>
+        <li>Changing filters/sort resets to page 1; everything else preserves the page (B3).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 06 SURFACES -->
+<section class="doc-section" id="surfaces">
+  <div class="sec-kicker">06 · Surfaces</div>
+  <h2 class="sec-title">Tables &amp; Cards</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Tables (desktop ops)</div>
+      <ul class="rules">
+        <li><b>Row click opens the drawer</b>; interactive cells (chips with menus, ⋯) stop propagation. Hover reveals row actions; <span class="kbd">J</span>/<span class="kbd">K</span> + <span class="kbd">⏎</span> mirror it for keyboard.</li>
+        <li>Bulk-select: checkbox column when batch actions exist; <span class="kbd">⇧</span>-click selects ranges; a sticky action bar replaces the filter bar while selection &gt; 0.</li>
+        <li>Realtime changes patch the row in place with a 300ms teal highlight (B8); new rows slide in at their sorted position — the table never re-jumps under the user.</li>
+        <li>No inline cell editing in V1 — edits happen in the drawer, keeping validation and audit in one place.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Cards</div>
+      <ul class="rules">
+        <li>Clickable cards: whole surface is the target; hover lift (desktop) only if clickable. Inner CTAs (Book slot) stop propagation.</li>
+        <li>Patient-mobile list cards support swipe actions (left: primary e.g. Reschedule; right: destructive e.g. Cancel) — <b>always an accelerator, never the only path</b>; the same actions live in the detail view.</li>
+        <li>Queue cards expose one-tap actions (Call in / Skip) directly — no drawer detour for the 90% case.</li>
+        <li>Long-press on mobile = the desktop right-click/⋯ menu (600ms, with haptic).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 07 OVERLAYS -->
+<section class="doc-section" id="overlays">
+  <div class="sec-kicker">07 · Overlays</div>
+  <h2 class="sec-title">Dialogs &amp; Drawers</h2>
+  <div class="panel">
+    <div class="label">Which overlay when</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Need</th><th>Surface</th></tr></thead>
+      <tbody>
+        <tr><td>View / edit an entity from a list</td><td><b>Drawer</b> (right 440–480 desktop · bottom sheet mobile)</td></tr>
+        <tr><td>Confirm an irreversible or clinical action</td><td><b>Dialog</b> 420px</td></tr>
+        <tr><td>Small focused task (time-off, rename)</td><td><b>Dialog</b> 560px</td></tr>
+        <tr><td>Multi-step journey</td><td><b>Flow (T6)</b> — modal desktop, full-screen mobile</td></tr>
+        <tr><td>Options / pickers on mobile</td><td><b>Bottom sheet</b></td></tr>
+      </tbody>
+    </table></div>
+    <div class="label">Behavior contract</div>
+    <ul class="rules">
+      <li><b>Dialogs:</b> focus trapped; initial focus on the <b>least destructive</b> action; <span class="kbd">Esc</span> = cancel; scrim click does <b>not</b> close confirm dialogs (misclick safety). Destructive anatomy: named object + consequence line + verb buttons ("Cancel appointment", not "Yes").</li>
+      <li><b>Drawers:</b> open 250ms; close via <span class="kbd">Esc</span>, ✕, scrim, or back (B2); dirty content triggers the guard (B4). Drawer URLs are real (B1). A drawer never opens another drawer — inner navigation replaces content with a back arrow in the drawer header.</li>
+      <li>Nothing auto-dismisses a dialog — only user action or the operation completing does.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 08 NOTIFICATIONS -->
+<section class="doc-section" id="notifications">
+  <div class="sec-kicker">08 · Messaging</div>
+  <h2 class="sec-title">Notifications &amp; Toasts</h2>
+  <div class="panel">
+    <ul class="rules">
+      <li><b>Toasts</b> (z-500): bottom-left desktop, top mobile; 5s duration, 8s with an action (Undo/Retry); max 3 stacked, oldest collapses. Hover pauses the timer. Toasts confirm — they never carry errors that require action (those render inline at the point of failure).</li>
+      <li><b>Bell panel:</b> opening marks visible items read (unread dot fades, count decrements); "Mark all read" for the rest. Items deep-link (X6) and back returns to origin (X7).</li>
+      <li><b>In-app urgent banners:</b> time-critical events (You're next · Emergency added · e-sign failed) render an 8s banner below the top bar — a bell count alone is never the only signal for urgency.</li>
+      <li><b>Realtime etiquette (B8):</b> another user's action updates data in place with the 300ms highlight; it never navigates, focuses, or opens anything on this user's screen.</li>
+      <li>Sound: off by default everywhere except the org Token Display (<code class="tk">ORG-004</code>) announcement chime.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 09 STATE MACHINES -->
+<section class="doc-section" id="status">
+  <div class="sec-kicker">09 · Clinical States</div>
+  <h2 class="sec-title">Appointment &amp; Queue status — state machines</h2>
+  <p class="sec-desc">Status is sacred (APS-002 P3). These are the only allowed states and transitions, platform-wide. Every transition is logged with actor + timestamp, and every patient-visible change notifies the patient.</p>
+
+  <div class="panel">
+    <div class="label">Appointment lifecycle</div>
+    <div class="sm">
+      <span class="st" style="color:#64748B;background:#F1F5F9;border-color:#E2E8F0"><span class="dot"></span>Requested</span><span class="sm-arr">→</span><span class="sm-note">org/doctor approves</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#2563EB;background:#EFF6FF;border-color:#BFDBFE"><span class="dot"></span>Scheduled</span><span class="sm-arr">→</span><span class="sm-note">patient confirms / auto</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>Confirmed</span><span class="sm-arr">→</span><span class="sm-note">reception check-in</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#4F46E5;background:#EEF2FF;border-color:#C7D2FE"><span class="dot"></span>Checked-in</span><span class="sm-arr">→</span><span class="sm-note">doctor calls</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>In Consultation</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Completed</span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px"><table class="tbl">
+      <thead><tr><th>Exit transition</th><th>From</th><th>Actor</th><th>Rules</th></tr></thead>
+      <tbody>
+        <tr><td><b>→ Cancelled</b></td><td>Requested…Confirmed</td><td>Patient / Org</td><td>Reason captured; slot reopens instantly; patient/org notified. Not allowed after Checked-in — use "revert check-in" first (logged).</td></tr>
+        <tr><td><b>→ No-show</b></td><td>Scheduled / Confirmed</td><td>System</td><td>Auto after grace window (org-configurable, default 30 min post-slot); reception can override back to Checked-in same-day.</td></tr>
+        <tr><td><b>→ Rescheduled</b></td><td>Requested…Confirmed</td><td>Either side</td><td>Modeled as new appointment linked to the old; history chain preserved.</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="rules" style="margin-top:12px">
+      <li>Transitions are <b>forward-only for actors</b>; corrections (wrong check-in) are explicit reversions with reasons, visible in the audit log (<code class="tk">SET-008</code>).</li>
+      <li>Chips always render dot + label (never color alone), colors fixed per APS-002 — no workspace may restyle a status.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <div class="label">Queue lifecycle (per visit-day token)</div>
+    <div class="sm">
+      <span class="st" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A"><span class="dot"></span>Waiting</span><span class="sm-arr">→</span><span class="sm-note">doctor calls</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#2563EB;background:#EFF6FF;border-color:#BFDBFE"><span class="dot"></span>Called</span><span class="sm-arr">→</span><span class="sm-note">patient enters</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4"><span class="dot"></span>With Doctor</span><span class="sm-arr">→</span>
+      <span class="st" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0"><span class="dot"></span>Done</span>
+    </div>
+    <ul class="rules" style="margin-top:12px">
+      <li><b>Called → Waiting:</b> no response in 2 min re-queues at +2 positions, max twice, then <b>Skipped</b> (grey). Reception can restore a Skipped token to Waiting anytime.</li>
+      <li><b>Emergency:</b> reception-only action; inserts at position 1 with mandatory reason; board shows red card; doctor gets an urgent banner. All displaced patients' ETAs update + notify.</li>
+      <li><b>Tokens never renumber.</b> Positions recalculate; the printed/SMS token stays valid all day. Patient app shows position + ETA, both live.</li>
+      <li>Reorder (drag on board) is reception-only, optimistic, logged, and rate-limited to prevent thrash.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 10 CLINICAL INTERACTIONS -->
+<section class="doc-section" id="clinical">
+  <div class="sec-kicker">10 · Clinical Interactions</div>
+  <h2 class="sec-title">Medical Timeline · Prescription · Sharing</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Medical timeline</div>
+      <ul class="rules">
+        <li>Reverse-chronological, grouped by date; loads the last 12 months, older years lazy-load on demand ("2025 · 14 events").</li>
+        <li>Type filter chips (Visits · Rx · Labs · Vitals · Docs) — instant, combinable.</li>
+        <li>Tap: mobile expands the entry inline (accordion); desktop opens the entity drawer. Dot colors by event type (APS-002); source badge shows the providing org.</li>
+        <li>New events slide in with highlight if the timeline is open when they land (e.g. Rx right after a consult).</li>
+        <li>Same data, two voices: patient view uses plain language ("Blood test — mostly normal, iron low"); clinical views show terminology. The projection changes, the record never does.</li>
+      </ul>
+      <div class="label">Prescription preview</div>
+      <ul class="rules">
+        <li>Dose pills use 1-0-1 notation with plain-text expansion on tap ("morning and night, after food").</li>
+        <li>Patient actions: Download PDF · Share (→ sharing flow) · Send to pharmacy. Signed state chip always visible; "signature pending" renders amber if e-sign is delayed (J2 recovery).</li>
+        <li>Doctor composer: search-add medicines (recents + templates first), <span class="kbd">⌥R</span> focus, template apply then edit, per-line dose/duration pills. <b>Allergy conflict is a hard stop</b> — proceeding requires an explicit override with a typed reason, logged on the Rx.</li>
+        <li><span class="kbd">⌘⏎</span> Sign &amp; complete — pessimistic write; on success the queue advances automatically.</li>
+        <li>Signed prescriptions are immutable; corrections issue a superseding Rx linked to the original.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Sharing flow (records &amp; consent)</div>
+      <ul class="rules">
+        <li><b>Patient-initiated share:</b> pick scope (whole record / a report / date range) → pick duration (24h · 7d · 30d) → generate link + QR. Default scope is always the <b>minimum</b> that satisfies the action.</li>
+        <li><b>Provider-requested consent (ABDM):</b> doctor requests → patient gets push + in-app card stating <b>who, what, why, how long</b> → Approve / Modify scope / Deny. Approval unlocks within the consult in real time (J2).</li>
+        <li>Every access is logged and visible to the patient (<code class="tk">PAT-015</code>): who viewed what, when. Revoke is one tap, effective immediately, and confirmed with a toast.</li>
+        <li>Expiry is automatic and silent for the viewer, notified to the owner ("Your share with Dr. Mehta expired").</li>
+        <li>No dark patterns: consent requests never pre-select scopes, never nag more than once per request, and Deny needs no reason.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 IDENTITY -->
+<section class="doc-section" id="identity">
+  <div class="sec-kicker">11 · Identity Flows</div>
+  <h2 class="sec-title">OTP Flow · Organization Switching</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">OTP flow</div>
+      <ul class="rules">
+        <li>6 boxes (48×56), first autofocused; typing auto-advances; backspace moves back; full-code <b>paste fills all boxes</b>; SMS auto-read on Android fills and pauses 1s before auto-submit (visible, cancellable).</li>
+        <li>Auto-submit on the 6th digit — no Verify button press needed (button exists as fallback).</li>
+        <li>Wrong code: boxes shake once (150ms), clear, refocus first box, inline error "Incorrect code — 2 attempts left".</li>
+        <li>Resend: 30s cooldown with visible countdown → resend → second resend offers <b>voice OTP</b>; after 3 failed codes, a 60s hold with a support link. Never a silent lockout.</li>
+        <li>"Change number" link is always present — mistyped numbers are the #1 OTP failure.</li>
+        <li>Same component everywhere: sign-in (L5), booking-embedded (L4 modal), re-auth on session expiry (B9), sensitive-action step-up (payout changes).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Organization / context switching</div>
+      <ul class="rules">
+        <li>Sidebar-header popover (APS-006 §05): orgs then branches, searchable &gt; 6, recents first; <span class="kbd">↑</span><span class="kbd">↓</span> + <span class="kbd">⏎</span>.</li>
+        <li>Switch target: same module, new scope. Perceived &lt; 400ms — chrome swaps instantly, lists skeleton, badges refetch. Current branch name is always visible in the sidebar header afterward.</li>
+        <li>Dirty work triggers the guard (B4) <b>before</b> switching; an in-progress flow blocks switching with "finish or discard".</li>
+        <li>Role may change with the org — the sidebar re-renders (N6) and, if the current module doesn't exist in the new role, lands on that role's home with a one-line explainer.</li>
+        <li>Workspace switching (identity change) stays separate in the profile menu (X1) with the same guard rules — the two switchers are never merged.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 12 CLOSE -->
+<section class="doc-section" id="close">
+  <div class="sec-kicker">12 · Close-out</div>
+  <h2 class="sec-title">One language, enforced</h2>
+  <div class="panel">
+    <div class="label">The consistency contract</div>
+    <ul class="rules">
+      <li>Every screen designed from here on must be expressible as: <b>APS-007 layout shell + APS-002 template + these interaction patterns</b>. A screen needing a new pattern amends this document first — patterns are never invented per-screen.</li>
+      <li>The same action always has the same trigger everywhere: row click = open, <span class="kbd">⌘K</span> = find, <span class="kbd">Esc</span> = close, swipe = accelerate, chip = status. No exceptions per workspace.</li>
+      <li>Anything clinical is: pessimistic, confirmed, logged, immutable-with-supersession. Anything reversible is: instant, undoable, quiet.</li>
+    </ul>
+  </div>
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Phase 1 — Product Blueprint: COMPLETE (pending your approval of APS-007/008)</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:6px">APS-001 Vision ✅ · APS-002 Design System ✅ · APS-003 Information Architecture ✅ · APS-004 Journey Maps ✅ · APS-005 Screen Inventory ✅ · APS-006 Navigation ✅ · APS-007 Layouts ✅ · APS-008 Interaction Patterns (this document).</p>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:6px"><b>Phase 2 — Screen Design</b> starts on the P0 spine in APS-004 journey order: ① Marketplace search → doctor profile → booking flow (MKT-001/002/003/009/010 + AUTH-001/002) → ② Patient Home &amp; appointment (PAT-001/002/003) → ③ Org Front Desk (ORG-001/002/003) → ④ Doctor Today &amp; workbench (DOC-001/002). Send each screen's requirements and it will be designed strictly against this blueprint.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

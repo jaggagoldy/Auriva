@@ -1,0 +1,139 @@
+import { notFound } from "next/navigation";
+import prisma from "@/lib/prisma";
+import PrintButton from "@/components/shared/print-button";
+
+interface InvoiceItem {
+  description: string;
+  qty: number;
+  unit_price: number;
+  amount: number;
+}
+
+function parseItems(json: string): InvoiceItem[] {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatINR(amount: number) {
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function formatDate(value: Date) {
+  return value.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+export default async function InvoicePrintPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: {
+      patient: true,
+      clinic: true,
+      payments: { orderBy: { received_at: "asc" } },
+    },
+  });
+  if (!invoice) notFound();
+
+  const items = parseItems(invoice.items_json);
+  const paid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
+  const balance = invoice.total - paid;
+  const isReceipt = invoice.status === "paid";
+
+  return (
+    <div>
+      <PrintButton />
+
+      <header className="flex items-start justify-between border-b-2 border-black pb-4">
+        <div>
+          <h1 className="text-lg font-bold">{isReceipt ? "Receipt" : "Invoice"}</h1>
+          <p className="text-[12px] text-muted-foreground">{invoice.invoice_number}</p>
+        </div>
+        <div className="text-right text-[12px]">
+          <p className="font-semibold">{invoice.clinic.name}</p>
+          <p className="text-muted-foreground">{invoice.clinic.address}</p>
+        </div>
+      </header>
+
+      <section className="mt-4 grid grid-cols-2 gap-2 border-b border-border pb-4 text-[12px]">
+        <div>
+          <span className="font-semibold">Billed to:</span> {invoice.patient.full_name}
+        </div>
+        <div className="text-right">
+          <span className="font-semibold">Date:</span> {formatDate(invoice.created_at)}
+        </div>
+        <div>
+          <span className="font-semibold">Health ID:</span> {invoice.patient.health_id}
+        </div>
+        <div className="text-right">
+          <span className="font-semibold">Status:</span> {invoice.status.toUpperCase()}
+        </div>
+      </section>
+
+      <table className="mt-4 w-full border-collapse text-[12px]">
+        <thead>
+          <tr className="border-b border-black text-left">
+            <th className="py-1">Description</th>
+            <th className="py-1 text-right">Qty</th>
+            <th className="py-1 text-right">Unit Price</th>
+            <th className="py-1 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, i) => (
+            <tr key={i} className="border-b border-border">
+              <td className="py-1.5">{item.description}</td>
+              <td className="py-1.5 text-right">{item.qty}</td>
+              <td className="py-1.5 text-right">{formatINR(item.unit_price)}</td>
+              <td className="py-1.5 text-right">{formatINR(item.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-black font-semibold">
+            <td colSpan={3} className="py-2 text-right">
+              Total
+            </td>
+            <td className="py-2 text-right">{formatINR(invoice.total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      {invoice.payments.length > 0 && (
+        <section className="mt-5">
+          <h2 className="text-[11px] font-bold tracking-wide uppercase text-muted-foreground">Payments</h2>
+          <table className="mt-2 w-full border-collapse text-[12px]">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="py-1">Date</th>
+                <th className="py-1">Method</th>
+                <th className="py-1">Reference</th>
+                <th className="py-1 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.payments.map((p) => (
+                <tr key={p.id} className="border-b border-border">
+                  <td className="py-1.5">{formatDate(p.received_at)}</td>
+                  <td className="py-1.5 uppercase">{p.method}</td>
+                  <td className="py-1.5">{p.reference ?? "—"}</td>
+                  <td className="py-1.5 text-right">{formatINR(p.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-right text-[12px] font-semibold">
+            Balance due: {formatINR(balance)}
+          </p>
+        </section>
+      )}
+
+      <footer className="mt-16 text-[11px] text-muted-foreground">
+        Generated by Auriva · {invoice.invoice_number}
+      </footer>
+    </div>
+  );
+}

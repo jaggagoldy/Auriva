@@ -10,12 +10,24 @@ import { randomBytes } from "crypto";
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { isOrgArchetype, memberRoleFromSpecialty, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
+import { type Capability } from "@/domain/authorization";
 import { publishEvent } from "@/lib/events";
+
+// Batch 2 (Adaptive Workspace): the capabilities an owner may GRANT to a staff
+// member through staff management. Deliberately excludes `admin_portal` (that
+// is organization ownership, not an operational grant) and `patient_workspace`
+// (never a staff surface). Granting `reception` to a doctor is exactly the
+// solo-practitioner preset.
+export const GRANTABLE_CAPABILITIES: Capability[] = ["reception", "doctor_workspace"];
 
 export class EmailInUseError extends Error {}
 export class InvitationNotFoundError extends Error {}
 export class InvitationNotPendingError extends Error {}
 export class OnboardingInputError extends Error {}
+// DATA-2/3: distinct from OnboardingInputError's 400-shaped cases — a
+// duplicate clinic name within the same organization is a 409-shaped
+// conflict, mirroring department-service.ts's DepartmentNameConflictError.
+export class ClinicNameConflictError extends Error {}
 
 export type InviteRole = "doctor" | "receptionist";
 
@@ -138,6 +150,15 @@ export async function createClinic(input: {
   const address = input.address?.trim();
   if (!name || !address) {
     throw new OnboardingInputError("Clinic name and address are required.");
+  }
+
+  // DATA-2: no DB constraint backs this (no schema change this sprint) — an
+  // application-level duplicate-creation guard, same org, same name.
+  const duplicate = await prisma.clinic.findFirst({
+    where: { organization_id: input.organizationId, name },
+  });
+  if (duplicate) {
+    throw new ClinicNameConflictError(`A clinic named "${name}" already exists in this organization.`);
   }
 
   return prisma.$transaction(async (tx) => {
@@ -353,12 +374,69 @@ export async function setStaffActive(input: {
   await prisma.$transaction([
     prisma.staffProfile.update({ where: { id: profile.id }, data: { is_active: input.isActive } }),
     prisma.user.update({ where: { id: profile.user_id }, data: { is_active: input.isActive } }),
+    // Batch 1: revoke live sessions on deactivation so access ends immediately,
+    // not just at the next login attempt (the login gate alone would leave a
+    // deactivated member working until their 12h session expired). No-op on
+    // reactivation (a deactivated user has no sessions to begin with).
+    ...(input.isActive
+      ? []
+      : [prisma.session.deleteMany({ where: { user_id: profile.user_id } })]),
     prisma.auditLog.create({
       data: {
         organization_id: input.organizationId,
         actor_user_id: input.actorUserId,
         action: input.isActive ? "staff_activated" : "staff_deactivated",
         detail: profile.full_name,
+      },
+    }),
+  ]);
+
+  return prisma.staffProfile.findUniqueOrThrow({ where: { id: profile.id } });
+}
+
+/**
+ * Batch 2 (Adaptive Workspace): grants a staff member the capabilities beyond
+ * their base role — the mechanism behind the solo-practitioner preset (grant a
+ * doctor `reception`, and their one account runs the whole practice). Stores
+ * only the GRANTS as a JSON array on the profile; the effective set (role
+ * defaults ∪ grants) is always recomputed server-side, never persisted, so a
+ * later role change can't leave a stale union behind. Passing an empty list
+ * clears grants back to role defaults.
+ */
+export async function setStaffCapabilities(input: {
+  organizationId: string;
+  staffProfileId: string;
+  actorUserId: string;
+  capabilities: Capability[];
+}) {
+  const profile = await prisma.staffProfile.findUnique({
+    where: { id: input.staffProfileId },
+    include: { clinic: true },
+  });
+  if (!profile || profile.clinic.organization_id !== input.organizationId) {
+    throw new InvitationNotFoundError("Staff member not found in this organization.");
+  }
+
+  const invalid = input.capabilities.filter((c) => !GRANTABLE_CAPABILITIES.includes(c));
+  if (invalid.length > 0) {
+    throw new OnboardingInputError(
+      `Cannot grant: ${invalid.join(", ")}. Grantable capabilities are ${GRANTABLE_CAPABILITIES.join(", ")}.`
+    );
+  }
+
+  // De-duplicate and store in a stable order; null when empty so the column
+  // reads as "role defaults only".
+  const unique = [...new Set(input.capabilities)];
+  const stored = unique.length > 0 ? JSON.stringify(unique) : null;
+
+  await prisma.$transaction([
+    prisma.staffProfile.update({ where: { id: profile.id }, data: { capabilities: stored } }),
+    prisma.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        actor_user_id: input.actorUserId,
+        action: "staff_capabilities_updated",
+        detail: `${profile.full_name}: [${unique.join(", ")}]`,
       },
     }),
   ]);

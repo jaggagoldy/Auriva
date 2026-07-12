@@ -1,0 +1,51 @@
+name: CI
+
+# INF-4: the platform's first automated gate. Runs lint, typecheck, the
+# Vitest suite (TEST-1/TEST-2), and a production build on every push/PR —
+# nothing reached the working tree with automated verification before this.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      # Non-blocking for now: ~34 pre-existing violations across ~20 files
+      # predate this pipeline (mostly no-explicit-any and a stricter
+      # react-hooks/set-state-in-effect rule) — none in code this sprint
+      # touched. Fixing them is real work in files outside this sprint's
+      # locked scope (SEC-1/SEC-2/SEC-5, TEST-1/TEST-2, INF-4), so it's
+      # tracked as its own follow-up (APS-035 TD-6/DS-1) rather than done
+      # silently here. Findings still surface in every run; flip this to
+      # blocking once that cleanup lands.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

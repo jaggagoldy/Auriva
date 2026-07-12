@@ -1,0 +1,856 @@
+"use client";
+
+import * as React from "react";
+import {
+  Activity,
+  ArrowLeft,
+  Banknote,
+  CalendarDays,
+  CheckCircle2,
+  Circle,
+  Copy,
+  ExternalLink,
+  Home,
+  Loader2,
+  MessageCircle,
+  Pencil,
+  Plus,
+  Search,
+  Settings as SettingsIcon,
+  Stethoscope,
+  Archive,
+  RotateCcw,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
+
+// Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
+// entirely inside /clinic. Every screen answers one question and always offers
+// one obvious next action.
+
+type View = "home" | "today" | "treatments" | "payments" | "settings";
+type Save = "idle" | "saving" | "saved";
+type Method = "cash" | "upi" | "card";
+
+interface ReadyStep { key: string; label: string; done: boolean; }
+interface Overview {
+  clinic: { id: string; name: string; phone: string | null; accepting_bookings: boolean; is_demo: boolean };
+  doctorId: string | null;
+  bookingPath: string | null;
+  ready: {
+    steps: ReadyStep[]; completed: number; total: number; percent: number;
+    nextStep: ReadyStep | null; goal: { seen: number; target: number } | null;
+  };
+}
+interface Service {
+  id: string; name: string; duration_minutes: number; price: number;
+  buffer_minutes: number | null; is_active: boolean;
+}
+interface Appt {
+  id: string; scheduled_time: string; status: string; walk_in: boolean; notes: string | null;
+  patient: { id: string; full_name: string } | null;
+}
+interface Today {
+  appointments: Appt[]; total: number; completed: number; remaining: number;
+  follow_ups: number; collected_today: number; outstanding_total: number; owner_name: string | null;
+}
+interface Visit {
+  step: "consult" | "pay";
+  appointmentId: string; patientName: string;
+  invoiceId?: string; total?: number;
+}
+
+const STEP_TARGET: Record<string, View> = {
+  treatment: "treatments", patient: "today", payment: "today", share: "home", profile: "settings",
+};
+
+function SaveBadge({ state }: { state: Save }) {
+  if (state === "saving") return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Saving…</span>;
+  if (state === "saved") return <span className="inline-flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="size-3" /> Saved</span>;
+  return null;
+}
+
+export default function MyClinicWorkspace() {
+  const [view, setView] = React.useState<View>("home");
+  const [ov, setOv] = React.useState<Overview | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [visit, setVisit] = React.useState<Visit | null>(null);
+
+  const refreshOverview = React.useCallback(() => {
+    return fetch("/api/clinic/overview", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setOv(d); });
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/clinic/overview", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d) setOv(d); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const [resetting, setResetting] = React.useState(false);
+  async function resetDemo() {
+    setResetting(true);
+    const res = await fetch("/api/demo/reset", { method: "POST" });
+    if (res.ok) {
+      toast.success("Demo reset to the original sample clinic");
+      // Full reload so every view (Today, Payments, …) picks up the fresh story.
+      window.location.reload();
+    } else {
+      toast.error("Couldn't reset the demo.");
+      setResetting(false);
+    }
+  }
+
+  async function toggleAccepting() {
+    if (!ov) return;
+    const next = !ov.clinic.accepting_bookings;
+    const res = await fetch("/api/clinic/booking-status", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accepting_bookings: next }),
+    });
+    if (res.ok) {
+      setOv({ ...ov, clinic: { ...ov.clinic, accepting_bookings: next } });
+      toast.success(next ? "Now accepting online bookings" : "Online bookings paused");
+    } else toast.error("Couldn't update booking status.");
+  }
+
+  const NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
+    { key: "home", label: "My Clinic", q: "Am I ready?", icon: <Home className="size-4" /> },
+    { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
+    { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
+    { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
+    { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
+  ];
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <Toaster position="top-center" />
+      {ov?.clinic.is_demo && (
+        <div className="flex items-center gap-2.5 bg-primary px-4 py-2 text-xs text-primary-foreground">
+          <Sparkles className="size-3.5 shrink-0" />
+          <span className="font-semibold">Demo clinic</span>
+          <span className="hidden opacity-90 md:inline">
+            You&apos;re exploring a sample clinic with fictional patients — nothing here affects a real practice.
+          </span>
+          <button
+            onClick={resetDemo}
+            disabled={resetting}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-primary-foreground/15 px-2.5 py-1 font-medium transition-colors hover:bg-primary-foreground/25 disabled:opacity-60"
+          >
+            {resetting ? <Loader2 className="size-3 animate-spin" /> : <RotateCcw className="size-3" />}
+            Reset demo
+          </button>
+        </div>
+      )}
+      <div className="mx-auto flex min-h-screen max-w-6xl">
+        <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r bg-background p-3 sm:flex">
+          <div className="flex items-center gap-2 px-2 py-3">
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground"><Activity className="size-4" /></div>
+            <div className="text-sm font-semibold leading-tight">{ov?.clinic.name ?? "My Clinic"}</div>
+          </div>
+          {NAV.map((n) => (
+            <button key={n.key} onClick={() => setView(n.key)}
+              className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                view === n.key ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted")}>
+              {n.icon}
+              <span className="flex-1">{n.label}
+                <span className="block text-[11px] font-normal text-muted-foreground">{n.q}</span>
+              </span>
+              {n.key === "home" && ov && (
+                <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">{ov.ready.percent}%</span>
+              )}
+            </button>
+          ))}
+        </aside>
+
+        <main className="flex-1 pb-16 sm:pb-0">
+          <Header ov={ov} onToggle={toggleAccepting} />
+          <div className="p-5">
+            {loading ? (
+              <div className="flex justify-center py-24 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+            ) : !ov ? (
+              <Card className="p-8 text-center text-sm text-muted-foreground">Couldn&apos;t load your clinic.</Card>
+            ) : view === "home" ? (
+              <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
+            ) : view === "today" ? (
+              <TodayView bookingPath={ov.bookingPath} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+            ) : view === "treatments" ? (
+              <TreatmentsView onChanged={refreshOverview} />
+            ) : view === "payments" ? (
+              <PaymentsView />
+            ) : (
+              <SettingsView ov={ov} onChanged={refreshOverview} onToggle={toggleAccepting} />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* B6 (Founder MVP Audit F1): /clinic had no navigation fallback below
+          `sm` — the sidebar above is sm:flex only. Same NAV/setView the
+          sidebar uses, just rendered as a fixed bottom bar on mobile. */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background sm:hidden">
+        {NAV.map((n) => (
+          <button
+            key={n.key}
+            onClick={() => setView(n.key)}
+            aria-current={view === n.key ? "page" : undefined}
+            className={cn(
+              "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
+              view === n.key ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            {n.icon}
+            {n.label}
+            {n.key === "home" && ov && ov.ready.percent < 100 && (
+              <span className="absolute top-1 right-[calc(50%-16px)] size-2 rounded-full bg-primary" />
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {visit && (
+        <VisitOverlay
+          visit={visit}
+          onClose={() => setVisit(null)}
+          onAdvance={(v) => setVisit(v)}
+          onDone={() => { setVisit(null); setView("today"); refreshOverview(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function Header({ ov, onToggle }: { ov: Overview | null; onToggle: () => void }) {
+  const accepting = ov?.clinic.accepting_bookings ?? true;
+  return (
+    <header className="flex items-center gap-3 border-b bg-background px-5 py-3">
+      <PatientSearch />
+      <div className="flex-1" />
+      <button onClick={onToggle}
+        className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
+          accepting ? "border-primary/30 bg-primary/5 text-primary" : "border-destructive/30 bg-destructive/5 text-destructive")}>
+        <span className={cn("size-2 rounded-full", accepting ? "bg-primary" : "bg-destructive")} />
+        {accepting ? "Accepting bookings" : "Bookings paused"}
+      </button>
+    </header>
+  );
+}
+
+function PatientSearch() {
+  const [q, setQ] = React.useState("");
+  const [results, setResults] = React.useState<{ id: string; full_name: string; health_id: string; phones: string[] }[] | null>(null);
+  const [busy, setBusy] = React.useState(false);
+
+  async function run(e: React.FormEvent) {
+    e.preventDefault();
+    if (q.trim().length < 2) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/patients?name=${encodeURIComponent(q.trim())}`);
+      const data = await res.json().catch(() => ({ profiles: [] }));
+      setResults(res.ok ? data.profiles ?? [] : []);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="relative w-full max-w-xs">
+      <form onSubmit={run} className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => { setQ(e.target.value); if (!e.target.value) setResults(null); }} placeholder="Search patients…" className="pl-8" />
+        {busy && <Loader2 className="absolute right-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+      </form>
+      {results && (
+        <div className="absolute z-10 mt-1 w-full rounded-lg border bg-background p-1 shadow-lg">
+          {results.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground">No patients found.</div>
+          ) : results.slice(0, 6).map((p) => (
+            <div key={p.id} className="rounded-md px-3 py-1.5 text-sm hover:bg-muted">
+              <div className="font-medium">{p.full_name}</div>
+              <div className="text-xs text-muted-foreground">{p.health_id}{p.phones[0] ? ` · ${p.phones[0]}` : ""}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Ring({ percent }: { percent: number }) {
+  return (
+    <div className="grid size-20 shrink-0 place-items-center rounded-full"
+      style={{ background: `conic-gradient(var(--color-primary, #0d9488) ${percent}%, var(--color-border, #e2e8f0) 0)` }}>
+      <div className="grid place-items-center rounded-full bg-background" style={{ width: 60, height: 60 }}>
+        <span className="text-lg font-bold text-primary">{percent}%</span>
+      </div>
+    </div>
+  );
+}
+
+function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => void; onShared: () => void }) {
+  const bookingUrl = ov.bookingPath ? `${typeof window !== "undefined" ? window.location.origin : ""}${ov.bookingPath}` : "";
+  const next = ov.ready.nextStep;
+
+  async function markShared() { await fetch("/api/clinic/booking-shared", { method: "POST" }); onShared(); }
+  async function copyLink() {
+    if (!bookingUrl) return;
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      toast.success("Booking link copied");
+    } catch {
+      toast.error("Couldn't copy the link — copy it manually instead.");
+      return;
+    }
+    markShared();
+  }
+  function whatsapp() { if (bookingUrl) window.open(`https://wa.me/?text=${encodeURIComponent(`Book an appointment with me: ${bookingUrl}`)}`, "_blank"); markShared(); }
+  function preview() { if (ov.bookingPath) window.open(ov.bookingPath, "_blank"); }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5">
+        {next ? (
+          <div className="flex items-center gap-4">
+            <Ring percent={ov.ready.percent} />
+            <div className="flex-1">
+              <h2 className="text-base font-semibold">Clinic Ready</h2>
+              <div className="mt-1 rounded-lg bg-primary/5 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next step</div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="flex-1 text-sm font-medium">{next.label}</span>
+                  <Button size="sm" onClick={() => (next.key === "share" ? copyLink() : goto(STEP_TARGET[next.key]))}>Complete</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <div className="grid size-20 shrink-0 place-items-center rounded-full bg-primary/10"><Trophy className="size-8 text-primary" /></div>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold">Your clinic is ready 🎉</h2>
+              {ov.ready.goal && (
+                <div className="mt-1 rounded-lg bg-primary/5 p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next goal</div>
+                  <div className="mt-0.5 text-sm font-medium">See {ov.ready.goal.target} patients</div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.round((ov.ready.goal.seen / ov.ready.goal.target) * 100))}%` }} />
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{ov.ready.goal.seen} of {ov.ready.goal.target} seen</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {next && (
+        <Card className="p-5">
+          <h3 className="mb-1 text-sm font-semibold">Get your clinic ready</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Each step is a real win, not a settings form.</p>
+          <div className="divide-y">
+            {ov.ready.steps.map((s) => (
+              <button key={s.key} onClick={() => (s.done ? undefined : s.key === "share" ? copyLink() : goto(STEP_TARGET[s.key]))}
+                className="flex w-full items-center gap-3 py-2.5 text-left">
+                {s.done ? <CheckCircle2 className="size-5 text-primary" /> : <Circle className="size-5 text-muted-foreground/40" />}
+                <span className={cn("flex-1 text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.label}</span>
+                {!s.done && <span className="text-xs font-medium text-primary">Do this →</span>}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-5">
+        <h3 className="mb-1 text-sm font-semibold">Your booking page is live</h3>
+        <p className="mb-3 text-xs text-muted-foreground">Share it and patients book themselves.</p>
+        <div className="mb-3 truncate rounded-lg border bg-muted/40 p-2.5 text-xs font-medium text-primary">{bookingUrl || "—"}</div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={copyLink}><Copy className="size-3.5" /> Copy booking link</Button>
+          <Button size="sm" variant="outline" onClick={whatsapp}><MessageCircle className="size-3.5" /> Share via WhatsApp</Button>
+          <Button size="sm" variant="outline" onClick={preview}><ExternalLink className="size-3.5" /> Preview booking page</Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function greetingFor(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function TodayView({ bookingPath, onStart }: { bookingPath: string | null; onStart: (appointmentId: string, patientName: string) => void }) {
+  const [data, setData] = React.useState<Today | null>(null);
+  const [nextId, setNextId] = React.useState<string | null>(null);
+  const [greeting, setGreeting] = React.useState("Hello");
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/clinic/today", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: Today | null) => {
+        if (cancelled || !d) return;
+        setData(d);
+        setGreeting(greetingFor(new Date().getHours()));
+        const now = Date.now();
+        const n = d.appointments.find((a) => new Date(a.scheduled_time).getTime() >= now && a.status !== "completed");
+        setNextId(n?.id ?? null);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!data) return <div className="flex justify-center py-16 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
+
+  const nextAppt = data.appointments.find((a) => a.id === nextId) ?? null;
+
+  return (
+    <div className="space-y-4">
+      {/* Hero: the single most important thing is first — who's next and one
+          obvious action. Everything else (counts, money) sits underneath. */}
+      <Card className="p-5">
+        <p className="text-sm text-muted-foreground">{greeting}{data.owner_name ? `, ${data.owner_name}` : ""}.</p>
+        {nextAppt ? (
+          <div className="mt-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-primary">Your next patient</div>
+            <div className="mt-1.5 flex items-start gap-3">
+              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {(nextAppt.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-lg font-semibold leading-tight">{nextAppt.patient?.full_name ?? "Patient"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {new Date(nextAppt.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  {nextAppt.notes ? <span className="line-clamp-1"> · {nextAppt.notes}</span> : null}
+                </div>
+              </div>
+            </div>
+            <Button className="mt-3 w-full sm:w-auto" onClick={() => onStart(nextAppt.id, nextAppt.patient?.full_name ?? "Patient")}>
+              Start consultation
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {data.total === 0 ? "You have no appointments today." : "All caught up — no one else waiting."}
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
+          <span><strong className="text-foreground">{data.remaining}</strong> remaining</span>
+          <span><strong className="text-foreground">{data.completed}</strong> seen</span>
+          {data.follow_ups > 0 && <span><strong className="text-foreground">{data.follow_ups}</strong> follow-up{data.follow_ups === 1 ? "" : "s"}</span>}
+          <span><strong className="text-foreground">₹{data.collected_today.toLocaleString()}</strong> collected</span>
+          {data.outstanding_total > 0 && <span><strong className="text-foreground">₹{data.outstanding_total.toLocaleString()}</strong> outstanding</span>}
+        </div>
+      </Card>
+
+      {data.total === 0 ? (
+        <Card className="space-y-3 p-8 text-center">
+          <p className="text-sm text-muted-foreground">Your day is clear. Get your first patient in.</p>
+          {bookingPath && <Button onClick={() => window.open(bookingPath, "_blank")}>Book first patient</Button>}
+        </Card>
+      ) : (
+        <Card className="p-5">
+          <h3 className="mb-2 text-sm font-semibold">Today&apos;s schedule</h3>
+          <div className="divide-y">
+            {data.appointments.map((a) => {
+              const done = a.status === "completed";
+              return (
+                <div key={a.id} className="flex items-center gap-3 py-3">
+                  <div className={cn("grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold",
+                    done ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
+                    {(a.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{a.patient?.full_name ?? "Patient"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(a.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                      {a.walk_in ? " · walk-in" : ""} · {a.status.replace(/_/g, " ")}
+                    </div>
+                  </div>
+                  {done ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">Seen</span>
+                  ) : (
+                    <Button size="sm" variant={a.id === nextId ? "default" : "outline"} onClick={() => onStart(a.id, a.patient?.full_name ?? "Patient")}>
+                      Start consultation
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function VisitOverlay({ visit, onClose, onAdvance, onDone }: {
+  visit: Visit; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
+}) {
+  const [services, setServices] = React.useState<Service[]>([]);
+  const [treatmentId, setTreatmentId] = React.useState("");
+  const [notes, setNotes] = React.useState("");
+  const [diagnosis, setDiagnosis] = React.useState("");
+  const [followUp, setFollowUp] = React.useState("");
+  const [method, setMethod] = React.useState<Method>("cash");
+  const [amount, setAmount] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/services", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).then((d) => { if (!cancelled) setServices(d); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Esc closes the flow (keyboard-first).
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function complete() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/clinic/consultation", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "complete", appointment_id: visit.appointmentId,
+          notes, diagnosis, follow_up_date: followUp || undefined, treatment_id: treatmentId || undefined,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(d.message ?? "Couldn't complete the visit."); return; }
+      setAmount(String(d.total ?? ""));
+      onAdvance({ ...visit, step: "pay", invoiceId: d.invoiceId, total: d.total });
+    } finally { setBusy(false); }
+  }
+
+  async function pay() {
+    const amt = Number(amount);
+    if (!Number.isInteger(amt) || amt <= 0) return toast.error("Enter a valid amount.");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/clinic/payment", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice_id: visit.invoiceId, amount: amt, method }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(d.message ?? "Couldn't record the payment."); return; }
+      toast.success(`₹${amt.toLocaleString()} received from ${visit.patientName}`);
+      onDone();
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
+      <Card className="w-full max-w-lg space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
+        {visit.step === "consult" ? (
+          <>
+            <div className="flex items-center gap-2">
+              <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></button>
+              <div>
+                <h2 className="text-base font-semibold">Consultation</h2>
+                <p className="text-xs text-muted-foreground">{visit.patientName}</p>
+              </div>
+            </div>
+            <div className="space-y-1.5"><Label htmlFor="notes">Notes</Label>
+              <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visit notes" autoFocus /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label htmlFor="dx">Diagnosis</Label>
+                <Input id="dx" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Optional" /></div>
+              <div className="space-y-1.5"><Label htmlFor="fu">Follow-up date</Label>
+                <Input id="fu" type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} /></div>
+            </div>
+            <div className="space-y-1.5"><Label htmlFor="tx">Treatment (sets the price)</Label>
+              <select id="tx" value={treatmentId} onChange={(e) => setTreatmentId(e.target.value)}
+                className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+                <option value="">Consultation (default fee)</option>
+                {services.map((s) => <option key={s.id} value={s.id}>{s.name} — ₹{s.price.toLocaleString()}</option>)}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={onClose}>Cancel <span className="ml-1 text-[11px] text-muted-foreground">Esc</span></Button>
+              <Button disabled={busy} onClick={complete}>{busy && <Loader2 className="size-4 animate-spin" />} Complete &amp; collect payment</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <h2 className="text-base font-semibold">Collect payment</h2>
+              <p className="text-xs text-muted-foreground">{visit.patientName}</p>
+            </div>
+            <div className="text-3xl font-bold">₹{Number(amount || visit.total || 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn&apos;t process the money.</p>
+            <div className="space-y-1.5"><Label htmlFor="amt">Amount (₹)</Label>
+              <Input id="amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></div>
+            <div className="space-y-1.5"><Label>How did they pay?</Label>
+              <div className="inline-flex overflow-hidden rounded-lg border">
+                {(["cash", "upi", "card"] as Method[]).map((m) => (
+                  <button key={m} onClick={() => setMethod(m)}
+                    className={cn("px-4 py-2 text-sm font-medium capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}>{m}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={onDone}>Skip</Button>
+              <Button disabled={busy} onClick={pay}>{busy && <Loader2 className="size-4 animate-spin" />} Record ₹{Number(amount || 0).toLocaleString()} received</Button>
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function PaymentsView() {
+  const [data, setData] = React.useState<{ payments: { id: string; amount: number; method: string; received_at: string; invoice: { invoice_number: string; patient: { full_name: string } | null } | null }[]; summary: { collected_today: number; payments_today: number; outstanding_total: number; open_invoices: number } } | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/clinic/payments", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (!cancelled) setData(d); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!data) return <div className="flex justify-center py-16 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-4"><div className="text-xl font-bold">₹{data.summary.collected_today.toLocaleString()}</div><div className="text-xs text-muted-foreground">Collected today</div></Card>
+        <Card className="p-4"><div className="text-xl font-bold">₹{data.summary.outstanding_total.toLocaleString()}</div><div className="text-xs text-muted-foreground">Outstanding</div></Card>
+        <Card className="p-4"><div className="text-xl font-bold">{data.summary.payments_today}</div><div className="text-xs text-muted-foreground">Payments today</div></Card>
+      </div>
+      <Card className="p-5">
+        <h3 className="mb-2 text-sm font-semibold">Today&apos;s payments</h3>
+        {data.payments.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">No payments yet today. Complete a visit and record the payment.</p>
+        ) : (
+          <div className="divide-y">
+            {data.payments.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 py-2.5 text-sm">
+                <div className="flex-1">
+                  <div className="font-medium">{p.invoice?.patient?.full_name ?? "Patient"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.invoice?.invoice_number ?? ""} · {p.method} · {new Date(p.received_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </div>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">₹{p.amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function TreatmentsView({ onChanged }: { onChanged: () => void }) {
+  const [items, setItems] = React.useState<Service[] | null>(null);
+  const [save, setSave] = React.useState<Save>("idle");
+  const [form, setForm] = React.useState({ name: "", duration: "30", price: "", buffer: "" });
+  const [editId, setEditId] = React.useState<string | null>(null);
+  const [edit, setEdit] = React.useState({ name: "", duration: "", price: "", buffer: "" });
+
+  const load = React.useCallback(() => {
+    return fetch("/api/services?include_inactive=true", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setItems(d));
+  }, []);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/services?include_inactive=true", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : [])).then((d) => { if (!cancelled) setItems(d); });
+    return () => { cancelled = true; };
+  }, []);
+
+  function flash() { setSave("saved"); setTimeout(() => setSave("idle"), 1500); }
+
+  async function add() {
+    if (form.name.trim().length < 2) return toast.error("Enter a treatment name.");
+    const duration = Number(form.duration), price = Number(form.price);
+    if (!Number.isInteger(duration) || duration <= 0) return toast.error("Duration must be a positive whole number of minutes.");
+    if (!Number.isInteger(price) || price < 0) return toast.error("Price must be a whole number (₹).");
+    setSave("saving");
+    const res = await fetch("/api/services", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: form.name, duration_minutes: duration, price, buffer_minutes: form.buffer ? Number(form.buffer) : undefined }),
+    });
+    if (res.ok) { setForm({ name: "", duration: "30", price: "", buffer: "" }); await load(); onChanged(); flash(); }
+    else { const d = await res.json().catch(() => ({})); setSave("idle"); toast.error(d.message ?? "Couldn't add treatment."); }
+  }
+
+  function startEdit(s: Service) {
+    setEditId(s.id);
+    setEdit({ name: s.name, duration: String(s.duration_minutes), price: String(s.price), buffer: s.buffer_minutes != null ? String(s.buffer_minutes) : "" });
+  }
+
+  async function saveEdit(id: string) {
+    setSave("saving");
+    const res = await fetch(`/api/services/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: edit.name, duration_minutes: Number(edit.duration), price: Number(edit.price),
+        buffer_minutes: edit.buffer ? Number(edit.buffer) : null,
+      }),
+    });
+    if (res.ok) { setEditId(null); await load(); onChanged(); flash(); }
+    else { const d = await res.json().catch(() => ({})); setSave("idle"); toast.error(d.message ?? "Couldn't save treatment."); }
+  }
+
+  async function setActive(id: string, isActive: boolean) {
+    setSave("saving");
+    const res = await fetch(`/api/services/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_active: isActive }) });
+    if (res.ok) { await load(); onChanged(); flash(); } else { setSave("idle"); toast.error("Couldn't update treatment."); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Treatments &amp; Services</h2>
+            <p className="text-xs text-muted-foreground">Name, duration, price and buffer — one clear list. Drives your slots and payment amounts.</p>
+          </div>
+          <SaveBadge state={save} />
+        </div>
+        <div className="grid grid-cols-12 gap-2">
+          <Input className="col-span-5" placeholder="Treatment name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input className="col-span-2" inputMode="numeric" placeholder="Mins" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} />
+          <Input className="col-span-2" inputMode="numeric" placeholder="₹ Price" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <Input className="col-span-2" inputMode="numeric" placeholder="Buffer" value={form.buffer} onChange={(e) => setForm({ ...form, buffer: e.target.value })} />
+          <Button className="col-span-1" onClick={add}><Plus className="size-4" /></Button>
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        {!items ? (
+          <div className="flex justify-center py-8 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+        ) : items.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">No treatments yet. Add your first above.</p>
+        ) : (
+          <div className="divide-y">
+            <div className="grid grid-cols-12 gap-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="col-span-4">Name</span><span className="col-span-2">Duration</span>
+              <span className="col-span-2">Price</span><span className="col-span-2">Status</span><span className="col-span-2 text-right">Edit</span>
+            </div>
+            {items.map((s) => editId === s.id ? (
+              <div key={s.id} className="grid grid-cols-12 items-center gap-2 py-2.5">
+                <Input className="col-span-4" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+                <Input className="col-span-2" inputMode="numeric" value={edit.duration} onChange={(e) => setEdit({ ...edit, duration: e.target.value })} />
+                <Input className="col-span-2" inputMode="numeric" value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
+                <Input className="col-span-2" inputMode="numeric" placeholder="Buffer" value={edit.buffer} onChange={(e) => setEdit({ ...edit, buffer: e.target.value })} />
+                <span className="col-span-2 flex justify-end gap-1">
+                  <Button size="sm" onClick={() => saveEdit(s.id)}>Save</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Cancel</Button>
+                </span>
+              </div>
+            ) : (
+              <div key={s.id} className="grid grid-cols-12 items-center gap-2 py-2.5 text-sm">
+                <span className="col-span-4 font-medium">{s.name}</span>
+                <span className="col-span-2 text-muted-foreground">{s.duration_minutes} min{s.buffer_minutes ? ` +${s.buffer_minutes}` : ""}</span>
+                <span className="col-span-2">₹{s.price.toLocaleString()}</span>
+                <span className="col-span-2">
+                  <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", s.is_active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                    {s.is_active ? "Active" : "Archived"}
+                  </span>
+                </span>
+                <span className="col-span-2 flex justify-end gap-2 text-muted-foreground">
+                  <button title="Edit" onClick={() => startEdit(s)} className="hover:text-foreground"><Pencil className="size-4" /></button>
+                  {s.is_active ? (
+                    <button title="Archive" onClick={() => setActive(s.id, false)} className="hover:text-destructive"><Archive className="size-4" /></button>
+                  ) : (
+                    <button title="Restore" onClick={() => setActive(s.id, true)} className="hover:text-primary"><RotateCcw className="size-4" /></button>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
+  const [phone, setPhone] = React.useState(ov.clinic.phone ?? "");
+  const [phoneSave, setPhoneSave] = React.useState<Save>("idle");
+  const [bio, setBio] = React.useState("");
+  const [reg, setReg] = React.useState("");
+  const [profileSave, setProfileSave] = React.useState<Save>("idle");
+
+  function flash(set: (s: Save) => void) { set("saved"); setTimeout(() => set("idle"), 1500); }
+
+  async function saveContact() {
+    setPhoneSave("saving");
+    const res = await fetch(`/api/clinics/${ov.clinic.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
+    if (res.ok) { flash(setPhoneSave); onChanged(); } else { setPhoneSave("idle"); toast.error("Couldn't save contact number."); }
+  }
+  async function saveProfile() {
+    if (!ov.doctorId) return toast.error("No profile to update.");
+    setProfileSave("saving");
+    const res = await fetch(`/api/doctors/${ov.doctorId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio, registration_number: reg }) });
+    if (res.ok) { flash(setProfileSave); onChanged(); } else { setProfileSave("idle"); toast.error("Couldn't save profile."); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-3 p-5">
+        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Clinic contact number</h2><SaveBadge state={phoneSave} /></div>
+        <p className="text-xs text-muted-foreground">Shown on your booking page. This is <strong>separate from your login</strong> — changing it never affects how you sign in.</p>
+        <div className="flex gap-2"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98450 12345" /><Button onClick={saveContact}>Save</Button></div>
+      </Card>
+
+      <Card className="space-y-3 p-5">
+        <h2 className="text-base font-semibold">Online bookings</h2>
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <div className="text-sm font-medium">{ov.clinic.accepting_bookings ? "Accepting bookings" : "Bookings paused"}</div>
+            <div className="text-xs text-muted-foreground">{ov.clinic.accepting_bookings ? "Patients can book online." : "Patients see \"call the clinic\" instead of times. Existing appointments are unaffected."}</div>
+          </div>
+          <Button variant={ov.clinic.accepting_bookings ? "outline" : "default"} onClick={onToggle}>{ov.clinic.accepting_bookings ? "Pause" : "Resume"}</Button>
+        </div>
+      </Card>
+
+      <Card className="space-y-3 p-5">
+        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Your profile</h2><SaveBadge state={profileSave} /></div>
+        <p className="text-xs text-muted-foreground">A short bio and registration number build patient trust on your booking page.</p>
+        <div className="space-y-1.5"><Label htmlFor="reg">Registration number</Label><Input id="reg" value={reg} onChange={(e) => setReg(e.target.value)} placeholder="e.g. KA-PT-10482" /></div>
+        <div className="space-y-1.5"><Label htmlFor="bio">Short bio</Label><Input id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="e.g. Physiotherapist, 12 years in sports & post-op rehab." /></div>
+        <Button onClick={saveProfile}>Save profile</Button>
+      </Card>
+
+      {/* Scale path — a solo owner can see and act on growing to multi-clinic.
+          Multi-doctor is the next edition (Coming soon); the request routes to a
+          real contact flow, on the same account — never a migration. */}
+      <Card className="space-y-3 border-primary/25 bg-primary/[0.03] p-5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-primary" />
+          <h2 className="text-base font-semibold">Growing your practice?</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Right now you run everything yourself — that&apos;s Auriva Solo, free forever. When you add a
+          second doctor or a front desk, Auriva grows into the <strong>multi-clinic edition</strong> on this
+          same account. Same patients, same history — you never migrate.
+        </p>
+        <a
+          href="/contact-sales?from=solo-upgrade"
+          className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2")}
+        >
+          Talk to us about multi-clinic
+          <ExternalLink className="size-4" />
+        </a>
+      </Card>
+    </div>
+  );
+}

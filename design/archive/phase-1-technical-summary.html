@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auriva — Phase 1 Technical Summary &amp; Implementation Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-500:#14B8A6;--teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;--slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --green:#16A34A;--amber:#D97706;--red:#DC2626;--blue:#0284C7;--indigo:#4F46E5;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;
+  --sh-sm:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 2px 4px rgba(15,23,42,.04);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,sans-serif;background:#F5F7FA;color:var(--slate-800);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--slate-200);padding:24px 16px;overflow-y:auto;z-index:10}
+.doc-nav .brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px;border-bottom:1px solid var(--slate-100);margin-bottom:16px}
+.doc-nav .brand .mark{width:32px;height:32px;border-radius:8px;background:var(--teal-600);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+.doc-nav .brand div b{display:block;font-size:14px;color:var(--slate-900)}
+.doc-nav .brand div span{font-size:11px;color:var(--slate-500)}
+.doc-nav a{display:block;padding:7px 10px;border-radius:var(--r-sm);color:var(--slate-600);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-50);color:var(--slate-900)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{color:var(--slate-400);font-weight:600;font-size:11px;margin-right:8px}
+main{margin-left:248px;padding:48px 56px 120px;max-width:1040px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--slate-900);line-height:1.2}
+h2{font-size:21px;font-weight:700;letter-spacing:-.01em;color:var(--slate-900);margin:0 0 6px}
+h3{font-size:15px;font-weight:600;color:var(--slate-900);margin:24px 0 10px}
+p{color:var(--slate-600);max-width:78ch}
+section{margin-top:64px;scroll-margin-top:24px}
+.lede{font-size:15px;color:var(--slate-600);margin-top:12px;max-width:80ch}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--teal-50);color:var(--teal-700);border:1px solid var(--teal-100);text-transform:uppercase;letter-spacing:.04em}
+.chip.done{background:#F0FDF4;color:var(--green);border-color:#DCFCE7}
+.chip.pend{background:#FFFBEB;color:var(--amber);border-color:#FEF3C7}
+.card{background:#fff;border:1px solid var(--slate-200);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px 24px;margin-top:14px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--slate-200);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm);margin-top:14px;font-size:13px}
+table{display:block;overflow-x:auto}
+thead th{background:var(--slate-50);text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500);border-bottom:1px solid var(--slate-200);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--slate-100);vertical-align:top;color:var(--slate-700)}
+tr:last-child td{border-bottom:none}
+code,.mono{font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:12px;background:var(--slate-100);padding:1px 6px;border-radius:4px;color:var(--slate-800)}
+td code{white-space:nowrap}
+a.doclink{color:var(--teal-700);font-weight:600;text-decoration:none;border-bottom:1px solid var(--teal-100)}
+a.doclink:hover{border-bottom-color:var(--teal-600)}
+ul.tight{margin:8px 0 0 18px;color:var(--slate-600)}
+ul.tight li{margin-bottom:6px}
+.callout{border-left:3px solid var(--teal-600);background:var(--teal-50);border-radius:0 var(--r-md) var(--r-md) 0;padding:14px 18px;margin-top:16px;color:var(--teal-800);font-size:13.5px}
+.callout.warn{border-left-color:var(--amber);background:#FFFBEB;color:#92400E}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.flow .st{background:#fff;border:1px solid var(--slate-200);border-radius:var(--r-md);padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--slate-800);box-shadow:var(--sh-sm)}
+.flow .ar{color:var(--slate-400);font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:960px){.grid2{grid-template-columns:1fr}main{padding:32px 24px 80px}}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+@media(max-width:860px){.kpi{grid-template-columns:repeat(2,1fr)}}
+.kpi .k{background:#fff;border:1px solid var(--slate-200);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--sh-sm)}
+.kpi .k b{display:block;font-size:24px;font-weight:800;color:var(--slate-900);letter-spacing:-.02em}
+.kpi .k span{font-size:12px;color:var(--slate-500);font-weight:500}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(15,23,42,.08)}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="brand">
+    <div class="mark">A</div>
+    <div><b>Auriva</b><span>Phase 1 · Handoff</span></div>
+  </div>
+  <a href="#s0"><span class="num">00</span>Executive Summary</a>
+  <a href="#s1"><span class="num">01</span>Deliverables Index</a>
+  <a href="#s2"><span class="num">02</span>Locked Design Decisions</a>
+  <a href="#s3"><span class="num">03</span>Screen Inventory &amp; Priorities</a>
+  <a href="#s4"><span class="num">04</span>Contracts for the Backend</a>
+  <a href="#s5"><span class="num">05</span>Implementation Guidance</a>
+  <a href="#s6"><span class="num">06</span>Status &amp; Next Steps</a>
+</nav>
+
+<main>
+
+<section id="s0" style="margin-top:0">
+  <span class="chip">Phase 1 · Product Blueprint</span>
+  <h1 style="margin-top:14px">Technical Summary &amp; Implementation Handoff</h1>
+  <p class="lede"><b>Auriva — Healthcare, Simplified</b> is India's Healthcare Operating System connecting Patients, Doctors, Clinics, Hospitals, Diagnostics and Pharmacies. Phase 1 produced the complete product blueprint: <b>seven specification documents</b> that together define what the product is, every screen it contains, how users move through it, and how every interaction behaves. No feature screens have been designed and no application code has been touched — by design. This document is the single entry point for anyone (frontend, backend, or design) starting implementation.</p>
+  <div class="kpi">
+    <div class="k"><b>7</b><span>Blueprint documents</span></div>
+    <div class="k"><b>96</b><span>Screens inventoried</span></div>
+    <div class="k"><b>41</b><span>P0 launch-spine screens</span></div>
+    <div class="k"><b>5</b><span>User journeys mapped</span></div>
+  </div>
+</section>
+
+<section id="s1">
+  <h2>01 · Deliverables Index</h2>
+  <p>All documents live in <code>design/</code> as self-contained HTML. Read them in this order.</p>
+  <table>
+    <thead><tr><th>Doc</th><th>File</th><th>What it defines</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><b>APS-001</b> Product Vision</td><td class="mono">—</td><td>Positioning, users, workspaces (approved in-session, no artifact needed)</td><td><span class="chip done">Approved</span></td></tr>
+      <tr><td><b>APS-002</b> Design System</td><td><a class="doclink" href="auriva-design-system.html">auriva-design-system.html</a></td><td>Tokens, color scales, typography, full component library, healthcare-specific components, T1–T8 screen templates</td><td><span class="chip done">Approved</span></td></tr>
+      <tr><td><b>APS-003</b> Information Architecture</td><td><a class="doclink" href="aps-003-information-architecture.html">aps-003-information-architecture.html</a></td><td>4 workspaces, complete site maps, module hierarchy, shared-module projections, cross-nav rules X1–X7, feature dependencies, principles N1–N8</td><td><span class="chip done">Approved</span></td></tr>
+      <tr><td><b>APS-004</b> User Journey Maps</td><td><a class="doclink" href="aps-004-user-journey-maps.html">aps-004-user-journey-maps.html</a></td><td>Journeys J1–J5 (Patient, Doctor, Receptionist, Hospital Admin, Independent Doctor) as flow diagrams with edge cases, errors, recovery</td><td><span class="chip done">Delivered</span></td></tr>
+      <tr><td><b>APS-005</b> Screen Inventory</td><td><a class="doclink" href="aps-005-screen-inventory.html">aps-005-screen-inventory.html</a></td><td>All 96 screens with permanent IDs, purpose, primary user, dependencies, P0/P1/P2 priority, template assignment</td><td><span class="chip done">Delivered</span></td></tr>
+      <tr><td><b>APS-006</b> Navigation System</td><td><a class="doclink" href="aps-006-navigation-system.html">aps-006-navigation-system.html</a></td><td>Nav model per workspace × device, switchers, ⌘K palette, keyboard map, responsive matrix, behaviors B1–B9</td><td><span class="chip done">Delivered</span></td></tr>
+      <tr><td><b>APS-007</b> Workspace Layouts</td><td><a class="doclink" href="aps-007-workspace-layouts.html">aps-007-workspace-layouts.html</a></td><td>Layout shells L1–L5 with full spec tables (grid, spacing, header, sidebar, drawers, empty/loading, responsive)</td><td><span class="chip pend">Pending review</span></td></tr>
+      <tr><td><b>APS-008</b> Interaction Patterns</td><td><a class="doclink" href="aps-008-interaction-patterns.html">aps-008-interaction-patterns.html</a></td><td>Behavioral standards: write strategy, forms, overlays, appointment &amp; queue state machines, prescription rules, OTP, org switching</td><td><span class="chip pend">Pending review</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s2">
+  <h2>02 · Locked Design Decisions</h2>
+  <p>These are the invariants every screen and every line of frontend code must follow. They come from the approved documents and should not be re-decided per-screen.</p>
+
+  <h3>Design tokens (APS-002)</h3>
+  <ul class="tight">
+    <li><b>Brand:</b> <span class="sw" style="background:#0D9488"></span>Auriva Teal <code>--teal-600: #0D9488</code>, Slate neutrals <code>#0F172A → #F8FAFC</code>, page canvas <code>#F5F7FA</code>.</li>
+    <li><b>Semantics:</b> success <code>#16A34A</code> · warning <code>#D97706</code> · danger <code>#DC2626</code> · info <code>#0284C7</code>.</li>
+    <li><b>Type:</b> Inter, scale Display 36 → Overline 11. <b>Radius:</b> 6/8/12/16/full. <b>Spacing:</b> 4px base. <b>Focus ring:</b> <code>0 0 0 3px rgba(13,148,136,.25)</code>.</li>
+    <li><b>Icons:</b> Lucide only.</li>
+  </ul>
+
+  <h3>Fixed status palettes (platform-wide, dot + label — never color alone)</h3>
+  <table>
+    <thead><tr><th>Domain</th><th>Statuses</th></tr></thead>
+    <tbody>
+      <tr><td><b>Appointment</b></td><td>Requested (slate) → Scheduled (blue) → Confirmed (teal) → Checked-in (indigo) → In Consultation (amber) → Completed (green) · Cancelled (red) · No-show (dashed grey)</td></tr>
+      <tr><td><b>Queue</b></td><td>Waiting (amber) → Called (blue) → With Doctor (teal) → Done (green) · Skipped (grey) · Emergency (solid red)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Structural systems</h3>
+  <table>
+    <thead><tr><th>System</th><th>Members</th><th>Defined in</th></tr></thead>
+    <tbody>
+      <tr><td><b>Screen templates</b></td><td>T1 List+Drawer · T2 Live Board · T3 Workbench · T4 Record · T5 Feed · T6 Flow · T7 Explore · T8 Insights — every screen is an instance of exactly one</td><td>APS-002 §09</td></tr>
+      <tr><td><b>Layout shells</b></td><td>L1 Patient Mobile · L2 Doctor Desktop (3-rail: 320/fluid/360) · L3 Organization Desktop (248px sidebar) · L4 Marketplace (1200px max, SSR-first, only real footer) · L5 Authentication (45/55 split)</td><td>APS-007</td></tr>
+      <tr><td><b>Workspaces &amp; URLs</b></td><td>Marketplace <code>auriva.in</code> · Patient <code>/app/patient</code> · Doctor <code>/app/doctor</code> · Organization <code>/app/org/{orgId}</code> — role-scoped projections over shared entities; one Auriva ID per person</td><td>APS-003</td></tr>
+      <tr><td><b>Rule systems</b></td><td>P1–P6 design principles · N1–N8 IA principles · X1–X7 cross-navigation rules · B1–B9 nav behaviors (URL is source of truth, back is sacred, skeleton-first)</td><td>APS-002/003/006</td></tr>
+      <tr><td><b>Depth caps</b></td><td>Marketplace / Patient / Doctor ≤ 3 levels · Organization ≤ 4 levels</td><td>APS-003</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s3">
+  <h2>03 · Screen Inventory &amp; Priorities</h2>
+  <p>96 screens across 9 groups: <code>AUTH</code>(7) · <code>MKT</code>(13) · <code>PAT</code>(18) · <code>DOC</code>(14) · <code>ORG</code>(27) · <code>SET</code>(8) · <code>NOT</code>(3) · <code>PRO</code>(3) · <code>SUP</code>(3). Screen IDs are permanent; modals, drawers and flow steps are not screens.</p>
+  <div class="card">
+    <b style="color:var(--slate-900)">Priority tiers</b>
+    <ul class="tight">
+      <li><b>P0 (41 screens)</b> — the launch spine. Nothing ships without all 41.</li>
+      <li><b>P1 (36)</b> — fast-follow within the first releases.</li>
+      <li><b>P2 (19)</b> — later expansion (diagnostics depth, pharmacy, analytics).</li>
+    </ul>
+  </div>
+  <h3>Critical path (build order for both design and engineering)</h3>
+  <div class="flow">
+    <span class="st">Identity / Auth</span><span class="ar">→</span>
+    <span class="st">Marketplace Search &amp; Booking</span><span class="ar">→</span>
+    <span class="st">Check-in (Front Desk)</span><span class="ar">→</span>
+    <span class="st">Live Queue</span><span class="ar">→</span>
+    <span class="st">Consultation Workbench</span><span class="ar">→</span>
+    <span class="st">Prescription</span>
+  </div>
+  <p style="margin-top:12px">This chain is one physical visit end-to-end and touches all four workspaces. It is validated against journeys J1–J5 in APS-004 with <b>zero P0 gaps</b> found.</p>
+</section>
+
+<section id="s4">
+  <h2>04 · Contracts for the Backend</h2>
+  <p>APS-008 defines behavior the backend must enforce, not just the UI. These are the items to align with the backend session before Phase 2 screens are coded.</p>
+
+  <h3>State machines (server-enforced, every transition logged)</h3>
+  <table>
+    <thead><tr><th>Entity</th><th>Happy path</th><th>Key rules</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Appointment</b></td>
+        <td>Requested → Scheduled → Confirmed → Checked-in → In Consultation → Completed</td>
+        <td>Cancelled / No-show / Rescheduled are actor-gated exits with grace windows; patient-visible changes trigger notifications; transitions are append-only.</td>
+      </tr>
+      <tr>
+        <td><b>Queue token</b></td>
+        <td>Waiting → Called → With Doctor → Done</td>
+        <td>Called → Waiting at most twice, then Skipped; Emergency inserts at position 1 and requires a typed reason; token numbers are <b>never renumbered</b>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Write strategy &amp; clinical safety</h3>
+  <ul class="tight">
+    <li><b>Optimistic writes</b> for reversible actions (rename, reorder, preferences) with undo; <b>pessimistic writes</b> for anything clinical or financial (sign prescription, publish results, payments).</li>
+    <li><b>Signed prescriptions are immutable.</b> Corrections create a superseding prescription linked to the original — never an edit.</li>
+    <li><b>Allergy conflict is a hard stop</b> in the Rx composer; override requires a typed clinical reason, which is stored.</li>
+    <li><b>Consent/sharing:</b> minimum scope by default, explicit who/what/why/how-long on every grant, full access log, one-tap revoke.</li>
+    <li><b>OTP:</b> single component across sign-in / booking / re-auth / step-up; 30s resend cooldown, voice fallback, never a silent lockout.</li>
+    <li><b>Idempotent submits</b> on all mutating endpoints (double-click / retry safe).</li>
+    <li><b>Realtime:</b> queue boards and front-desk lists patch rows in place (target &lt;1s propagation); org switching must resolve role + context in &lt;400ms perceived.</li>
+  </ul>
+</section>
+
+<section id="s5">
+  <h2>05 · Implementation Guidance</h2>
+
+  <div class="callout warn"><b>Standing constraint:</b> no changes to the existing app UI code (<code>src/</code>) until designs are finalized and approved. When coding starts, this project's Next.js version has breaking changes — read <code>node_modules/next/dist/docs/</code> before writing any app code (per AGENTS.md).</div>
+
+  <h3>How a screen gets built (the composition rule)</h3>
+  <div class="flow">
+    <span class="st">Pick shell L1–L5<br><span style="font-weight:400;color:var(--slate-500);font-size:11px">by workspace (APS-007)</span></span><span class="ar">+</span>
+    <span class="st">Pick template T1–T8<br><span style="font-weight:400;color:var(--slate-500);font-size:11px">assigned per screen (APS-005)</span></span><span class="ar">+</span>
+    <span class="st">Apply components &amp; tokens<br><span style="font-weight:400;color:var(--slate-500);font-size:11px">from APS-002</span></span><span class="ar">+</span>
+    <span class="st">Wire behaviors<br><span style="font-weight:400;color:var(--slate-500);font-size:11px">APS-006 nav + APS-008 patterns</span></span>
+  </div>
+  <p style="margin-top:12px">No screen invents its own layout, status colors, overlay behavior, or loading pattern. If a screen appears to need something new, the blueprint gets amended first.</p>
+
+  <h3>Suggested engineering foundation order (pre-screens)</h3>
+  <ul class="tight">
+    <li><b>1. Token layer</b> — CSS custom properties / theme config straight from APS-002 §08.</li>
+    <li><b>2. Core components</b> — buttons, inputs, chips, table, drawer, dialog, toast, skeleton (APS-002 §04–05).</li>
+    <li><b>3. Layout shells</b> — L1–L5 as app-shell components with the z-index scale (content 0 → chrome 100 → drawer 200 → dialog 300 → palette 400 → toast 500).</li>
+    <li><b>4. Status &amp; state-machine primitives</b> — status chip components bound to the fixed palettes; client state mirrors of the two machines.</li>
+    <li><b>5. Screens</b> — in P0 critical-path order (§03), each composed per the rule above.</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <h2>06 · Status &amp; Next Steps</h2>
+  <div class="card">
+    <b style="color:var(--slate-900)">Where we are (as of 3 Jul 2026)</b>
+    <ul class="tight">
+      <li>Phase 1 — Product Blueprint: <b>all 8 documents delivered</b>. APS-001/002/003 approved; APS-004/005/006 delivered; APS-007/008 awaiting your review.</li>
+      <li>No application code has been modified. All artifacts live in <code>design/</code> (currently untracked in git).</li>
+      <li>Backend is being built in a parallel session — §04 of this doc is the alignment checklist for it.</li>
+    </ul>
+  </div>
+  <div class="callout">
+    <b>Phase 2 — Screen Design</b> starts on the P0 spine in journey order:
+    ① Marketplace search → doctor profile → booking (MKT-001/002/003/009/010 + AUTH-001/002) ·
+    ② Patient Home &amp; appointment (PAT-001/002/003) ·
+    ③ Org Front Desk (ORG-001/002/003) ·
+    ④ Doctor Today &amp; workbench (DOC-001/002).
+    Send each screen's requirements and it will be designed strictly against this blueprint.
+  </div>
+</section>
+
+</main>
+
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

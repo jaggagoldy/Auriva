@@ -5,9 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  FlaskConical,
   LayoutDashboard,
   ListChecks,
   LogOut,
+  ReceiptText,
   UserPlus,
 } from "lucide-react";
 
@@ -16,14 +18,20 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/shared/queue";
+import WhatsNew from "@/components/shared/whats-new";
+import WorkspaceSwitcher from "@/components/shared/workspace-switcher";
+import type { Capability } from "@/domain/authorization";
 
 interface StaffShellProps {
   displayName: string;
-  role: "receptionist" | "super_admin";
+  role: string;
+  capabilities: Capability[];
   children: React.ReactNode;
 }
 
-export default function StaffShell({ displayName, role, children }: StaffShellProps) {
+// L3 Organization Desktop shell (design/aps-007-workspace-layouts.html):
+// white 248px sidebar with sections, teal-tinted active state.
+export default function StaffShell({ displayName, role, capabilities, children }: StaffShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = React.useState(false);
@@ -40,16 +48,18 @@ export default function StaffShell({ displayName, role, children }: StaffShellPr
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <Toaster position="bottom-right" />
-      <aside className="flex w-60 shrink-0 flex-col bg-zinc-950 text-zinc-400">
-        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-white/10 px-4">
-          <div className="flex size-7 items-center justify-center rounded-md bg-white text-zinc-950">
+      <aside className="flex w-[248px] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-4">
+          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Activity className="size-4" />
           </div>
           <div className="leading-tight">
-            <div className="text-sm font-semibold text-zinc-100">Aegis Clinic OS</div>
-            <div className="text-[11px] text-zinc-500">Reception</div>
+            <div className="text-sm font-semibold">Auriva</div>
+            <div className="text-[11px] text-muted-foreground">Reception</div>
           </div>
         </div>
+
+        <WorkspaceSwitcher capabilities={capabilities} current="reception" />
 
         <nav className="flex-1 space-y-0.5 p-3">
           <NavItem
@@ -70,27 +80,39 @@ export default function StaffShell({ displayName, role, children }: StaffShellPr
             href="/staff/walkin"
             active={pathname === "/staff/walkin"}
           />
+          <NavItem
+            icon={ReceiptText}
+            label="Billing"
+            href="/staff/billing"
+            active={pathname === "/staff/billing"}
+          />
+          <NavItem
+            icon={FlaskConical}
+            label="Lab Orders"
+            href="/staff/lab"
+            active={pathname === "/staff/lab"}
+          />
         </nav>
 
-        <div className="flex items-center gap-2.5 border-t border-white/10 p-3">
+        <div className="flex items-center gap-1.5 border-t p-3">
           <Avatar className="size-8">
-            <AvatarFallback className="bg-white/10 text-xs font-semibold text-zinc-100">
+            <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-sm font-medium text-zinc-100">{displayName}</div>
-            <div className="truncate text-[11px] text-zinc-500 capitalize">
+            <div className="truncate text-sm font-medium">{displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground capitalize">
               {role.replace("_", " ")}
             </div>
           </div>
+          <WhatsNew />
           <Button
             variant="ghost"
             size="icon-sm"
             aria-label="Log out"
             disabled={loggingOut}
             onClick={handleLogout}
-            className="text-zinc-500 hover:bg-white/10 hover:text-zinc-100"
           >
             <LogOut />
           </Button>
@@ -119,8 +141,8 @@ function NavItem({
       className={cn(
         "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
         active
-          ? "bg-white/10 font-medium text-white"
-          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+          ? "bg-accent font-semibold text-accent-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
       <Icon className="size-4 shrink-0" />

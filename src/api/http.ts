@@ -1,26 +1,79 @@
 // Standard HTTP response builders for every route handler.
 //
 // The envelopes below are the EXISTING public contracts, centralized — not a
-// redesign. Two historical quirks are deliberately preserved (clients may
-// depend on them; changing them is tracked in docs/technical-debt.md):
+// redesign. One historical quirk is deliberately preserved (clients may depend
+// on it; tracked in docs/technical-debt.md):
 //   1. `apiError(400, "Not Found", ...)` — POST /api/appointments reports
 //      missing patient/doctor/clinic with label "Not Found" but HTTP 400.
-//   2. `serverError()` exposes the internal error message as `details`.
+// (Note: `serverError()`'s `details` field, once always returned, is now
+//  suppressed in production as of H2 — see its own comment below.)
 
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { logger } from "@/api/logger";
+import { reportAlert } from "@/lib/alerts";
 import {
   AppointmentNotFoundError,
+  CancellationNotAllowedError,
   ClinicNotFoundError,
   DoctorProfileNotFoundError,
+  DoctorSlotConflictError,
   DuplicateActiveAppointmentError,
   InvalidScheduleInputError,
   InvalidTransitionError,
+  MaxAppointmentsExceededError,
   PatientProfileNotFoundError,
+  RescheduleNotAllowedError,
 } from "@/services/appointment-service";
 import { QueueAppointmentNotFoundError } from "@/services/queue-service";
-import { DoctorNotFoundError } from "@/services/walkin-service";
+import {
+  DoctorNotFoundError,
+  HealthcareProfileNotFoundError,
+  WalkInsDisabledError,
+} from "@/services/walkin-service";
 import { PhoneNumberInUseError } from "@/services/patient-service";
+import {
+  InvalidInvoiceTransitionError,
+  InvalidPaymentError,
+  InvoiceNotFoundError,
+} from "@/services/billing-service";
+import {
+  InvalidLabOrderInputError,
+  InvalidLabOrderTransitionError,
+  LabOrderNotFoundError,
+} from "@/services/lab-service";
+import {
+  ClinicNameConflictError,
+  EmailInUseError,
+  InvitationNotFoundError,
+  InvitationNotPendingError,
+  OnboardingInputError,
+} from "@/services/onboarding-service";
+import { ClinicInputError } from "@/services/clinic-service";
+import {
+  DepartmentInputError,
+  DepartmentNameConflictError,
+  DepartmentNotFoundError,
+} from "@/services/department-service";
+import { AvailabilityInputError } from "@/services/availability-service";
+import { ServiceInputError, ServiceNotFoundError } from "@/services/service-catalog-service";
+import { BookingsPausedError } from "@/services/booking-service";
+import { QuickSetupError, QuickSetupPhoneInUseError } from "@/services/quick-setup-service";
+import { ConsultationInputError } from "@/services/consultation-service";
+import {
+  InvalidReleaseTransitionError,
+  ReleaseInputError,
+  ReleaseNotFoundError,
+} from "@/services/release-service";
+import { SprintInputError, SprintNotFoundError } from "@/services/sprint-service";
+import { EventHandlerNotFoundError, EventNotFoundError } from "@/services/event-log-service";
+import { NotificationNotFoundError } from "@/services/notification-service";
+import {
+  AppointmentNotCompletedError,
+  DuplicateReviewError,
+  ReviewAppointmentNotFoundError,
+  ReviewInputError,
+} from "@/services/review-service";
 
 /** Success envelope: the payload as-is (existing contract — no wrapper). */
 export function ok(data: unknown, status = 200) {
@@ -42,22 +95,73 @@ export const notFound = (message: string) =>
   apiError(404, "Not Found", message);
 export const conflict = (message: string) =>
   apiError(409, "Conflict", message);
+/**
+ * OBS-2: available for semantically-distinct validation failures (the
+ * request is well-formed JSON but fails a domain rule, as opposed to
+ * `badRequest`'s malformed-request 400). No existing route's status code
+ * changes to use this — that would be a contract change, out of scope for
+ * standardization work. It exists so any *new* validation-shaped error has
+ * a standard home instead of every service reaching for 400 by default.
+ */
+export const unprocessableEntity = (message: string) =>
+  apiError(422, "Unprocessable Entity", message);
+/** INF-5: readiness-check failure envelope (dependency, e.g. the database, unreachable). */
+export const serviceUnavailable = (message: string) =>
+  apiError(503, "Service Unavailable", message);
+
+/** 429 envelope for SEC-5 rate limiting, with a `Retry-After` header (seconds). */
+export function tooManyRequests(message: string, retryAfterSeconds: number) {
+  const response = apiError(429, "Too Many Requests", message);
+  response.headers.set("Retry-After", String(Math.ceil(retryAfterSeconds)));
+  return response;
+}
 
 /**
- * Logs and returns the historical 500 envelope
- * `{ error: "Internal Server Error", details: <error.message> }`.
- * (`details` is omitted when the thrown value has no message — matching the
- * previous `error.message` access on `any`.)
+ * Logs and returns the 500 envelope `{ error: "Internal Server Error" }`.
+ *
+ * H2 (security hardening): the internal error message is included as `details`
+ * only OUTSIDE production. In production it is logged (full context, server-
+ * side) but never returned — leaking raw exception text (Prisma internals,
+ * stack-shaped messages, file paths) to a caller is an information-disclosure
+ * finding. Non-production keeps `details` for developer ergonomics.
  */
 export function serverError(context: string, error: unknown) {
   logger.error(context, error);
-  return NextResponse.json(
-    {
-      error: "Internal Server Error",
-      details: (error as { message?: string } | null)?.message,
-    },
-    { status: 500 }
-  );
+  record5xxAndMaybeAlert(context);
+  const body: { error: string; details?: string } = { error: "Internal Server Error" };
+  if (process.env.NODE_ENV !== "production") {
+    body.details = (error as { message?: string } | null)?.message;
+  }
+  return NextResponse.json(body, { status: 500 });
+}
+
+// RG-001 alert trigger #3: a 5xx error-RATE spike (distinct from any single
+// error). An in-memory rolling one-minute window — one alert when the count
+// crosses the threshold, then reportAlert's own dedupe suppresses repeats. Same
+// single-instance caveat as the rate limiter (documented); good enough to catch
+// "production is broadly failing right now" for a single-instance pilot.
+const FIVE_XX_WINDOW_MS = 60 * 1000;
+const FIVE_XX_THRESHOLD = 10;
+let fiveXxWindow = { start: Date.now(), count: 0 };
+
+/** Test-only: reset the 5xx window. */
+export function __reset5xxWindowForTests() {
+  fiveXxWindow = { start: Date.now(), count: 0 };
+}
+
+function record5xxAndMaybeAlert(context: string) {
+  const now = Date.now();
+  if (now - fiveXxWindow.start > FIVE_XX_WINDOW_MS) {
+    fiveXxWindow = { start: now, count: 0 };
+  }
+  fiveXxWindow.count += 1;
+  if (fiveXxWindow.count === FIVE_XX_THRESHOLD) {
+    void reportAlert({
+      severity: "critical",
+      title: "High 5xx error rate",
+      detail: `${FIVE_XX_THRESHOLD}+ server errors in the last minute (latest context: ${context}).`,
+    });
+  }
 }
 
 /**
@@ -70,13 +174,20 @@ export function mapDomainError(error: unknown): NextResponse | null {
   if (
     error instanceof AppointmentNotFoundError ||
     error instanceof QueueAppointmentNotFoundError ||
-    error instanceof DoctorNotFoundError
+    error instanceof DoctorNotFoundError ||
+    error instanceof HealthcareProfileNotFoundError
   ) {
     return notFound(error.message);
   }
   if (
     error instanceof InvalidTransitionError ||
-    error instanceof DuplicateActiveAppointmentError
+    error instanceof DuplicateActiveAppointmentError ||
+    error instanceof DoctorSlotConflictError ||
+    error instanceof RescheduleNotAllowedError ||
+    error instanceof MaxAppointmentsExceededError ||
+    error instanceof CancellationNotAllowedError ||
+    error instanceof WalkInsDisabledError ||
+    error instanceof BookingsPausedError
   ) {
     return conflict(error.message);
   }
@@ -93,6 +204,110 @@ export function mapDomainError(error: unknown): NextResponse | null {
   }
   if (error instanceof InvalidScheduleInputError) {
     return badRequest(error.message);
+  }
+  // Billing + lab (APS-041/042) — same status conventions as appointments.
+  if (error instanceof InvoiceNotFoundError || error instanceof LabOrderNotFoundError) {
+    return notFound(error.message);
+  }
+  if (
+    error instanceof InvalidInvoiceTransitionError ||
+    error instanceof InvalidLabOrderTransitionError
+  ) {
+    return conflict(error.message);
+  }
+  if (error instanceof InvalidPaymentError || error instanceof InvalidLabOrderInputError) {
+    return badRequest(error.message);
+  }
+  // Onboarding (APS-044).
+  if (error instanceof InvitationNotFoundError) {
+    return notFound(error.message);
+  }
+  if (
+    error instanceof EmailInUseError ||
+    error instanceof InvitationNotPendingError ||
+    error instanceof ClinicNameConflictError
+  ) {
+    return conflict(error.message);
+  }
+  if (error instanceof OnboardingInputError) {
+    return badRequest(error.message);
+  }
+  // Sprint 3 (OPS-001): organization/clinic/department/availability config.
+  if (error instanceof DepartmentNotFoundError) {
+    return notFound(error.message);
+  }
+  // DATA-2/3: a duplicate-name conflict, distinct from DepartmentInputError's
+  // 400-shaped cases below.
+  if (error instanceof DepartmentNameConflictError) {
+    return conflict(error.message);
+  }
+  if (
+    error instanceof ClinicInputError ||
+    error instanceof DepartmentInputError ||
+    error instanceof AvailabilityInputError ||
+    error instanceof ServiceInputError
+  ) {
+    return badRequest(error.message);
+  }
+  // Milestone 1: Treatments & Services catalog — a treatment from another
+  // clinic is indistinguishable from a non-existent one (hide-existence).
+  if (error instanceof ServiceNotFoundError) {
+    return notFound(error.message);
+  }
+  // Milestone 1 Batch 3: Quick Setup — validation vs. phone-already-registered.
+  if (error instanceof QuickSetupPhoneInUseError) {
+    return conflict(error.message);
+  }
+  if (error instanceof QuickSetupError) {
+    return badRequest(error.message);
+  }
+  // Milestone 1 Batch 5: solo consultation flow input errors.
+  if (error instanceof ConsultationInputError) {
+    return badRequest(error.message);
+  }
+  // APS-036: Release Management.
+  if (error instanceof ReleaseNotFoundError || error instanceof SprintNotFoundError) {
+    return notFound(error.message);
+  }
+  if (error instanceof InvalidReleaseTransitionError) {
+    return conflict(error.message);
+  }
+  if (error instanceof ReleaseInputError || error instanceof SprintInputError) {
+    return badRequest(error.message);
+  }
+  // OBS-2: previously handled by a duplicate instanceof-chain in each of the
+  // three /api/organizations/[id]/events* routes — centralized here like
+  // every other domain error, same status/message, zero behavior change.
+  if (error instanceof EventNotFoundError || error instanceof EventHandlerNotFoundError) {
+    return notFound(error.message);
+  }
+  // PAT-1 (Release 1.2 Sprint 1): mark-notification-read on a notification
+  // that doesn't belong to the caller — same hide-existence convention as
+  // every other cross-identity check (DATA-3).
+  if (error instanceof NotificationNotFoundError) {
+    return notFound(error.message);
+  }
+  // PAT-2: the appointment doesn't exist, or doesn't belong to the caller —
+  // same hide-existence convention as everywhere else (DATA-3).
+  if (error instanceof ReviewAppointmentNotFoundError) {
+    return notFound(error.message);
+  }
+  if (error instanceof AppointmentNotCompletedError || error instanceof DuplicateReviewError) {
+    return conflict(error.message);
+  }
+  if (error instanceof ReviewInputError) {
+    return badRequest(error.message);
+  }
+  // DATA-2: a catch-all for any Prisma unique-constraint violation (P2002)
+  // not already mapped to a more specific domain error above — using the
+  // uniqueness the schema already enforces (e.g. User.phone_number,
+  // PatientProfile.health_id, Invoice's [clinic_id, invoice_number]), just
+  // surfaced as a clean 409 instead of falling through to serverError()'s
+  // generic 500 with a raw Prisma error message.
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    const target = error.meta?.target;
+    const field = Array.isArray(target) ? target.join(", ") : "value";
+    return conflict(`A record with this ${field} already exists.`);
   }
   return null;
 }

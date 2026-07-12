@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-006 — Auriva Navigation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:600;width:20px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1060px;margin:0 auto;padding-top:64px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14.5px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+.sub{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:34px 0 6px}
+.sub-desc{font-size:13px;color:var(--text-secondary);margin-bottom:16px;max-width:640px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:20px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--slate-100);padding:2px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.kbd{display:inline-block;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;font-weight:600;color:var(--slate-600);border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:1px 7px;background:var(--slate-50);white-space:nowrap}
+.cover{min-height:380px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+ul.rules{font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px}
+ul.rules b{color:var(--text)}
+
+/* anatomy diagrams */
+.anat{border:1.5px dashed var(--slate-300);border-radius:var(--r-lg);padding:14px;background:var(--slate-50)}
+.anat-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px}
+.zone{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--teal-400,#2DD4BF);background:var(--teal-50);border-radius:6px;padding:8px 10px;font-size:11px;font-weight:600;color:var(--teal-800)}
+.zn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:9.5px;font-weight:800;flex-shrink:0}
+.anat-legend{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.anat-legend div{font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:baseline}
+.anat-legend b{color:var(--text);font-weight:600}
+.anat-side{width:210px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:10px;display:flex;flex-direction:column;gap:8px}
+.anat-col{display:flex;gap:16px;align-items:flex-start}
+.dev{display:inline-flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:5px;padding:2px 8px;text-transform:uppercase}
+.dev.d{background:var(--indigo-bg);color:var(--indigo)}
+.dev.t{background:var(--blue-bg);color:var(--blue)}
+.dev.m{background:var(--teal-100);color:var(--teal-800)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.grid2{grid-template-columns:1fr}.anat-col{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-006 · Navigation System</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#model"><span class="num">01</span> Navigation Model</a>
+  <a href="#top"><span class="num">02</span> Top Navigation</a>
+  <a href="#side"><span class="num">03</span> Side Navigation</a>
+  <a href="#bottom"><span class="num">04</span> Bottom Navigation</a>
+  <a href="#switchers"><span class="num">05</span> Switchers</a>
+  <a href="#search"><span class="num">06</span> Search</a>
+  <a href="#notif"><span class="num">07</span> Notifications</a>
+  <a href="#profile"><span class="num">08</span> Profile Menu</a>
+  <a href="#quick"><span class="num">09</span> Quick Actions</a>
+  <a href="#keyboard"><span class="num">10</span> Keyboard Navigation</a>
+  <a href="#responsive"><span class="num">11</span> Responsive Rules</a>
+  <a href="#behavior"><span class="num">12</span> Navigation Behavior</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-006 · Phase 1 — Product Blueprint · For Review</div>
+    <h1>Navigation <em>System</em></h1>
+    <p>The complete wayfinding specification for Auriva across desktop, tablet and mobile — every navigation surface, switcher, search behavior and keyboard path, with exact responsive transformation rules. Built on the APS-003 architecture and APS-004 journeys. Specification only; screen design comes later.</p>
+  </div>
+</section>
+
+<!-- 01 MODEL -->
+<section class="doc-section" id="model">
+  <div class="sec-kicker">01 · Navigation Model</div>
+  <h2 class="sec-title">One system, three devices, four workspaces</h2>
+  <p class="sec-desc">Each workspace has exactly one primary navigation surface per device class. Nothing else competes for wayfinding. This matrix is the master rule — every later section details one cell of it.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Workspace</th><th><span class="dev d">Desktop ≥1024</span></th><th><span class="dev t">Tablet 768–1023</span></th><th><span class="dev m">Mobile ≤767</span></th></tr></thead>
+    <tbody>
+      <tr><td><b>Marketplace</b></td><td>Top bar + inline search</td><td>Top bar + inline search</td><td>Top bar (condensed) + search sheet</td></tr>
+      <tr><td><b>Patient</b></td><td>Top bar + left rail (same 4 sections)</td><td>Bottom tabs + top bar</td><td><b>Bottom tabs (4 + Book)</b> + top bar</td></tr>
+      <tr><td><b>Doctor</b></td><td><b>Slim sidebar 220px</b> + top bar</td><td>Icon rail 64px + top bar</td><td>Bottom tabs (Today · Schedule · Patients · More)</td></tr>
+      <tr><td><b>Organization</b></td><td><b>Sectioned sidebar 248px</b> + top bar</td><td>Icon rail 64px + top bar</td><td>Drawer nav (hamburger) — view-mostly</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel" style="margin-top:14px">
+    <div class="label">Model rules</div>
+    <ul class="rules">
+      <li><b>Primary nav = L1 modules only</b> (APS-003). L2 lives inside the page (tabs, sub-lists); L3+ is reached from lists. Navigation never shows more than one level.</li>
+      <li><b>Device class is capability, not punishment:</b> mobile Doctor/Org surfaces cover the on-the-go subset (check a queue, approve a request) — full operation remains desktop-first by design.</li>
+      <li><b>The patient product is mobile-first;</b> its desktop view is an adaptation, never the reverse. Doctor/Org are the opposite.</li>
+      <li><b>Every surface carries the same four utilities:</b> search, quick action, notifications, profile — always in the same corner of the screen per device.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 02 TOP NAV -->
+<section class="doc-section" id="top">
+  <div class="sec-kicker">02 · Top Navigation</div>
+  <h2 class="sec-title">Top Navigation</h2>
+  <p class="sec-desc">Two variants: the public marketplace bar (brand + conversion) and the app bar (context + utilities). Both are 56px tall, sticky, white with a bottom hairline — never colored, never translucent.</p>
+
+  <div class="panel">
+    <div class="label">Anatomy — marketplace top bar</div>
+    <div class="anat"><div class="anat-bar">
+      <span class="zone"><span class="zn">1</span>Logo</span>
+      <span class="zone" style="flex:1"><span class="zn">2</span>Inline search — doctors, hospitals, labs</span>
+      <span class="zone"><span class="zn">3</span>For Providers</span>
+      <span class="zone"><span class="zn">4</span>Sign in / Avatar</span>
+    </div></div>
+    <div class="anat-legend">
+      <div><b>1 · Logo</b> — always returns to marketplace home (N3). 32px mark + wordmark; mark only ≤767px.</div>
+      <div><b>2 · Search</b> — inline field, expands on focus with recents + suggestions; collapses to an icon opening a full-screen sheet on mobile.</div>
+      <div><b>3 · For Providers</b> — the supply-side entry; text link, never a button (patients must not misclick it).</div>
+      <div><b>4 · Session</b> — signed out: primary button. Signed in: avatar menu (§08) with "Open my Auriva" as the first item.</div>
+    </div>
+    <div class="label">Anatomy — app top bar (all workspaces)</div>
+    <div class="anat"><div class="anat-bar">
+      <span class="zone"><span class="zn">1</span>Context: page title / breadcrumb (L3+)</span>
+      <span class="zone" style="flex:1;justify-content:center"><span class="zn">2</span>⌘K search trigger</span>
+      <span class="zone"><span class="zn">3</span>Quick action</span>
+      <span class="zone"><span class="zn">4</span>Bell</span>
+      <span class="zone"><span class="zn">5</span>Avatar</span>
+    </div></div>
+    <div class="anat-legend">
+      <div><b>1 · Context zone</b> — page title on L1/L2; breadcrumb trail replaces it on L3+ (APS-003 §08). Never both.</div>
+      <div><b>2 · Search trigger</b> — a quiet input-shaped button showing <span class="kbd">⌘K</span>; opens the command palette (§06). Center-aligned on desktop, icon on ≤1023px.</div>
+      <div><b>3–5 · Utilities</b> — fixed order, fixed corner, all workspaces: quick action (§09), notifications (§07), profile (§08). Muscle memory is a feature.</div>
+    </div>
+    <div class="label">Behavior</div>
+    <ul class="rules">
+      <li>Sticky at all times; content scrolls beneath. No hide-on-scroll — in clinical software the exits never move.</li>
+      <li>On scroll &gt; 0 the hairline gains <code class="tk">shadow-xs</code> to separate from content; no other change.</li>
+      <li>The bar never hosts page actions (save, filter). Those belong to the page. The bar is wayfinding + utilities only.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 03 SIDE NAV -->
+<section class="doc-section" id="side">
+  <div class="sec-kicker">03 · Side Navigation</div>
+  <h2 class="sec-title">Side Navigation</h2>
+  <p class="sec-desc">The desktop backbone for Doctor and Organization. Two widths, one anatomy: switcher on top, L1 items in the middle, account anchored at the bottom.</p>
+
+  <div class="anat-col">
+    <div class="anat" style="flex-shrink:0">
+      <div class="anat-side">
+        <span class="zone"><span class="zn">1</span>Org / branch switcher</span>
+        <span class="zone" style="padding:14px 10px"><span class="zn">2</span>L1 nav items (+ sections)</span>
+        <span class="zone"><span class="zn">3</span>Utility items</span>
+        <span class="zone"><span class="zn">4</span>Collapse toggle · profile</span>
+      </div>
+    </div>
+    <div style="flex:1">
+      <div class="anat-legend" style="margin-top:0">
+        <div><b>1 · Switcher zone</b> — Organization: org avatar + branch switcher (§05). Doctor: clinic-context selector when multi-affiliation, otherwise just the workspace label.</div>
+        <div><b>2 · Items</b> — 36px rows: 20px icon + 13px label + optional count badge. Active = teal-50 bg + teal-700 text (the only colored state). Organization groups items under OPERATE / MANAGE / UNDERSTAND / CONFIGURE section headers; Doctor has 6 flat items, no sections.</div>
+        <div><b>3 · Utilities</b> — Settings, Help. Visually separated, always last.</div>
+        <div><b>4 · Footer</b> — collapse toggle (<span class="kbd">[</span>) and the signed-in user chip.</div>
+      </div>
+      <div class="label">Rules</div>
+      <ul class="rules">
+        <li><b>Widths:</b> Organization 248px · Doctor 220px · collapsed icon rail 64px (icons + tooltips, sections become dividers). Collapse state persists per user per device.</li>
+        <li><b>Role-scoping (N6):</b> items the role can't use don't render — a receptionist's sidebar is 4 items, not 9 greyed ones. Section headers with zero visible children disappear.</li>
+        <li><b>Badges:</b> numeric counts only for actionable queues (Requests 3, Worklist 12). Max shown "99+". No red dots for "new stuff" noise.</li>
+        <li><b>One active item always.</b> L3 detail pages highlight their owning L1 module.</li>
+        <li>No nested expanding trees. If an L1 needs sub-navigation, it renders as in-page tabs — never accordion sidebars.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 04 BOTTOM NAV -->
+<section class="doc-section" id="bottom">
+  <div class="sec-kicker">04 · Bottom Navigation</div>
+  <h2 class="sec-title">Bottom Navigation</h2>
+  <p class="sec-desc">The patient's primary surface on mobile and tablet, and the doctor's mobile fallback. Fixed, always visible, thumb-first.</p>
+
+  <div class="panel">
+    <div class="label">Anatomy — patient bottom bar</div>
+    <div class="anat"><div class="anat-bar" style="justify-content:space-around">
+      <span class="zone"><span class="zn">1</span>Home</span>
+      <span class="zone"><span class="zn">2</span>Care</span>
+      <span class="zone" style="background:var(--teal-600);color:#fff;border-color:var(--teal-600)"><span class="zn" style="background:#fff;color:var(--teal-700)">3</span>+ Book</span>
+      <span class="zone"><span class="zn">4</span>Records</span>
+      <span class="zone"><span class="zn">5</span>Family</span>
+    </div></div>
+    <div class="anat-legend">
+      <div><b>1/2/4/5 · Tabs</b> — 24px icon + 10px label, both always visible (icon-only tabs fail non-technical users). Active = teal-600 icon + label; inactive = slate-400.</div>
+      <div><b>3 · Book action</b> — raised 36px circular primary button, not a tab: it opens the T6 booking flow as a sheet and never shows an active state.</div>
+    </div>
+    <div class="label">Rules</div>
+    <ul class="rules">
+      <li><b>Hit targets 56px tall</b> full-width per tab; safe-area padding on gesture-nav devices.</li>
+      <li><b>Always visible</b> — never hides on scroll; flows (T6) and full-screen media are the only surfaces that cover it.</li>
+      <li><b>Re-tap = reset:</b> tapping the active tab scrolls to top / pops the tab's stack to its root. Tab stacks are preserved when switching tabs.</li>
+      <li><b>Badges:</b> Care shows a dot only on visit day (live queue active). Numeric badges are reserved for the bell, not tabs.</li>
+      <li><b>Family context banner:</b> when browsing as a family member, a persistent banner sits above the bar ("Viewing: Ravi · Switch back") — context is never silent.</li>
+      <li><b>Doctor mobile:</b> Today · Schedule · Patients · More (More = sheet with Consults, Earnings, Settings). Same geometry, no center action.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 05 SWITCHERS -->
+<section class="doc-section" id="switchers">
+  <div class="sec-kicker">05 · Switchers</div>
+  <h2 class="sec-title">Workspace &amp; Organization Switchers</h2>
+  <p class="sec-desc">Two different jobs: the workspace switcher changes <em>who you are acting as</em> (rare, deliberate); the org/branch switcher changes <em>which floor you're standing on</em> (frequent, lightweight).</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Workspace switcher — in the profile menu only (X1)</div>
+      <ul class="rules">
+        <li>Renders only for multi-role accounts; single-role users never see it.</li>
+        <li>Lists workspaces as identity cards: "Patient — Ananya" / "Doctor — Dr. Mehta · 2 clinics" / "Apollo Koramangala — Receptionist".</li>
+        <li>Switching is a <b>full context change</b>: new namespace, new nav, landing on that workspace's home (N3). Unsaved-work guard applies (§12).</li>
+        <li>Last-used workspace is remembered per device and becomes the sign-in default; deep links override it for one session.</li>
+        <li>Keyboard: <span class="kbd">⌘⇧O</span> opens it from anywhere.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">Organization / branch switcher — sidebar header</div>
+      <ul class="rules">
+        <li>Shown when the user belongs to 2+ orgs or an org has 2+ branches; single-context users see a static label.</li>
+        <li>Two-level popover: organizations, then branches; searchable beyond 6 entries.</li>
+        <li>Switching swaps the <code class="tk">{orgId}</code> scope and re-scopes every list and badge; it does <b>not</b> change the current module (Front Desk stays Front Desk).</li>
+        <li>Role may differ per org — the sidebar re-renders to the new role's items (N6).</li>
+        <li>Current branch is always visible in the sidebar header — never only in a menu.</li>
+        <li>Doctor equivalent: clinic-context pills on Today/Schedule filter queue and slots per affiliation.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 06 SEARCH -->
+<section class="doc-section" id="search">
+  <div class="sec-kicker">06 · Search</div>
+  <h2 class="sec-title">Search &amp; Global Search (⌘K)</h2>
+  <p class="sec-desc">Two search systems, deliberately separate: public marketplace search (a destination) and the in-app command palette (an accelerator). They never share UI or index.</p>
+
+  <div class="panel">
+    <div class="label">Marketplace search</div>
+    <ul class="rules">
+      <li>A visible, prominent field — the product's front door, never hidden behind an icon on ≥768px.</li>
+      <li>Query model: <b>what</b> (speciality, doctor, symptom, test) × <b>where</b> (locality). Results at <code class="tk">MKT-002</code> with type tabs; filters mutate URL state (N5).</li>
+      <li>Suggestions while typing: specialities first, then providers, then content. Recent searches for returning visitors.</li>
+      <li>Zero results is a routing moment, not a dead end: nearby localities, sibling specialities, "browse all doctors in {city}".</li>
+    </ul>
+    <div class="label">Global search — the ⌘K command palette (all app workspaces)</div>
+    <div class="tbl-wrap" style="margin-bottom:14px"><table class="tbl">
+      <thead><tr><th>Workspace</th><th>Indexed entities</th><th>Inline commands</th></tr></thead>
+      <tbody>
+        <tr><td><b>Patient</b></td><td>My appointments, prescriptions, reports, doctors, family members</td><td>"Book…", "Show my meds"</td></tr>
+        <tr><td><b>Doctor</b></td><td>My patients, consults, prescriptions, schedule days</td><td>"New Rx for…", "Block time off"</td></tr>
+        <tr><td><b>Organization</b></td><td>Patients (phone/name/MRN), appointments, tokens, invoices, doctors, staff</td><td>"Check in…", "New walk-in", "Today's collections"</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="rules">
+      <li><b>Open:</b> <span class="kbd">⌘K</span> / <span class="kbd">Ctrl K</span>, or the top-bar trigger. Closes on <span class="kbd">Esc</span>, restoring focus to where it was.</li>
+      <li><b>Result anatomy:</b> icon + primary line + context line + type chip; grouped by entity type; max 5 per group with "see all" expanding to the owning list screen with the query applied.</li>
+      <li><b>Ranking:</b> exact ID/phone match first, then prefix, then fuzzy — recency-weighted. A receptionist typing 4 digits of a phone number sees the patient in &lt; 200 ms (perceived).</li>
+      <li><b>Selection:</b> <span class="kbd">↑</span><span class="kbd">↓</span> to move, <span class="kbd">⏎</span> to open (drawer or page per its type), <span class="kbd">⌘⏎</span> to open the primary action directly (e.g. straight into Check-in).</li>
+      <li><b>Scope:</b> strictly the current workspace + current org scope. No cross-workspace results, ever (X3).</li>
+      <li>Empty state teaches: shows the top 5 commands and recent items for this role.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 07 NOTIFICATIONS -->
+<section class="doc-section" id="notif">
+  <div class="sec-kicker">07 · Notifications</div>
+  <h2 class="sec-title">Notifications</h2>
+  <p class="sec-desc">One bell, one panel, per workspace — surfacing the shared notification module (APS-003 §04) with role-appropriate content and X6 deep-linking.</p>
+
+  <div class="panel">
+    <ul class="rules">
+      <li><b>Placement:</b> top-bar bell, position 4 (§02) on all devices; patient mobile keeps it in the top bar (tabs are for places, not streams).</li>
+      <li><b>Badge:</b> numeric unread count, max "99+". Urgent operational alerts (emergency queue jump, e-sign failure) turn the badge red; everything else is neutral slate.</li>
+      <li><b>Panel:</b> 380px popover on desktop; full-height sheet on mobile. Grouped Today / Earlier. Each item: icon + one-line summary + relative time + status chip where relevant.</li>
+      <li><b>Tap → deep link</b> to the entity's canonical location in this workspace (X6); back returns to the panel's origin (X7). Items auto-mark read on open; "mark all read" available.</li>
+      <li><b>Channel escalation is invisible here:</b> push/SMS/WhatsApp routing happens server-side per preferences (<code class="tk">NOT-003</code>); the in-app centre is always the complete record.</li>
+      <li><b>Live region:</b> time-critical items (You're next · Patient waiting) also render as an in-app banner for 8s — never only as a bell count.</li>
+      <li>No marketing content in the bell. Ever. Promotions live elsewhere or nowhere.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 08 PROFILE -->
+<section class="doc-section" id="profile">
+  <div class="sec-kicker">08 · Profile Menu</div>
+  <h2 class="sec-title">Profile Menu</h2>
+  <p class="sec-desc">The account anchor — always the last item in the top bar (avatar, 32px). One structure, role-flavored contents.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:170px">Section</th><th>Contents</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Identity</b></td><td>Avatar, name, role line ("Receptionist · Apollo Koramangala"), phone</td><td>Read-only header; taps nothing.</td></tr>
+      <tr><td><b>2 · Workspace switcher</b></td><td>Other identities on this Auriva ID (§05)</td><td>Multi-role accounts only. <span class="kbd">⌘⇧O</span></td></tr>
+      <tr><td><b>3 · Account</b></td><td>Profile (<code class="tk">PRO-00x</code>), Settings (<code class="tk">SET-00x</code>), Notification preferences (<code class="tk">NOT-003</code>)</td><td>Role-appropriate targets.</td></tr>
+      <tr><td><b>4 · Support</b></td><td>Help centre, contact support (<code class="tk">SUP-001/002</code>), keyboard shortcuts (<span class="kbd">⌘/</span>)</td><td>Shortcuts item on desktop only.</td></tr>
+      <tr><td><b>5 · Session</b></td><td>Sign out</td><td>Always last, visually separated. Confirm only if unsaved work exists.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="panel" style="margin-top:14px">
+    <ul class="rules">
+      <li>Patient mobile: the avatar opens a full Profile page instead of a popover — same five sections as a scrollable screen.</li>
+      <li>Language switch (EN/HI/regional) lives here for patients — one tap deep, never buried in settings.</li>
+      <li>Org staff see their <b>current role and branch</b> in the identity header — the answer to "why can't I see Billing?" is visible before the question.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 09 QUICK ACTIONS -->
+<section class="doc-section" id="quick">
+  <div class="sec-kicker">09 · Quick Actions</div>
+  <h2 class="sec-title">Quick Actions</h2>
+  <p class="sec-desc">Each workspace has exactly one global quick action — the single most frequent job, reachable from anywhere. It is the only primary-colored element in the navigation chrome.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Workspace</th><th>Global quick action</th><th>Desktop</th><th>Mobile</th><th>Shortcut</th></tr></thead>
+    <tbody>
+      <tr><td><b>Patient</b></td><td><b>+ Book</b> — doctor / lab / pharmacy</td><td>Top-bar button</td><td>Raised center of bottom bar</td><td><span class="kbd">⌘B</span></td></tr>
+      <tr><td><b>Doctor</b></td><td><b>Call next patient</b> (context: + Rx inside a consult)</td><td>Top-bar button on Today; persistent in workbench</td><td>Sticky footer button on Today</td><td><span class="kbd">⌥N</span></td></tr>
+      <tr><td><b>Organization</b></td><td><b>+ Walk-in / Check-in</b> (split button, reception roles)</td><td>Top-bar button</td><td>FAB on Front Desk</td><td><span class="kbd">⌥W</span> / <span class="kbd">⌥C</span></td></tr>
+      <tr><td><b>Marketplace</b></td><td>Search itself is the quick action</td><td>Inline field</td><td>Search icon → sheet</td><td><span class="kbd">/</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="panel" style="margin-top:14px">
+    <ul class="rules">
+      <li>The global action opens a <b>flow (T6) or drawer</b> — never navigates away from the current screen; on completion the user is exactly where they were, updated.</li>
+      <li>Role-scoped: an org user without reception rights gets that role's most frequent action instead (e.g. Billing → + Invoice).</li>
+      <li>Secondary quick actions are contextual to lists (row hover / swipe actions) and are specified in APS-008 Interaction Patterns.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 10 KEYBOARD -->
+<section class="doc-section" id="keyboard">
+  <div class="sec-kicker">10 · Keyboard Navigation</div>
+  <h2 class="sec-title">Keyboard Navigation</h2>
+  <p class="sec-desc">Receptionists and doctors live on the keyboard. The system has a global layer, a per-workspace layer, and full focus-order accessibility. Single-key shortcuts are active only when focus is outside a text field.</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Global (all app workspaces)</div>
+      <div class="tbl-wrap"><table class="tbl"><tbody>
+        <tr><td><span class="kbd">⌘K</span></td><td>Command palette / global search</td></tr>
+        <tr><td><span class="kbd">⌘/</span></td><td>Shortcut reference overlay</td></tr>
+        <tr><td><span class="kbd">⌘⇧O</span></td><td>Workspace switcher</td></tr>
+        <tr><td><span class="kbd">Esc</span></td><td>Close topmost overlay (drawer → dialog → palette), restore focus</td></tr>
+        <tr><td><span class="kbd">[</span></td><td>Collapse / expand sidebar</td></tr>
+        <tr><td><span class="kbd">G</span> then <span class="kbd">H</span></td><td>Go home (workspace landing) — "g-then" prefix for all L1s, e.g. <span class="kbd">G</span><span class="kbd">S</span> Schedule</td></tr>
+        <tr><td><span class="kbd">J</span> / <span class="kbd">K</span></td><td>Next / previous row in any list or queue</td></tr>
+        <tr><td><span class="kbd">⏎</span> / <span class="kbd">⌘⏎</span></td><td>Open row / open row's primary action</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="label">Role layers</div>
+      <div class="tbl-wrap"><table class="tbl"><tbody>
+        <tr><td><span class="kbd">⌥N</span></td><td><b>Doctor:</b> call next patient</td></tr>
+        <tr><td><span class="kbd">⌥R</span></td><td><b>Doctor:</b> focus Rx composer (in workbench)</td></tr>
+        <tr><td><span class="kbd">⌘⏎</span></td><td><b>Doctor:</b> sign &amp; complete consult (in workbench)</td></tr>
+        <tr><td><span class="kbd">⌥C</span></td><td><b>Reception:</b> check-in (focus phone search)</td></tr>
+        <tr><td><span class="kbd">⌥W</span></td><td><b>Reception:</b> new walk-in</td></tr>
+        <tr><td><span class="kbd">⌥E</span></td><td><b>Reception:</b> mark emergency (confirm dialog)</td></tr>
+        <tr><td><span class="kbd">/</span></td><td><b>Marketplace:</b> focus search</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <div class="label">Focus &amp; accessibility rules</div>
+    <ul class="rules">
+      <li><b>Visible focus ring always</b> (<code class="tk">--shadow-focus</code>, APS-002) — never suppressed, keyboard and pointer alike.</li>
+      <li><b>Skip link</b> ("Skip to content") is the first tab stop on every page; sidebar and top bar are single tab stops with arrow-key roving inside (WAI-ARIA menu/toolbar patterns).</li>
+      <li><b>Overlays trap focus</b> (drawer, dialog, palette); on close, focus returns to the triggering element. Queue auto-advance moves focus to the next patient card.</li>
+      <li>Tab order follows visual order; drawers insert after the triggering row, not at document end.</li>
+      <li>Shortcuts are remappable later — the map above ships as the default layer, discoverable via <span class="kbd">⌘/</span> and shown in tooltips.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 11 RESPONSIVE -->
+<section class="doc-section" id="responsive">
+  <div class="sec-kicker">11 · Responsive Rules</div>
+  <h2 class="sec-title">Responsive Navigation</h2>
+  <p class="sec-desc">Three breakpoints, deterministic transformations. Navigation morphs by replacing surfaces, never by hiding capabilities silently — anything dropped from chrome remains reachable via ⌘K or More.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Surface</th><th><span class="dev d">Desktop ≥1024</span></th><th><span class="dev t">Tablet 768–1023</span></th><th><span class="dev m">Mobile ≤767</span></th></tr></thead>
+    <tbody>
+      <tr><td><b>Doctor / Org sidebar</b></td><td>Full width (220 / 248px), collapsible</td><td>Icon rail 64px, labels as tooltips; expands as overlay on tap-and-hold / <span class="kbd">[</span></td><td>Doctor → bottom tabs; Org → hamburger drawer (full nav tree, sections intact)</td></tr>
+      <tr><td><b>Patient tabs</b></td><td>Left rail with same 4 items + Book button (rare desktop use)</td><td>Bottom tabs (as mobile), 2-col content</td><td>Bottom tabs — the canonical form</td></tr>
+      <tr><td><b>Top bar</b></td><td>Full: context + ⌘K + utilities</td><td>Context + icons (search becomes icon)</td><td>Condensed 48px: title + bell + avatar; search icon where applicable</td></tr>
+      <tr><td><b>Breadcrumbs</b></td><td>From L3 (APS-003 §08)</td><td>Parent-only crumb ("← Diagnostics")</td><td>Back button + title only</td></tr>
+      <tr><td><b>Record detail</b></td><td>Right drawer 400–480px over list</td><td>Right drawer, wider (~60vw)</td><td>Full-screen push page</td></tr>
+      <tr><td><b>Command palette</b></td><td>Centered 560px modal</td><td>Centered modal</td><td>Full-screen sheet with keyboard-aware layout</td></tr>
+      <tr><td><b>Quick action</b></td><td>Top-bar button</td><td>Top-bar icon button</td><td>FAB / raised tab / sticky footer per §09</td></tr>
+      <tr><td><b>Notifications panel</b></td><td>380px popover</td><td>380px popover</td><td>Full-height sheet</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel" style="margin-top:14px">
+    <ul class="rules">
+      <li><b>Breakpoints are tokens:</b> <code class="tk">--bp-md: 768px</code>, <code class="tk">--bp-lg: 1024px</code>, <code class="tk">--bp-xl: 1440px</code> (≥1440 widens content, never adds nav).</li>
+      <li><b>Input, not just width:</b> touch devices get 44px minimum targets and swipe gestures regardless of viewport; pointer devices get hover states and shortcuts.</li>
+      <li><b>State survives resize:</b> a drawer open at desktop becomes the full-screen page at mobile width with the same URL — rotation never loses work.</li>
+      <li><b>The Org token display (<code class="tk">ORG-004</code>)</b> is chrome-free at every size — it is a broadcast surface, not a navigable one.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 12 BEHAVIOR -->
+<section class="doc-section" id="behavior">
+  <div class="sec-kicker">12 · Behavior</div>
+  <h2 class="sec-title">Navigation Behavior</h2>
+  <p class="sec-desc">The contract for how movement feels — state, history, guards and transitions. These rules bind every screen designed after this document.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:64px">Rule</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><b>B1</b></td><td><b>URL is the source of truth.</b> Every location — including active tab, open drawer, filters and search query — is representable as a URL. Refresh reproduces the exact view; every view is shareable within permission scope.</td></tr>
+      <tr><td><b>B2</b></td><td><b>Back is sacred (X7).</b> Browser/OS back always returns to the previous location with list state (filters, scroll, selection) restored. Drawers close on back before the page changes. Flows (T6) treat back as "previous step", with an explicit exit confirm.</td></tr>
+      <tr><td><b>B3</b></td><td><b>State preservation:</b> per-list filter and scroll state persists for the session; per-tab stacks persist on patient mobile. "Reset" is always explicit (re-tap tab, Clear all), never a side effect.</td></tr>
+      <tr><td><b>B4</b></td><td><b>Unsaved-work guard:</b> leaving a dirty form/consult prompts save/discard — except autosaved surfaces (consult notes, drafts), which navigate freely and say "Draft saved".</td></tr>
+      <tr><td><b>B5</b></td><td><b>Deep links resolve through permissions:</b> a link into another org/role lands on a clean "no access — switch identity?" screen offering legitimate identities (X1/X3). Never a blank 403.</td></tr>
+      <tr><td><b>B6</b></td><td><b>Loading is skeleton-first:</b> navigation paints the destination's layout instantly with skeletons (APS-002); chrome never blocks on data. Slow queries surface progress in-page, not as a frozen nav.</td></tr>
+      <tr><td><b>B7</b></td><td><b>Transitions are quiet:</b> 150ms fades/slides on drawers and sheets; zero animation on primary-nav changes on desktop. Motion respects <code class="tk">prefers-reduced-motion</code>.</td></tr>
+      <tr><td><b>B8</b></td><td><b>Realtime never yanks navigation:</b> queue/board updates re-render in place; if the focused item changes state, a subtle highlight explains what moved. The user is never auto-navigated by someone else's action — banners invite, they don't push.</td></tr>
+      <tr><td><b>B9</b></td><td><b>Session expiry preserves intent:</b> re-auth via OTP overlay returns the user to the same URL with state intact — critical for a receptionist mid-queue.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Phase 1 status &amp; next</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">APS-001 ✅ · APS-002 ✅ · APS-003 ✅ · APS-004 ✅ · APS-005 ✅ · APS-006 (this document). Next: <b>APS-007 Workspace Layouts</b> — the structural grid each workspace's screens compose into, followed by APS-008 Interaction Patterns. Then screen design begins on the P0 spine.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

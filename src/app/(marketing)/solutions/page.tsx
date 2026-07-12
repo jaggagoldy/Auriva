@@ -2,12 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowRight,
-  Clock,
-  FileText,
-  Workflow,
-  BellRing,
-  Receipt,
-  BarChart3,
+  Activity,
+  Smile,
+  Apple,
+  Brain,
+  Sparkles,
+  MessageCircle,
+  Bone,
+  Plus,
+  LayoutList,
+  RefreshCw,
+  IndianRupee,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/marketing/container';
@@ -15,86 +20,112 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: 'Solutions',
-  description: 'What Auriva actually fixes — organized by the problem, not the module name.',
+  description: 'Auriva adapts to your specialty — configured to the way you practise, not customised.',
 };
 
-const SOLUTIONS = [
+const PROFESSIONS = [
+  { icon: Activity, name: 'Physiotherapists', desc: 'Session plans, exercise notes and recurring follow-ups.' },
+  { icon: Smile, name: 'Dentists', desc: 'Tooth charts, treatment plans and staged billing.' },
+  { icon: Apple, name: 'Dietitians', desc: 'Diet plans, progress tracking and check-in reminders.' },
+  { icon: Brain, name: 'Psychologists', desc: 'Private notes, session cadence and gentle reminders.' },
+  { icon: Sparkles, name: 'Dermatologists', desc: 'Photo records, procedure notes and package billing.' },
+  { icon: MessageCircle, name: 'Speech Therapists', desc: 'Goal tracking, session logs and parent updates.' },
+  { icon: Bone, name: 'Orthopedics', desc: 'Imaging references, procedure notes and recovery plans.' },
+  { icon: Plus, name: 'More every month', desc: 'New specialties are added continuously. Yours next.' },
+];
+
+const WHY = [
   {
-    icon: Clock,
-    problem: 'Stop the waiting-room guesswork',
-    solution:
-      'A live queue and real operational calendar so a "10:30 appointment" means something — for the person waiting and the doctor running behind.',
-    pillar: 'Practice Operations',
+    icon: LayoutList,
+    title: 'Specialty templates',
+    desc: 'Consultation and prescription templates tuned to how your field charts.',
   },
   {
-    icon: Workflow,
-    problem: 'Get out of the human-API business',
-    solution:
-      'Front desk, doctor, lab, and billing work off the same record — nobody re-keys the same information into three different systems.',
-    pillar: 'Platform Foundation',
+    icon: RefreshCw,
+    title: 'Follow-up rhythms',
+    desc: 'Recurring visits and check-ins that match your treatment cycles.',
   },
   {
-    icon: FileText,
-    problem: 'Make discharge take minutes, not forms',
-    solution:
-      'A clinical timeline that builds itself as care happens, instead of a stack of paperwork assembled after the fact.',
-    pillar: 'Clinical Excellence',
+    icon: IndianRupee,
+    title: 'Billing that suits you',
+    desc: 'Single visits, packages or staged plans — priced the way your work is.',
   },
-  {
-    icon: BellRing,
-    problem: 'Never lose a follow-up to memory',
-    solution:
-      'Follow-ups are tracked as real, dated records — not a note on a doctor’s desk that depends on someone remembering.',
-    pillar: 'Patient Engagement',
-  },
-  {
-    icon: Receipt,
-    problem: 'Reconcile money the day it moves',
-    solution:
-      'Cash and payer ledgers with attribution at transaction time — not a monthly dispute over what happened three weeks ago.',
-    pillar: 'Financial Operations',
-  },
-  {
-    icon: BarChart3,
-    problem: 'See performance without asking anyone',
-    solution:
-      'A live Command Center where every number is a link to the record that proves it — not a report someone compiles on Fridays.',
-    pillar: 'Organization Intelligence',
-  },
-] as const;
+];
 
 export default function SolutionsPage() {
   return (
     <>
       <PageHero
         eyebrow="Solutions"
-        title="What Auriva actually fixes"
-        description="Organized by the problem you have, not the name of a module."
+        title="Software that fits the way you practise."
+        description="Auriva Solo Practice adapts to your profession — the fields you chart, the way you prescribe, the follow-ups you run. One platform, shaped to your specialty."
       />
 
-      <Container className="py-16">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {SOLUTIONS.map((s) => (
-            <div key={s.problem} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                <s.icon className="size-5 text-primary" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground">{s.problem}</h2>
-              <p className="text-sm text-muted-foreground">{s.solution}</p>
-              <span className="text-xs font-semibold uppercase tracking-wide text-primary">{s.pillar}</span>
-            </div>
+      {/* Professions */}
+      <Container className="py-14">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Live today</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {PROFESSIONS.map(({ icon: Icon, name, desc }) => (
+            <Link
+              key={name}
+              href="/start"
+              className="rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg"
+            >
+              <span className="mb-3.5 grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground">
+                <Icon className="size-5" />
+              </span>
+              <h3 className="font-heading text-[15px] font-bold">{name}</h3>
+              <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{desc}</p>
+            </Link>
           ))}
         </div>
       </Container>
 
-      <Container className="flex flex-col items-center gap-4 border-t border-border py-16 text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Have a problem that isn&apos;t listed here?
+      {/* Why it fits */}
+      <section className="border-y border-border bg-secondary py-16">
+        <Container>
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              Why it fits
+            </span>
+            <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground">
+              One product. Configured, not customised.
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              You don&apos;t buy a different system for your specialty — you switch on the parts that
+              matter to you. Everything else stays out of your way.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {WHY.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-2xl border border-border bg-card p-6">
+                <span className="mb-4 grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground">
+                  <Icon className="size-5" />
+                </span>
+                <h3 className="font-heading text-base font-bold">{title}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* CTA */}
+      <Container className="flex flex-col items-center gap-4 py-16 text-center">
+        <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+          Set up your practice today.
         </h2>
-        <Button size="lg" nativeButton={false} render={<Link href="/book-demo" />}>
-          Book Demo
-          <ArrowRight />
-        </Button>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button size="lg" nativeButton={false} render={<Link href="/start" />}>
+            Start free <ArrowRight className="size-4" />
+          </Button>
+          <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/pricing" />}>
+            See pricing
+          </Button>
+        </div>
       </Container>
     </>
   );

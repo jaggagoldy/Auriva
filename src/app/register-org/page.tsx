@@ -43,6 +43,14 @@ const ARCHETYPE_ICONS: Record<OrgArchetype, React.ComponentType<{ className?: st
   day_care: HeartPulse,
 };
 
+// Solo Practice Edition (frozen MVP scope — see docs/founder-mvp-audit.md §4):
+// independent clinics ship now; every other organization type is "Coming
+// Soon" — the architecture already supports them ("zero forks"), they are
+// deliberately not exposed as active choices until their edition ships, so a
+// self-serve visitor is never funnelled into an onboarding path that isn't
+// ready. Widen this set as each edition launches; nothing else changes.
+const AVAILABLE_ARCHETYPES: readonly OrgArchetype[] = ["independent_clinic"];
+
 export default function RegisterOrganizationPage() {
   const router = useRouter();
   const [step, setStep] = React.useState<"archetype" | "details">("archetype");
@@ -61,6 +69,16 @@ export default function RegisterOrganizationPage() {
   const selectedMeta = archetype ? ORG_ARCHETYPES.find((a) => a.id === archetype) : null;
 
   const chooseArchetype = (id: OrgArchetype) => {
+    // Independent Clinic IS the Solo Practice edition — route straight into
+    // the mobile-first Quick Setup (/start → phone OTP → live clinic in
+    // ~2 min, landing in the /clinic solo workspace), not the enterprise
+    // org-creation form below. The other archetypes are Coming Soon and
+    // never reach here (see AVAILABLE_ARCHETYPES). The details-form flow
+    // below is retained, unexposed, for when the multi-org editions ship.
+    if (id === "independent_clinic") {
+      router.push("/start");
+      return;
+    }
     setArchetype(id);
     setStep("details");
   };
@@ -116,12 +134,38 @@ export default function RegisterOrganizationPage() {
           <>
             <h1 className="text-lg font-semibold tracking-tight">What kind of organization are you?</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              One platform, configured for you — you can change every setting later.
+              Auriva is starting with independent clinics — more organization types are coming soon.
+              You can change every setting later.
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {ORG_ARCHETYPES.map((a) => {
                 const Icon = ARCHETYPE_ICONS[a.id];
+                const available = AVAILABLE_ARCHETYPES.includes(a.id);
+
+                if (!available) {
+                  return (
+                    <div
+                      key={a.id}
+                      aria-disabled="true"
+                      className="flex cursor-not-allowed items-start gap-3 rounded-xl border bg-muted/30 p-4 text-left opacity-60"
+                    >
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <Icon className="size-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium">{a.label}</span>
+                          <span className="rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Coming soon
+                          </span>
+                        </div>
+                        <div className="mt-0.5 text-xs text-muted-foreground">{a.description}</div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={a.id}

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>APS-031 · Auriva Design System</title>
+<style>
+  :root{
+    --surface-page:#F5F7FA; --surface-card:#FFFFFF; --surface-sunken:#F1F5F9;
+    --border-default:#E2E8F0; --border-strong:#CBD5E1;
+    --text-primary:#0F172A; --text-secondary:#475569; --text-tertiary:#94A3B8;
+    --accent:#0D9488; --accent-hover:#0F766E;
+    --success:#16A34A; --success-bg:#F0FDF4; --success-border:#BBF7D0;
+    --warning:#D97706; --warning-bg:#FFFBEB; --warning-border:#FDE68A;
+    --danger:#DC2626; --danger-bg:#FEF2F2; --danger-border:#FECACA;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+    --el-1:0 1px 2px rgba(15,23,42,.06); --el-2:0 4px 12px rgba(15,23,42,.10);
+    --el-3:0 12px 32px rgba(15,23,42,.16); --el-4:0 24px 64px rgba(15,23,42,.24);
+  }
+  [data-theme="dark"]{
+    --surface-page:#0B1220; --surface-card:#111827; --surface-sunken:#0F172A;
+    --border-default:#1E293B; --border-strong:#334155;
+    --text-primary:#F1F5F9; --text-secondary:#94A3B8; --text-tertiary:#64748B;
+    --accent:#2DD4BF; --accent-hover:#5EEAD4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--surface-page);color:var(--text-primary);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;transition:background .15s,color .15s;}
+  h1,h2,h3{font-weight:700;margin:0 0 4px;}
+  a{color:var(--accent);}
+  .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:var(--surface-card);border-bottom:1px solid var(--border-default);}
+  .topbar .brand{font-weight:800;font-size:18px;letter-spacing:-.02em;}
+  .topbar .brand span{color:var(--accent);}
+  .theme-toggle{border:1px solid var(--border-default);background:var(--surface-page);color:var(--text-primary);padding:8px 14px;border-radius:var(--r-full);cursor:pointer;font:inherit;font-weight:500;}
+  main{max-width:1120px;margin:0 auto;padding:40px 32px 120px;}
+  section{margin-bottom:64px;}
+  section > h2{font-size:22px;margin-bottom:6px;}
+  section > p.desc{color:var(--text-secondary);margin:0 0 24px;max-width:70ch;}
+  .grid{display:grid;gap:16px;}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+  .grid.cols-6{grid-template-columns:repeat(6,1fr);}
+  .card{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:20px;}
+  .swatch{border-radius:var(--r-md);height:64px;display:flex;align-items:flex-end;padding:8px;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);}
+  .swatch-label{margin-top:8px;font-size:12px;color:var(--text-secondary);}
+  .swatch-label code{font-size:11px;color:var(--text-tertiary);}
+  .type-row{display:flex;align-items:baseline;gap:24px;padding:14px 0;border-bottom:1px solid var(--border-default);}
+  .type-row:last-child{border-bottom:none;}
+  .type-row .meta{width:220px;flex-shrink:0;font-size:12px;color:var(--text-tertiary);}
+  .type-row .meta code{color:var(--text-secondary);}
+  .display{font-size:32px;font-weight:700;}
+  .page-title{font-size:24px;font-weight:700;}
+  .section-title{font-size:18px;font-weight:600;}
+  .body-emphasis{font-size:14px;font-weight:500;}
+  .body{font-size:14px;font-weight:400;}
+  .caption{font-size:12px;color:var(--text-secondary);}
+  .micro{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;color:var(--text-tertiary);}
+
+  /* Buttons */
+  .btn{font:inherit;font-weight:600;font-size:13px;border-radius:var(--r-md);padding:9px 16px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-hover);}
+  .btn-secondary{background:transparent;border-color:var(--border-strong);color:var(--text-primary);}
+  .btn-tertiary{background:transparent;color:var(--accent);padding-left:4px;padding-right:4px;}
+  .btn-destructive{background:var(--danger);color:#fff;}
+  .btn-disabled{background:var(--surface-sunken);color:var(--text-tertiary);cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+  /* Inputs */
+  .field{display:flex;flex-direction:column;gap:6px;max-width:320px;}
+  .field label{font-size:13px;font-weight:500;}
+  .field input,.field select{font:inherit;font-size:14px;padding:9px 12px;border-radius:var(--r-sm);border:1px solid var(--border-strong);background:var(--surface-card);color:var(--text-primary);}
+  .field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .field.error input{border-color:var(--danger);}
+  .field .helper{font-size:12px;color:var(--text-tertiary);}
+  .field.error .helper{color:var(--danger);}
+
+  /* Badges/Tags */
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:var(--r-full);border:1px solid;}
+  .badge .dot{width:6px;height:6px;border-radius:50%;}
+  .badge.success{color:var(--success);background:var(--success-bg);border-color:var(--success-border);}
+  .badge.success .dot{background:var(--success);}
+  .badge.warning{color:var(--warning);background:var(--warning-bg);border-color:var(--warning-border);}
+  .badge.warning .dot{background:var(--warning);}
+  .badge.danger{color:var(--danger);background:var(--danger-bg);border-color:var(--danger-border);}
+  .badge.danger .dot{background:var(--danger);}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:var(--r-md);background:var(--surface-sunken);color:var(--text-secondary);}
+
+  /* Tabs */
+  .tabs{display:flex;gap:20px;border-bottom:1px solid var(--border-default);}
+  .tab{padding:10px 2px;font-size:13px;font-weight:500;color:var(--text-tertiary);border-bottom:2px solid transparent;cursor:pointer;}
+  .tab.active{color:var(--text-primary);border-color:var(--accent);}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-size:12px;color:var(--text-tertiary);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border-default);}
+  td{padding:12px;font-size:13px;border-bottom:1px solid var(--border-default);height:48px;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;}
+  tr:hover td{background:var(--surface-sunken);cursor:pointer;}
+
+  /* Chart bars (no pies/donuts/gauges — line/bar/stacked-bar/single-value+delta/table-with-bars only) */
+  .chart-title{font-size:13px;font-weight:500;margin-bottom:12px;}
+  .bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;}
+  .bar{flex:1;border-radius:4px 4px 0 0;position:relative;}
+  .bar-label{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;color:var(--text-tertiary);}
+  .stat-tile{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-lg);padding:16px;}
+  .stat-tile .label{font-size:12px;color:var(--text-secondary);}
+  .stat-tile .value{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin:4px 0;}
+  .stat-tile .delta{font-size:12px;font-weight:600;}
+  .stat-tile .delta.up{color:var(--success);}
+  .stat-tile .delta.down{color:var(--danger);}
+
+  /* Empty / skeleton / permission states */
+  .state-box{border:1px dashed var(--border-strong);border-radius:var(--r-lg);padding:32px;text-align:center;color:var(--text-secondary);}
+  .state-box .icon{font-size:28px;margin-bottom:8px;}
+  .skeleton{background:linear-gradient(90deg,var(--surface-sunken) 25%,var(--border-default) 37%,var(--surface-sunken) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;border-radius:var(--r-sm);}
+  @keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+
+  /* Command palette */
+  .cmdk-trigger{display:flex;align-items:center;gap:8px;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:8px 12px;background:var(--surface-card);color:var(--text-tertiary);font-size:13px;cursor:pointer;width:280px;}
+  .cmdk-trigger kbd{margin-left:auto;font-size:11px;background:var(--surface-sunken);padding:2px 6px;border-radius:4px;}
+  .cmdk-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:50;}
+  .cmdk-overlay.open{display:flex;}
+  .cmdk-panel{width:560px;max-width:90vw;background:var(--surface-card);border-radius:var(--r-xl);box-shadow:var(--el-4);overflow:hidden;}
+  .cmdk-input{width:100%;border:none;border-bottom:1px solid var(--border-default);padding:16px;font-size:15px;background:transparent;color:var(--text-primary);}
+  .cmdk-input:focus{outline:none;}
+  .cmdk-list{padding:8px;max-height:320px;overflow:auto;}
+  .cmdk-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-md);font-size:13px;cursor:pointer;}
+  .cmdk-item:hover,.cmdk-item.sel{background:var(--surface-sunken);}
+  .cmdk-item .prefix{font-size:11px;color:var(--accent);font-weight:600;background:var(--success-bg);padding:1px 6px;border-radius:4px;}
+
+  .footer-note{margin-top:80px;padding-top:24px;border-top:1px solid var(--border-default);color:var(--text-tertiary);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Auriva<span>·</span> Design System <span style="color:var(--text-tertiary);font-weight:400;font-size:13px;">APS-031</span></div>
+  <button class="theme-toggle" onclick="var h=document.documentElement;h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark')">Toggle dark mode</button>
+</div>
+
+<main>
+
+<section>
+  <h2>Typography</h2>
+  <p class="desc">Inter throughout. Two sizes max per component. Tabular figures for all numeric data.</p>
+  <div class="card">
+    <div class="type-row"><div class="display">Auriva is the Healthcare Operating System</div><div class="meta"><code>type/display</code> 32/40 · 700 · marketing only</div></div>
+    <div class="type-row"><div class="page-title">Queue Board</div><div class="meta"><code>type/page-title</code> 24/32 · 700</div></div>
+    <div class="type-row"><div class="section-title">Today's appointments</div><div class="meta"><code>type/section-title</code> 18/26 · 600</div></div>
+    <div class="type-row"><div class="body-emphasis">Goldy Jagga — Follow-up</div><div class="meta"><code>type/body-emphasis</code> 14/20 · 500</div></div>
+    <div class="type-row"><div class="body">Consultation completed at 11:42 AM</div><div class="meta"><code>type/body</code> 14/20 · 400</div></div>
+    <div class="type-row"><div class="caption">Last updated 2 minutes ago</div><div class="meta"><code>type/caption</code> 12/16 · 400</div></div>
+    <div class="type-row"><div class="micro">Follow-up due</div><div class="meta"><code>type/micro</code> 11/14 · 500 uppercase</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Color System</h2>
+  <p class="desc">One accent. Status is never color alone — every chip pairs a dot with a word. Dark mode remaps surface and text only; clinical status colors never shift.</p>
+  <div class="grid cols-6">
+    <div><div class="swatch" style="background:#0D9488">teal-600</div><div class="swatch-label">Accent default<br><code>#0D9488</code></div></div>
+    <div><div class="swatch" style="background:#0F766E">teal-700</div><div class="swatch-label">Accent hover<br><code>#0F766E</code></div></div>
+    <div><div class="swatch" style="background:#16A34A">success</div><div class="swatch-label">Success<br><code>#16A34A</code></div></div>
+    <div><div class="swatch" style="background:#D97706">warning</div><div class="swatch-label">Warning<br><code>#D97706</code></div></div>
+    <div><div class="swatch" style="background:#DC2626">danger</div><div class="swatch-label">Danger<br><code>#DC2626</code></div></div>
+    <div><div class="swatch" style="background:#475569">slate-600</div><div class="swatch-label">Text secondary<br><code>#475569</code></div></div>
+  </div>
+  <div class="grid cols-6" style="margin-top:12px;">
+    <div><div class="swatch" style="background:#2563EB">chart-2</div><div class="swatch-label">Chart series 2<br><code>#2563EB</code></div></div>
+    <div><div class="swatch" style="background:#D97706">chart-3</div><div class="swatch-label">Chart series 3<br><code>#D97706</code></div></div>
+    <div><div class="swatch" style="background:#7C3AED">chart-4</div><div class="swatch-label">Chart series 4<br><code>#7C3AED</code></div></div>
+    <div><div class="swatch" style="background:#DB2777">chart-5</div><div class="swatch-label">Chart series 5<br><code>#DB2777</code></div></div>
+    <div><div class="swatch" style="background:#64748B">chart-6</div><div class="swatch-label">Chart series 6<br><code>#64748B</code></div></div>
+    <div><div class="swatch" style="background:var(--surface-page);border:1px solid var(--border-default);color:var(--text-primary)">page bg</div><div class="swatch-label">Surface / page<br>toggles with theme</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Elevation</h2>
+  <p class="desc">New in APS-031 — needed now that modals, drawers, and the command palette are in scope. Never combine a heavy border and a heavy shadow on the same surface.</p>
+  <div class="grid cols-4">
+    <div class="card" style="box-shadow:none;">el-0<br><span class="caption">rest / table rows</span></div>
+    <div class="card" style="box-shadow:var(--el-1);">el-1<br><span class="caption">hover, dropdown trigger</span></div>
+    <div class="card" style="box-shadow:var(--el-2);">el-2<br><span class="caption">popover, tooltip</span></div>
+    <div class="card" style="box-shadow:var(--el-3);">el-3<br><span class="caption">modal, drawer</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Buttons</h2>
+  <div class="card">
+    <div class="btn-row">
+      <button class="btn btn-primary">Book appointment</button>
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-tertiary">View details →</button>
+      <button class="btn btn-destructive">Void invoice</button>
+      <button class="btn btn-disabled" disabled>Save changes</button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Inputs &amp; Validation</h2>
+  <div class="grid cols-3">
+    <div class="card">
+      <div class="field">
+        <label>Organization name</label>
+        <input type="text" placeholder="e.g. Sunrise Multi-specialty Clinic">
+        <span class="helper">Shown to patients on booking and invoices.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field error">
+        <label>Phone number</label>
+        <input type="text" value="98765">
+        <span class="helper">Enter a valid 10-digit mobile number.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label>Organization type</label>
+        <select><option>Independent Clinic</option><option>Multi-specialty Clinic</option><option>Hospital</option></select>
+        <span class="helper">Sets your module and setup defaults.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Badges, Tags &amp; Tabs</h2>
+  <div class="card">
+    <div class="btn-row" style="margin-bottom:20px;">
+      <span class="badge success"><span class="dot"></span>Paid</span>
+      <span class="badge warning"><span class="dot"></span>Pending approval</span>
+      <span class="badge danger"><span class="dot"></span>Overdue</span>
+      <span class="tag">Follow-up</span>
+      <span class="tag">Diabetes</span>
+    </div>
+    <div class="tabs">
+      <div class="tab active">Recent</div>
+      <div class="tab">Favourites</div>
+      <div class="tab">High Risk</div>
+      <div class="tab">Chronic</div>
+      <div class="tab">Follow-up Due</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Table</h2>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table>
+      <thead><tr><th>Patient</th><th>Time</th><th>Status</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>
+        <tr><td>Goldy Jagga</td><td>10:30 AM</td><td><span class="badge success"><span class="dot"></span>Checked in</span></td><td class="num">₹1,200</td></tr>
+        <tr><td>Priya Kumari</td><td>10:45 AM</td><td><span class="badge warning"><span class="dot"></span>Waiting</span></td><td class="num">₹800</td></tr>
+        <tr><td>Aarav Kumar</td><td>11:00 AM</td><td><span class="badge danger"><span class="dot"></span>No-show</span></td><td class="num">₹0</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Data Visualization</h2>
+  <p class="desc">Line / bar / stacked-bar / single-value-with-delta / table-with-bars only. No pies, donuts, gauges, radar, or 3D. Every chart title is a full sentence. Every value links to its evidence view.</p>
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="chart-title">Appointments booked this week, by day</div>
+      <div class="bar-chart">
+        <div class="bar" style="height:40%;background:#0D9488;"><span class="bar-label">Mon</span></div>
+        <div class="bar" style="height:65%;background:#0D9488;"><span class="bar-label">Tue</span></div>
+        <div class="bar" style="height:50%;background:#0D9488;"><span class="bar-label">Wed</span></div>
+        <div class="bar" style="height:80%;background:#0D9488;"><span class="bar-label">Thu</span></div>
+        <div class="bar" style="height:70%;background:#0D9488;"><span class="bar-label">Fri</span></div>
+      </div>
+    </div>
+    <div class="grid cols-2" style="align-content:start;">
+      <div class="stat-tile"><div class="label">Patients seen today</div><div class="value">42</div><div class="delta up">↑ 12% vs last Tue</div></div>
+      <div class="stat-tile"><div class="label">Avg. wait time</div><div class="value">14m</div><div class="delta down">↓ 3m vs last Tue</div></div>
+      <div class="stat-tile"><div class="label">Revenue today</div><div class="value">₹58,400</div><div class="delta up">↑ 8%</div></div>
+      <div class="stat-tile"><div class="label">Pending claims</div><div class="value">6</div><div class="delta down" style="color:var(--warning);">needs review</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Empty, Loading &amp; Permission States</h2>
+  <div class="grid cols-3">
+    <div class="state-box">
+      <div class="icon">📋</div>
+      <div class="body-emphasis" style="color:var(--text-primary);">No appointments yet</div>
+      <p class="caption">Book your first appointment to see it here.</p>
+      <button class="btn btn-primary" style="margin-top:8px;">Book appointment</button>
+    </div>
+    <div class="card">
+      <div class="skeleton" style="height:16px;width:60%;margin-bottom:10px;"></div>
+      <div class="skeleton" style="height:12px;width:90%;margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:12px;width:75%;"></div>
+    </div>
+    <div class="state-box">
+      <div class="icon">🔒</div>
+      <div class="body-emphasis" style="color:var(--text-primary);">Restricted</div>
+      <p class="caption">You don't have the <strong>Billing · View</strong> grant.</p>
+      <button class="btn btn-secondary" style="margin-top:8px;">Request access</button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Command Palette (⌘K)</h2>
+  <p class="desc">Role and scope-aware. Prefix grammar: <code>p:</code> patient, <code>inv:</code> invoice, <code>ord:</code> order, <code>#</code> record ID. Click to preview.</p>
+  <div class="cmdk-trigger" onclick="document.getElementById('cmdk').classList.add('open')">
+    Search or jump to... <kbd>⌘K</kbd>
+  </div>
+  <div class="cmdk-overlay" id="cmdk" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="cmdk-panel">
+      <input class="cmdk-input" placeholder="Type a command or search..." autofocus>
+      <div class="cmdk-list">
+        <div class="cmdk-item sel"><span class="prefix">p:</span> Goldy Jagga — Patient record</div>
+        <div class="cmdk-item"><span class="prefix">inv:</span> INV-2026-0417 — ₹1,200 pending</div>
+        <div class="cmdk-item"><span class="prefix">ord:</span> Lab order — CBC, awaiting sample</div>
+        <div class="cmdk-item">→ Go to Queue Board</div>
+        <div class="cmdk-item">→ Go to Insights · Overview</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Responsive Frames</h2>
+  <p class="desc">Mobile (Patient default) · Tablet (new — nursing stations, bedside) · Desktop (Doctor/Org default) · Ultra-wide (Org only, gains a third rail rather than stretching).</p>
+  <div class="grid cols-4">
+    <div class="card" style="text-align:center;"><div class="micro">Mobile</div><div class="caption">360–599px</div></div>
+    <div class="card" style="text-align:center;"><div class="micro">Tablet</div><div class="caption">600–1023px</div></div>
+    <div class="card" style="text-align:center;"><div class="micro">Desktop</div><div class="caption">1024–1599px</div></div>
+    <div class="card" style="text-align:center;"><div class="micro">Ultra-wide</div><div class="caption">1600px+</div></div>
+  </div>
+</section>
+
+<div class="footer-note">
+  APS-031 · Design System showcase — companion to <code>docs/aps-031-design-system.md</code>. Static visual reference only, not production code. Extends APS-002 (<code>auriva-design-system.html</code>); does not replace it — see the written spec for what changed and why.
+</div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --fm:'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --nav:76px; --top:64px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+  code,.mono{font-family:var(--fm)}
+
+  .app{display:grid;grid-template-columns:var(--nav) 1fr;grid-template-rows:var(--top) 1fr;min-height:100vh}
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 20px;background:rgba(251,248,244,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .tb-clinic{display:flex;align-items:center;gap:11px}
+  .tb-clinic .lg{width:34px;height:34px;border-radius:11px;background:var(--pine);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(14,116,102,.7)}
+  .tb-clinic .lg svg{width:19px;height:19px}
+  .tb-clinic .nm{font-family:var(--fd);font-weight:700;font-size:16px;line-height:1.1}
+  .tb-clinic .rl{font-size:11.5px;color:var(--muted)}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .health-dot{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:650;color:var(--ok);background:var(--ok-tint);border-radius:99px;padding:6px 12px}
+  .health-dot .d{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(63,157,90,.2)}
+  .tb-av{width:38px;height:38px;border-radius:12px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px}
+
+  .nav{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;position:sticky;top:var(--top);height:calc(100vh - var(--top))}
+  .navb{width:56px;height:60px;border-radius:15px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9px;font-weight:650;transition:.15s;text-align:center;line-height:1.1}
+  .navb svg{width:22px;height:22px}
+  .navb:hover{background:var(--sand);color:var(--ink)}
+  .navb.on{background:var(--pine-tint);color:var(--pine-deep)}
+
+  .main{padding:clamp(18px,2.5vw,30px);max-width:1140px;width:100%}
+  .view{display:none;animation:vin .4s cubic-bezier(.2,.8,.2,1)}
+  .view.on{display:block}
+  @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+
+  .vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .vh .eyebrow{font-size:12px;font-weight:700;color:var(--muted)}
+  .vh h1{font-size:clamp(23px,3vw,30px);margin-top:4px}
+  .vh .sub{color:var(--body);font-size:14px;margin-top:5px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14px;transition:transform .12s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:16px;height:16px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 12px 26px -12px rgba(14,116,102,.6)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:34px;font-size:12.5px;padding:0 11px}
+  .btn-xs{height:29px;font-size:11.5px;padding:0 9px;border-radius:9px}
+  .btn-ghost{background:none;color:var(--pine-deep)}.btn-ghost:hover{background:var(--pine-tint)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .pad{padding:20px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .stat .n{font-family:var(--fd);font-weight:700;font-size:23px;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .stat .n.ok{color:var(--ok)}.stat .n.warn{color:var(--honey-deep)}.stat .n.crit{color:var(--rose)}
+
+  .filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .fchip{padding:8px 13px;border-radius:99px;border:1.5px solid var(--line-2);background:var(--surface);font-family:var(--fd);font-weight:650;font-size:12.5px;color:var(--body)}
+  .fchip.on{border-color:var(--pine);background:var(--pine-tint);color:var(--pine-deep)}
+
+  /* log rows */
+  .logrow{display:flex;align-items:center;gap:14px;padding:13px 4px;border-top:1px solid var(--line)}
+  .logrow:first-of-type{border-top:none}
+  .logrow .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:var(--pine-tint);color:var(--pine-deep)}
+  .logrow .ic svg{width:17px;height:17px}
+  .logrow .ic.warn{background:var(--honey-tint);color:var(--honey-deep)}
+  .logrow .ic.crit{background:var(--rose-tint);color:var(--rose)}
+  .logrow .msg{font-size:13.5px}
+  .logrow .msg b{font-weight:700}
+  .logrow .meta{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:var(--fm)}
+  .logrow .time{margin-left:auto;font-size:11.5px;color:var(--muted);flex:0 0 auto;text-align:right}
+
+  /* event table */
+  .etab-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+  .etab{width:100%;border-collapse:collapse;min-width:660px}
+  .etab th,.etab td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;text-align:left}
+  .etab thead th{background:var(--sand);font-family:var(--fd);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .etab tbody tr:last-child td{border-bottom:none}
+  .etab .evt{font-family:var(--fm);font-size:12px;color:var(--ink)}
+  .etab .id{font-family:var(--fm);font-size:11.5px;color:var(--muted)}
+  .est{font-size:10.5px;font-weight:700;border-radius:99px;padding:3px 9px;display:inline-block}
+  .est.pub{background:var(--ok-tint);color:var(--ok)}
+  .est.retry{background:var(--honey-tint);color:var(--honey-deep)}
+  .est.dlq{background:var(--rose-tint);color:var(--rose)}
+
+  .dlqbar{display:flex;align-items:center;gap:12px;background:var(--rose-tint);border:1px solid #EFC7BF;border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .dlqbar .ic{width:38px;height:38px;border-radius:11px;background:#fff;color:var(--rose);display:grid;place-items:center;flex:0 0 auto}
+  .dlqbar .ic svg{width:19px;height:19px}
+  .dlqbar .t{font-family:var(--fd);font-weight:700;font-size:14px;color:#A23A2E}
+  .dlqbar .s{font-size:12px;color:#8a4237}
+
+  /* integrations */
+  .intgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:20px}
+  .intcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .intcard .top{display:flex;align-items:center;gap:12px}
+  .intcard .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;background:var(--pine-tint);color:var(--pine-deep)}
+  .intcard .ic svg{width:21px;height:21px}
+  .intcard .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .intcard .st{font-size:11.5px;margin-top:1px;display:inline-flex;align-items:center;gap:5px;font-weight:650}
+  .intcard .st.on{color:var(--ok)}.intcard .st.off{color:var(--muted)}
+  .intcard .st .d{width:6px;height:6px;border-radius:50%}
+  .intcard .st.on .d{background:var(--ok)}.intcard .st.off .d{background:var(--line-2)}
+  .intcard p{font-size:12px;color:var(--body);margin-top:12px;line-height:1.45}
+  .intcard .foot{margin-top:14px}
+
+  .keyrow{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
+  .keyrow:first-of-type{border-top:none}
+  .keyrow .kn{font-family:var(--fd);font-weight:700;font-size:14px}
+  .keyrow .kv{font-family:var(--fm);font-size:12.5px;color:var(--muted);margin-top:3px}
+  .keyrow .right{margin-left:auto;display:flex;gap:8px}
+
+  .toastwrap{position:fixed;top:76px;right:16px;z-index:80;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:12px 15px;font-size:13.5px;font-weight:600;animation:tin .3s}
+  .toast .ic{width:24px;height:24px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  .mobnav{display:none}
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}.nav{display:none}
+    .stats{grid-template-columns:1fr 1fr}
+    .main{padding-bottom:88px}
+    .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:50;padding:6px 4px;justify-content:space-around}
+    .mobnav .navb{width:auto;height:auto;padding:6px 8px;flex:1}
+  }
+</style>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="tb-clinic"><span class="lg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><div><div class="nm">Auriva Platform</div><div class="rl">Foundation &amp; services</div></div></div>
+    <div class="tb-right"><span class="health-dot"><span class="d"></span>All systems operational</span><span class="tb-av">AR</span></div>
+  </div>
+
+  <nav class="nav">
+    <button class="navb on" data-view="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-6.2-8.5"/></svg>Audit log</button>
+    <button class="navb" data-view="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>Events</button>
+    <button class="navb" data-view="integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>Integrations</button>
+  </nav>
+
+  <main class="main">
+    <!-- ===== AUDIT LOG ===== -->
+    <section class="view on" data-v="audit">
+      <div class="vh"><div><div class="eyebrow">Tamper-evident</div><h1>Audit log</h1><div class="sub">Every access and change across the platform — who, what and when.</div></div>
+        <button class="btn btn-line" data-toast="Exported audit log (CSV)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export</button>
+      </div>
+      <div class="filters"><button class="fchip on">All events</button><button class="fchip">Records</button><button class="fchip">Billing</button><button class="fchip">Staff</button><button class="fchip">Auth</button></div>
+      <div class="card pad">
+        <div class="logrow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span><div><div class="msg"><b>Dr. Anjali Rao</b> viewed record · Rohan Kulkarni</div><div class="meta">record.view · patient:P-2048 · 49.36.x.x</div></div><div class="time">10:32:14<br>today</div></div>
+        <div class="logrow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><div><div class="msg"><b>Meera Nair</b> created invoice INV-1042 · ₹600</div><div class="meta">invoice.create · amount:600 · clinic:HSR</div></div><div class="time">10:33:02<br>today</div></div>
+        <div class="logrow"><span class="ic warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span><div><div class="msg"><b>Suresh Kumar</b> attempted access to Revenue · denied</div><div class="meta">authz.denied · role:reception · resource:reports</div></div><div class="time">10:28:41<br>today</div></div>
+        <div class="logrow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div><div class="msg"><b>Dr. Anjali Rao</b> invited Suresh Kumar · Reception</div><div class="meta">staff.invite · role:reception · clinic:SmileCare</div></div><div class="time">09:51:10<br>today</div></div>
+        <div class="logrow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><div><div class="msg"><b>Dr. Anjali Rao</b> signed &amp; completed visit · Rohan Kulkarni</div><div class="meta">visit.complete · rx:2 items · followup:7d</div></div><div class="time">10:40:55<br>today</div></div>
+      </div>
+    </section>
+
+    <!-- ===== EVENTS ===== -->
+    <section class="view" data-v="events">
+      <div class="vh"><div><div class="eyebrow">Event platform</div><h1>Events</h1><div class="sub">The publish/retry/dead-letter backbone that connects every module.</div></div>
+        <button class="btn btn-line" data-toast="Refreshed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg>Refresh</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="n ok">12,480</div><div class="l">Published today</div></div>
+        <div class="stat"><div class="n">99.98%</div><div class="l">Delivery rate</div></div>
+        <div class="stat"><div class="n warn">3</div><div class="l">Retrying</div></div>
+        <div class="stat"><div class="n crit">2</div><div class="l">Dead-letter</div></div>
+      </div>
+      <div class="dlqbar">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+        <div><div class="t">2 events in the dead-letter queue</div><div class="s">Failed after max retries — review and replay</div></div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" data-toast="Replaying 2 events…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg>Replay all</button>
+      </div>
+      <div class="etab-wrap"><table class="etab">
+        <thead><tr><th>Event</th><th>ID</th><th>Consumer</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="evt">appointment.booked</td><td class="id">evt_9f3a1c</td><td>reminders</td><td><span class="est pub">Published</span></td><td></td></tr>
+          <tr><td class="evt">visit.completed</td><td class="id">evt_9f3a20</td><td>billing</td><td><span class="est pub">Published</span></td><td></td></tr>
+          <tr><td class="evt">prescription.created</td><td class="id">evt_9f3a2b</td><td>patient-portal</td><td><span class="est pub">Published</span></td><td></td></tr>
+          <tr><td class="evt">invoice.created</td><td class="id">evt_9f3a31</td><td>whatsapp</td><td><span class="est retry">Retry 2/5</span></td><td><button class="btn btn-ghost btn-xs" data-toast="Retried evt_9f3a31">Retry</button></td></tr>
+          <tr><td class="evt">lab.report.ready</td><td class="id">evt_9f39e7</td><td>patient-portal</td><td><span class="est dlq">Dead-letter</span></td><td><button class="btn btn-line btn-xs" data-toast="Replayed evt_9f39e7">Replay</button></td></tr>
+          <tr><td class="evt">claim.submitted</td><td class="id">evt_9f39d2</td><td>insurance</td><td><span class="est dlq">Dead-letter</span></td><td><button class="btn btn-line btn-xs" data-toast="Replayed evt_9f39d2">Replay</button></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ===== INTEGRATIONS ===== -->
+    <section class="view" data-v="integrations">
+      <div class="vh"><div><div class="eyebrow">Integration framework</div><h1>Integrations &amp; API</h1><div class="sub">How Auriva connects to the rest of your world.</div></div></div>
+      <div class="intgrid">
+        <div class="intcard"><div class="top"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2z"/></svg></span><div><div class="nm">WhatsApp</div><div class="st on"><span class="d"></span>Connected</div></div></div><p>Reminders, confirmations and report links.</p><div class="foot"><button class="btn btn-line btn-sm" data-toast="WhatsApp settings">Configure</button></div></div>
+        <div class="intcard"><div class="top"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg></span><div><div class="nm">SMS gateway</div><div class="st on"><span class="d"></span>Connected</div></div></div><p>OTP and fallback reminders over SMS.</p><div class="foot"><button class="btn btn-line btn-sm" data-toast="SMS settings">Configure</button></div></div>
+        <div class="intcard"><div class="top"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg></span><div><div class="nm">UPI / payments</div><div class="st on"><span class="d"></span>Connected</div></div></div><p>Collect at the counter, settle to your bank.</p><div class="foot"><button class="btn btn-line btn-sm" data-toast="Payment settings">Configure</button></div></div>
+        <div class="intcard"><div class="top"><span class="ic" style="background:var(--sand2);color:var(--muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><div><div class="nm">Lab network</div><div class="st off"><span class="d"></span>Available soon</div></div></div><p>Auto-route orders and receive reports.</p><div class="foot"><button class="btn btn-line btn-sm" data-toast="Join lab network waitlist">Connect</button></div></div>
+      </div>
+      <div class="card pad">
+        <h3 style="font-size:16px;margin-bottom:6px">API keys</h3>
+        <div class="keyrow"><div><div class="kn">Production key</div><div class="kv">sk_live_••••••••••••4f9a</div></div><div class="right"><button class="btn btn-line btn-xs" data-toast="Key copied to clipboard">Copy</button><button class="btn btn-ghost btn-xs" data-toast="Rotate key?">Rotate</button></div></div>
+        <div class="keyrow"><div><div class="kn">Webhook endpoint</div><div class="kv">https://clinic.example.com/auriva/hooks</div></div><div class="right"><button class="btn btn-line btn-xs" data-toast="Test event sent">Test</button></div></div>
+        <button class="btn btn-line btn-sm" style="margin-top:14px" data-toast="Generate a new key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Create API key</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobnav">
+  <button class="navb on" data-view="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-6.2-8.5"/></svg>Audit</button>
+  <button class="navb" data-view="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>Events</button>
+  <button class="navb" data-view="integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7"/></svg>Integrations</button>
+</nav>
+
+<script>
+(function(){
+  var tw=document.getElementById("toasts");
+  function toast(msg){var t=document.createElement("div");t.className="toast";t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';tw.appendChild(t);setTimeout(function(){t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(function(){t.remove();},300);},2500);}
+  function setView(v){[].forEach.call(document.querySelectorAll(".view"),function(s){s.classList.toggle("on",s.dataset.v===v);});[].forEach.call(document.querySelectorAll(".navb"),function(b){b.classList.toggle("on",b.dataset.view===v);});window.scrollTo(0,0);}
+  document.addEventListener("click",function(e){
+    var nv=e.target.closest("[data-view]");if(nv){setView(nv.getAttribute("data-view"));return;}
+    var f=e.target.closest(".fchip");if(f){[].forEach.call(f.parentNode.children,function(c){c.classList.remove("on");});f.classList.add("on");return;}
+    var tt=e.target.closest("[data-toast]");if(tt){toast(tt.getAttribute("data-toast"));return;}
+  });
+})();
+</script>

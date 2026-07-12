@@ -1,6 +1,10 @@
+// Release 1.2 Batch 4 (Founder MVP Blocker B1): PostgreSQL, replacing the
+// hardcoded SQLite file. Env-driven so dev/staging/production point at
+// different instances via DATABASE_URL, never a code change — see
+// docs/adr/0006-postgresql-migration.md.
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -12,19 +16,109 @@ model User {
   role         String          // Enum: 'patient', 'super_admin', 'doctor', 'receptionist'
   phone_number String          @unique
   email        String?
+  // APS-040: scrypt hash ("scrypt$<salt>$<hash>") for B2B (staff) logins.
+  // Null for patient accounts — patients authenticate via OTP only.
+  password_hash String?
+
+  // Sprint 3: gates login (not just role-based access) — a deactivated staff
+  // member must not be able to sign in at all, distinct from "has no
+  // permission to X". Patients are never deactivated through this field.
+  is_active    Boolean         @default(true)
+
+  // APS-036: deliberately separate from `role`. `super_admin` means "owns a
+  // customer Organization" in this codebase today (see authorization.ts) —
+  // it is NOT an Auriva-internal-staff flag. Release Management authors
+  // Auriva's own product release notes, which no customer (including a
+  // clinic owner with role=super_admin) should be able to draft or publish.
+  // This flag is the only thing that grants that capability; it is never
+  // set from any customer-facing signup/invite flow.
+  is_platform_admin Boolean    @default(false)
 
   // Relations
   clinics      Clinic[]        @relation("ClinicSuperAdmin")
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
   staffProfile StaffProfile?
   patientProfile PatientProfile?
   sessions     Session[]
+  memberships  OrganizationMember[]
+  // APS-029/010: profiles this Account can act as — the multi-profile
+  // (family) mechanism. `patientProfile` above remains the legacy 1:1
+  // "owns" pointer for the account's own profile; this join is how an
+  // Account additionally accesses other Healthcare Profiles (e.g. a
+  // dependent registered by reception without their own login).
+  linkedProfiles AccountProfileLink[]
+  releaseViews   ReleaseView[]
+  releasesAuthored Release[] @relation("ReleaseAuthor")
 
   @@map("Users")
+}
+
+// Sprint 3 (OPS-001): the real Organization entity — previously a pure
+// TypeScript alias over Clinic (src/domain/organization.ts documented this
+// explicitly: "Organization <- Clinics, one clinic = one organization").
+// Genuine multi-clinic support requires a real parent; this is that parent.
+// Migration note: every pre-existing Clinic gets an Organization row created
+// with THE SAME id as the clinic (see migration SQL) — so every existing
+// organization_id value already in OrganizationMember/Invitation rows stays
+// valid with zero data rewriting, and every existing single-clinic org keeps
+// behaving exactly as before. Only NEW clinics added to an org (Sprint 3's
+// actual new capability) get a distinct organization_id from their clinic_id.
+model Organization {
+  id            String   @id @default(uuid())
+  name          String
+  address       String?
+  contact_email String?
+  contact_phone String?
+  timezone      String   @default("Asia/Kolkata")
+  // Which of the six presets this org started from (independent_clinic |
+  // multi_specialty | hospital | diagnostic_center | pharmacy_chain |
+  // day_care). Purely a config-path selector at signup time — every module
+  // stays activatable for every org regardless of this value (presets are
+  // starting points, not tiers/forks). Nullable: pre-existing orgs predate
+  // this field and orgs can always reconfigure afterward.
+  archetype     String?
+  // Milestone 1 Batch 6 (Demo Mode): marks the sandbox "SmileCare
+  // Physiotherapy" organization created by the "Skip & explore" entry. The
+  // ONLY safety marker Demo Reset keys off — resetDemo() wipes and reseeds
+  // volatile content for organizations where this is true and never touches a
+  // real customer org. Default false = every real org is untouched/unchanged.
+  is_demo       Boolean  @default(false)
+  owner_user_id String
+  created_at    DateTime @default(now())
+
+  owner       User                 @relation("OrganizationOwner", fields: [owner_user_id], references: [id], onDelete: Cascade)
+  clinics     Clinic[]
+  members     OrganizationMember[]
+  invitations Invitation[]
+  departments Department[]
+  auditLogs   AuditLog[]
+
+  @@map("Organizations")
+}
+
+// APS-040 (debt M2): real membership rows replacing the specialty→role
+// heuristic. Sprint 3: retargeted onto the new real Organization table (was
+// Clinic — see the Organization model's migration note above). Existing
+// organization_id values are untouched; they already equal the id of the
+// Organization row backfilled for their clinic.
+model OrganizationMember {
+  id              String   @id @default(uuid())
+  organization_id String
+  user_id         String
+  role            String   // 'owner' | 'doctor' | 'receptionist'
+  created_at      DateTime @default(now())
+
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, user_id])
+  @@map("Organization_Members")
 }
 
 // Minimal server-side session for the new /staff surface (Sprint 1). Scoped
 // narrowly: it does not replace or harden the existing email+role login
 // check, it only lets /api/reception/* and /staff/* verify who is calling.
+// APS-029/010 Sprint 1: also backs patient sessions (role: 'patient').
 model Session {
   id         String   @id @default(uuid())
   token_hash String   @unique
@@ -32,6 +126,13 @@ model Session {
   role       String
   created_at DateTime @default(now())
   expires_at DateTime
+
+  // Which Healthcare Profile this session is currently "acting as" — an
+  // Account can be linked to more than one profile (family sharing a
+  // phone, APS-029 Part I A1). Session-scoped selection, resolved against
+  // Account_Profile_Links server-side, never trusted from the client. Null
+  // for staff/doctor/admin sessions (not patient-scoped).
+  active_healthcare_profile_id String?
 
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -43,13 +144,151 @@ model Clinic {
   name           String
   address        String
   super_admin_id String
-  
+
+  // Sprint 3: every clinic belongs to exactly one Organization — the real
+  // parent that groups branches together (see Organization model above).
+  organization_id String
+
+  // --- Sprint 3 (OPS-001) per-clinic operational configuration ---
+  // Simple scalar fields, deliberately not a separate settings table or a
+  // slot-generation engine — "operational completeness, not new platform
+  // architecture" per the sprint brief. A null value means "no policy set,
+  // behave as before this sprint" everywhere these are read.
+  timezone                          String?  // overrides Organization.timezone when set
+  working_days                      String?  // comma-separated, e.g. "mon,tue,wed,thu,fri"
+  opens_at                          String?  // "09:00"
+  closes_at                         String?  // "18:00"
+
+  // Milestone 1 (First Clinic Ready), Batch 2 — the clinic-wide "Accepting
+  // Bookings" switch (frozen Release 1.2 UX v1.0). Clinic-wide by Product
+  // Office decision: one flag covers vacation/illness/conference/renovation.
+  // Governs the PUBLIC (online self-service) surface ONLY — when false the
+  // public booking page stays reachable (clinic details, phone, hours,
+  // directions) but the "choose a time" action is disabled, and the public
+  // booking endpoint refuses. Staff/reception phone-in booking
+  // (scheduleAppointment) is deliberately unaffected — "please call the clinic
+  // to book" only works if the desk can still book. Default true = every
+  // existing clinic keeps accepting online bookings, unchanged.
+  accepting_bookings                Boolean  @default(true)
+  // Clinic contact number shown on the public booking page (and the "call us"
+  // fallback when bookings are paused). Nullable/additive; backfilled from the
+  // owner's mobile during Quick Setup (Batch 3) for new solo clinics.
+  phone                             String?
+  // Milestone 1 Batch 4: when the owner first shared their booking page (copy
+  // link / share). Backs the "Share your booking page" guided-checklist item
+  // as a REAL signal rather than a guessed one — null = not shared yet.
+  booking_shared_at                 DateTime?
+  default_slot_duration_minutes     Int?     @default(15)
+  buffer_minutes                    Int?     @default(0)
+  max_appointments_per_doctor_per_day Int?   // null = unlimited
+  allow_double_booking              Boolean  @default(false)
+  allow_walk_ins                    Boolean  @default(true)
+  cancellation_window_hours         Int?     // null = no restriction
+  default_consultation_fee          Int?     // falls back to StaffProfile.consultation_fee, then this, then the global default
+
+  // Find Care marketplace fields — geo is fabricated-but-consistent (seeded
+  // literals scattered around the platform's fictional "Springfield" — real
+  // geocoding of these addresses was never meaningful), but every distance
+  // shown from it is real Haversine math, not a hardcoded string.
+  is_verified Boolean @default(false)
+  latitude    Float?
+  longitude   Float?
+
   // Relations
+  organization   Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   superAdmin     User           @relation("ClinicSuperAdmin", fields: [super_admin_id], references: [id], onDelete: Cascade)
   staffProfiles  StaffProfile[]
+  services       Service[]
   appointments   Appointment[]
+  prescriptions  Prescription[]
+  labOrders      LabOrder[]
+  invoices       Invoice[]
+  invitations    Invitation[]
+  departments    Department[]
+  // APS-029/010: profiles this org registered (registration provenance —
+  // "Organizations own registration", not a standing access grant).
+  registeredProfiles PatientProfile[] @relation("ProfileRegisteredByClinic")
 
   @@map("Clinics")
+}
+
+// Sprint 3: a department groups staff within an organization — org-wide
+// (clinic_id null) or scoped to one branch. Deliberately minimal: a name, an
+// optional head, an optional default fee — no separate permission model
+// (department membership doesn't change what a role can do, only how staff
+// are organized and default-priced).
+model Department {
+  id              String   @id @default(uuid())
+  organization_id String
+  clinic_id       String?  // null = org-wide department, spans every branch
+  name            String
+  head_staff_id   String?
+  default_consultation_fee Int?
+  created_at      DateTime @default(now())
+
+  organization Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  clinic       Clinic?       @relation(fields: [clinic_id], references: [id], onDelete: SetNull)
+  headStaff    StaffProfile? @relation("DepartmentHead", fields: [head_staff_id], references: [id], onDelete: SetNull)
+  members      StaffProfile[] @relation("DepartmentMembers")
+
+  @@map("Departments")
+}
+
+// Sprint 3: a doctor's real weekly working hours — deliberately just the
+// recurring weekly grid (day + start + end). Holidays/leave/breaks are
+// explicitly NOT built here (would need a second, date-specific override
+// model) and stay an honest "coming soon" in the UI rather than being faked.
+model DoctorAvailability {
+  id          String  @id @default(uuid())
+  doctor_id   String
+  day_of_week Int     // 0=Sunday .. 6=Saturday
+  start_time  String  // "09:00"
+  end_time    String  // "17:00"
+  is_active   Boolean @default(true)
+
+  doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@unique([doctor_id, day_of_week])
+  @@map("Doctor_Availability")
+}
+
+// Batch 4 (Personal Time Blocking): the date-specific time-off model the
+// availability service previously flagged as "coming soon". A solo
+// practitioner blocks lunch, a school pickup, or a leave day; getBookableSlots
+// removes any slot overlapping a block so patients can't book over it. This is
+// deliberately separate from the weekly DoctorAvailability recurrence above —
+// availability says "I normally work these hours", a block says "but not this
+// specific window" — so neither has to encode the other's shape.
+model DoctorTimeBlock {
+  id         String   @id @default(uuid())
+  doctor_id  String
+  start_at   DateTime
+  end_at     DateTime
+  reason     String?
+  created_at DateTime @default(now())
+
+  doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@index([doctor_id, start_at])
+  @@map("Doctor_Time_Blocks")
+}
+
+// Sprint 3: the general, organization-wide audit log — distinct from
+// AppointmentEvent, which is explicitly appointment-scoped only (its own
+// schema comment already flagged it as merely "the seed" of this). Captures
+// admin/org-level actions: clinics/departments created, staff invited,
+// activated/deactivated, settings changed.
+model AuditLog {
+  id              String   @id @default(uuid())
+  organization_id String
+  actor_user_id   String?
+  action          String   // 'clinic_created' | 'staff_invited' | 'staff_activated' | 'staff_deactivated' | 'organization_updated' | 'department_created' | ...
+  detail          String?
+  created_at      DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("Audit_Logs")
 }
 
 model StaffProfile {
@@ -58,26 +297,195 @@ model StaffProfile {
   clinic_id    String
   specialty    String?       // e.g., 'Cardiologist'
   full_name    String        // Added for UI display (Lead Dev decision)
-  
+  // Doctor Workspace profile (APS-009/011) — nullable, doctor-editable.
+  bio                 String?
+  years_experience    Int?
+  languages           String?   // comma-separated, e.g. "English,Hindi,Kannada"
+  qualifications       String?
+  registration_number String?
+  consultation_fee    Int?      // INR, per Q5: fee lives per practice location (single clinic today)
+  // Sprint 3 (OPS-001)
+  follow_up_fee       Int?      // falls back to consultation_fee when null (a follow-up visit costs less, typically)
+  department_id       String?
+  is_active           Boolean   @default(true) // deactivated staff can't log in (enforced at the User level too) or appear in active rosters
+  // Batch 2 (Adaptive Workspace): capabilities GRANTED beyond this profile's
+  // base-role defaults, as a JSON string array of capability keys (see
+  // src/domain/authorization.ts WORKSPACE_CAPABILITIES). Null = role defaults
+  // only (every existing row). A solo practitioner is a doctor profile granted
+  // "reception"; the effective set is defaults ∪ grants, resolved server-side.
+  capabilities        String?
+
   // Relations
-  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  clinic       Clinic        @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  clinic        Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  department    Department?    @relation("DepartmentMembers", fields: [department_id], references: [id], onDelete: SetNull)
+  headOfDepartments Department[] @relation("DepartmentHead")
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  labOrders     LabOrder[]
+  availability  DoctorAvailability[]
+  timeBlocks    DoctorTimeBlock[]
+  reviews       Review[]
+  favoritedBy   PatientFavoriteDoctor[]
 
   @@map("Staff_Profiles")
 }
 
+// Milestone 1 (First Clinic Ready) — "Treatments & Services", the solo
+// practice's core business object per the frozen Release 1.2 UX v1.0 contract.
+// A named thing the clinic offers, carrying the two facts everything else
+// needs: how long it takes (drives bookable-slot length) and what it costs
+// (drives the payment amount). `buffer_minutes` is per-treatment cleanup/turnaround
+// time; when null the clinic-level buffer applies. Clinic-scoped (not org-scoped):
+// pricing and offered treatments are a property of the physical branch, matching
+// StaffProfile.consultation_fee / Clinic.default_consultation_fee living per-clinic.
+// Integer INR for price (same money convention as consultation_fee/Invoice.total).
+// Soft-archived via is_active rather than deleted so historical references stay
+// intact once appointments/payments point at a service (Milestone 1 later batches).
+model Service {
+  id               String   @id @default(uuid())
+  clinic_id        String
+  name             String
+  duration_minutes Int
+  price            Int      // integer INR
+  buffer_minutes   Int?     // null = use the clinic's buffer_minutes
+  is_active        Boolean  @default(true)
+  sort_order       Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  @@index([clinic_id, is_active])
+  @@map("Services")
+}
+
+// Patient -> doctor reviews (Find Care / Doctor Details). A clinic's own
+// displayed rating is derived by aggregating across its doctors' reviews —
+// deliberately not a second, parallel clinic-review model.
+model Review {
+  id         String   @id @default(uuid())
+  doctor_id  String
+  patient_id String
+  // PAT-2 (Release 1.2 Sprint 1) — added so a review can be tied to the
+  // specific completed visit it's about, and so at most one review can
+  // exist per appointment (@unique). Nullable: additive, backward
+  // compatible with any pre-existing Review rows, which predate this field
+  // and have no appointment to attribute to. Product Office-approved
+  // schema addition (see docs/release-1.2-sprint-1-implementation-packet.md
+  // §3/§6 escalation record) — not a redesign of the existing fields.
+  appointment_id String? @unique
+  rating     Int      // 1-5
+  comment    String?
+  created_at DateTime @default(now())
+
+  doctor      StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+
+  @@map("Reviews")
+}
+
+// A patient's favorited (starred) doctors — Find Care's star toggle and
+// Profile's "My care network" Favourites filter.
+model PatientFavoriteDoctor {
+  id         String   @id @default(uuid())
+  patient_id String
+  doctor_id  String
+  created_at DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor  StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@unique([patient_id, doctor_id])
+  @@map("Patient_Favorite_Doctors")
+}
+
+// The Healthcare Profile of APS-029/010 Part I — same table, evolved in
+// place (Part I A1's "bridge note": Identity + Profile concepts collapse
+// into this one table for MVP; health_id/verification_level carry the
+// Identity envelope, the rest carries Profile content).
 model PatientProfile {
-  id           String        @id @default(uuid())
-  user_id      String        @unique
-  full_name    String
-  blood_group  String
-  
+  id                       String        @id @default(uuid())
+  // Nullable + still unique: a profile can exist with NO Auriva Account at
+  // all (reception/emergency registration) — "Healthcare Profile is the
+  // clinical identity, Auriva Account is optional". When present, this is
+  // still a 1:1 "this account owns this profile" pointer; an Account
+  // linking to OTHER (non-owned) profiles goes through AccountProfileLink,
+  // never through this field — see APS-029 Part I A1 / Part II §3.
+  user_id                  String?       @unique
+  full_name                String
+  blood_group              String
+  date_of_birth            DateTime?
+  gender                   String?
+  onboarding_completed     Boolean       @default(false)
+  // Health Summary (APS-010) — free-text on purpose; structured allergy/condition
+  // taxonomies are a future clinical-data-model decision, not an MVP concern.
+  allergies                String?
+  chronic_conditions       String?
+  emergency_contact_name   String?
+  emergency_contact_phone  String?
+
+  // --- Healthcare Identity Platform (APS-029/010) fields ---
+  health_id                String        @unique // "AUR-XXXXXX" — immutable, shareable, never a phone/Aadhaar
+  guardian_name            String?
+  guardian_relation        String?       // "Father" | "Mother" | "Husband" | "Guardian" | ...
+  registered_by_clinic_id  String?       // which org registered this profile (provenance, not an access grant)
+  verification_level       String        @default("unverified") // 'unverified' | 'phone_verified' (ladder continues in Part I A5)
+
   // Relations
-  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+  user          User?          @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  registeredByClinic Clinic?   @relation("ProfileRegisteredByClinic", fields: [registered_by_clinic_id], references: [id], onDelete: SetNull)
+  contacts      Contact[]
+  accountLinks  AccountProfileLink[]
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  labOrders     LabOrder[]
+  invoices      Invoice[]
+  reviews       Review[]
+  favoriteDoctors PatientFavoriteDoctor[]
+  notifications Notification[]
 
   @@map("Patient_Profiles")
+}
+
+// A Contact is deliberately separate from Account/User identity (APS-029
+// Part I A1): the same phone value may legitimately appear on many Contact
+// rows (a family sharing one number), so `value` is NOT unique — uniqueness
+// belongs to User.phone_number (an Account, a single login identity), never
+// here. This is what makes family-phone-sharing representable at all.
+model Contact {
+  id                   String    @id @default(uuid())
+  healthcare_profile_id String
+  type                 String    // 'phone' | 'email'
+  value                String
+  is_primary           Boolean   @default(true)
+  verified_at          DateTime? // set once OTP-verified against THIS contact
+  created_at           DateTime  @default(now())
+
+  patientProfile PatientProfile @relation(fields: [healthcare_profile_id], references: [id], onDelete: Cascade)
+
+  @@index([type, value])
+  @@map("Contacts")
+}
+
+// Join: which Healthcare Profiles an Auriva Account can act as. Replaces a
+// forced 1:1 with a real many-to-many — one Account can hold N profiles
+// (self + dependents); a profile is "claimed" by at most one Account at a
+// time in practice, enforced at the service layer (never a DB constraint,
+// since Phase 6 identity-transfer needs to move a claim between accounts).
+model AccountProfileLink {
+  id                    String   @id @default(uuid())
+  account_user_id       String
+  healthcare_profile_id String
+  is_primary            Boolean  @default(false)
+  linked_at             DateTime @default(now())
+
+  account User           @relation(fields: [account_user_id], references: [id], onDelete: Cascade)
+  profile PatientProfile @relation(fields: [healthcare_profile_id], references: [id], onDelete: Cascade)
+
+  @@unique([account_user_id, healthcare_profile_id])
+  @@map("Account_Profile_Links")
 }
 
 model Appointment {
@@ -95,15 +503,171 @@ model Appointment {
   completed_at   DateTime?
   priority       Int            @default(0)
   walk_in        Boolean        @default(false)
-  notes          String?
+  notes          String?        // visit reason, set at booking/check-in
+
+  // Consult Workbench clinical record (APS-011/Doctor Excellence Review).
+  // Free-text on purpose — structured clinical taxonomies (ICD codes, discrete
+  // vitals fields) are a future clinical-data-model decision, not MVP.
+  chief_complaint            String?
+  history_notes              String?
+  vitals_json                String?   // { bp, pulse, temp, spo2, weight }
+  diagnosis                  String?
+  prescription_notes         String?
+  prescription_medicines_json String?  // [{ name, dosage, frequency, duration }]
+  follow_up_date             DateTime?
+
+  // Sprint 2: set on the NEW appointment when it was auto-scheduled from a
+  // prior visit's follow_up_date at sign-and-complete — makes the "follow-up
+  // date" field a real booking instead of inert text. @unique enforces at
+  // most one auto-scheduled follow-up per source visit (matches
+  // transitionStatus() only ever reaching "completed" once per appointment).
+  follow_up_source_appointment_id String? @unique
 
   // Relations
   patient        PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
   doctor         StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
   clinic         Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
   events         AppointmentEvent[]
+  prescription   Prescription?
+  labOrders      LabOrder[]
+  invoice        Invoice?
+  review         Review?
+  followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
+  followUpBooking Appointment? @relation("AppointmentFollowUp")
 
+  // H5 (performance): the Today dashboard + reception queue filter by clinic and
+  // a scheduled_time window ordered by scheduled_time; the patient timeline
+  // filters by patient_id. Measured baseline (EXPLAIN QUERY PLAN, dev.db): both
+  // were full "SCAN Appointments" (+ a TEMP B-TREE sort for the ordered one).
+  // These indexes turn those into indexed SEARCHes and remove the in-memory
+  // sort — protecting the responsiveness of the screens a clinic uses all day as
+  // its appointment history grows over the pilot.
+  @@index([clinic_id, scheduled_time])
+  @@index([patient_id])
   @@map("Appointments")
+}
+
+// APS-044: staff invitations (WF-23/24-lite). Replaces the localStorage mock
+// in the admin workspace. An accepted invitation creates the User +
+// StaffProfile + OrganizationMember in one transaction.
+model Invitation {
+  id              String    @id @default(uuid())
+  organization_id String
+  // Sprint 3: which specific clinic (branch) within the organization this
+  // invite assigns the new StaffProfile to — StaffProfile.clinic_id stays
+  // single/non-nullable, so this must be explicit once an org can have more
+  // than one clinic. Backfilled to organization_id for pre-existing rows
+  // (valid, since organization_id === clinic_id before Sprint 3).
+  clinic_id       String
+  email           String
+  full_name       String
+  role            String    // 'doctor' | 'receptionist'
+  specialty       String?
+  token           String    @unique
+  status          String    @default("pending") // 'pending' | 'accepted' | 'revoked'
+  created_at      DateTime  @default(now())
+  accepted_at     DateTime?
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  clinic       Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  @@map("Invitations")
+}
+
+// APS-043: prescription extracted from the Appointment's JSON columns into a
+// first-class object (one per visit for the MVP). The legacy columns on
+// Appointments stop being written and read once this lands; they are kept
+// only until a cleanup migration drops them.
+model Prescription {
+  id             String    @id @default(uuid())
+  appointment_id String    @unique
+  patient_id     String
+  doctor_id      String
+  clinic_id      String
+  notes          String?
+  medicines_json String    // [{ name, dosage, frequency, duration }]
+  follow_up_date DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  appointment Appointment    @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor      StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  @@map("Prescriptions")
+}
+
+// APS-042: lab order — the MVP loop is ordered → resulted (or cancelled);
+// sample tracking and routing are post-MVP (WF-09/10 full shape).
+model LabOrder {
+  id                  String    @id @default(uuid())
+  appointment_id      String?
+  patient_id          String
+  doctor_id           String
+  clinic_id           String
+  tests_json          String    // [{ name }]
+  status              String    @default("ordered") // 'ordered' | 'resulted' | 'cancelled'
+  clinical_note       String?   // why ordered — shown on the worklist
+  result_values_json  String?   // [{ test, value, unit, reference }]
+  result_notes        String?
+  ordered_at          DateTime  @default(now())
+  resulted_at         DateTime?
+  resulted_by_user_id String?
+
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor      StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  @@map("Lab_Orders")
+}
+
+// APS-041: the cash ledger's two objects. Amounts are integer INR (matches
+// StaffProfile.consultation_fee). Lifecycle: draft → issued → paid; draft and
+// issued may be voided. A correction after issue is a new invoice + void,
+// never an edit (APS-018 E1).
+model Invoice {
+  id             String    @id @default(uuid())
+  invoice_number String
+  clinic_id      String
+  patient_id     String
+  appointment_id String?   @unique
+  status         String    @default("draft") // 'draft' | 'issued' | 'paid' | 'void'
+  items_json     String    // [{ description, qty, unit_price, amount }]
+  total          Int
+  created_at     DateTime  @default(now())
+  issued_at      DateTime?
+  paid_at        DateTime?
+  voided_at      DateTime?
+
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  payments    Payment[]
+
+  @@unique([clinic_id, invoice_number])
+  @@map("Invoices")
+}
+
+model Payment {
+  id                  String   @id @default(uuid())
+  invoice_id          String
+  clinic_id           String
+  amount              Int
+  method              String   // 'cash' | 'upi' | 'card'
+  reference           String?  // UPI ref / card slip
+  received_at         DateTime @default(now())
+  received_by_user_id String?
+
+  invoice Invoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  // H5 (performance): the Payments screen + daily billing summary filter by
+  // clinic and a received_at window ordered by received_at. Measured baseline
+  // (EXPLAIN QUERY PLAN, dev.db): full "SCAN Payments" + a TEMP B-TREE sort;
+  // this index makes it an indexed, already-ordered SEARCH.
+  @@index([clinic_id, received_at])
+  @@map("Payments")
 }
 
 // Activity timeline for Sprint 1 (Epic 8), and the seed of the future
@@ -122,3 +686,181 @@ model AppointmentEvent {
 
   @@map("Appointment_Events")
 }
+
+model EventLog {
+  id              String   @id @default(uuid())
+  event_type      String   // e.g. 'scheduling.appointment.booked'
+  occurred_at     DateTime @default(now())
+  organization_id String
+  actor_id        String?
+  entity_id       String
+  correlation_id  String
+  payload_json    String   // full event payload serialized
+  created_at      DateTime @default(now())
+
+  handlers        EventHandlerLog[]
+
+  @@map("Event_Logs")
+}
+
+model EventHandlerLog {
+  id              String    @id @default(uuid())
+  event_log_id    String
+  handler_name    String    // e.g. 'NotificationHandler'
+  status          String    @default("PENDING") // 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'DEAD_LETTER'
+  retry_count     Int       @default(0)
+  last_error      String?
+  last_attempt_at DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  eventLog        EventLog @relation(fields: [event_log_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_log_id, handler_name])
+  @@map("Event_Handler_Logs")
+}
+
+// APS-036 — Release Management Platform. Release/Sprint describe Auriva's
+// own product (not a customer's clinic), so — unlike every other model in
+// this schema — they are deliberately NOT scoped by organization_id/clinic_id.
+// Authoring is gated by User.is_platform_admin, not the customer-facing
+// `super_admin` role (see the comment on that field). Not wired into the
+// existing EventLog/EventHandlerLog bus: that bus requires an
+// organization_id on every event (it was built for tenant-scoped events),
+// and a platform-wide release announcement has no single owning
+// organization — forcing one in would be the same "fake data to fit an
+// ill-fitting mechanism" anti-pattern this codebase otherwise avoids.
+model Release {
+  id                  String    @id @default(uuid())
+  version             String    @unique // semver "MAJOR.MINOR.PATCH", validated in release-service.ts
+  name                String
+  // 'draft' | 'internal_qa' | 'ready_for_review' | 'approved' | 'published' | 'archived'
+  // — see src/domain/release-status.ts for the legal transition table.
+  status              String    @default("draft")
+  release_date        DateTime?
+  summary              String
+  public_notes        String    // Markdown — shown in the customer-facing What's New module once published
+  internal_notes       String?  // Markdown — platform-admin-only, never returned to non-platform-admin callers
+  breaking_changes     String?
+  migration_notes      String?
+  known_issues         String?
+  // Loosely-tagged lists, stored as JSON text. This is NOT the
+  // JSON-blob-instead-of-relational-rows anti-pattern flagged elsewhere in
+  // this schema (Prescription/Invoice/LabOrder): those blobs hide
+  // transactional data that reporting needs to aggregate. These are plain
+  // reference tags with no aggregation need and no entity of their own
+  // elsewhere in the schema (APS items live in docs, not a database table).
+  aps_items           String?   // e.g. ["APS-040","APS-041"]
+  sprint_numbers      String?   // e.g. [12,13] — loosely correlates to Sprint.number, not a hard FK
+  feature_flags       String?   // e.g. ["teleconsult_beta"] — descriptive only; no live flag-evaluation engine exists in the platform today
+  published_at        DateTime?
+  created_by_user_id  String
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  created_by User               @relation("ReleaseAuthor", fields: [created_by_user_id], references: [id])
+  highlights ReleaseHighlight[]
+  views      ReleaseView[]
+
+  @@index([status])
+  @@index([published_at])
+  @@map("Releases")
+}
+
+model ReleaseHighlight {
+  id          String   @id @default(uuid())
+  release_id  String
+  category    String   // 'feature' | 'enhancement' | 'fix'
+  title       String
+  description String?
+  sort_order  Int      @default(0)
+
+  release Release @relation(fields: [release_id], references: [id], onDelete: Cascade)
+
+  @@index([release_id])
+  @@map("Release_Highlights")
+}
+
+// Tracks whether a given User has seen a given published Release — the
+// data behind the What's New bell's unread badge.
+model ReleaseView {
+  id         String   @id @default(uuid())
+  release_id String
+  user_id    String
+  viewed_at  DateTime @default(now())
+
+  release Release @relation(fields: [release_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([release_id, user_id])
+  @@index([user_id])
+  @@map("Release_Views")
+}
+
+// Deliberately lightweight (per APS-036 scope decision): number/goal/dates
+// plus a plain notes field, NOT a full stories/velocity/retrospective model.
+// This is a tagging/reference system of record for what fed a Release, not
+// an internal project-management tool — that scope was explicitly rejected
+// as out of place in a healthcare platform's own production schema.
+model Sprint {
+  id         String    @id @default(uuid())
+  number     Int       @unique
+  goal       String
+  start_date DateTime?
+  end_date   DateTime?
+  aps_items  String?   // JSON array of ticket ids, same rationale as Release.aps_items
+  notes      String?   // freeform summary — intentionally not structured stories/metrics
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("Sprints")
+}
+
+// Release 1.2 Sprint 1 (PAT-1) — in-app patient notification center. Reuses
+// the existing Event Platform (Event_Logs/Event_Handler_Logs) as the sole
+// event source; this table only stores the patient-facing projection of
+// those events. `source_event_id` is the EventLog id that generated the
+// row and is @unique specifically so notification generation is idempotent
+// under the Event Platform's existing at-least-once retry/replay delivery
+// (see release-1.2-sprint-1-implementation-packet.md §1/§4) — a redelivered
+// event hits this constraint and is treated as already-handled, not an error.
+model Notification {
+  id                 String    @id @default(uuid())
+  patient_profile_id String
+  type               String    // 'appointment_booked' | 'appointment_rescheduled' | 'appointment_cancelled' | 'invoice_issued' | 'lab_result_ready'
+  title              String
+  message            String
+  related_entity_id  String?   // the appointment/invoice/lab-order id the notification is about (no FK — differs per type)
+  source_event_id    String    @unique
+  read_at            DateTime?
+  created_at         DateTime  @default(now())
+
+  patient PatientProfile @relation(fields: [patient_profile_id], references: [id], onDelete: Cascade)
+
+  @@index([patient_profile_id, created_at])
+  @@map("Notifications")
+}
+
+// Batch 1 (SEC-3, retires debt D2/L1): a real one-time patient OTP,
+// replacing the fixed shared secret "123456" that /api/auth/otp/send echoed
+// to every caller. Each send issues a fresh cryptographically-random code
+// stored ONLY as a scrypt hash (same scheme as staff passwords — never the
+// plaintext), with a short expiry, a per-challenge attempt cap, and
+// single-use consumption. No SMS provider is wired yet (see src/lib/config.ts);
+// until one is, non-production echoes the code back in the send response so a
+// pilot/demo/test can still log in — but the code is now per-request,
+// expiring, and consumed on use, so the brute-force surface the rate limiter
+// guards is a genuine secret rather than a public constant.
+model OtpChallenge {
+  id           String    @id @default(uuid())
+  phone_number String
+  code_hash    String
+  expires_at   DateTime
+  attempts     Int       @default(0)
+  consumed_at  DateTime?
+  created_at   DateTime  @default(now())
+
+  @@index([phone_number, created_at])
+  @@map("Otp_Challenges")
+}
+

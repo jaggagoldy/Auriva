@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-009 — Auriva Doctor Workspace Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   AURIVA DESIGN TOKENS — copied verbatim from APS-002 v1.0.
+   This document is built on the locked design system, not a new one.
+   ============================================================ */
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-300:#5EEAD4;
+  --teal-400:#2DD4BF;--teal-500:#14B8A6;--teal-600:#0D9488;--teal-700:#0F766E;
+  --teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;
+  --slate-400:#94A3B8;--slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;
+  --slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --info:#0284C7;--info-bg:#F0F9FF;--info-border:#BAE6FD;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg:#FFFFFF;--bg-subtle:#F8FAFC;--bg-page:#F5F7FA;
+  --border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-sm:0 1px 3px rgba(15,23,42,.07),0 1px 2px rgba(15,23,42,.04);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* ===== Doc shell — same family as APS-003…008 ===== */
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:12.5px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:10.5px;color:var(--text-muted);font-weight:700;width:26px;flex-shrink:0}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1100px;margin:0 auto;padding-top:64px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14.5px;color:var(--text-secondary);max-width:720px;margin-bottom:28px}
+.sub{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:36px 0 6px}
+.sub-desc{font-size:13px;color:var(--text-secondary);margin-bottom:16px;max-width:700px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:20px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--slate-100);padding:2px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+
+.cover{min-height:400px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+.cover-meta{display:flex;gap:32px;font-size:12px;color:var(--text-muted);flex-wrap:wrap}
+.cover-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600;font-size:12.5px}
+.tbl td .pur{display:block;font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+
+.pri{display:inline-flex;align-items:center;font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;letter-spacing:.04em;white-space:nowrap}
+.p0{background:var(--teal-100);color:var(--teal-800)}
+.p1{background:var(--blue-bg);color:var(--blue)}
+.p2{background:var(--slate-100);color:var(--slate-500)}
+.gate{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning-border)}
+.real{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+
+/* verdict chips for the critique-and-refine passes */
+.v{display:inline-flex;align-items:center;font-size:10px;font-weight:700;border-radius:5px;padding:2px 8px;letter-spacing:.05em}
+.v-keep{background:var(--success-bg);color:var(--success)}
+.v-change{background:var(--warning-bg);color:var(--warning)}
+.v-add{background:var(--blue-bg);color:var(--blue)}
+.v-open{background:var(--indigo-bg);color:var(--indigo)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag{display:inline-flex;font-size:11px;font-weight:500;padding:2px 8px;border-radius:var(--r-sm);background:var(--slate-100);color:var(--slate-600)}
+.kbd{font-size:10.5px;font-weight:600;color:var(--text-muted);border:1px solid var(--border);border-radius:5px;padding:1px 6px;background:var(--slate-50);font-family:ui-monospace,Menlo,monospace}
+
+.prin-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-xs)}
+.prin-card h3{font-size:14.5px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em}
+.prin-card p{font-size:12.5px;color:var(--text-secondary)}
+.prin-num{font-size:11px;font-weight:700;color:var(--teal-600);margin-bottom:8px}
+
+/* journey / flow chains */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px}
+.flow .fstep{background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:6px 11px;font-weight:600;color:var(--text);box-shadow:var(--sh-xs);white-space:nowrap}
+.flow .fstep.hl{background:var(--teal-50);border-color:var(--teal-500);color:var(--teal-800)}
+.flow .fstep.dim{background:var(--slate-50);border-style:dashed;color:var(--text-muted);font-weight:500}
+.flow .fstep small{display:block;font-size:10px;font-weight:500;color:var(--text-muted)}
+.flow .arr{color:var(--slate-400);font-weight:700}
+.flow .brk{flex-basis:100%;height:0}
+.fnote{font-size:11.5px;color:var(--text-muted);margin-top:10px}
+
+/* wireframes */
+.wf-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:8px}
+.wf{border:1px solid var(--border-strong);border-radius:var(--r-lg);background:#fff;overflow:hidden;box-shadow:var(--sh-md);flex-shrink:0}
+.wf-cap{font-size:12px;font-weight:600;color:var(--text-secondary);margin-top:10px;text-align:center}
+.wf-cap span{display:block;font-weight:400;font-size:11px;color:var(--text-muted)}
+.wfi{display:flex;height:100%}
+.wf-side{background:var(--slate-50);border-right:1px solid var(--border);padding:8px 6px;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.wf-item{height:16px;border-radius:4px;background:var(--slate-200);font-size:8.5px;font-weight:600;color:var(--slate-500);display:flex;align-items:center;padding:0 6px;overflow:hidden;white-space:nowrap}
+.wf-item.on{background:var(--teal-100);color:var(--teal-800)}
+.wf-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.wf-top{height:26px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:6px;padding:0 10px;flex-shrink:0;font-size:8.5px;color:var(--text-muted);font-weight:600}
+.wf-body{flex:1;background:var(--bg-page);padding:8px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.wb{background:#fff;border:1px solid var(--border);border-radius:6px;font-size:8.5px;font-weight:600;color:var(--slate-500);display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}
+.wb.hl{background:var(--teal-50);border-color:var(--teal-300);color:var(--teal-800)}
+.wb.soon{border-style:dashed;background:var(--slate-50);color:var(--text-muted)}
+.wb col{}
+.wb-col{display:flex;flex-direction:column;gap:6px}
+.pill-dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:3px}
+
+/* annotations */
+.annot{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.annot .pill{display:flex;gap:9px;font-size:12.5px;color:var(--text-secondary);align-items:flex-start}
+.annot .n{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+
+.callout{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-lg);border:1px solid;font-size:12.5px;align-items:flex-start;margin-top:14px}
+.callout.info{background:var(--info-bg);border-color:var(--info-border);color:var(--slate-700)}
+.callout.warn{background:var(--warning-bg);border-color:var(--warning-border);color:var(--slate-700)}
+.callout.ok{background:var(--success-bg);border-color:var(--success-border);color:var(--slate-700)}
+.callout b{color:var(--text)}
+.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text-secondary);margin:0 0 16px}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-009 · Doctor Workspace</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#truth"><span class="num">01</span> Ground Truth &amp; Gaps</a>
+  <a href="#persona"><span class="num">D1</span> Doctor Persona</a>
+  <a href="#journey"><span class="num">D2</span> Doctor Journey</a>
+  <a href="#ia"><span class="num">D3</span> Information Architecture</a>
+  <a href="#inventory"><span class="num">D4</span> Screen Inventory</a>
+  <a href="#dashboard"><span class="num">D5</span> Today</a>
+  <a href="#workbench"><span class="num">D6</span> Consult Workbench</a>
+  <a href="#profile"><span class="num">D7</span> Doctor Profile</a>
+  <a href="#practice"><span class="num">D8</span> Practice Management</a>
+  <a href="#flows"><span class="num">D9</span> User Flows</a>
+  <a href="#wireframes"><span class="num">D10</span> Wireframes</a>
+  <a href="#hifi"><span class="num">D11</span> Hi-Fi Design Plan</a>
+  <a href="#rollout"><span class="num">02</span> Rollout &amp; Open Qs</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- ================= 00 COVER ================= -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-009 · Doctor Workspace Blueprint · Approved with refinements</div>
+    <h1>The Doctor <em>Workspace</em>.</h1>
+    <p>The complete Doctor experience for Auriva — from a phone number on a landing page to the ten-thousandth consult. This blueprint reconciles the approved IA (DOC-001–014, APS-005), the shipped Live Queue and Consult Workbench code, the AUTH-005 onboarding draft, and the Organization multi-affiliation seam into one implementable design. Where a screen needs a backend that doesn't exist yet, it says so — nothing here pretends. <b>Revision 2</b> incorporates product review: Today renamed from "Dashboard" and enriched into Mission Control (D5), Patients and Practice made faceted/sub-sectioned (D4/D8), Profile rebuilt around Personal/Professional/Practice/Verification with a reserved slot for a future Doctor Reputation score (D7), and all seven open questions resolved (§02).</p>
+    <div class="cover-meta">
+      <div><b>Builds on</b> APS-002 tokens · APS-003 IA · APS-005 IDs · APS-006/007 nav &amp; layouts</div>
+      <div><b>Refines</b> DOC-001/002 shipped code · AUTH-005 draft</div>
+      <div><b>Excludes</b> Org workspace &amp; AUTH-006 (separate track)</div>
+      <div><b>Status</b> Approved — next: hi-fi visual design (APS-011), no further product decisions</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 01 GROUND TRUTH ================= -->
+<section class="doc-section" id="truth">
+  <div class="sec-kicker">01 · Ground Truth</div>
+  <h2 class="sec-title">What already exists, and what gates what</h2>
+  <p class="sec-desc">This is not a greenfield design. Five things are fixed inputs; one register lists every backend gap so no screen in this document quietly assumes capabilities that aren't built. Engineering should read every later section as a diff against this baseline.</p>
+
+  <div class="grid2">
+    <div class="prin-card"><div class="prin-num">FIXED 1</div><h3>Design system is live code</h3><p>Auriva Teal <code class="tk">#0D9488</code>, slate neutrals, Inter, 6/8/12/16 radii, fixed status-chip palette (dot + label, never color alone) — already implemented in <code class="tk">src/app/globals.css</code> and <code class="tk">src/shared/queue.ts STATUS_META</code>. This doc introduces zero new tokens.</p></div>
+    <div class="prin-card"><div class="prin-num">FIXED 2</div><h3>Screen IDs are permanent</h3><p>DOC-001…014 (APS-005) are kept as-is — extended, never renamed. Two scope amendments are proposed explicitly in D4; everything else maps 1:1.</p></div>
+    <div class="prin-card"><div class="prin-num">FIXED 3</div><h3>DOC-001 / DOC-002 are shipped</h3><p><code class="tk">live-queue.tsx</code>, <code class="tk">queue-sidebar.tsx</code>, <code class="tk">consultation-pane.tsx</code> work today against the real 8-state appointment machine. D5 and D6 are critique-and-refine passes with explicit KEEP / CHANGE / ADD verdicts — not redesigns.</p></div>
+    <div class="prin-card"><div class="prin-num">FIXED 4</div><h3>Onboarding has a draft</h3><p>AUTH-005 exists as a 3-step design in <code class="tk">patient-doctor-flow-mockup.html</code> (identity → qualifications &amp; clinic → review/pending), entered via the unified phone+OTP door. D2 extends it; it does not replace it.</p></div>
+    <div class="prin-card"><div class="prin-num">FIXED 5</div><h3>Multi-org has a domain seam</h3><p><code class="tk">src/domain/organization.ts</code> defines Organization / OrganizationMember (mapped onto Clinic / StaffProfile today, real tables later). D8 designs practice management against this seam so the UI survives the schema migration untouched.</p></div>
+    <div class="prin-card"><div class="prin-num">RULE</div><h3>No fake UI, anywhere</h3><p>Every control in this blueprint either works against a real capability or is an honest "Coming soon" state — the same pattern as the Patient app's Labs/Pharmacy tabs. The register below is the single source of truth for which is which.</p></div>
+  </div>
+
+  <div class="sub">Backend capability register</div>
+  <p class="sub-desc">What the Prisma schema and API routes actually support as of this document. <span class="pri real">REAL</span> = build against it now · <span class="pri gate">GATED</span> = design final UI now, ship with an honest "Coming soon" or reduced state until the backend lands.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:210px">Capability</th><th style="width:64px">Status</th><th>Reality today</th><th style="width:230px">Doctor screens affected</th></tr></thead>
+    <tbody>
+      <tr><td><b>Queue &amp; status machine</b></td><td><span class="pri real">REAL</span></td><td>8 states (<code class="tk">scheduled → checked_in → waiting → doctor_ready → in_consultation → completed / no_show / cancelled</code>), every transition through <code class="tk">transitionStatus()</code>, event audit trail, <code class="tk">queue_number</code>, priority, walk-in flag.</td><td>DOC-001, DOC-002 — fully live</td></tr>
+      <tr><td><b>Patient demographics</b></td><td><span class="pri real">REAL</span></td><td>Name, phone, blood group, and (since the patient-side build) <code class="tk">date_of_birth</code> and <code class="tk">gender</code>. Age/sex display is real data now.</td><td>DOC-001/002/007/008 headers</td></tr>
+      <tr><td><b>Appointments (raw datetime)</b></td><td><span class="pri real">REAL</span></td><td>Bookings exist with a datetime; list/detail/patch APIs live. No slot or availability model behind them.</td><td>DOC-003 (calendar of existing bookings works)</td></tr>
+      <tr><td><b>Prescriptions</b></td><td><span class="pri gate">GATED</span></td><td>No <code class="tk">Prescription</code> model. The shipped Rx composer autosaves drafts to <code class="tk">localStorage</code> only — a signed Rx never reaches the patient record.</td><td>DOC-002 (issue step), DOC-009/010/012, PAT-009/010 supply</td></tr>
+      <tr><td><b>Availability / slots</b></td><td><span class="pri gate">GATED</span></td><td>No slot model (known open question, <code class="tk">sprint-2-audit §14</code>). Marketplace booking takes raw datetimes.</td><td>DOC-004, DOC-005, DOC-006, MKT-009 slot picker</td></tr>
+      <tr><td><b>Follow-ups</b></td><td><span class="pri gate">GATED</span></td><td>No follow-up model; the notes template has a "Follow-up:" line as free text.</td><td>DOC-011, follow-up capture in DOC-002</td></tr>
+      <tr><td><b>Earnings / billing</b></td><td><span class="pri gate">GATED</span></td><td>No invoice, fee or payout models anywhere in the schema.</td><td>DOC-013, DOC-014</td></tr>
+      <tr><td><b>Doctor onboarding</b></td><td><span class="pri gate">GATED</span></td><td>No registration-number, qualification or affiliation-request models; no doctor signup API. AUTH-005 is design-complete, backend-absent.</td><td>AUTH-005, SET-002/003, verification states in D7</td></tr>
+      <tr><td><b>Multi-org affiliation</b></td><td><span class="pri gate">GATED</span></td><td>Domain seam exists; storage is still one <code class="tk">clinic_id</code> per StaffProfile. One doctor ↔ many orgs needs the real Organization tables.</td><td>D8 entirely; clinic-context pills on DOC-001/003/004</td></tr>
+      <tr><td><b>Vitals, lab orders, reports</b></td><td><span class="pri gate">GATED</span></td><td>No models. Patient Records tabs on the patient side are already honest "Coming soon".</td><td>DOC-002 context rail sections, DOC-008 tabs</td></tr>
+      <tr><td><b>Notifications</b></td><td><span class="pri gate">GATED</span></td><td>No notification model or delivery channel.</td><td>NOT-002 bell on the top bar</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout info"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--info)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div><b>How to read the rest of this document.</b> Screens marked <span class="pri gate">GATED</span> are designed to their final state here so engineering never guesses layout later — but each one specifies its honest intermediate state (what renders before the backend exists). Nothing ships as a dead button.</div></div>
+</section>
+
+<!-- ================= D1 PERSONA ================= -->
+<section class="doc-section" id="persona">
+  <div class="sec-kicker">Deliverable 1 · Persona</div>
+  <h2 class="sec-title">Who the workspace serves</h2>
+  <p class="sec-desc">One workspace, three postures of the same profession. The primary persona is the Indian OPD clinician — high volume, tiny consult windows, zero tolerance for software that costs seconds. The other two personas stress the same screens differently (multi-context switching, org-managed constraints) rather than needing different screens.</p>
+
+  <div class="grid3">
+    <div class="prin-card"><div class="prin-num">PRIMARY</div><h3>Dr. Arjun Mehta — Clinic OPD physician</h3><p><b>General physician, 12 yrs, one clinic affiliation.</b> 40–60 patients/day in 3–5 minute consults, morning + evening OPD blocks. Types with two fingers; a receptionist manages his floor. Auriva's queue is his cockpit — anything that adds a click between patients is a defect.</p></div>
+    <div class="prin-card"><div class="prin-num">SECONDARY</div><h3>Dr. Kavya Rao — Multi-clinic specialist</h3><p><b>Dermatologist, 2 clinics + independent tele-practice.</b> Different fees, different hours, different patient books per location. Her core anxiety: a booking landing at clinic A while she's at clinic B. She is why clinic-context is a first-class primitive (D8), not a filter.</p></div>
+    <div class="prin-card"><div class="prin-num">TERTIARY</div><h3>Dr. Suresh Iyer — Hospital-affiliated consultant</h3><p><b>Cardiologist at a hospital that adopted Auriva org-wide.</b> Didn't choose the platform; the org did. His schedule, room and fees are largely org-managed — his workspace must make clear what he controls vs. what the hospital controls, without burying him in admin UI.</p></div>
+  </div>
+
+  <div class="sub">Goals, pain points, success metrics</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:180px"></th><th>What they want</th><th>What today's tools do to them</th><th style="width:270px">How we measure success</th></tr></thead>
+    <tbody>
+      <tr><td><b>The consult</b></td><td>See the next patient's context in one glance; finish notes + Rx before the patient stands up.</td><td>Paper Rx pads, WhatsApp'd reports, EMRs designed for billing not medicine — history lives in the patient's carry-bag.</td><td>Consult record + Rx completed in &lt; 60s of typing · zero navigation events during a consult (APS-005 stated goal)</td></tr>
+      <tr><td><b>The day</b></td><td>Know at 9am what the day holds; know at any moment who's next and how deep the queue is.</td><td>Receptionist shouting names; no visibility into walk-in load until it's chaos.</td><td>Time from sign-in to first patient called &lt; 10s · queue state trusted enough that the doctor stops asking reception</td></tr>
+      <tr><td><b>The practice</b></td><td>Fill slots, get discovered, control fees/hours per location, get paid without chasing.</td><td>Listings on one portal, bookings on another, accounts in a diary.</td><td>Availability kept current (edits/week) · profile completeness · payout reconciliation without support tickets</td></tr>
+      <tr><td><b>Trust</b></td><td>Their name presented accurately; records defensible; nothing published without their sight.</td><td>Directory sites scrape and misstate credentials; no audit trail on records.</td><td>Public profile previewed before going live (AUTH-005 step 3, kept) · every record change event-logged (already real)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">A day in the life — what the workspace must match</div>
+  <div class="panel">
+    <div class="flow">
+      <span class="fstep">08:50<small>Arrives, opens Auriva</small></span><span class="arr">→</span>
+      <span class="fstep hl">Today<small>glances day bar: 23 booked · 2 requests</small></span><span class="arr">→</span>
+      <span class="fstep">09:00–13:00<small>OPD: call → consult → Rx → complete, ×30</small></span><span class="arr">→</span>
+      <span class="fstep">13:10<small>lunch: approves requests, blocks Sat off</small></span><span class="arr">→</span>
+      <span class="fstep">17:00–20:00<small>evening OPD, walk-ins spike</small></span><span class="arr">→</span>
+      <span class="fstep">20:15<small>glances earnings, follow-ups due</small></span>
+    </div>
+    <p class="fnote">Design consequence: 95% of doctor-hours are spent inside DOC-001 + DOC-002. Everything else is edge-of-day administration and must be reachable in one click but never in the way. This is the argument that decides the Dashboard question in D3/D5.</p>
+  </div>
+</section>
+
+<!-- ================= D2 JOURNEY ================= -->
+<section class="doc-section" id="journey">
+  <div class="sec-kicker">Deliverable 2 · Doctor Journey</div>
+  <h2 class="sec-title">Landing → Approved → Daily use</h2>
+  <p class="sec-desc">The journey builds directly on the shipped AUTH-005 draft: unified phone+OTP entry (no separate "doctor register" path — role resolves after OTP), then three onboarding steps, then a pending-approval state that never locks the doctor out of their console. The brief's 13-stage chain is deliberately <b>compressed into that 3-step structure</b> rather than 9 separate screens — every extra onboarding screen costs real supply-side conversion. The mapping is explicit below so nothing from the brief is silently dropped.</p>
+
+  <div class="panel">
+    <div class="label">The spine — one line, three onboarding steps</div>
+    <div class="flow">
+      <span class="fstep">Landing<small>MKT-013 "For Providers"</small></span><span class="arr">→</span>
+      <span class="fstep">Sign up<small>AUTH-001 · phone</small></span><span class="arr">→</span>
+      <span class="fstep">OTP<small>AUTH-002 · role resolves here</small></span><span class="arr">→</span>
+      <span class="fstep hl">Step 1 · Identity<small>name · council · registration no.</small></span><span class="arr">→</span>
+      <span class="fstep hl">Step 2 · Practice<small>speciality · qualifications · experience · clinic or independent</small></span><span class="arr">→</span>
+      <span class="fstep hl">Step 3 · Review<small>public-profile preview · submit</small></span><span class="arr">→</span>
+      <span class="fstep">Verification pending<small>console open, limited</small></span><span class="arr">→</span>
+      <span class="fstep">Approved<small>listed on marketplace</small></span><span class="arr">→</span>
+      <span class="fstep">Doctor Workspace<small>lands on Today</small></span>
+    </div>
+  </div>
+
+  <div class="sub">Where each stage of the brief lives</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:190px">Brief stage</th><th style="width:190px">Lives in</th><th>Design note</th></tr></thead>
+    <tbody>
+      <tr><td><b>Landing</b></td><td>MKT-013</td><td>"For Providers" marketing page; CTA drops into AUTH-001 with a <code class="tk">?intent=doctor</code> hint so an unknown number branches to AUTH-005 instead of patient onboarding.</td></tr>
+      <tr><td><b>Doctor Signup + OTP</b></td><td>AUTH-001/002 (unchanged)</td><td>Same door as patients — already built and live for the patient side. No parallel auth stack.</td></tr>
+      <tr><td><b>Personal Details</b></td><td>Step 1</td><td>Full name as per registration. DOB/photo deferred to profile completion post-approval — not an onboarding gate.</td></tr>
+      <tr><td><b>Professional Details + Medical Registration</b></td><td>Step 1</td><td>State council + registration number. Hard gate, verified against NMC registry (instant when possible, 24h manual fallback — SLA copy already in the draft, kept).</td></tr>
+      <tr><td><b>Qualification + Specialization</b></td><td>Step 2</td><td>Speciality (structured select — it drives marketplace search facets), qualifications (structured multi-entry: degree · institution · year, refining the draft's single free-text field), years of experience.</td></tr>
+      <tr><td><b>Practice Information</b></td><td>Step 2</td><td>The draft's fork, kept: join an existing Auriva clinic (affiliation request → org admin approves) or independent practice (own address, hours, fee). This fork is what creates the first OrganizationMember row.</td></tr>
+      <tr><td><b>Profile Review</b></td><td>Step 3</td><td>Kept exactly as drafted: the doctor sees their MKT-003 public card before submitting. Nothing is published unseen.</td></tr>
+      <tr><td><b>Verification Pending</b></td><td>Post-submit state</td><td>Console opens immediately (draft annotation kept): Today renders with a pending banner; Practice &amp; Profile are editable; queue/booking surfaces show "activates when you're approved". Never a locked-out wall.</td></tr>
+      <tr><td><b>Approved</b></td><td>Transition, not a screen</td><td>Notification + one-time "You're live" banner on Today with profile link and "set your availability" nudge (the single highest-value next action).</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Alternate journeys</div>
+  <div class="grid2">
+    <div class="prin-card"><div class="prin-num">RETURNING DOCTOR</div><h3>Phone → OTP → Today</h3><p>Known number with a doctor role goes straight to Today (<code class="tk">defaultWorkspacePathForRole</code> already does this). Multi-role accounts (doctor who is also a patient) pass through AUTH-003 Workspace Chooser, which remembers the last choice per device.</p></div>
+    <div class="prin-card"><div class="prin-num">MULTI-CLINIC DOCTOR</div><h3>Onboard once, affiliate many</h3><p>Onboarding creates the <em>first</em> affiliation only. Additional clinics are added later from Practice (D8) — "Add affiliation" → search clinic → request → that org's admin approves. Identity and credentials are verified once, per-org approval is per-org.</p></div>
+    <div class="prin-card"><div class="prin-num">INDEPENDENT DOCTOR</div><h3>Solo practice branch</h3><p>Step 2's second radio. Behind the seam this is an implicit single-member organization owned by the doctor — no separate product concept, no clinic admin to wait for; only NMC verification gates go-live. Their "practice location" is self-managed in D8.</p></div>
+    <div class="prin-card"><div class="prin-num">HOSPITAL DOCTOR</div><h3>Org-initiated, doctor-completed</h3><p>The hospital adds the doctor from its roster (ORG-010) → doctor gets an invite SMS → phone+OTP → onboarding steps 1–3 pre-filled with whatever the org supplied, doctor confirms and owns their credentials. <span class="v v-keep">DEFERRED</span> Per Q7 (§02): the org-side invite mechanics are postponed to the Org-workspace track (AUTH-006/007 family) by product decision, not left open — this side only commits the doctor-side acceptance UX shown above.</p></div>
+  </div>
+</section>
+
+<!-- ================= D3 IA ================= -->
+<section class="doc-section" id="ia">
+  <div class="sec-kicker">Deliverable 3 · Information Architecture</div>
+  <h2 class="sec-title">Six flat items. Zero navigation during a consult.</h2>
+  <p class="sec-desc">Navigation model: the approved L2 shell (APS-006/007) — slim 220px sidebar, flat items, no section headers, collapsible to a 64px icon rail, 56px top bar, desktop-first at min 1280. Primary nav is L1 modules only; L2 lives as in-page tabs; records are L3 pages with breadcrumbs. This section reconciles the brief's 11 requested modules onto the approved structure and resolves one spec ambiguity explicitly.</p>
+
+  <div class="panel">
+    <div class="label">The sidebar, decided</div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap">
+      <div style="width:230px;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:12px 8px;box-shadow:var(--sh-sm);flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px 12px;border-bottom:1px solid var(--border);margin-bottom:8px">
+          <div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center">A</div>
+          <div style="font-size:12px"><b>Doctor Workspace</b><span style="display:block;font-size:10.5px;color:var(--text-muted)">Dr. Kavya Rao · 2 clinics</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;font-size:13px;font-weight:500;color:var(--text-secondary)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-weight:600"><svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Today</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule <span style="margin-left:auto;font-size:10.5px;font-weight:700;background:var(--slate-100);border-radius:99px;padding:1px 7px;color:var(--text-muted)">2</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M19 8v6M22 11h-6"/></svg>Patients</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h2"/></svg>Consults</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><svg class="icon" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Earnings <span class="tag" style="margin-left:auto;font-size:9px">SOON</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px"><svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Practice</div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--text-secondary)">
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 12px"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.2 4.2l2.8 2.8m10 10 2.8 2.8M1 12h4m14 0h4M4.2 19.8 7 17m10-10 2.8-2.8"/></svg>Settings</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 12px"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Help</div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-top:8px;padding:10px 10px 2px;display:flex;align-items:center;gap:9px">
+          <span style="width:28px;height:28px;border-radius:50%;background:var(--indigo-bg);color:var(--indigo);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center">KR</span>
+          <div style="font-size:11px;line-height:1.3"><b>Dr. Kavya Rao</b><span style="display:block;color:var(--text-muted)">Account →</span></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:340px">
+        <div class="callout warn" style="margin-top:0"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0M12 9v4M12 17h.01"/></svg><div><b>One spec ambiguity, resolved explicitly.</b> APS-003 lists five Doctor L1 modules (Today · Schedule · Patients · Consults · Earnings) with Settings/Help as utilities; APS-006 says the Doctor sidebar has "6 flat items". This blueprint resolves the count by making <b>Practice</b> the sixth item — the home for SET-002 (public profile) and SET-003 (clinics &amp; fees), promoted from buried settings to a first-class module. Rationale: for a multi-clinic doctor these aren't "settings", they're the levers of their livelihood (what patients see, what they pay, where the doctor works) — and D8 needs a stable home. Not a new screen group: Practice <em>hosts</em> the existing SET-002/003 IDs. If product prefers the strict 5+utilities reading, Practice folds into Settings with no other change to this document.</div></div>
+        <div class="callout ok"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success)"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg><div><b>The Dashboard decision: there is no separate Dashboard — deliberately.</b> The brief asks for a Dashboard module; APS-003's rule N3 says the doctor's home answers "what needs me now?", and for a doctor that answer is <em>the queue</em>. A stats dashboard before the queue is one click between the doctor and their first patient, 40–60 times a day. Instead, Today absorbs the dashboard's job with a <b>Day Bar</b> glance strip (D5). Full argument and what the Day Bar contains: section D5.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">Why each module exists — and where the brief's 11 modules landed</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:110px">Module</th><th>Why it exists (job-to-be-done)</th><th style="width:200px">Contains (screen IDs)</th><th style="width:210px">Brief modules absorbed</th></tr></thead>
+    <tbody>
+      <tr><td><b>Today</b><span class="pur">landing · L1</span></td><td>"Who is in front of me, who is next?" The live clinical cockpit — queue rail + consult workbench, zero navigation while consulting. The workspace's home (logo returns here).</td><td>DOC-001, DOC-002</td><td>Dashboard · Queue · Consultation Workspace</td></tr>
+      <tr><td><b>Schedule</b><span class="pur">L1</span></td><td>"What does my time look like, and who wants a piece of it?" Everything calendar-shaped: bookings, the availability rules that generate them, requests against them, and leave.</td><td>DOC-003 (default tab) · DOC-004 · DOC-005 · DOC-006 as tabs</td><td>Appointments · Availability</td></tr>
+      <tr><td><b>Patients</b><span class="pur">L1 · revised, see below</span></td><td>"Everyone I have ever treated — and who among them needs me." Doctors remember cases, not names (review feedback): the book is faceted by clinical relevance, not just alphabetical/recency. Each row opens the clinical record (L3, breadcrumbed).</td><td>DOC-007 → DOC-008</td><td>Patients · Medical Records</td></tr>
+      <tr><td><b>Consults</b><span class="pur">L1</span></td><td>"What have I done, and what's due back?" The doctor's output: past consults (audit-friendly), follow-ups due, and Rx templates — the speed layer that makes the next consult faster.</td><td>DOC-009 (default) → DOC-010 · DOC-011 · DOC-012 as tabs</td><td>Prescriptions</td></tr>
+      <tr><td><b>Earnings</b><span class="pur">L1 · gated</span></td><td>"What did my work earn, per clinic, and when do I get it?" Exists as a first-class module because money is why availability stays current — but ships as an honest Coming-soon until billing lands.</td><td>DOC-013 → DOC-014</td><td>—</td></tr>
+      <tr><td><b>Practice</b><span class="pur">L1 · see note above</span></td><td>"Where I work, what I charge, how patients see me." Seven sub-sections — Locations · Schedule (link) · Fees · Services · Online Consultation · Documents · Verification (D8, revised). The multi-org control panel.</td><td>SET-003 (default) · SET-002 reachable from any sub-section</td><td>Practice Locations · Profile (public half)</td></tr>
+      <tr><td><b>Settings</b><span class="pur">utility</span></td><td>Account-level identity and preferences — credentials, linked orgs, sign-in security, notification prefs. Deliberately boring and out of the way.</td><td>PRO-002 · NOT-003</td><td>Profile (account half) · Settings</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="grid3" style="margin-top:16px">
+    <div class="prin-card"><div class="prin-num">RULE</div><h3>Top bar carries context</h3><p>56px bar: page title (breadcrumb on L3), clinic-context pills when multi-affiliated (D8), global search <span class="kbd">⌘K</span> scoped to my patients / consults / Rx, notification bell (NOT-002, gated), account chip. The shipped header's doctor-picker <code class="tk">Select</code> is a dev artifact and is retired — identity comes from the session.</p></div>
+    <div class="prin-card"><div class="prin-num">RULE</div><h3>One active item, always</h3><p>L3 records highlight their owning module (a patient record highlights Patients). Record tabs never appear in breadcrumbs: <code class="tk">Patients / Ananya Sharma</code>, never <code class="tk">… / Timeline</code>. (APS-006 kept as-is.)</p></div>
+    <div class="prin-card"><div class="prin-num">RULE</div><h3>Badges are actionable only</h3><p>Numeric badges only for queues needing action (Schedule shows pending requests count). No red-dot "new stuff" noise — the queue itself is the doctor's urgency surface.</p></div>
+  </div>
+</section>
+
+<!-- ================= D4 INVENTORY ================= -->
+<section class="doc-section" id="inventory">
+  <div class="sec-kicker">Deliverable 4 · Screen Inventory</div>
+  <h2 class="sec-title">Every screen, on the permanent IDs</h2>
+  <p class="sec-desc">All fourteen DOC IDs from APS-005 are kept with their boundaries intact, joined by the doctor-facing SET/PRO/NOT/AUTH screens that complete the experience. Grouping below is by build phase; the P0/P1/P2 priorities from APS-005 are preserved and annotated where a backend gate changes what "done" means. Two scope amendments are proposed — both flagged, neither silent.</p>
+
+  <div class="legend"><span class="pri p0">CORE MVP</span> launch spine · <span class="pri p1">PHASE 2</span> completes the workspace · <span class="pri p2">FUTURE</span> V1.x+ · <span class="pri gate">GATED</span> needs backend from the §01 register</div>
+
+  <div class="sub">Core MVP — the doctor can practice</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:90px">ID</th><th style="width:210px">Screen · purpose</th><th>Primary user goal</th><th>Main actions</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">AUTH-005</code> <span class="pri gate">GATED</span></td><td><b>Doctor Onboarding</b><span class="pur">3 steps, per D2 — extends the shipped draft</span></td><td>Go from phone number to a submittable, previewed profile in one sitting.</td><td>Verify registration · enter qualifications · pick clinic or independent · preview · submit</td></tr>
+      <tr><td><code class="tk">DOC-001</code> <span class="pri real">REAL</span></td><td><b>Today — Live Queue</b><span class="pur">shipped; refined per D5 (Day Bar added)</span></td><td>Know who's next and call them, instantly.</td><td>Call next · select patient · search queue · scope Today/All · see day-at-a-glance</td></tr>
+      <tr><td><code class="tk">DOC-002</code> <span class="pri real">REAL</span></td><td><b>Consult Workbench</b><span class="pur">shipped; refined per D6 (context rail, follow-up capture)</span></td><td>Complete a defensible consult record + Rx in under a minute of typing.</td><td>Start consult · write notes · compose Rx · set follow-up · sign &amp; complete</td></tr>
+      <tr><td><code class="tk">DOC-003</code></td><td><b>Schedule Calendar</b><span class="pur">day/week calendar; works on real bookings today</span></td><td>See the shape of my day/week across clinics.</td><td>Switch day/week · filter by clinic · open appointment drawer · jump to date</td></tr>
+      <tr><td><code class="tk">DOC-004</code> <span class="pri gate">GATED</span></td><td><b>Availability &amp; Slots</b><span class="pur">per-affiliation slot rules; feeds marketplace inventory</span></td><td>Keep bookable hours true to reality with minimal edits.</td><td>Set weekly pattern per clinic · slot length · buffer · publish · pause bookings</td></tr>
+      <tr><td><code class="tk">DOC-007</code></td><td><b>My Patients</b><span class="pur">revised: faceted, not flat — see callout below D4</span></td><td>Find the right patient by case, not just by name.</td><td>Search · facet: Recent / Favourites / High Risk / Chronic / Follow-up Due · open record · start new consult from row</td></tr>
+      <tr><td><code class="tk">DOC-008</code></td><td><b>Patient Record (clinical)</b><span class="pur">Overview · Timeline · Prescriptions · Reports · Notes tabs; gated tabs render honest empty/Coming-soon states</span></td><td>Reconstruct this patient's story before they sit down.</td><td>Browse timeline · open past consult · view Rx history · (reports/vitals when real)</td></tr>
+      <tr><td><code class="tk">SET-002</code> <span class="pri gate">GATED</span></td><td><b>Public Profile</b><span class="pur">inside Practice module</span></td><td>Control exactly how the marketplace presents me.</td><td>Edit bio/photo/languages · preview as patient · publish</td></tr>
+      <tr><td><code class="tk">SET-003</code> <span class="pri gate">GATED</span></td><td><b>Clinics &amp; Fees</b><span class="pur">inside Practice module; the D8 surface, now with 7 sub-sections — see callout</span></td><td>Manage where I practice and what each location charges.</td><td>Add/pause affiliation · set fee + follow-up window per clinic · set consult types</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout info"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--info)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div><b>Revision — Patients module gets facets, not just a list.</b> Product review: "Doctors don't remember names. They remember cases." DOC-007's filter bar becomes five facet tabs above the table — <b>Recent</b> (default, last-seen order, unchanged) · <b>Favourites</b> · <b>High Risk</b> · <b>Chronic</b> · <b>Follow-up Due</b> — plus the existing search. <span class="pri real">REAL now</span> Recent, Follow-up Due (once DOC-011's model lands — same gate as before). <span class="pri gate">GATED, new</span> Favourites needs a doctor-side favourite/star flag on the patient relationship (small additive table, same shape as a join row — not a redesign). High Risk and Chronic need condition tags on the patient record; until the structured Dx field (D6 ADD) accumulates real data, these two tabs render with an honest "Flag conditions during a consult to populate this list" empty state rather than a guess. No screen renders fake risk data.</div></div>
+
+  <div class="sub">Phase 2 — the workspace completes</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:90px">ID</th><th style="width:210px">Screen · purpose</th><th>Primary user goal</th><th>Main actions</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">DOC-005</code> <span class="pri gate">GATED</span></td><td><b>Appointment Requests</b><span class="pur">tab in Schedule</span></td><td>Clear pending requests in seconds at day's edge.</td><td>Approve · propose new time · decline with reason</td></tr>
+      <tr><td><code class="tk">DOC-006</code> <span class="pri gate">GATED</span></td><td><b>Time Off</b><span class="pur">tab in Schedule</span></td><td>Block leave without orphaning booked patients.</td><td>Block range · see affected bookings · trigger reschedule flow</td></tr>
+      <tr><td><code class="tk">DOC-009</code> <span class="pri gate">GATED</span></td><td><b>Consult History</b><span class="pur">default tab in Consults</span></td><td>Find any past consult, audit-cleanly.</td><td>Filter by date/clinic/patient · open detail</td></tr>
+      <tr><td><code class="tk">DOC-010</code> <span class="pri gate">GATED</span></td><td><b>Consult Detail</b><span class="pur">L3 from history</span></td><td>See exactly what was recorded and issued.</td><td>Read notes/Rx · print · (amend with audit trail — future)</td></tr>
+      <tr><td><code class="tk">DOC-011</code> <span class="pri gate">GATED</span></td><td><b>Follow-ups Due</b><span class="pur">tab in Consults</span></td><td>Bring the right patients back.</td><td>Nudge patient · mark done · book follow-up slot</td></tr>
+      <tr><td><code class="tk">DOC-012</code> <span class="pri gate">GATED</span></td><td><b>Rx Templates</b><span class="pur">tab in Consults; surfaced inside DOC-002 composer</span></td><td>Make the 20 most common prescriptions one keystroke.</td><td>Create from past Rx · edit · apply in workbench</td></tr>
+      <tr><td><code class="tk">DOC-013</code> <span class="pri gate">GATED</span></td><td><b>Earnings Overview</b><span class="pur">module landing; honest Coming-soon until billing exists</span></td><td>Know what my work earned, per clinic.</td><td>Range picker · per-clinic split · consult-volume view</td></tr>
+      <tr><td><code class="tk">PRO-002</code></td><td><b>Doctor Account</b><span class="pur">in Settings</span></td><td>Manage identity, credentials, linked orgs, security.</td><td>Edit account fields · view verification status · manage sessions</td></tr>
+      <tr><td><code class="tk">NOT-002</code> <span class="pri gate">GATED</span></td><td><b>Notification Centre</b><span class="pur">top-bar bell panel</span></td><td>Catch requests/cancellations without watching the queue.</td><td>Read · deep-link to source · mark all read</td></tr>
+      <tr><td><code class="tk">NOT-003</code></td><td><b>Notification Preferences</b><span class="pur">in Settings</span></td><td>Control channels per event type.</td><td>Toggle push/SMS/WhatsApp per event</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Future — V1.x and beyond</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:90px">ID</th><th style="width:210px">Screen · purpose</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">DOC-014</code></td><td><b>Payouts &amp; Statements</b></td><td>Settlement history, downloadable statements. Follows Earnings; P2 per APS-005, unchanged.</td></tr>
+      <tr><td><code class="tk">—</code></td><td><b>Tele-consultation surface</b></td><td>Video consult inside DOC-002's center pane; queue merges tele + in-person. Inventoried as a future DOC-002 mode, not a new ID, so the workbench layout reserves room for it (D6).</td></tr>
+      <tr><td><code class="tk">—</code></td><td><b>AI assists</b></td><td>Voice-to-notes, Rx suggestions, drug-interaction checks — already listed as DOC-002 future enhancements in APS-005. No layout impact beyond the composer's suggestion row.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0M12 9v4M12 17h.01"/></svg><div><b>Two explicit scope amendments to APS-005</b> (extensions, not replacements): <b>(1) DOC-001 absorbs the "dashboard" job</b> via the Day Bar — its purpose line effectively becomes "default landing: day-at-a-glance strip + the doctor's slice of the org queue". <b>(2) DOC-005/006 render as tabs inside Schedule</b> rather than standalone pages, per the APS-003 tree (Requests and Time Off are listed as L2 under Schedule there) — APS-005's separate rows stay valid as IDs; only their navigational packaging is confirmed here.</div></div>
+</section>
+
+<!-- ================= D5 TODAY / DASHBOARD ================= -->
+<section class="doc-section" id="dashboard">
+  <div class="sec-kicker">Deliverable 5 · Today</div>
+  <h2 class="sec-title">Today — Mission Control, not a dashboard</h2>
+  <p class="sec-desc">Product review confirmed the no-dashboard call and renamed the deliverable from "Dashboard" to <b>Today</b> — stronger product language, and it says what the screen actually is. The brief asks for "the perfect Doctor Dashboard" and warns against a generic admin dashboard; the strongest way to honor both is still not building a dashboard screen at all. But "glance strip" undersold it — review feedback is that Today should read as <b>Mission Control</b>: in three seconds a doctor should know the clinic they're in, the shape of the day, who's next, whether they're running behind, and have one-tap access to the four things they actually do between patients. The Day Bar spec below is revised accordingly.</p>
+
+  <div class="grid3">
+    <div class="prin-card"><div class="prin-num">WHY NO DASHBOARD</div><h3>The first click is sacred</h3><p>40–60 times a day the doctor returns to home base between patients. A dashboard-then-queue structure taxes every return. Landing on the queue with glanceable context taxes none. (Linear lands on issues, not a chart about issues — same logic.)</p></div>
+    <div class="prin-card"><div class="prin-num">WHY NO DASHBOARD</div><h3>Everything the brief lists fits in one strip</h3><p>Today's appointments (count + next), waiting patients (queue stats — already shipped in the rail), current queue (the rail itself), upcoming consultations (next-up card), schedule (one click to Schedule), quick actions, notifications (bell). Nothing needs a full screen.</p></div>
+    <div class="prin-card"><div class="prin-num">THE ESCAPE HATCH</div><h3>Re-evaluate at Earnings + Insights</h3><p>If a future doctor needs cross-clinic analytics (trends, no-show rates), that's an <em>insights</em> page under Earnings/Consults — a destination you visit weekly, not a landing you pass through hourly. Decision stands until that need is evidenced.</p></div>
+  </div>
+
+  <div class="sub">The Day Bar — anatomy (revised: Mission Control)</div>
+  <p class="sub-desc">Two rows now, not one: a glance row (unchanged in spirit, one metric added) and a Quick Actions row beneath it — the four things a doctor actually reaches for between patients, one tap away, never a menu dig.</p>
+  <div class="panel">
+    <div style="border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh-xs);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+        <div style="min-width:150px"><div style="font-size:14px;font-weight:700;letter-spacing:-.01em">Good morning, Dr. Mehta</div><div style="font-size:11px;color:var(--text-muted)">Thu, Jul 3 · Aegis Family Clinic · 9:00–13:00</div></div>
+        <div style="height:34px;width:1px;background:var(--border)"></div>
+        <div style="display:flex;gap:18px;font-size:11px;color:var(--text-muted)">
+          <div><b style="display:block;font-size:17px;color:var(--text);font-weight:700">26</b>patients today</div>
+          <div><b style="display:block;font-size:17px;color:#D97706;font-weight:700">4</b>waiting</div>
+          <div><b style="display:block;font-size:17px;color:#16A34A;font-weight:700">9</b>completed</div>
+          <div><b style="display:block;font-size:17px;color:var(--text);font-weight:700">2</b>walk-ins</div>
+        </div>
+        <div style="height:34px;width:1px;background:var(--border)"></div>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:999px;padding:5px 11px">
+          <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--warning)"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span style="font-size:11px;font-weight:700;color:#92400E">Running 12 min behind</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;background:var(--teal-50);border:1px solid var(--teal-200);border-radius:10px;padding:7px 12px">
+          <span style="width:30px;height:30px;border-radius:8px;background:var(--teal-100);color:var(--teal-800);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center">RS</span>
+          <div style="font-size:11px;line-height:1.35"><span style="color:var(--teal-700);font-weight:700;text-transform:uppercase;font-size:9.5px;letter-spacing:.05em">Next patient</span><br><b style="font-size:12.5px">Rohan Sharma</b> · 34 M · waiting 12m</div>
+          <button style="font-family:var(--font);border:none;background:var(--teal-600);color:#fff;font-weight:600;font-size:12px;border-radius:8px;padding:7px 14px;cursor:pointer">Call in</button>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <span class="chip" style="color:var(--blue);background:var(--blue-bg);border-color:var(--blue-border)">2 requests</span>
+          <span class="chip" style="color:var(--text-muted);background:var(--slate-50);border-color:var(--border)"><span class="dot" style="background:var(--success)"></span>Live · 12:42</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--slate-50)">
+        <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-right:4px">Quick actions</span>
+        <button style="font-family:var(--font);display:flex;align-items:center;gap:6px;border:1px solid var(--teal-500);background:var(--teal-50);color:var(--teal-800);font-weight:600;font-size:11.5px;border-radius:8px;padding:6px 11px;cursor:pointer"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 3l14 9-14 9V3z"/></svg>Start Consultation</button>
+        <button style="font-family:var(--font);display:flex;align-items:center;gap:6px;border:1px solid var(--border-strong);background:#fff;color:var(--text);font-weight:600;font-size:11.5px;border-radius:8px;padding:6px 11px;cursor:pointer"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Open Schedule</button>
+        <button style="font-family:var(--font);display:flex;align-items:center;gap:6px;border:1px solid var(--border-strong);background:#fff;color:var(--text);font-weight:600;font-size:11.5px;border-radius:8px;padding:6px 11px;cursor:pointer"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><path d="M10 15V9M14 15V9"/></svg>Pause Booking</button>
+        <button style="font-family:var(--font);display:flex;align-items:center;gap:6px;border:1px solid var(--border-strong);background:#fff;color:var(--text);font-weight:600;font-size:11.5px;border-radius:8px;padding:6px 11px;cursor:pointer"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Switch Clinic</button>
+      </div>
+    </div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span><b>Greeting + date + active clinic block.</b> Multi-affiliated doctors see clinic-context pills here (D8); single-clinic doctors see a plain label. Replaces the shipped header's clinic name + doctor-picker.</span>
+      <span class="pill"><span class="n">2</span><b>Day counters</b> — patients today / waiting / completed / walk-ins. Waiting and completed reuse the exact numbers the queue rail already computes; this generalizes the rail's stat tiles upward and frees rail height for patients.</span>
+      <span class="pill"><span class="n">3</span><b>"Running behind" indicator (ADD).</b> Compares actual consult pace against the slot length for the current affiliation (D8/DOC-004) — average time-in-consult over the last N patients vs. scheduled slot length, shown only once it's meaningfully behind (&gt;5 min), never as a constant pressure gauge. <span class="pri gate">GATED</span> on the slot model (Q2, resolved below) — until then this chip is hidden rather than estimated from nothing.</span>
+      <span class="pill"><span class="n">4</span><b>Next-up card with "Call in"</b> — the single most valuable Mission Control element: the top of the queue made one-click actionable (drives <code class="tk">waiting → doctor_ready</code> through the existing state machine). Keyboard: <span class="kbd">N</span>.</span>
+      <span class="pill"><span class="n">5</span><b>Requests chip</b> (deep-links to Schedule ▸ Requests; gated, hidden until DOC-005 is real) and the shipped <b>Live-sync indicator</b>, kept as-is.</span>
+      <span class="pill"><span class="n">6</span><b>Quick Actions row (ADD).</b> Start Consultation jumps straight into the next-up patient's workbench (same action as "Call in" + auto-open, for a doctor who wants to skip the glance and go). Open Schedule / Switch Clinic are one-click navigations. <b>Pause Booking</b> is new: an instant "stop taking new marketplace bookings for today" toggle for this affiliation — the fastest way to say "I'm full" without editing availability rules. <span class="pri gate">GATED</span> Pause Booking needs the slot/availability model (Q2); Switch Clinic needs the Organization seam wired end-to-end (D8). Both render disabled with a tooltip, not hidden — the doctor should know these exist.</span>
+    </div>
+  </div>
+
+  <div class="sub">Critique &amp; refine — the shipped DOC-001, verdict by verdict</div>
+  <p class="sub-desc">Engineering reads this as a diff against <code class="tk">live-queue.tsx</code> / <code class="tk">queue-sidebar.tsx</code>. Everything not listed is endorsed as-is.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:78px">Verdict</th><th style="width:250px">What</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Status-grouped queue rail</td><td>Grouping by <code class="tk">QUEUE_ORDER</code> (most urgent first), status dots per <code class="tk">STATUS_META</code>, per-group counts, time + relative-time column, search, Today/All scope, empty state, skeletons — all correct and endorsed.</td></tr>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Optimistic updates + silent polling</td><td>The override map that survives background polls, visibility-gated 8s polling, manual refresh, live chip. Solid foundation; websockets can replace polling later without UI change.</td></tr>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Auto-selection of most urgent patient</td><td>The derived selection (<code class="tk">in_consultation → waiting → scheduled</code>) matches how doctors actually work. Keep.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Header doctor-picker → real identity</td><td>The <code class="tk">Select</code> that switches doctors is a demo artifact (any user can impersonate any doctor). Identity comes from the session; the header slot it occupied becomes the clinic-context pills. The picker survives only in the Org workspace's view of queues, where choosing a doctor is legitimate.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Shell: header-only → L2 sidebar shell</td><td>The shipped page is a full-viewport header+content with no sidebar. It moves into the 220px sidebar shell (D3) so Schedule/Patients/Consults exist. The queue rail narrows 352→320px per APS-007; net center width is preserved by removing the old header clutter.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Queue row meta: blood group → age · sex</td><td>Rows currently show "Blood B+ · clinic name". Blood group is almost never the deciding glance-fact; age/sex is — and it's real data now (<code class="tk">date_of_birth</code>/<code class="tk">gender</code> shipped). New meta line: <b>34 M · token 12 · walk-in?</b>. Clinic name leaves the row (it's in the Day Bar context); blood group moves to the workbench header.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Rail stat tiles → Day Bar</td><td>The three stat tiles (waiting / in consult / completed) generalize into the Day Bar's counters. The rail keeps only group headers + rows: more patients visible per screenful.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Day Bar</td><td>As specced above. This is the dashboard.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Token numbers in rows</td><td><code class="tk">queue_number</code> exists in the schema and is rendered nowhere doctor-side. Doctors and patients both speak in tokens ("token 12") — show it as the row's leading number block alongside time.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Keyboard layer</td><td><span class="kbd">N</span> call next · <span class="kbd">↑↓</span> move selection · <span class="kbd">Enter</span> open consult · <span class="kbd">⌘K</span> global search. Per design principle P2 (keyboard-first clinician flows).</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Pending-verification banner state</td><td>For the mid-approval doctor (D2): Today renders with queue empty-state "Your queue activates once verification completes" + progress link. Honest, not locked out.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ================= D6 WORKBENCH ================= -->
+<section class="doc-section" id="workbench">
+  <div class="sec-kicker">Deliverable 6 · Consultation Workspace</div>
+  <h2 class="sec-title">The Consult Workbench — Auriva's heart</h2>
+  <p class="sec-desc">DOC-002 already exists and its bones are right: patient header with status chip, detail cells, clinical notes with a Dx/Findings/Advice/Follow-up template, a line-item Rx composer with autosave. What's missing is <b>memory</b> — the workbench treats every patient as new. The refinement adds the third rail from APS-007's T3 spec (queue 320 · center fluid · <b>context 360</b>) so the patient's story sits beside the composer, plus a completion flow that captures the follow-up instead of losing it in free text.</p>
+
+  <div class="sub">Target layout — the three-rail workbench (APS-007 T3, honored)</div>
+  <div class="wf-row">
+    <div class="wf" style="width:640px;height:330px">
+      <div class="wfi">
+        <div class="wf-side" style="width:52px">
+          <div class="wf-item on" style="justify-content:center">Tdy</div><div class="wf-item" style="justify-content:center">Sch</div><div class="wf-item" style="justify-content:center">Pat</div><div class="wf-item" style="justify-content:center">Con</div><div class="wf-item" style="justify-content:center">Ear</div><div class="wf-item" style="justify-content:center">Prc</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-top">Today · clinic pills · ⌘K · bell · account</div>
+          <div class="wf-body" style="gap:6px">
+            <div class="wb" style="height:34px;flex-shrink:0">DAY BAR — date · counters · next-up + Call in · requests · live</div>
+            <div style="display:flex;gap:6px;flex:1;min-height:0">
+              <div class="wb-col" style="width:130px">
+                <div class="wb" style="flex:1;flex-direction:column;gap:3px">QUEUE RAIL 320<br>status groups<br>token · time · name · age/sex</div>
+              </div>
+              <div class="wb-col" style="flex:1">
+                <div class="wb" style="height:40px">PATIENT HEADER — name · age/sex · blood · allergies chip · status chip · Start/Call actions</div>
+                <div class="wb hl" style="flex:1;flex-direction:column;gap:3px">CENTER — CONSULT RECORD<br>Dx (structured) + clinical notes<br>Rx COMPOSER (line items · template picker)</div>
+                <div class="wb" style="height:26px">STICKY ACTION BAR — draft-saved chip · Save draft · Sign &amp; complete</div>
+              </div>
+              <div class="wb-col" style="width:120px">
+                <div class="wb" style="height:56px;flex-direction:column">LAST VISIT<br>summary + Rx</div>
+                <div class="wb" style="flex:1;flex-direction:column">TIMELINE<br>visits w/ me (real)</div>
+                <div class="wb soon" style="height:44px;flex-direction:column">VITALS · REPORTS<br>Coming soon</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:300px">
+      <div class="annot" style="margin-top:0">
+        <span class="pill"><span class="n">1</span><b>Context rail (ADD, 360px).</b> Top card: last visit with me — date, Dx line, Rx issued (buildable from real appointment + event data once Rx persists; until then shows past visits only). Below: visit timeline. Vitals/Reports sections render as honest Coming-soon rows, matching the patient side's pattern.</span>
+        <span class="pill"><span class="n">2</span><b>Sticky action bar (ADD, 64px)</b> — per APS-007: "Sign &amp; complete" is an in-pane action, never a dialog. Carries the autosave chip ("Draft saved · 12:41") that currently floats in the composer header.</span>
+        <span class="pill"><span class="n">3</span><b>Below 1280</b> the context rail folds into tabs above the center pane (APS-007 responsive rule, honored).</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">The consult workflow — start to signed</div>
+  <div class="panel">
+    <div class="flow">
+      <span class="fstep">Call in<small>waiting → doctor_ready<br>patient's app shows "you're called"</small></span><span class="arr">→</span>
+      <span class="fstep">Start consult<small>→ in_consultation · timer starts</small></span><span class="arr">→</span>
+      <span class="fstep hl">Record<small>Dx · notes · Rx lines<br>(template apply · autosave)</small></span><span class="arr">→</span>
+      <span class="fstep hl">Sign &amp; complete<small>inline completion row:<br>follow-up? — none / 3d / 1w / 2w / custom</small></span><span class="arr">→</span>
+      <span class="fstep">completed<small>Rx lands in patient record<br>next patient auto-selected</small></span>
+    </div>
+    <p class="fnote">All transitions ride the existing <code class="tk">transitionStatus()</code> machine — the design adds no new states. "Sign &amp; complete" replaces the current "Mark as Completed": same action, framed as the professional act it is. The follow-up quick-pick writes a real follow-up record when the backend lands; until then it stays a template line in notes (as today) and the quick-pick is not rendered — no fake control.</p>
+  </div>
+
+  <div class="sub">Critique &amp; refine — the shipped DOC-002, verdict by verdict</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:78px">Verdict</th><th style="width:250px">What</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Rx composer mechanics</td><td>Line-item editor (medicine · dosage · frequency · duration), 1-0-1 dose convention, add/remove rows, borderless inputs in a grid — matches APS-007's Rx composer spec. Endorsed.</td></tr>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Autosave + per-appointment draft isolation</td><td>Debounced autosave, draft keyed and remounted per appointment, legacy-draft migration. The <em>behavior</em> is exactly right; only the storage moves (below).</td></tr>
+      <tr><td><span class="v v-keep">KEEP</span></td><td>Notes template + empty state</td><td>Dx/Findings/Advice/Follow-up insert-template and the no-patient-selected empty state. Kept.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Detail cells: reprioritize</td><td>Current four cells: Blood group · Scheduled · Doctor · Clinic. Attending-doctor and clinic cells are redundant (it's the signed-in doctor; clinic is in the Day Bar). New header line under the name: <b>34 M · B+ · allergies chip (gated) · token 12</b>; cells shrink to Scheduled + phone. Raw UUID slices (<code class="tk">id.slice(0,8)</code>) leave the UI — meaningless to clinicians.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>Draft storage: localStorage → server</td><td>A signed Rx that exists only in the browser is a clinical-record integrity problem (lost on device change; never reaches PAT-009/010). Requires the Prescription model — <span class="pri gate">GATED</span>, called out in §01. Until then the current localStorage behavior stands <em>and the UI says so</em>: the existing "won't persist after reload" toast copy is honest and stays.</td></tr>
+      <tr><td><span class="v v-change">CHANGE</span></td><td>"Mark as Completed" → "Sign &amp; complete" in a sticky bar</td><td>Wording + placement per the workflow above. Clear/Save Draft stay beside it.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Context rail</td><td>As specced. The single biggest clinical upgrade: last visit + timeline beside the composer. Real data first (appointments + events), gated sections honest.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Structured Dx field</td><td>One field above notes, chips-style, free-text tolerant. Feeds DOC-009 filtering and future template suggestions ("you usually prescribe X for this Dx"). Notes stay free-form — structure is offered, never forced mid-consult.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Template picker in composer</td><td>"Apply template" ahead of the medicine rows (DOC-012, gated). Templates are the doctor's speed layer; the composer is where they pay off.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Consult timer</td><td>Quiet elapsed-time chip in the patient header once in_consultation (started_at is already recorded). Doctors self-regulate pace; orgs later get wait-time analytics from the same events.</td></tr>
+      <tr><td><span class="v v-add">ADD</span></td><td>Skip → Skipped, resolved (Q1)</td><td>Product decision: reception controls queue order — doctors don't get a reorder gesture. Doctors <em>may</em> skip a patient temporarily via a "Skip" action on the rail (called, didn't enter). This is a <b>new terminal-adjacent state, <code class="tk">skipped</code></b>, distinct from <code class="tk">no_show</code>: skipped patients move to a visible "Skipped" group in the queue rail and can be recalled by the doctor or reception at any time (skipped → waiting on recall). This is a schema change (new status value + one new transition pair in <code class="tk">appointment-status.ts</code>) — flagged here for engineering, not implemented in this design pass.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ================= D7 PROFILE ================= -->
+<section class="doc-section" id="profile">
+  <div class="sec-kicker">Deliverable 7 · Doctor Profile</div>
+  <h2 class="sec-title">Professional identity, not an account-settings form</h2>
+  <p class="sec-desc">Product review flagged this as the one deliverable Claude undershot — fair. The original table was organized by <em>who owns the edit</em> (correct information architecture, kept underneath) but read flat and administrative. Revised: four named groups a doctor actually thinks in — <b>Personal · Professional · Practice · Verification</b> — each opening as its own panel off a left-hand section list (same pattern as Settings' own sub-nav, D3), with the public-profile preview pinned alongside whichever panel is open. The ownership/edit-rule details from the original table are preserved per field, just regrouped.</p>
+
+  <div class="sub">Personal</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:150px">Field</th><th style="width:150px">Lives in</th><th>Contains</th></tr></thead>
+    <tbody>
+      <tr><td><b>Identity</b></td><td>PRO-002</td><td>Legal name, DOB, phone (sign-in identity — change re-verifies via OTP), email, address. Self-serve.</td></tr>
+      <tr><td><b>Photo</b></td><td>SET-002</td><td>Profile photo — the first trust signal on MKT-003. Self-serve, instant.</td></tr>
+      <tr><td><b>Bio</b></td><td>SET-002</td><td>Free-text professional summary, patient-facing.</td></tr>
+      <tr><td><b>Languages</b></td><td>SET-002</td><td>Consultation languages — a real search facet in India. Self-serve, instant.</td></tr>
+      <tr><td><b>Experience</b></td><td>SET-002</td><td>Practice history entries (role · org · years). Optional, marketplace-visible.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Professional</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:150px">Field</th><th style="width:150px">Lives in</th><th>Contains</th></tr></thead>
+    <tbody>
+      <tr><td><b>Registration</b></td><td>PRO-002, shown on SET-002</td><td>Council, registration number, verification state, validity. <b>Locked post-verification</b> — changes open a re-verification flow, never an inline edit.</td></tr>
+      <tr><td><b>Qualifications</b></td><td>SET-002</td><td>Degrees: degree · institution · year, structured (from onboarding step 2). Additions self-serve; visibility while unverified resolved below (Q6-adjacent call).</td></tr>
+      <tr><td><b>Specialization</b></td><td>SET-002</td><td>Primary + secondary specialities — drives marketplace search facets. Change flags for re-review (it's a trust claim).</td></tr>
+      <tr><td><b>Awards</b> <span class="pri gate">GATED, new</span></td><td>SET-002</td><td>Named recognitions, self-reported, marked "unverified" on the public card until reviewed — same trust pattern as Qualifications, not a new rule.</td></tr>
+      <tr><td><b>Memberships</b> <span class="pri gate">GATED, new</span></td><td>SET-002</td><td>Professional bodies (e.g. state medical association). Self-reported, same verification-badge pattern.</td></tr>
+      <tr><td><b>Research</b> <span class="pri gate">GATED, new</span></td><td>SET-002</td><td>Publications / papers, optional, link-out only (no PDF hosting in MVP).</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Practice</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:150px">Field</th><th style="width:150px">Lives in</th><th>Contains</th></tr></thead>
+    <tbody>
+      <tr><td><b>Clinics</b></td><td>SET-003 · Practice ▸ Locations</td><td>Affiliation cards — org, address, role, status.</td></tr>
+      <tr><td><b>Hospitals</b></td><td>SET-003 · Practice ▸ Locations</td><td>Same affiliation model — a hospital is an organization like any other (D8); no separate concept.</td></tr>
+      <tr><td><b>Fees</b> <span class="pri gate">GATED</span></td><td>SET-003 · Practice ▸ Fees</td><td>Per-location, per Q5 below — never a single global fee.</td></tr>
+      <tr><td><b>Availability</b></td><td>DOC-004, linked from Practice ▸ Schedule</td><td>Not duplicated here — one link into Schedule, pre-filtered per affiliation.</td></tr>
+      <tr><td><b>Public Profile Preview</b></td><td>SET-002, persistent</td><td>Live MKT-003 render beside whichever Profile panel is open — the onboarding step-3 pattern, now a permanent fixture, not just an onboarding moment. "View as patient" opens the real marketplace page.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sub">Verification</div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:150px">Field</th><th style="width:150px">Lives in</th><th>Contains</th></tr></thead>
+    <tbody>
+      <tr><td><b>Documents</b></td><td>PRO-002, also in Practice ▸ Documents</td><td>Registration certificate, degree scans, ID. Upload/replace self-serve; visible to Auriva verification only, never public. <span class="pri gate">GATED</span> (no document store yet).</td></tr>
+      <tr><td><b>Approval</b></td><td>Banner on both surfaces</td><td>One state chip: <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A;font-size:10.5px">Pending review</span> <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0;font-size:10.5px">Verified</span> <span class="chip" style="color:#DC2626;background:#FEF2F2;border-color:#FECACA;font-size:10.5px">Action needed</span>. Read-only; "Action needed" deep-links to exactly what's missing.</td></tr>
+      <tr><td><b>License</b></td><td>Derived from Registration</td><td>The registration number itself, shown again here in verification context.</td></tr>
+      <tr><td><b>Expiry</b> <span class="pri gate">GATED, new</span></td><td>PRO-002</td><td>Registration renewal date, once the NMC integration or manual entry supplies it — surfaces a renewal reminder before it lapses. Not collected in AUTH-005 today; a v1.x addition to the onboarding form.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout info"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--info)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div><b>Design rule carried from onboarding:</b> nothing reaches the public card unseen. Every SET-002 save shows the diff on the preview pane before publish. Profile completeness is a quiet progress meter, not a nag.</div></div>
+
+  <div class="sub">Doctor Reputation — the biggest product opportunity flagged in review, explicitly not MVP</div>
+  <div class="callout warn"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0M12 9v4M12 17h.01"/></svg><div><b>Not building this now — reserving room for it.</b> A future <b>Professional Score</b>, deliberately not framed as a star rating: a composite of Patients Treated · Years Practicing · Response Rate · Availability · Verified Credentials · a Recommendation Score distinct from raw review averages. This is Auriva's trust layer, and it's worth getting right rather than shipping a generic 5-star widget that every directory site already has. Design consequence today: the Public Profile Preview's trust-strip layout (MKT-003, patient-side APS-010) already reserves a slot for exactly this — a single composite tile — so this can land later without reflowing the page. No score is computed or shown in this blueprint; the reserved slot renders nothing until product defines the formula.</div></div>
+</section>
+
+<!-- ================= D8 PRACTICE ================= -->
+<section class="doc-section" id="practice">
+  <div class="sec-kicker">Deliverable 8 · Practice Management</div>
+  <h2 class="sec-title">One doctor, many organizations</h2>
+  <p class="sec-desc">Designed directly against the Organization seam: a doctor is one identity holding N <code class="tk">OrganizationMember</code> rows — each with its own role, fee, schedule and status. Today's storage is a single clinic per StaffProfile, so this section is the UI contract the real Organization tables will fulfil; the interim UI simply renders one affiliation card. "Organization" here is only the thing a doctor belongs to (name, address, role) — its management screens are the other track's scope.</p>
+
+  <div class="sub">The mental model</div>
+  <div class="panel">
+    <div class="flow">
+      <span class="fstep hl">Dr. Kavya Rao<small>one Auriva ID · one set of credentials</small></span>
+      <span class="arr">→</span><span class="fstep">Aegis Family Clinic<small>member · doctor · ₹600 · Mon/Wed/Fri</small></span>
+      <span class="arr">→</span><span class="fstep">Sunrise Skin Centre<small>member · doctor · ₹900 · Tue/Thu</small></span>
+      <span class="arr">→</span><span class="fstep">Independent (tele)<small>owner · implicit solo org · ₹500 online</small></span>
+    </div>
+    <p class="fnote">Credentials are verified once and belong to the identity. Everything money- or time-shaped hangs off the affiliation. An independent practice is just an affiliation where the doctor is the owner — one model, no special cases.</p>
+  </div>
+
+  <div class="sub">Practice module — seven sub-sections (revised from two tabs)</div>
+  <p class="sub-desc">Product review: "Practice deserves sub-sections... much cleaner." Same underlying data as the original two-tab design — reorganized so each concern (where / when / what it costs / what's offered / documents / verification) is its own destination instead of three ideas crammed into one "Clinics &amp; Fees" tab. Still all SET-002/SET-003 under the hood — no new screen IDs, just a navigation split.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:170px">Sub-section</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><b>Locations</b> <span class="pur">SET-003 · default</span></td><td>One card per affiliation: org name + address + my role · status chip (Active / Pending approval / Paused). Card actions: pause new bookings · leave clinic (confirm dialog, applies the Q4 policy below) · <b>Add affiliation</b> → search clinic / create independent practice (the onboarding step-2 fork, re-entrant).</td></tr>
+      <tr><td><b>Schedule</b></td><td>Not a duplicate screen — a direct link into Schedule ▸ Availability, pre-filtered to this affiliation. Practice is where you decide <em>where</em> you work; Schedule is where you decide <em>when</em> (D3 module boundary, kept).</td></tr>
+      <tr><td><b>Fees</b> <span class="pri gate">GATED</span></td><td>Per-affiliation consult fee + follow-up window (free within N days), resolved per Q5 below: <b>each location stores its own fee</b>, independent of the others. Needs the billing/fees backend.</td></tr>
+      <tr><td><b>Services</b></td><td>Consult types offered at this affiliation (new patient, follow-up, procedure consult, etc.) — the "what" a patient is booking, distinct from the "how" (Online Consultation, next).</td></tr>
+      <tr><td><b>Online Consultation</b> <span class="pri gate">GATED</span></td><td>Per-affiliation toggle + settings for tele-consult once a video surface exists (APS-005 future enhancement). Renders as an honest "Coming soon" card today — visible so the doctor knows it's planned, not hidden.</td></tr>
+      <tr><td><b>Documents</b> <span class="pri gate">GATED</span></td><td>Registration certificate, degree scans, ID — same store as D7's Documents section, surfaced here too since it's a practical "am I fully set up" checklist. One document store, two entry points.</td></tr>
+      <tr><td><b>Verification</b></td><td>Read-only status chip (Pending review / Verified / Action needed) + what's outstanding, mirroring D7's Verification Status. "Action needed" deep-links to the exact missing item, here or in Documents.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="fnote">Public Profile editing (bio, photo, languages, qualifications — SET-002) is unchanged from D7: a persistent edit-form-beside-live-preview pattern, reachable from any Practice sub-section's header. Not listed as its own tab here because it isn't a "where do I practice" concern — it's covered fully in D7.</div>
+
+  <div class="sub">How the rest of the workspace stays multi-clinic aware</div>
+  <div class="grid2">
+    <div class="prin-card"><div class="prin-num">CONTEXT PILLS</div><h3>Filter, never fork</h3><p>Today / Schedule / Availability get clinic-context pills in the page header (APS-006 §05 pattern): <b>All · Aegis · Sunrise · Tele</b>. One workspace filtered by affiliation — never N parallel workspaces. Single-affiliation doctors never see pills at all.</p></div>
+    <div class="prin-card"><div class="prin-num">SCHEDULE</div><h3>Per-affiliation availability</h3><p>DOC-004 defines weekly patterns <em>per affiliation</em> (Aegis Mon/Wed/Fri 9–1, Sunrise Tue/Thu 10–2, Tele daily 8–9pm). The calendar (DOC-003) color-codes bookings by clinic. Consult types per affiliation: in-clinic (real) · online/tele (<span class="pri gate">GATED</span> — designed, "Coming soon" until a tele surface exists).</p></div>
+    <div class="prin-card"><div class="prin-num">ROLES</div><h3>Org-managed vs. self-managed, visibly</h3><p>A hospital may own the doctor's fee, room, or hours (ORG-011 side). Those fields render read-only with a "Managed by Apollo Indiranagar" caption — visible truth beats hidden permission errors. The role comes straight from <code class="tk">OrganizationRole</code>.</p></div>
+    <div class="prin-card"><div class="prin-num">EARNINGS</div><h3>Split by affiliation, natively</h3><p>DOC-013's primary grouping is the affiliation — the same cards as Practice, with money attached. The seam's IDs make this a join, not a redesign, when billing lands.</p></div>
+  </div>
+
+  <div class="callout ok"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success)"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg><div><b>Resolved by product review</b> (full detail in §02 Rollout's Q1–Q7 table): <b>(1)</b> overlapping availability across affiliations is never allowed — the system detects and blocks it (Q3). <b>(2)</b> leaving a clinic: history stays with the org, future bookings follow that org's own policy (Q4). <b>(3)</b> fee is set per location, not org-approved (Q5). <b>(4)</b> which fields are org-managed for hospital doctors remains a per-org policy, correctly deferred to the Org-workspace track (Q7) — the Practice UI above already renders correctly under any such policy, so nothing here needs to change once that policy exists.</div></div>
+</section>
+
+<!-- ================= D9 FLOWS ================= -->
+<section class="doc-section" id="flows">
+  <div class="sec-kicker">Deliverable 9 · User Flows</div>
+  <h2 class="sec-title">Seven flows, step by step</h2>
+  <p class="sec-desc">Compact but complete — each step names its screen. Failure/decision branches shown dashed. These are the flows QA scripts and analytics funnels should be written against.</p>
+
+  <div class="panel">
+    <div class="label">F1 · New doctor onboarding</div>
+    <div class="flow">
+      <span class="fstep">MKT-013 CTA</span><span class="arr">→</span><span class="fstep">AUTH-001 phone</span><span class="arr">→</span><span class="fstep">AUTH-002 OTP</span><span class="arr">→</span><span class="fstep hl">AUTH-005 ①②③</span><span class="arr">→</span><span class="fstep">Submit</span><span class="arr">→</span><span class="fstep">Today (pending banner)</span>
+      <span class="brk"></span>
+      <span class="fstep dim">NMC instant-verify fails → manual review ≤24h, status card on Today</span>
+      <span class="fstep dim">Clinic affiliation → waits on org admin approval, independent of NMC state</span>
+    </div>
+    <div class="label">F2 · Returning doctor</div>
+    <div class="flow">
+      <span class="fstep">AUTH-001 phone</span><span class="arr">→</span><span class="fstep">AUTH-002 OTP</span><span class="arr">→</span><span class="fstep hl">Today</span>
+      <span class="brk"></span><span class="fstep dim">Holds patient role too → AUTH-003 chooser (remembers last workspace per device)</span>
+    </div>
+    <div class="label">F3 · Managing availability</div>
+    <div class="flow">
+      <span class="fstep">Schedule</span><span class="arr">→</span><span class="fstep">Availability tab (DOC-004)</span><span class="arr">→</span><span class="fstep">pick affiliation pill</span><span class="arr">→</span><span class="fstep hl">edit weekly pattern · slot length · buffers</span><span class="arr">→</span><span class="fstep">Review impact ("opens 84 slots/wk")</span><span class="arr">→</span><span class="fstep">Publish</span>
+      <span class="brk"></span><span class="fstep dim">Shrinking hours that hold existing bookings → conflict list → per-booking resolve (DOC-005 machinery)</span>
+    </div>
+    <div class="label">F4 · Starting a consultation</div>
+    <div class="flow">
+      <span class="fstep">Today</span><span class="arr">→</span><span class="fstep">Day Bar "Call in" <span class="kbd">N</span></span><span class="arr">→</span><span class="fstep">doctor_ready (patient notified)</span><span class="arr">→</span><span class="fstep">patient enters</span><span class="arr">→</span><span class="fstep hl">Start consult → in_consultation</span>
+      <span class="brk"></span><span class="fstep dim">Patient doesn't enter → Skip (re-queue rule = open Q) or No-show (existing state)</span>
+    </div>
+    <div class="label">F5 · Completing a consultation</div>
+    <div class="flow">
+      <span class="fstep">Workbench: Dx + notes + Rx</span><span class="arr">→</span><span class="fstep hl">Sign &amp; complete</span><span class="arr">→</span><span class="fstep">follow-up quick-pick (gated)</span><span class="arr">→</span><span class="fstep">completed · Rx → patient record</span><span class="arr">→</span><span class="fstep">next patient auto-selected</span>
+    </div>
+    <div class="label">F6 · Writing a prescription</div>
+    <div class="flow">
+      <span class="fstep">Rx composer</span><span class="arr">→</span><span class="fstep dim">Apply template (DOC-012, gated)</span><span class="arr">→</span><span class="fstep hl">add/edit medicine lines (1-0-1 · duration)</span><span class="arr">→</span><span class="fstep">autosave draft</span><span class="arr">→</span><span class="fstep">signed with consult → PAT-009/010</span>
+    </div>
+    <div class="label">F7 · Managing profile</div>
+    <div class="flow">
+      <span class="fstep">Practice ▸ Public Profile</span><span class="arr">→</span><span class="fstep hl">edit beside live preview</span><span class="arr">→</span><span class="fstep">Publish</span>
+      <span class="brk"></span>
+      <span class="fstep dim">Registration/credential changes → PRO-002 → guarded re-verification flow, never inline</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= D10 WIREFRAMES ================= -->
+<section class="doc-section" id="wireframes">
+  <div class="sec-kicker">Deliverable 10 · Wireframes</div>
+  <h2 class="sec-title">Low-fi frames — every major screen, desktop-first</h2>
+  <p class="sec-desc">Structural wireframes at 1280+ against the L2 shell (220px sidebar · 56px top bar · 24px page padding). Teal = the screen's primary work zone. Dashed = honest gated/Coming-soon region. Today + Workbench are wireframed in D5/D6 and not repeated.</p>
+
+  <div class="wf-row">
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item on" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Schedule · pills: All/Aegis/Sunrise · Day|Week</div>
+          <div class="wf-body">
+            <div class="wb" style="height:20px;flex-shrink:0">tabs: Calendar · Availability · Requests ② · Time off</div>
+            <div style="display:flex;gap:6px;flex:1"><div class="wb hl" style="flex:1;flex-direction:column">WEEK GRID<br>bookings color-coded by clinic</div><div class="wb" style="width:86px;flex-direction:column">DRAWER 440<br>appointment detail<br>on click</div></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Schedule — Calendar <span>DOC-003 · T1 pattern, drawer detail</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item on" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Schedule ▸ Availability · affiliation pills</div>
+          <div class="wf-body">
+            <div class="wb" style="height:20px;flex-shrink:0">tabs: Calendar · <b>Availability</b> · Requests · Time off</div>
+            <div style="display:flex;gap:6px;flex:1">
+              <div class="wb hl" style="flex:1.4;flex-direction:column">WEEKLY PATTERN EDITOR<br>Mon–Sun rows · time ranges<br>slot length · buffer</div>
+              <div class="wb-col" style="flex:1"><div class="wb" style="flex:1;flex-direction:column">IMPACT PANEL<br>"84 slots/week"<br>conflicts list</div><div class="wb" style="height:22px">Publish</div></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Availability &amp; Slots <span>DOC-004 · gated on slot backend</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item on" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Patients · search (⌘K) · recency sort</div>
+          <div class="wf-body">
+            <div class="wb" style="height:18px;flex-shrink:0">filter row: search · clinic · last-visit range</div>
+            <div class="wb hl" style="flex:1;flex-direction:column">TABLE 48px rows<br>avatar+name+age/sex · last visit · visits # · last Dx<br>row hover → “Open record”</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">My Patients <span>DOC-007 · T1 list</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item on" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Patients / Ananya Sharma (breadcrumb)</div>
+          <div class="wf-body">
+            <div class="wb" style="height:26px;flex-shrink:0">RECORD HEADER — name · 29 F · B+ · allergies · “New consult”</div>
+            <div class="wb" style="height:18px;flex-shrink:0">tabs: Overview · Timeline · Prescriptions · Reports · Notes</div>
+            <div style="display:flex;gap:6px;flex:1"><div class="wb hl" style="flex:1.4;flex-direction:column">TIMELINE<br>visits · Rx · events (real)</div><div class="wb soon" style="flex:1;flex-direction:column">Reports · Vitals<br>Coming soon</div></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Patient Record (clinical) <span>DOC-008 · T4 record, L3 page</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item on" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Consults · date range · clinic pills</div>
+          <div class="wf-body">
+            <div class="wb" style="height:18px;flex-shrink:0">tabs: History · Follow-ups due · Rx templates</div>
+            <div class="wb hl" style="flex:1;flex-direction:column">CONSULT TABLE<br>date · patient · Dx · Rx? · clinic<br>row → DOC-010 detail</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Consults <span>DOC-009/011/012 as tabs · gated on Rx/follow-up models</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item on" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Practice · Clinics &amp; Fees | Public Profile</div>
+          <div class="wf-body">
+            <div style="display:flex;gap:6px;flex:1">
+              <div class="wb-col" style="flex:1">
+                <div class="wb hl" style="flex:1;flex-direction:column">AFFILIATION CARD<br>Aegis · doctor · ₹600 · Active<br>types · availability link · pause</div>
+                <div class="wb hl" style="flex:1;flex-direction:column">AFFILIATION CARD<br>Sunrise · doctor · ₹900 · Pending</div>
+              </div>
+              <div class="wb-col" style="width:92px"><div class="wb" style="height:22px">+ Add affiliation</div><div class="wb soon" style="flex:1;flex-direction:column">Fees editing<br>gated on billing</div></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Practice — Clinics &amp; Fees <span>SET-003 · the D8 surface</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item" style="justify-content:center">E</div><div class="wf-item on" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Practice ▸ Public Profile</div>
+          <div class="wf-body">
+            <div style="display:flex;gap:6px;flex:1">
+              <div class="wb hl" style="flex:1.2;flex-direction:column">EDIT FORM 640 max<br>bio · photo · languages<br>qualifications · experience</div>
+              <div class="wb" style="flex:1;flex-direction:column">LIVE MKT-003 PREVIEW<br>“View as patient”<br>publish diff</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Public Profile <span>SET-002 · edit + persistent preview</span></div>
+    </div>
+    <div>
+      <div class="wf" style="width:330px;height:230px"><div class="wfi">
+        <div class="wf-side" style="width:40px"><div class="wf-item" style="justify-content:center">T</div><div class="wf-item" style="justify-content:center">S</div><div class="wf-item" style="justify-content:center">P</div><div class="wf-item" style="justify-content:center">C</div><div class="wf-item on" style="justify-content:center">E</div><div class="wf-item" style="justify-content:center">Pr</div></div>
+        <div class="wf-main"><div class="wf-top">Earnings</div>
+          <div class="wf-body">
+            <div class="wb soon" style="flex:1;flex-direction:column">COMING SOON — final layout reserved:<br>range picker · total + per-affiliation split cards<br>consult-volume table · payouts link (DOC-014)<br><br>ships as honest empty state with copy:<br>“Earnings arrive with online payments”</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="wf-cap">Earnings <span>DOC-013 · T8 · fully gated, designed anyway</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= D11 HI-FI PLAN ================= -->
+<section class="doc-section" id="hifi">
+  <div class="sec-kicker">Deliverable 11 · High-Fidelity Design Plan</div>
+  <h2 class="sec-title">Design-system execution — one OS, doctor face</h2>
+  <p class="sec-desc">The hi-fi pass introduces nothing new: it applies APS-002 components at APS-007's L2 compact density. This table is the per-concern contract for screen-by-screen implementation; APS-007 L2 rules are endorsed wholesale, with the deltas this blueprint adds marked <span class="v v-add">ADD</span>.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:150px">Concern</th><th>Specification</th></tr></thead>
+    <tbody>
+      <tr><td><b>Layout</b></td><td>L2 shell: sidebar 220 (collapse 64, <span class="kbd">[</span>, persisted) · top bar 56 · page header 64 · padding 24 · content fluid to 1440. Workbench = fixed 3-rail (320 / min 560 / 360). <span class="v v-add">ADD</span> Day Bar 64px sits inside Today's content, not the chrome — other pages don't inherit it.</td></tr>
+      <tr><td><b>Navigation</b></td><td>Six flat items + Settings/Help utilities + account chip (D3). Active = teal-50 bg / teal-700 text — the only colored state. Badges: actionable counts only. Breadcrumbs on L3 only. <span class="kbd">⌘K</span> scoped search; <span class="kbd">N</span> call-next on Today.</td></tr>
+      <tr><td><b>Cards</b></td><td>Radius 12 · shadow-xs · padding 20 · queue rows 88px fixed (scannability, APS-007). Stat/affiliation cards use the APS-002 <code class="tk">.stat</code>/<code class="tk">.hcard</code> patterns. Status is always chip dot+label from <code class="tk">STATUS_META</code> — the shipped implementation is already the reference.</td></tr>
+      <tr><td><b>Tables</b></td><td>48px rows · sticky header · first column = person (avatar + name + age/sex meta) · status chips · hover reveals row actions. Patients, Consults, Requests, Payouts all share one table component.</td></tr>
+      <tr><td><b>Dialogs</b></td><td>Confirm 420 (skip patient, discard Rx, leave clinic) · task 560 (time-off block, propose new time). Sign &amp; complete is never a dialog (in-pane action bar). Destructive confirms name the consequence ("3 booked patients will need rescheduling").</td></tr>
+      <tr><td><b>Drawers</b></td><td>Right 440: appointment detail (the shipped <code class="tk">AppointmentDrawer</code> is kept), patient quick-view from Schedule/queue. Full patient record is always a page (DOC-008), never a drawer.</td></tr>
+      <tr><td><b>Empty states</b></td><td>APS-002 empty pattern, clinician tone with a next action: queue — "No patients waiting — next appointment 11:30" · patients — "Your patients appear here after your first consult" · follow-ups — "Nothing due this week". Pending-verification variants per D2/D5.</td></tr>
+      <tr><td><b>Loading</b></td><td>Rails skeleton independently (shipped rail skeletons endorsed); queue changes re-render in place with a 300ms highlight; autosave chip in the action bar ("Draft saved · 12:41"); button-spinner for verifying/submitting states. Never a full-page spinner inside the shell.</td></tr>
+      <tr><td><b>Coming-soon states</b></td><td>One pattern platform-wide (matches Patient app + Admin "Soon" badges): section renders with icon + one-line honest promise + no interactive controls. Sidebar items for fully-gated modules (Earnings) carry a quiet <code class="tk">SOON</code> tag — visible so the IA reads complete, never a dead click into pretend UI.</td></tr>
+      <tr><td><b>Responsive</b></td><td>Desktop-first, min 1280 full experience. Tablet: icon rail 64, context rail → tabs, drawers 60vw. Mobile: bottom tabs Today · Schedule · Patients · More; workbench becomes sequential full-screens (queue → patient → Rx). Mobile is the on-the-go subset, not parity (APS-006 rule, honored).</td></tr>
+      <tr><td><b>Accessibility</b></td><td>WCAG 2.1 AA per APS-002 P5: 4.5:1 text contrast, visible focus rings (<code class="tk">--ring</code>), full keyboard operability of queue + composer, status never by color alone (dot + label already enforced in code).</td></tr>
+      <tr><td><b>Motion</b></td><td>Calm-over-clever: 150ms eases on hover/selection, 300ms row-change highlight, no entrance animations in clinical flows. The live-sync pulse (shipped) stays the only ambient motion.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ================= 02 ROLLOUT ================= -->
+<section class="doc-section" id="rollout">
+  <div class="sec-kicker">02 · Rollout &amp; Open Questions</div>
+  <h2 class="sec-title">Build order and what needs a product decision</h2>
+  <p class="sec-desc">Sequenced so every increment ships whole — screens arrive with their backends or with their honest gated states, never as facades.</p>
+
+  <div class="panel">
+    <ol style="font-size:13px;color:var(--text-secondary);margin-left:20px;display:flex;flex-direction:column;gap:9px">
+      <li><b style="color:var(--text)">M1 · Shell + refined Today</b> — L2 sidebar shell, session-identity (retire the doctor picker), Day Bar, queue-row changes (token, age/sex), keyboard layer. Zero new backend needed.</li>
+      <li><b style="color:var(--text)">M2 · Workbench memory + Rx persistence</b> — Prescription model + issue-on-complete, context rail (real visits first), structured Dx, sticky action bar. Unblocks PAT-009/010 supply → the platform's core loop closes.</li>
+      <li><b style="color:var(--text)">M3 · Patients &amp; records</b> — DOC-007/008 on real visit + Rx data; gated tabs honest.</li>
+      <li><b style="color:var(--text)">M4 · Onboarding + Practice + Public profile</b> — AUTH-005 backend (registration verification, affiliation request), SET-002/003, verification states. Unblocks supply acquisition and MKT-003 truthfulness.</li>
+      <li><b style="color:var(--text)">M5 · Time &amp; requests</b> — slot/availability model (resolves the standing sprint-2 open question), DOC-003 upgrades, DOC-004/005/006. Unblocks real marketplace booking (MKT-009).</li>
+      <li><b style="color:var(--text)">M6 · Consults, follow-ups, templates</b> — DOC-009/010/011/012 on the now-real Rx/consult data.</li>
+      <li><b style="color:var(--text)">M7 · Money</b> — billing/payments dependency lands → DOC-013/014 replace their Coming-soon states.</li>
+    </ol>
+  </div>
+
+  <div class="sub">Open questions — resolved by product review</div>
+  <p class="sub-desc">All seven answered. None required an architecture or database change beyond what's already flagged elsewhere in this document (Q1's new <code class="tk">skipped</code> status is the one schema note — called out again above in D6, not new here).</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:40px">#</th><th style="width:230px">Question</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td><b>Q1</b></td><td>Skip/re-queue rule when a called patient doesn't enter.</td><td><span class="pri real">DECIDED</span> Reception controls queue order, not doctors. A doctor may <b>Skip</b> a patient temporarily; skipped patients enter a <code class="tk">skipped</code> state and can be recalled later — never a permanent reorder by the doctor. Implemented in D6's skip affordance and the Day Bar's rail grouping (M1).</td></tr>
+      <tr><td><b>Q2</b></td><td>Slot model semantics.</td><td><span class="pri real">DECIDED</span> Fixed slots for MVP — 10 / 15 / 20 minute options. The <b>organization sets the default</b> per affiliation; the <b>doctor may override within org-allowed limits</b> (a min/max the org configures, not a free-for-all). Confirms this design's standing assumption (M5) and unblocks the Running Behind indicator (D5) and Pause Booking (D5 Quick Actions), both previously gated on this.</td></tr>
+      <tr><td><b>Q3</b></td><td>Multi-affiliation conflicts.</td><td><span class="pri real">DECIDED</span> Auriva never allows overlapping availability across a doctor's clinics. The system detects a conflict at save time in Practice ▸ Schedule and blocks publish until the doctor resolves it — no silent double-booking, no "last save wins." DOC-004's Impact Panel (D10 wireframe) is where this surfaces.</td></tr>
+      <tr><td><b>Q4</b></td><td>Doctor leaves a clinic.</td><td><span class="pri real">DECIDED</span> Historical consultations stay associated with that organization permanently (the record belongs to the visit, not just the doctor). Future bookings are cancelled or reassigned <b>per the organization's policy</b> — Auriva doesn't force one rule; the org configures it (Org-workspace track scope). The doctor's global identity and credentials are unaffected either way. Practice ▸ Locations' "leave clinic" confirm dialog states which outcome applies before the doctor confirms.</td></tr>
+      <tr><td><b>Q5</b></td><td>Fee governance.</td><td><span class="pri real">DECIDED</span> Each practice location stores its own fee, independent of every other affiliation — supports independent practice and multi-org doctors cleanly with one model, no special-casing. Reflected in D7 and D8's Fees sub-section.</td></tr>
+      <tr><td><b>Q6</b></td><td>Unverified doctors/qualifications.</td><td><span class="pri real">DECIDED</span> A doctor can complete onboarding and use their console immediately (D2's pending-banner state is correct, kept) — but their <b>public profile is not discoverable or bookable on the marketplace until verification completes</b>. This resolves the D7 qualifications question the same way: unverified items can be entered, but the profile as a whole doesn't go live until the registration itself is verified — no partial public visibility.</td></tr>
+      <tr><td><b>Q7</b></td><td>Org-invited doctor flow mechanics.</td><td><span class="pri real">DEFERRED, by design</span> — postponed to the Organization Platform phase, as recommended. This document commits only the doctor-side acceptance UX (F1 hospital variant, D2); invite channel and pre-fill scope are that track's decision.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Next after approval</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">Product answers Q1–Q6 → hi-fi screen design proceeds in M-order (M1 needs no answers and can start immediately) → the Org/Hospital workspace track picks up AUTH-006 and the Admin console with this document as its doctor-side contract.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

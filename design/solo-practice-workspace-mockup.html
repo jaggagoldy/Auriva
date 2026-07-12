@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auriva — My Clinic (First Successful Day)</title>
+<style>
+  :root{--bg:#eef2f4;--card:#fff;--fg:#0f172a;--muted:#64748b;--faint:#94a3b8;--border:#e2e8f0;
+    --primary:#0d9488;--soft:#f0fdfa;--ring:#99f6e4;--ok:#16a34a;--oks:#f0fdf4;--warn:#d97706;--warns:#fffbeb;--danger:#dc2626;--dangers:#fef2f2;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--r:12px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5}
+  .app{max-width:1120px;margin:0 auto;min-height:100vh;background:var(--card);display:grid;grid-template-columns:230px 1fr;box-shadow:0 0 40px rgba(15,23,42,.06)}
+  .demo{grid-column:1/-1;background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;padding:8px 20px;font-size:12.5px;display:flex;align-items:center;gap:10px}
+  .demo b{font-weight:700}
+  .demo .grow{flex:1}
+  .demo button{border:1px solid #fcd34d;background:#fff;color:#92400e;border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit}
+  .side{border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+  .brand{display:flex;align-items:center;gap:9px;padding:6px 8px 14px}
+  .lg{width:28px;height:28px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700}
+  .cname{font-weight:700;font-size:13.5px;line-height:1.2}.cname small{display:block;color:var(--faint);font-weight:500;font-size:11px}
+  .navlab{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:12px 8px 4px}
+  .nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--fg);font-weight:500;border:1px solid transparent}
+  .nav:hover{background:var(--bg)}
+  .nav.on{background:var(--soft);color:#0e7490;border-color:var(--ring);font-weight:650}
+  .nav .ic{width:18px;text-align:center}
+  .nav small{display:block;color:var(--faint);font-weight:500;font-size:10.5px}
+  .nav .q{flex:1}
+  .badge{margin-left:auto;background:var(--primary);color:#fff;border-radius:20px;font-size:10.5px;padding:1px 7px;font-weight:700}
+  .main{padding:0;min-height:100%}
+  .top{display:flex;align-items:center;gap:14px;padding:16px 26px;border-bottom:1px solid var(--border)}
+  .top h1{font-size:19px;margin:0;font-weight:680}
+  .top .q{color:var(--muted);font-size:12.5px;margin-top:1px}
+  .top .grow{flex:1}
+  .acc{display:flex;align-items:center;gap:9px;background:var(--oks);border:1px solid #bbf7d0;border-radius:20px;padding:5px 8px 5px 12px;font-size:12.5px;color:#166534;font-weight:600}
+  .acc.off{background:var(--dangers);border-color:#fecaca;color:#991b1b}
+  .sw{width:40px;height:23px;border-radius:20px;background:var(--ok);position:relative;border:0;cursor:pointer;flex:0 0 40px}
+  .sw::after{content:"";position:absolute;top:2px;left:19px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.15s}
+  .sw.off{background:#cbd5e1}.sw.off::after{left:2px}
+  .body{padding:22px 26px}
+  h2{font-size:16px;margin:0 0 3px;font-weight:660}
+  .cap{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px}
+  .btn{border:1px solid var(--border);background:#fff;color:var(--fg);border-radius:9px;padding:9px 15px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:550}
+  .btn:hover{background:var(--bg)}
+  .btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}.btn.pri:hover{background:#0b7d73}
+  .btn.sm{padding:6px 11px;font-size:12.5px}
+  .btn.gh{border-color:transparent;background:transparent;color:var(--muted)}
+  .ready{display:flex;gap:18px;align-items:center;margin-bottom:6px}
+  .ring{width:84px;height:84px;border-radius:50%;flex:0 0 84px;
+    background:conic-gradient(var(--primary) calc(var(--p,60)*1%),var(--border) 0);display:grid;place-items:center}
+  .ring b{background:#fff;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:19px;font-weight:750;color:var(--primary)}
+  .ready h2{font-size:17px}
+  .stopq{background:var(--soft);border:1px solid var(--ring);border-radius:var(--r);padding:14px 16px;margin:14px 0 4px}
+  .stopq .lab{font-size:11px;font-weight:700;color:#0e7490;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+  .stopq .qn{font-size:15px;font-weight:650;margin-bottom:10px}
+  .chk{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer}
+  .chk:last-child{border-bottom:0}
+  .box{width:22px;height:22px;border-radius:6px;border:2px solid #cbd5e1;flex:0 0 22px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:800}
+  .chk.done .box{background:var(--ok);border-color:var(--ok)}
+  .chk.done .t{color:var(--muted);text-decoration:line-through}
+  .chk .t{font-weight:600;flex:1}
+  .chk .t small{display:block;color:var(--faint);font-weight:500;text-decoration:none;font-size:11.5px}
+  .chk .go{color:var(--primary);font-weight:650;font-size:12.5px}
+  .chk.next{background:var(--soft);border-radius:9px;padding-left:10px;padding-right:10px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:0}
+  .av{width:36px;height:36px;border-radius:50%;background:var(--soft);color:#0e7490;display:grid;place-items:center;font-weight:700;flex:0 0 36px}
+  .rmeta{flex:1}.rmeta b{font-weight:650}.rmeta small{display:block;color:var(--muted);font-size:12px}
+  .pill{font-size:11px;font-weight:700;border-radius:20px;padding:3px 9px}
+  .pill.now{background:var(--soft);color:#0e7490}
+  .pill.due{background:var(--warns);color:#92400e}
+  .pill.paid{background:var(--oks);color:#166534}
+  .pill.pend{background:var(--dangers);color:#991b1b}
+  .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px}
+  .stat .c{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px}
+  .stat .n{font-size:22px;font-weight:750}.stat .l{color:var(--muted);font-size:12px}
+  .fld{margin-bottom:13px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  input,select,textarea{width:100%;border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:14px}
+  textarea{min-height:70px;resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:8px 14px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--muted);font-weight:600}
+  .seg button.on{background:var(--primary);color:#fff}
+  .amt{font-size:26px;font-weight:750;margin:2px 0 2px}
+  .divi{height:1px;background:var(--border);margin:16px 0}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(15,23,42,.25);opacity:0;transition:.2s;z-index:9;pointer-events:none}
+  .toast.on{opacity:1}
+  .eod{text-align:center;padding:8px}
+  .eod .big{font-size:40px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="demo">🧪 <b>You're exploring sample data.</b> Book, consult and take payments freely — nothing here is real.
+    <span class="grow"></span><button onclick="alert('→ Launches the 2-minute Quick Setup for your real clinic')">Set up my real clinic →</button></div>
+  <aside class="side">
+    <div class="brand"><div class="lg">A</div><div class="cname">Rao Physiotherapy<small>Dr. Anaya Rao</small></div></div>
+    <div class="nav on" data-v="home" onclick="go('home')"><span class="ic">🏠</span><span class="q">My Clinic<small>Am I ready?</small></span><span class="badge" id="rbadge">60%</span></div>
+
+    <div class="navlab">Run your day</div>
+    <div class="nav" data-v="today" onclick="go('today')"><span class="ic">☀️</span><span class="q">Today<small>What do I do today?</small></span></div>
+    <div class="nav" data-v="calendar" onclick="go('calendar')"><span class="ic">🗓️</span><span class="q">Calendar<small>When am I free?</small></span></div>
+    <div class="nav" data-v="patients" onclick="go('patients')"><span class="ic">👥</span><span class="q">Patients<small>Who are my patients?</small></span></div>
+
+    <div class="navlab">Money</div>
+    <div class="nav" data-v="payments" onclick="go('payments')"><span class="ic">💳</span><span class="q">Payments<small>What have I collected?</small></span></div>
+
+    <div class="navlab">Manage</div>
+    <div class="nav" data-v="settings" onclick="go('settings')"><span class="ic">⚙️</span><span class="q">Settings<small>How do I run my clinic?</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><h1 id="th">My Clinic</h1><div class="q" id="tq">Everything you need to see your first patient.</div></div>
+      <div class="grow"></div>
+      <div class="acc" id="acc">Accepting bookings <button class="sw" id="accSw" onclick="toggleAcc()"></button></div>
+    </div>
+    <div class="body" id="view"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var accepting=true;
+// value-centric checklist — experience value, not configuration
+var steps=[
+  {k:'created', t:'Clinic created', s:'Rao Physiotherapy & Rehab', done:true},
+  {k:'treat',   t:'Add your first treatment', s:'Name + price + how long it takes', done:false},
+  {k:'patient', t:'Book your first patient', s:'Add a real or test booking', done:false},
+  {k:'share',   t:'Share your booking page', s:'WhatsApp, QR or link', done:false},
+  {k:'pay',     t:'Record your first payment', s:'See money land in Payments', done:false},
+  {k:'profile', t:'Complete your profile', s:'Photo, bio, registration no.', done:false}
+];
+function pct(){var d=steps.filter(function(x){return x.done;}).length;return Math.round(d/steps.length*100);}
+function firstOpen(){return steps.find(function(x){return !x.done;});}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._);t._=setTimeout(function(){t.classList.remove('on');},2400);}
+function doStep(k){var s=steps.find(function(x){return x.k===k;});if(!s||s.done)return;s.done=true;toast('✓ '+s.t+' — Clinic Ready is now '+pct()+'%');go(cur);}
+function toggleAcc(){accepting=!accepting;go(cur);}
+function paintAcc(){
+  var acc=document.getElementById('acc'), sw=document.getElementById('accSw');
+  acc.classList.toggle('off',!accepting); sw.classList.toggle('off',!accepting);
+  acc.childNodes[0].nodeValue = accepting? 'Accepting bookings ' : 'Not accepting bookings ';
+}
+
+var cur='home';
+var TITLES={home:['My Clinic','Am I ready to see patients?'],today:['Today','What do I need to do today?'],
+  calendar:['Calendar','When am I available?'],patients:['Patients','Who are my patients?'],
+  payments:['Payments','What have I collected?'],settings:['Settings','How do I run my clinic?'],
+  consult:['Consultation','Meera Iyer · Follow-up session'],payment:['Record payment','Meera Iyer · Follow-up session'],
+  eod:['End of day','How did today go?']};
+
+function go(v){
+  cur=v;
+  document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('on',n.dataset.v===v);});
+  var t=TITLES[v]||TITLES.home;
+  document.getElementById('th').textContent=t[0];
+  document.getElementById('tq').textContent=t[1];
+  document.getElementById('rbadge').textContent=pct()+'%';
+  document.getElementById('view').innerHTML=(VIEWS[v]||VIEWS.home)();
+  paintAcc();
+}
+
+var VIEWS={
+  home:function(){
+    var s=firstOpen();
+    var closedNote = accepting? '' :
+      '<div class="stopq" style="background:var(--warns);border-color:#fde68a"><div class="lab" style="color:#92400e">Heads up</div><div class="qn" style="margin:0">Your clinic isn\'t accepting bookings — patients can\'t book online until you switch it back on. Existing appointments are unaffected.</div></div>';
+    return closedNote+
+    '<div class="card"><div class="ready">'+
+      '<div class="ring" style="--p:'+pct()+'"><b>'+pct()+'%</b></div>'+
+      '<div><h2>Clinic Ready</h2><div class="cap" style="margin:0">You\'re almost there. Finish the steps below and you\'re ready to see patients.</div></div>'+
+    '</div>'+
+    '<div class="stopq"><div class="lab">What\'s stopping me from seeing my first patient?</div>'+
+      '<div class="qn">'+ (s? s.t : 'Nothing — you\'re ready to go! 🎉') +'</div>'+
+      (s? '<button class="btn pri sm" onclick="doStep(\''+s.k+'\')">'+s.t+' →</button>' : '<button class="btn pri sm" onclick="go(\'today\')">Go to Today →</button>')+
+    '</div>'+
+    '<div class="divi"></div>'+
+    '<h2>Get your clinic ready</h2><div class="cap">Each step is a real win, not a settings form.</div>'+
+    steps.map(function(x){var isnext=s&&x.k===s.k;
+      return '<div class="chk '+(x.done?'done':'')+(isnext?' next':'')+'" onclick="doStep(\''+x.k+'\')">'+
+        '<div class="box">'+(x.done?'✓':'')+'</div>'+
+        '<div class="t">'+x.t+'<small>'+x.s+'</small></div>'+
+        (x.done?'':'<span class="go">'+(isnext?'Start →':'Do this')+'</span>')+'</div>';}).join('')+
+    '</div>'+
+    '<div class="card" style="margin-top:16px"><h2>Your booking page is live</h2>'+
+      '<div class="cap">Share it and patients book themselves — no phone tag.</div>'+
+      '<div style="display:flex;gap:10px;align-items:center;background:var(--soft);border:1px solid var(--ring);border-radius:10px;padding:11px 14px">'+
+      '<span style="font-weight:650;color:#0e7490;flex:1;word-break:break-all">🔗 auriva.health/rao-physiotherapy</span>'+
+      '<button class="btn sm" onclick="doStep(\'share\')">Copy</button>'+
+      '<button class="btn sm" onclick="doStep(\'share\')">WhatsApp</button>'+
+      '<button class="btn sm" onclick="doStep(\'share\')">QR</button></div></div>';
+  },
+
+  today:function(){
+    return '<div class="stat">'+
+      '<div class="c"><div class="n">1</div><div class="l">Appointment today</div></div>'+
+      '<div class="c"><div class="n">1</div><div class="l">Follow-up due tomorrow</div></div>'+
+      '<div class="c"><div class="n">₹800</div><div class="l">To collect</div></div></div>'+
+    '<div class="card" style="margin-top:16px"><h2>Your schedule</h2><div class="cap">Tap a patient to start their consultation.</div>'+
+      '<div class="row"><div class="av">MI</div><div class="rmeta"><b>Meera Iyer</b><small>10:30 AM · Follow-up session · 30 min</small></div>'+
+        '<span class="pill now">Up next</span><button class="btn pri sm" onclick="go(\'consult\')" style="margin-left:10px">Start consultation →</button></div>'+
+      '<div class="row"><div class="av" style="background:#f1f5f9;color:var(--faint)">+</div><div class="rmeta"><b>Open slots</b><small>11:00 AM onward · patients can book online</small></div>'+
+        '<button class="btn sm" onclick="doStep(\'patient\')">Add booking</button></div>'+
+    '</div>'+
+    '<div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px">'+
+      '<div style="flex:1"><h2 style="margin:0">Done seeing patients?</h2><div class="cap" style="margin:0">Close out the day and see how it went.</div></div>'+
+      '<button class="btn" onclick="go(\'eod\')">End of day summary →</button></div>';
+  },
+
+  consult:function(){
+    return '<div class="card"><div class="row" style="padding-top:0"><div class="av">MI</div>'+
+      '<div class="rmeta"><b>Meera Iyer</b><small>34 · Female · Follow-up session · Last visit 12 days ago</small></div>'+
+      '<span class="pill now">In consultation</span></div>'+
+    '<div class="divi"></div>'+
+    '<div class="fld"><label>Notes</label><textarea>Reports reduced lower-back stiffness. ROM improving. Continue prescribed mobility routine; progress to resistance band work.</textarea></div>'+
+    '<div class="two"><div class="fld"><label>Treatment given</label><select><option>Follow-up session</option><option>Initial assessment</option></select></div>'+
+    '<div class="fld"><label>Follow-up</label><select><option selected>In 1 week</option><option>In 2 weeks</option><option>No follow-up</option></select></div></div>'+
+    '<div class="fld"><label>Prescription / home plan (optional)</label><textarea style="min-height:52px">Cat-camel x10, bird-dog x10 each side, daily. Band rows x12, alt days.</textarea></div>'+
+    '<div class="divi"></div>'+
+    '<div style="display:flex;align-items:center;gap:10px"><span class="cap" style="margin:0;flex:1">Finishing marks the visit complete and takes you to collect payment.</span>'+
+      '<button class="btn gh" onclick="go(\'today\')">Cancel</button>'+
+      '<button class="btn pri" onclick="go(\'payment\')">Complete &amp; collect payment →</button></div></div>';
+  },
+
+  payment:function(){
+    return '<div class="card"><h2>Collect payment</h2><div class="cap">Meera Iyer · Follow-up session</div>'+
+      '<div class="amt">₹ 800</div><div class="cap" style="margin-bottom:16px">Price comes from the treatment — you can adjust it.</div>'+
+      '<div class="fld"><label>Amount</label><input value="800" /></div>'+
+      '<div class="fld"><label>How did they pay?</label><div class="seg"><button class="on">Cash</button><button>UPI</button><button>Card</button><button>Pay later</button></div></div>'+
+      '<div class="divi"></div>'+
+      '<div style="display:flex;align-items:center;gap:10px"><span class="cap" style="margin:0;flex:1">This <b>records</b> a payment you received — Auriva doesn\'t process the money.</span>'+
+      '<button class="btn gh" onclick="go(\'today\')">Skip</button>'+
+      '<button class="btn pri" onclick="doStep(\'pay\');go(\'payments\')">Record ₹800 received →</button></div></div>';
+  },
+
+  payments:function(){
+    var paid=steps.find(function(x){return x.k==='pay';}).done;
+    return '<div class="stat">'+
+      '<div class="c"><div class="n">₹'+(paid?'800':'0')+'</div><div class="l">Collected today</div></div>'+
+      '<div class="c"><div class="n">₹0</div><div class="l">Pending</div></div>'+
+      '<div class="c"><div class="n">'+(paid?'1':'0')+'</div><div class="l">Payments recorded</div></div></div>'+
+    '<div class="card" style="margin-top:16px"><h2>Today\'s payments</h2>'+
+      (paid?
+       '<div class="row"><div class="av">MI</div><div class="rmeta"><b>Meera Iyer</b><small>Follow-up session · Cash · 10:52 AM</small></div><span class="pill paid">₹800 received</span></div>'
+       :'<div class="cap" style="margin:8px 0">No payments yet. Complete a consultation and record the payment — it\'ll appear here.</div><button class="btn pri sm" onclick="go(\'today\')">Go to Today →</button>')+
+    '</div>';
+  },
+
+  calendar:function(){
+    var d=['Mon','Tue','Wed','Thu','Fri','Sat'];
+    return '<div class="card"><h2>This week</h2><div class="cap">Meera Iyer is booked at 10:30 today. Open slots come from your working hours and treatment lengths.</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px">'+
+      d.map(function(x,i){return '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center">'+
+        '<div style="font-weight:700;font-size:12px">'+x+'</div><div style="color:var(--faint);font-size:11px;margin:3px 0 8px">9–6</div>'+
+        (i===2?'<div class="pill now" style="display:inline-block">10:30 Meera</div>':'<div class="cap" style="margin:0;font-size:11px">Open</div>')+
+        '</div>';}).join('')+'</div>'+
+      '<div class="divi"></div><div class="cap" style="margin:0">'+(accepting?'Patients can book any open slot.':'<b>Bookings are paused</b> — patients can\'t book online right now.')+'</div></div>';
+  },
+
+  patients:function(){
+    return '<div class="card"><h2>Patients</h2><div class="cap">Everyone you\'ve seen or who\'s booked with you.</div>'+
+      '<div class="row"><div class="av">MI</div><div class="rmeta"><b>Meera Iyer</b><small>34 · +91 98••• ••210 · 3 visits</small></div><span class="pill due">Follow-up tomorrow</span></div>'+
+      '<div class="row"><div class="av">RK</div><div class="rmeta"><b>Ravi Kumar</b><small>41 · +91 99••• ••887 · 1 visit</small></div><span class="pill paid">Completed</span></div>'+
+      '<div class="row"><div class="av" style="background:#f1f5f9;color:var(--faint)">+</div><div class="rmeta"><b>Add a patient</b><small>Or let them book themselves via your page</small></div><button class="btn sm" onclick="doStep(\'patient\')">Add</button></div>'+
+    '</div>';
+  },
+
+  settings:function(){
+    var t=steps.find(function(x){return x.k==='treat';}).done;
+    var p=steps.find(function(x){return x.k==='profile';}).done;
+    return '<div class="card"><h2>Treatments &amp; Services</h2><div class="cap">Your core business object — a name, a price, and how long it takes. Drives your booking slots and payment amounts.</div>'+
+      (t? '<div class="row"><div class="rmeta"><b>Initial assessment</b><small>45 min</small></div><span class="pill paid">₹1,200</span></div>'+
+          '<div class="row"><div class="rmeta"><b>Follow-up session</b><small>30 min</small></div><span class="pill paid">₹800</span></div>'
+        : '<div class="cap" style="margin:8px 0">No treatments yet. Add your first — it takes 15 seconds.</div>')+
+      '<button class="btn '+(t?'':'pri ')+'sm" onclick="doStep(\'treat\')" style="margin-top:8px">'+(t?'Add another':'Add first treatment')+'</button></div>'+
+    '<div class="card" style="margin-top:16px"><h2>Your profile</h2><div class="cap">Photo, short bio and registration number — builds patient trust on your booking page.</div>'+
+      '<div class="two"><div class="fld"><label>Profile photo</label><input placeholder="Upload image (JPG/PNG)"/></div>'+
+      '<div class="fld"><label>Registration no.</label><input placeholder="e.g. KA-PT-10482"/></div></div>'+
+      '<div class="fld"><label>Short bio</label><textarea style="min-height:48px" placeholder="e.g. Physiotherapist with 12 years in sports & post-op rehab."></textarea></div>'+
+      '<button class="btn '+(p?'':'pri ')+'sm" onclick="doStep(\'profile\')">'+(p?'Profile complete ✓':'Save profile')+'</button>'+
+      '<div class="cap" style="margin:10px 0 0">Images only — profile picture, clinic logo, clinic photos. No documents or PDFs.</div></div>'+
+    '<div class="card" style="margin-top:16px"><h2>Clinic status</h2><div class="cap">Pause online bookings without changing your hours — e.g. you\'re at the clinic but fully booked, or away for the day.</div>'+
+      '<div style="display:flex;align-items:center;gap:12px"><div class="acc'+(accepting?'':' off')+'" style="cursor:default">'+(accepting?'Accepting bookings':'Not accepting bookings')+' <button class="sw'+(accepting?'':' off')+'" onclick="toggleAcc()"></button></div></div></div>';
+  },
+
+  eod:function(){
+    var paid=steps.find(function(x){return x.k==='pay';}).done;
+    return '<div class="card eod"><div class="big">🌙</div><h2 style="justify-content:center">That\'s a wrap on today</h2>'+
+      '<div class="cap">Here\'s how your day went.</div></div>'+
+    '<div class="stat" style="margin-top:16px">'+
+      '<div class="c"><div class="n">1</div><div class="l">Patient seen</div></div>'+
+      '<div class="c"><div class="n">₹'+(paid?'800':'0')+'</div><div class="l">Collected</div></div>'+
+      '<div class="c"><div class="n">1</div><div class="l">Follow-up scheduled</div></div></div>'+
+    '<div class="card" style="margin-top:16px"><h2>Tomorrow at a glance</h2>'+
+      '<div class="row"><div class="av">MI</div><div class="rmeta"><b>Meera Iyer — follow-up</b><small>Due tomorrow · you set this during her consult</small></div><span class="pill due">Tomorrow</span></div>'+
+      '<div class="cap" style="margin:10px 0 0">'+(accepting?'Your booking page is open overnight — patients can keep booking.':'Bookings are paused — turn "Accepting bookings" back on when you\'re ready.')+'</div></div>'+
+    '<div style="display:flex;justify-content:center;margin-top:16px"><button class="btn pri" onclick="go(\'home\')">Back to My Clinic</button></div>';
+  }
+};
+go('home');
+</script>
+</body>
+</html>

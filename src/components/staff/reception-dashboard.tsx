@@ -10,6 +10,7 @@ import GlobalSearch from "@/components/staff/global-search";
 import SummaryCards from "@/components/staff/summary-cards";
 import DoctorAvailabilityPanel, { DoctorLoad } from "@/components/staff/doctor-availability-panel";
 import WalkInModal from "@/components/staff/walkin-modal";
+import BookAppointmentDialog from "@/components/staff/book-appointment-dialog";
 import { DoctorOption } from "@/components/staff/doctor-filter";
 
 interface DashboardSummary {
@@ -106,6 +107,7 @@ export default function ReceptionDashboard() {
                 placeholder="Search patients by name or phone… (press Enter)"
               />
             </form>
+            <BookAppointmentDialog clinicId={summary.clinic_id} doctors={doctorOptions} onBooked={load} />
             <WalkInModal clinicId={summary.clinic_id} doctors={doctorOptions} onRegistered={load} />
           </div>
 

@@ -8,7 +8,7 @@ import { ARCHETYPES } from '@/components/marketing/content';
 
 export const metadata: Metadata = {
   title: 'Industries',
-  description: 'Six healthcare organization archetypes, one platform underneath each of them.',
+  description: 'Every kind of healthcare practice, on one platform that grows with them.',
 };
 
 export default function IndustriesPage() {
@@ -17,7 +17,7 @@ export default function IndustriesPage() {
       <PageHero
         eyebrow="Industries"
         title="Built for every kind of healthcare organization"
-        description="Six archetypes, sharing the same modules and the same operational primitives — not six different products."
+        description="From a solo clinic to a hospital network — the same platform, unlocking more as you grow. Not different products, one that grows with you."
       />
 
       <Container className="py-16">

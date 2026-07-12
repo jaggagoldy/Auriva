@@ -5,28 +5,47 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import BookAppointmentDialog from "@/components/patient/book-appointment-dialog";
 import {
-  Calendar,
   Clock,
   Stethoscope,
   FileText,
   FlaskConical,
   Pill,
-  Droplet,
   CalendarX2,
   AlertCircle,
+  MapPin,
+  CalendarClock,
+  FlaskConical as LabIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePatientSession } from "@/components/patient/patient-session";
+import BookAppointmentDialog from "@/components/patient/book-appointment-dialog";
 import { Appointment, Doctor, formatDay, formatTime, getInitials } from "@/shared/queue";
 
 const ACTIVE_STATUSES = ["scheduled", "checked_in", "waiting", "doctor_ready", "in_consultation"];
+
+interface LabOrderRow {
+  id: string;
+  status: "ordered" | "resulted" | "cancelled";
+  tests_json: string;
+  ordered_at: string;
+  resulted_at: string | null;
+}
+
+function parseTestNames(json: string): string {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.map((t) => t.name).join(", ") : "";
+  } catch {
+    return "";
+  }
+}
 
 export default function PatientHomePage() {
   const { patientProfile } = usePatientSession();
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
   const [doctors, setDoctors] = React.useState<Doctor[]>([]);
+  const [labOrders, setLabOrders] = React.useState<LabOrderRow[] | null>(null);
 
   const fetchAppointments = React.useCallback(async () => {
     try {
@@ -44,13 +63,38 @@ export default function PatientHomePage() {
       .then((res) => res.json())
       .then(setDoctors)
       .catch(() => setDoctors([]));
-  }, [fetchAppointments]);
+    fetch(`/api/patients/${patientProfile.id}/lab-orders`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setLabOrders)
+      .catch(() => setLabOrders([]));
+  }, [fetchAppointments, patientProfile.id]);
 
   const upcoming = (appointments ?? [])
     .filter((a) => ACTIVE_STATUSES.includes(a.status))
     .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
   const next = upcoming[0] ?? null;
-  const activeCount = upcoming.length;
+
+  // Real data already carried on each Appointment (Prescription.follow_up_date,
+  // projected onto the appointment payload) — the nearest one still ahead of
+  // now, not a separate tracked entity.
+  const nextFollowUp = (appointments ?? [])
+    .filter((a) => a.follow_up_date && new Date(a.follow_up_date).getTime() > Date.now())
+    .sort((a, b) => new Date(a.follow_up_date!).getTime() - new Date(b.follow_up_date!).getTime())[0] ?? null;
+
+  const recentLabOrder = (labOrders ?? [])
+    .slice()
+    .sort((a, b) => new Date(b.ordered_at).getTime() - new Date(a.ordered_at).getTime())[0] ?? null;
+
+  const rescheduleDoctor: Doctor | null = next
+    ? {
+        id: next.doctor.id,
+        full_name: next.doctor.full_name,
+        specialty: next.doctor.specialty,
+        clinic_id: next.doctor.clinic_id,
+        clinic: next.clinic,
+        user: { id: next.doctor.user_id, email: null, phone_number: "" },
+      }
+    : null;
 
   const firstName = patientProfile.full_name.split(" ")[0];
   const hour = new Date().getHours();
@@ -74,17 +118,17 @@ export default function PatientHomePage() {
         {appointments === null ? (
           <div className="h-40 animate-pulse rounded-xl bg-muted/60" />
         ) : next ? (
-          <Card className="overflow-hidden rounded-xl border-none bg-gradient-to-br from-primary to-teal-800 p-0 text-primary-foreground shadow-md">
+          <Card className="overflow-hidden rounded-xl border-none bg-gradient-to-br from-primary to-[#083F37] p-0 text-primary-foreground shadow-md">
             <CardContent className="p-5.5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold tracking-wider text-teal-200 uppercase">
+                  <p className="text-[11px] font-semibold tracking-wider text-white/70 uppercase">
                     Next appointment
                   </p>
                   <p className="mt-1.5 text-lg font-semibold">
                     {next.doctor.full_name} · {formatDay(next.scheduled_time)}, {formatTime(next.scheduled_time)}
                   </p>
-                  <p className="mt-0.5 text-[13px] text-teal-100">
+                  <p className="mt-0.5 text-[13px] text-white/80">
                     {next.clinic.name} · {next.doctor.specialty || "General Practitioner"}
                   </p>
                 </div>
@@ -97,11 +141,29 @@ export default function PatientHomePage() {
               <div className="mt-4 flex gap-2">
                 <Button
                   nativeButton={false}
-                  render={<Link href="/patient/care" />}
-                  className="flex-1 bg-white text-teal-900 hover:bg-teal-50"
+                  render={
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(next.clinic.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                  className="flex-1 bg-white text-primary hover:bg-accent"
                 >
-                  View details
+                  <MapPin className="size-3.5" />
+                  Get directions
                 </Button>
+                <BookAppointmentDialog
+                  patientId={patientProfile.id}
+                  onBooked={fetchAppointments}
+                  initialDoctor={rescheduleDoctor}
+                  rescheduleAppointmentId={next.id}
+                  trigger={
+                    <Button className="flex-1 bg-white/15 text-white hover:bg-white/25">
+                      Reschedule
+                    </Button>
+                  }
+                />
               </div>
             </CardContent>
           </Card>
@@ -117,23 +179,20 @@ export default function PatientHomePage() {
 
         {/* Quick actions — one primary action promoted, everything else recedes */}
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          <BookAppointmentDialog
-            patientId={patientProfile.id}
-            onBooked={fetchAppointments}
-            trigger={
-              <button className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-left transition-colors hover:border-primary/50">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Stethoscope className="size-4.5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-primary">Find a doctor</p>
-                  <p className="text-[11px] text-primary/80">
-                    {doctors.length > 0 ? `${doctors.length} available near you` : "Search doctors & clinics"}
-                  </p>
-                </div>
-              </button>
-            }
-          />
+          <Link
+            href="/patient/find-care"
+            className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-left transition-colors hover:border-primary/50"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Stethoscope className="size-4.5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-primary">Find a doctor</p>
+              <p className="text-[11px] text-primary/80">
+                {doctors.length > 0 ? `${doctors.length} available near you` : "Search doctors & clinics"}
+              </p>
+            </div>
+          </Link>
           <Link
             href="/patient/records"
             className="flex items-center gap-3 rounded-xl border bg-card p-3.5 shadow-xs transition-colors hover:border-primary/40"
@@ -155,10 +214,49 @@ export default function PatientHomePage() {
 
       {/* Right rail */}
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile icon={Droplet} label="Blood Group" value={patientProfile.blood_group} tone="text-red-600" />
-          <StatTile icon={Calendar} label="Appointments" value={`${activeCount} Active`} tone="text-foreground" />
-        </div>
+        {nextFollowUp && (
+          <Card className="rounded-xl">
+            <CardContent>
+              <p className="mb-2 text-[13px] font-semibold">Follow-up due</p>
+              <div className="flex items-center gap-2.5">
+                <Avatar className="size-8 shrink-0">
+                  <AvatarFallback className="text-[10.5px] font-semibold">
+                    {getInitials(nextFollowUp.doctor.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-[12.5px] font-medium">{nextFollowUp.doctor.full_name}</p>
+                  <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <CalendarClock className="size-3" />
+                    Due {formatDay(nextFollowUp.follow_up_date!)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {recentLabOrder && (
+          <Card className="rounded-xl">
+            <CardContent>
+              <p className="mb-2 text-[13px] font-semibold">Recent lab report</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <LabIcon className="size-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[12.5px] font-medium">{parseTestNames(recentLabOrder.tests_json) || "Lab test"}</p>
+                    <p className="text-[11px] text-muted-foreground">{formatDay(recentLabOrder.ordered_at)}</p>
+                  </div>
+                </div>
+                <Link href="/patient/records" className="shrink-0 text-[11.5px] font-medium text-primary hover:underline">
+                  View
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Needs your attention — only when something is actually missing */}
         {missingEmergencyContact && (
@@ -227,30 +325,6 @@ export default function PatientHomePage() {
         </Card>
       </div>
     </main>
-  );
-}
-
-function StatTile({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  tone: string;
-}) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-xl border bg-card p-3 shadow-xs">
-      <div className="rounded-lg border bg-muted/50 p-1.5">
-        <Icon className={`size-4 ${tone}`} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
-        <p className="truncate text-[13px] font-semibold">{value}</p>
-      </div>
-    </div>
   );
 }
 

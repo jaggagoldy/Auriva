@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-012 — Auriva Business Architecture Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-400:#2DD4BF;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --info:#0284C7;--info-bg:#F0F9FF;--info-border:#BAE6FD;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:600;width:20px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1060px;margin:0 auto;padding-top:72px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:30px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:15px;color:var(--text-secondary);max-width:720px;margin-bottom:36px}
+.sub{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:40px 0 6px}
+.sub-desc{font-size:13px;color:var(--text-secondary);margin-bottom:18px;max-width:700px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:26px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:22px 0 10px}
+.label:first-child{margin-top:0}
+.cover{min-height:420px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:80px 0 56px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:28px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:16px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:16px;color:var(--text-secondary);max-width:640px;margin-bottom:28px}
+.cover-meta{display:flex;gap:32px;font-size:12px;color:var(--text-muted)}
+.cover-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+.ws-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ws-badge{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.ws-head h3{font-size:17px;letter-spacing:-.01em}
+.ws-head span{font-size:12px;color:var(--text-muted);display:block;font-weight:400}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+.chip.teal{background:var(--teal-50);border-color:var(--teal-200);color:var(--teal-800)}
+.chip.slate{background:var(--slate-50);border-color:var(--slate-200);color:var(--slate-600)}
+.glance{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.glance .g{background:var(--slate-50);border:1px solid var(--border);border-radius:var(--r-md);padding:8px 12px;font-size:12px;color:var(--text-secondary)}
+.glance .g b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);font-weight:600;margin-bottom:1px}
+.journey{counter-reset:jstep;display:flex;flex-direction:column;gap:0}
+.jstep{display:flex;gap:14px;padding:10px 0;border-bottom:1px dashed var(--slate-200)}
+.jstep:last-child{border-bottom:none}
+.jstep::before{counter-increment:jstep;content:counter(jstep);width:24px;height:24px;border-radius:50%;background:var(--teal-50);border:1px solid var(--teal-200);color:var(--teal-800);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.jstep b{color:var(--text);font-weight:600;font-size:13px}
+.jstep p{font-size:12.5px;color:var(--text-secondary)}
+.jstep .fric{display:inline-block;font-size:11px;color:var(--danger);font-weight:600;margin-left:6px}
+ul.pain{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pain li{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--r-md);padding:9px 13px;font-size:12.5px;color:var(--slate-700)}
+ul.pain li b{color:var(--danger);font-weight:600}
+ul.opp{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.opp li{background:var(--teal-50);border:1px solid var(--teal-200);border-radius:var(--r-md);padding:9px 13px;font-size:12.5px;color:var(--slate-700)}
+ul.opp li b{color:var(--teal-800);font-weight:600}
+ul.trend{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.trend li{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r-md);padding:9px 13px;font-size:12.5px;color:var(--slate-700)}
+ul.trend li b{color:var(--blue);font-weight:600}
+.challenge{background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--r-lg);padding:18px 20px;margin-top:20px}
+.challenge .ch-k{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warning);margin-bottom:6px}
+.challenge p{font-size:13px;color:var(--slate-700)}
+.challenge p+p{margin-top:8px}
+.notecard{background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--r-lg);padding:16px 18px;font-size:13px;color:var(--slate-700)}
+.notecard b{color:var(--info)}
+.prin{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.prin-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-xs)}
+.prin-num{font-size:12px;font-weight:700;color:var(--teal-600);margin-bottom:8px}
+.prin-card h3{font-size:14.5px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.prin-card p{font-size:12.5px;color:var(--text-secondary)}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo"><div class="doc-logo-mark">A</div><div><b>Auriva</b><span>APS-012 · Business Architecture</span></div></div>
+  <a href="#cover"><span class="num">00</span>Cover</a>
+  <a href="#context"><span class="num">01</span>Market &amp; Method</a>
+  <a href="#clinic"><span class="num">02</span>Independent Clinic</a>
+  <a href="#multi"><span class="num">03</span>Multi-specialty Clinic</a>
+  <a href="#hospital"><span class="num">04</span>Hospital</a>
+  <a href="#diagnostic"><span class="num">05</span>Diagnostic Center</a>
+  <a href="#pharmacy"><span class="num">06</span>Pharmacy Chain</a>
+  <a href="#daycare"><span class="num">07</span>Day Care Center</a>
+  <a href="#synthesis"><span class="num">08</span>Cross-org Synthesis</a>
+  <a href="#handoff"><span class="num">09</span>Handoff → Session 2</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- ============ COVER ============ -->
+<section class="doc-section cover" id="cover">
+  <div class="cover-badge"><span class="dot"></span>Phase 1 · Session 1 — Business Architecture · Not a UI task</div>
+  <h1>Auriva <em>Business Blueprint</em><br>How Indian healthcare organizations actually run</h1>
+  <p>A business-consultant's model of the six organization types Auriva will serve: their economics, daily rhythm, people, patient journeys, workflows, pain, software reality, and where technology genuinely should intervene. No screens, no schema, no features — this document exists so that Sessions 2–5 build on how healthcare <b>operates</b>, not on how software vendors imagine it.</p>
+  <div class="cover-meta">
+    <div><b>Document</b>APS-012 · Business Architecture Blueprint</div>
+    <div><b>Date</b>03 Jul 2026</div>
+    <div><b>Feeds</b>Session 2 — Domain Architecture</div>
+    <div><b>Status</b>For review</div>
+  </div>
+</section>
+
+<!-- ============ 01 CONTEXT ============ -->
+<section class="doc-section" id="context">
+  <div class="sec-kicker">01 · Market &amp; Method</div>
+  <h2 class="sec-title">The ground Auriva stands on</h2>
+  <p class="sec-desc">Six archetypes are modeled as they operate in India today — composites of tier-1 metro, tier-2 city and semi-urban reality. Where numbers vary by geography they are given as ranges. Nothing here proposes software; every claim is about the business.</p>
+
+  <div class="panel">
+    <div class="label">Structural facts that shape every org in this document</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:220px">Fact</th><th>Business consequence</th></tr>
+      <tr><td><b>Private sector delivers most care</b> — roughly 70% of outpatient and ~60% of inpatient episodes</td><td>Auriva's customers are mostly private, revenue-anxious, owner-operated businesses — not budget-funded institutions. Software must pay for itself in visible money or time.</td></tr>
+      <tr><td><b>Out-of-pocket still ~45–50% of spend</b>, but falling as PM-JAY (~55 crore covered) and retail insurance grow</td><td>Cash-price sensitivity coexists with rising payer paperwork. Every org now runs two parallel money machines: cash counters and claims desks.</td></tr>
+      <tr><td><b>Extreme fragmentation</b> — the median provider is a 1-doctor clinic or a &lt;30-bed nursing home, not a corporate hospital</td><td>The platform must be viable at 1 doctor + 1 receptionist, yet coherent at 300 beds. One-size enterprise HIMS has repeatedly failed this market.</td></tr>
+      <tr><td><b>Clinical staff scarcity</b> — chronic nursing and specialist shortages, heavy attrition to Gulf/UK, pathologist &amp; radiologist scarcity outside metros</td><td>Workflows are built around scarce people's time (visiting consultants, sessional anesthetists, part-time pathologists), not around departments.</td></tr>
+      <tr><td><b>ABDM rails are real now</b> — ~90 crore ABHA accounts (2026), facility &amp; professional registries, consent-managed record exchange; <b>NHCX live since 2025</b> for standardized claims</td><td>For the first time, longitudinal records and standardized claims are national infrastructure, not vendor lock-in. Orgs that plug in early gain payer and patient advantages.</td></tr>
+      <tr><td><b>Regulatory patchwork</b> — Clinical Establishments Act (state-by-state), NABH/NABL (voluntary but payer-linked), DPDP Act, Telemedicine Guidelines 2020, Schedule H/H1/X, PC-PNDT, AERB, Bio-Medical Waste Rules</td><td>Compliance is a standing operational workload — registers, audits, sign-offs — mostly done on paper today, and a real fear for owners.</td></tr>
+    </table></div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">Method</div>
+    <p style="font-size:13px;color:var(--text-secondary)">Each of the following six sections models one organization archetype across the nine mandated lenses: <b>1</b> Business model · <b>2</b> Daily operations · <b>3</b> Staff structure · <b>4</b> Patient journey · <b>5</b> Internal workflows · <b>6</b> Pain points · <b>7</b> Software used today · <b>8</b> Biggest opportunities · <b>9</b> Future trends — closing with a <b>Challenge</b> block that questions a workflow the industry treats as normal. Section 08 then extracts the shared operational genome across all six; Section 09 hands that to Session 2 (Domain Architecture).</p>
+  </div>
+</section>
+
+<!-- ============ 02 INDEPENDENT CLINIC ============ -->
+<section class="doc-section" id="clinic">
+  <div class="sec-kicker">02 · Organization Archetype</div>
+  <h2 class="sec-title">Independent Clinic</h2>
+  <p class="sec-desc">The single-doctor (or husband-wife duo) OPD clinic — the most common healthcare business in India by an enormous margin, and the front door for most episodes of care. General practice, pediatrics, gynecology, dermatology, dental.</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>Consultation fees, ₹200–1,500/visit</div>
+    <div class="g"><b>Capacity unit</b>Doctor-hours — the hard ceiling</div>
+    <div class="g"><b>Typical scale</b>1–2 doctors · 1–3 staff · 30–80 visits/day</div>
+    <div class="g"><b>Cost driver</b>Rent + staff; contribution margin 60–80%</div>
+    <div class="g"><b>Payer mix</b>Cash/UPI dominant; some corporate panels</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:190px">Revenue line</th><th>How it works</th><th style="width:260px">Margin reality</th></tr>
+      <tr><td><b>Consultations</b></td><td>Fee-for-service per visit; most clinics honor an informal free re-visit window (5–7 days) for the same complaint</td><td>Core revenue; capped by doctor hours × consult speed (5–10 min average)</td></tr>
+      <tr><td><b>Procedures</b></td><td>Dressings, injections, nebulization, minor derm/dental procedures</td><td>High margin, low volume; often under-priced out of habit</td></tr>
+      <tr><td><b>In-house dispensing</b></td><td>GP clinics in smaller towns dispense medicines directly ("doctor sahab's medicine")</td><td>Meaningful margin but informal inventory; regulatory grey when no pharmacist</td></tr>
+      <tr><td><b>Panels &amp; camps</b></td><td>Corporate/TPA empanelment at discounted rates; school &amp; society health camps as acquisition</td><td>Low rate, slow payment, but fills off-peak hours and feeds new families</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">The economic truth: the doctor <b>is</b> the product, the capacity, and the brand. Revenue grows only via fee increases, faster consults (quality risk), or added hours (burnout). Everything the business does exists to protect and fill doctor-hours.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>08:30–09:30</b></td><td>Receptionist opens, wipes down, starts the token register; early walk-ins take tokens; doctor often still on hospital rounds elsewhere</td></tr>
+      <tr><td><b>09:30–13:30</b></td><td>Morning OPD session. Walk-in dominant; phone keeps ringing for "kitna time lagega?"; queue managed from a paper register or WhatsApp; wait 30–120 min</td></tr>
+      <tr><td><b>13:30–17:00</b></td><td>Closed or skeletal. Doctor does hospital visits, procedures, or rest. Receptionist reconciles cash, chases the day's panel paperwork</td></tr>
+      <tr><td><b>17:00–21:00</b></td><td>Evening session — the real peak (working patients). Same queue chaos, compressed further</td></tr>
+      <tr><td><b>21:00+</b></td><td>Cash + UPI totals tallied against the register by hand; stock of dispensed items eyeballed; no structured close-of-day exists</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Role</th><th>Reality</th></tr>
+        <tr><td><b>Doctor-owner</b></td><td>Clinician + CEO + CFO + HR; makes every non-trivial decision</td></tr>
+        <tr><td><b>Receptionist / compounder</b></td><td>Queue, billing, phones, stock, panel paperwork — one person, all of it. Single point of failure</td></tr>
+        <tr><td><b>Nurse / attendant</b></td><td>Present in procedure-heavy clinics; often doubles as housekeeping</td></tr>
+        <tr><td><b>Part-time accountant</b></td><td>Monthly visit for GST/ITR; sees totals, never operations</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows (as they run today)</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism</th></tr>
+        <tr><td><b>Queue &amp; tokens</b></td><td>Paper register / plastic tokens / WhatsApp messages</td></tr>
+        <tr><td><b>Clinical record</b></td><td>Paper case sheet or the patient's own carried file; often nothing</td></tr>
+        <tr><td><b>Billing</b></td><td>Cash + UPI; receipt book if asked; end-of-day manual tally</td></tr>
+        <tr><td><b>Referrals out</b></td><td>Doctor's personal network, scribbled note, zero follow-through visibility</td></tr>
+        <tr><td><b>Follow-up recall</b></td><td>"Aana 5 din baad" — entirely the patient's memory</td></tr>
+        <tr><td><b>Panel claims</b></td><td>Photocopies + Excel + email to TPA; payment chased for months</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Discovery</b><p>Word-of-mouth first; Google Maps reviews and Practo/Justdial increasingly decisive for new families</p></div></div>
+      <div class="jstep"><div><b>Access</b><span class="fric">friction</span><p>Walk in and take a token, or phone the receptionist. No reliable time estimate exists; patients budget half a day</p></div></div>
+      <div class="jstep"><div><b>The wait</b><span class="fric">friction</span><p>30–120 minutes in a crowded room. The wait is the #1 stated reason patients switch doctors — ahead of fees or outcomes</p></div></div>
+      <div class="jstep"><div><b>Consultation</b><p>5–10 minutes. History from memory (no prior record), exam, handwritten Rx. Instructions verbal, half-forgotten by the parking lot</p></div></div>
+      <div class="jstep"><div><b>Fulfillment</b><p>Pharmacy next door (or in-clinic dispensing); lab across the road if tests written. The clinic learns nothing about whether either happened</p></div></div>
+      <div class="jstep"><div><b>Follow-up</b><span class="fric">leakage</span><p>Return only if symptoms persist or memory serves. Chronic patients silently lapse; the clinic has no way to notice</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>Queue chaos:</b> unpredictable arrival + no time transparency = angry rooms, receptionist abuse, doctor pressure to rush</li>
+        <li><b>No longitudinal record:</b> every visit restarts from memory; chronic care quality is capped by recall</li>
+        <li><b>Follow-up leakage:</b> the largest silent revenue and outcome loss in the business — nobody measures it</li>
+        <li><b>Doctor dependency:</b> illness or travel = zero revenue; no locum mechanism exists</li>
+        <li><b>Reception SPOF:</b> one resignation and the clinic forgets its own operations</li>
+        <li><b>Panel receivables:</b> months-late TPA payments, tracked in a notebook</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>Practice mgmt</b></td><td>Practo Ray, Eka Care, HealthPlix, DocOn, Bajaj Finserv Health — usually only the appointment + Rx-print slices</td></tr>
+        <tr><td><b>Communication</b></td><td>WhatsApp — the true operating system: bookings, reports, reminders, payments</td></tr>
+        <tr><td><b>Payments</b></td><td>UPI QR on the desk; PhonePe/Paytm statements as the de-facto ledger</td></tr>
+        <tr><td><b>EMR</b></td><td>Rare in earnest. Typing during a 6-minute consult is unrealistic, so adoption collapses after the trial month</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>Time transparency:</b> live queue position + honest ETA converts the #1 pain into the #1 loyalty lever</li>
+        <li><b>Zero-typing records:</b> capture built for a 6-minute consult (voice, templates, assistant-entered) — the only EMR that can survive here</li>
+        <li><b>Recall engine:</b> systematic follow-up and chronic-care reminders recover the silent leakage — measurable, attributable revenue</li>
+        <li><b>ABHA-linked history:</b> a clinic that can pull a patient's prior records becomes clinically better overnight — a differentiator small clinics could never build alone</li>
+        <li><b>Panel automation:</b> claim paperwork and receivable tracking done by software, not the receptionist's evenings</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>Free-EMR land grab:</b> HealthPlix/Eka giving software away to own the Rx data layer — clinics are being platformed whether they notice or not</li>
+        <li><b>ABDM incentives:</b> digitization incentives + registry presence starting to matter for empanelment</li>
+        <li><b>Patient expectation shift:</b> post-COVID normalization of online booking &amp; teleconsult; younger families simply won't queue blind</li>
+        <li><b>Doctor as creator:</b> Instagram/YouTube personal brands driving direct acquisition, bypassing aggregators</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>The waiting room is not a feature of care — it is unpriced inventory buffering the doctor's utilization.</b> The entire walk-in model exists because the clinic cannot predict consult durations or arrivals, so it makes patients absorb the variance with their time. Technology should not "digitize the token" — it should collapse the buffer: predicted per-token times, arrive-when-called, and honest overrun communication.</p>
+    <p><b>The free re-visit window is an untracked business rule.</b> Every clinic runs one; none can say what it costs or earns. It should be an explicit, measured policy — it is the clinic's only retention product.</p>
+  </div>
+</section>
+
+<!-- ============ 03 MULTI-SPECIALTY CLINIC ============ -->
+<section class="doc-section" id="multi">
+  <div class="sec-kicker">03 · Organization Archetype</div>
+  <h2 class="sec-title">Multi-specialty Clinic / Polyclinic</h2>
+  <p class="sec-desc">Several specialties under one roof, usually with an in-house lab, basic imaging and a pharmacy counter. The step between the solo clinic and the hospital — and the archetype where internal cross-referral becomes the business.</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>Consult fees + in-house lab &amp; pharmacy margin</div>
+    <div class="g"><b>Capacity unit</b>Consultant slots × room availability</div>
+    <div class="g"><b>Typical scale</b>5–25 consultants (mostly visiting) · 10–40 staff · 100–400 visits/day</div>
+    <div class="g"><b>Cost driver</b>Consultant fee-share + facility + staff</div>
+    <div class="g"><b>Payer mix</b>Cash + corporate panels + OPD insurance emerging</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:200px">Revenue line</th><th>How it works</th><th style="width:270px">Margin reality</th></tr>
+      <tr><td><b>Consultations</b></td><td>Visiting consultants on 60–80% fee share; a few salaried juniors for continuity</td><td>Thin for the center — consults are the <b>feeder</b>, not the profit</td></tr>
+      <tr><td><b>In-house diagnostics</b></td><td>Lab + X-ray/USG capture tests written in-house; same-day loop back to the doctor</td><td>The margin engine — 40–60% contribution when volumes hold</td></tr>
+      <tr><td><b>Pharmacy counter</b></td><td>Fills in-house prescriptions before the patient reaches the exit</td><td>Second margin engine; capture rate is the metric nobody measures</td></tr>
+      <tr><td><b>Procedures / minor OT</b></td><td>Daycare-adjacent minor procedures, dressings, endoscopy in larger setups</td><td>Good margin, scheduling-sensitive</td></tr>
+      <tr><td><b>Panels &amp; corporates</b></td><td>Company empanelments, pre-employment checkups, OPD insurance tie-ins</td><td>Volume at discount; paperwork-heavy, slow receivables</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">The real business: <b>buy footfall with consults, monetize it with diagnostics and pharmacy.</b> Success is measured (or should be) by internal capture rate — what fraction of prescribed tests and medicines stay in the building.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>07:00–10:00</b></td><td>Lab opens first — fasting samples. Front desk juggles sample patients and early OPD registrations at the same counter</td></tr>
+      <tr><td><b>09:00–14:00</b></td><td>Morning OPD across chambers. Visiting consultants arrive when their hospital rounds allow — published times are aspirational. Reception re-shuffles queues live</td></tr>
+      <tr><td><b>14:00–17:00</b></td><td>Lull: reports processing, panel paperwork, pharmacy stock work, minor procedures</td></tr>
+      <tr><td><b>17:00–21:30</b></td><td>Evening peak: most visiting consultants' clinic hours; waiting area overflows; pharmacy and billing queues compound the consult wait</td></tr>
+      <tr><td><b>21:30+</b></td><td>Cash close per counter (consult / lab / pharmacy separately), then a manual merge; consultant-share ledger updated in Excel</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Role</th><th>Reality</th></tr>
+        <tr><td><b>Owner(s)</b></td><td>Often 2–4 doctor-partners; one becomes de-facto operations head</td></tr>
+        <tr><td><b>Center manager</b></td><td>Runs staff, vendors, panels, complaints; the institutional memory</td></tr>
+        <tr><td><b>Visiting consultants</b></td><td>Not employees — courted, scheduled around, never commanded. Scheduling is politics</td></tr>
+        <tr><td><b>Front office (2–6)</b></td><td>Registration, queue, billing, phones; discount authority informally held here</td></tr>
+        <tr><td><b>Nurses &amp; technicians</b></td><td>OPD assist, sample draw, X-ray/USG tech, minor OT</td></tr>
+        <tr><td><b>Pharmacist + counter staff</b></td><td>Registered pharmacist mandatory; counter staff do the actual selling</td></tr>
+        <tr><td><b>Panel / marketing exec</b></td><td>Chases corporate tie-ups and TPA payments; keeps referring-doctor relationships warm</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism · breaks when</th></tr>
+        <tr><td><b>Consultant scheduling</b></td><td>WhatsApp with each consultant; breaks the moment a hospital emergency delays one — cascade of 30 rebooked patients</td></tr>
+        <tr><td><b>Fee-share payouts</b></td><td>Monthly Excel from billing exports; disputes every single month ("my patient count is wrong")</td></tr>
+        <tr><td><b>Internal referral</b></td><td>Doctor writes tests; nobody tracks whether patient used the in-house lab or walked out</td></tr>
+        <tr><td><b>Panel pre-auth &amp; claims</b></td><td>Per-TPA portals + email; a dedicated person's whole job</td></tr>
+        <tr><td><b>Discounts</b></td><td>Front-desk discretion + owner phone calls; leakage and occasional fraud, invisible until audit</td></tr>
+        <tr><td><b>Inventory</b></td><td>Pharmacy on Marg-style POS; clinical consumables on a register; two systems, no link</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Booking</b><p>Phone or walk-in dominant; aggregators (Practo) for new patients; direct WhatsApp for repeats</p></div></div>
+      <div class="jstep"><div><b>Registration &amp; wait</b><span class="fric">friction</span><p>New UHID per center (patient's fourth this year); consult wait compounded by consultant's late arrival</p></div></div>
+      <div class="jstep"><div><b>Consultation</b><p>10–15 min; tests and medicines prescribed; "get these done and come back" — same-day loop if lab is quick</p></div></div>
+      <div class="jstep"><div><b>Diagnostics decision</b><span class="fric">leakage</span><p>Patient weighs in-house price vs the lab their neighbor recommended; 30–50% walk out with the prescription</p></div></div>
+      <div class="jstep"><div><b>Review &amp; pharmacy</b><p>Report review same evening or next visit; pharmacy counter capture depends on queue length at that exact moment</p></div></div>
+      <div class="jstep"><div><b>Continuity</b><span class="fric">gap</span><p>Each specialist keeps their own paper file; the patient with diabetes + cardiac + ortho is three unconnected records in one building</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>Consultant no-shows / delays:</b> one late consultant torches a whole evening's bookings and the center's reputation, not the consultant's</li>
+        <li><b>Payout disputes:</b> monthly reconciliation friction is the top reason consultants quit centers</li>
+        <li><b>Referral leakage:</b> the margin engines starve while footfall is high — and it isn't even measured</li>
+        <li><b>Fragmented patient view:</b> no single record across specialties in the same building</li>
+        <li><b>Discount leakage:</b> unaudited front-desk discretion</li>
+        <li><b>Panel receivables:</b> 60–120 day cycles, disputes over disallowed items</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>Clinic HIMS</b></td><td>Insta by Practo, SoftClinic, MocDoc, KareXpert lite tiers — usually billing + appointments modules only</td></tr>
+        <tr><td><b>Lab</b></td><td>Standalone LIS (CrelioHealth-class) or the HIMS lab module, rarely integrated with billing properly</td></tr>
+        <tr><td><b>Pharmacy</b></td><td>Marg ERP or GoFrugal POS — an island</td></tr>
+        <tr><td><b>Accounts</b></td><td>Tally, fed manually from the other three</td></tr>
+        <tr><td><b>The real system</b></td><td>Excel + WhatsApp — payouts, consultant schedules, panel tracking all live here</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>One patient, one record, all specialties:</b> the multi-specialty promise, actually delivered — instant clinical differentiation</li>
+        <li><b>Transparent consultant settlements:</b> per-visit attribution both sides can see kills the #1 relationship killer</li>
+        <li><b>Capture-rate visibility:</b> measure and manage internal lab/pharmacy conversion — direct margin impact</li>
+        <li><b>Live schedule truth:</b> consultant delay → automatic patient notification → the center stops eating the reputational cost</li>
+        <li><b>NHCX-era claims desk:</b> one pipeline instead of seven TPA portals</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>Chain consolidation:</b> organized clinic chains and insurer-owned OPD networks expanding into tier-2</li>
+        <li><b>OPD insurance:</b> outpatient covers growing from near-zero — will industrialize panel workflows</li>
+        <li><b>Daycare pull:</b> procedures migrating out of hospitals toward clinic + daycare formats (payer preference)</li>
+        <li><b>Franchise polyclinics:</b> brand + SOP + software as a bundle sold to doctor-entrepreneurs</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>"Come back with the reports" is a design failure, not a care model.</b> The same-building loop (consult → lab → review) is the polyclinic's core promise, yet it runs on the patient physically ferrying paper between rooms. The loop should be an orchestrated same-day episode with the review slot reserved at order time.</p>
+    <p><b>Consultant payout opacity is a solvable trust problem being treated as an accounting chore.</b> Attribution should be automatic at billing time, visible to the consultant continuously — reconciliation as a concept should disappear.</p>
+  </div>
+</section>
+
+<!-- ============ 04 HOSPITAL ============ -->
+<section class="doc-section" id="hospital">
+  <div class="sec-kicker">04 · Organization Archetype</div>
+  <h2 class="sec-title">Hospital</h2>
+  <p class="sec-desc">The 50–300 bed private hospital — India's secondary-care workhorse: nursing homes grown up, single-owner or small-group, mixed specialty with OT, ICU, emergency, in-house lab/imaging/pharmacy. (Corporate chains are a variant, not the norm.)</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>IPD packages — room, OT, consumables, pharmacy, investigations</div>
+    <div class="g"><b>Capacity unit</b>Bed-days &amp; OT-hours; ARPOB × occupancy</div>
+    <div class="g"><b>Typical scale</b>50–300 beds · 150–800 staff · occupancy 60–75%</div>
+    <div class="g"><b>Cost driver</b>People — 55–70% of operating cost</div>
+    <div class="g"><b>Payer mix</b>Cash + retail insurance + PM-JAY + corporate/TPA</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:200px">Revenue line</th><th>How it works</th><th style="width:280px">Margin reality</th></tr>
+      <tr><td><b>IPD (the core)</b></td><td>Admissions from own OPD, emergency, and — critically — consultants who choose to admit here. Billed as room rent + surgeon fee + OT + consumables + pharmacy + investigations, or as payer-defined packages</td><td>Pharmacy &amp; investigations inside IPD carry the margin; room rent anchors the payer's rate card (everything scales off room category)</td></tr>
+      <tr><td><b>OPD</b></td><td>Consultant chambers; deliberately cheap</td><td>A feeder — measured by OPD→IPD conversion, not profit</td></tr>
+      <tr><td><b>Emergency</b></td><td>24×7 casualty; medico-legal cases included</td><td>Loss-leader that feeds admissions and defines community trust</td></tr>
+      <tr><td><b>Diagnostics &amp; pharmacy</b></td><td>In-house lab, imaging, 24×7 pharmacy serving IPD + walk-in</td><td>Highest-margin departments in the building</td></tr>
+      <tr><td><b>PM-JAY / govt schemes</b></td><td>Fixed package rates per procedure</td><td>Often below private cost — a volume &amp; utilization play requiring ruthless case-mix and cost discipline</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">Two structural dependencies define the business: <b>visiting consultants decide where patients get admitted</b> (the hospital competes for doctors as much as for patients), and <b>payer mix decides cash flow</b> — every insurance/PM-JAY admission converts revenue into a receivable that must be defended paper by paper.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations — a 24×7 machine with a daily heartbeat</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>07:00–09:00</b></td><td>Nursing shift handover (verbal + register). Consultant morning rounds → today's discharge list is born. Bed huddle: expected discharges vs booked admissions vs OT list</td></tr>
+      <tr><td><b>09:00–14:00</b></td><td>OT list runs (delays cascade); OPD in parallel; TPA desk fires off pre-auth requests for planned admissions; lab/imaging peak load</td></tr>
+      <tr><td><b>11:00–18:00</b></td><td>The discharge grind: summary drafted by RMO → consultant sign-off (whenever rounds allow) → pharmacy returns → final bill → insurance final approval (hours) → patient actually leaves. Family waits, bed blocked</td></tr>
+      <tr><td><b>14:00–20:00</b></td><td>New admissions land as beds free up; emergency admits interleave unpredictably; evening consultant rounds generate fresh orders</td></tr>
+      <tr><td><b>20:00–07:00</b></td><td>Skeleton night crew: duty doctors + night nursing; emergency keeps admitting; night is when thin staffing meets highest clinical risk</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Layer</th><th>Roles · reality</th></tr>
+        <tr><td><b>Clinical leadership</b></td><td>Medical Director / Medical Superintendent; HODs in larger units</td></tr>
+        <tr><td><b>Consultants</b></td><td>Mostly visiting/fee-share; a salaried core in bigger hospitals. The hospital's true customers, candidly</td></tr>
+        <tr><td><b>Resident doctors</b></td><td>RMOs / duty doctors — the 24×7 clinical presence; write the notes, take the calls</td></tr>
+        <tr><td><b>Nursing</b></td><td>Nursing superintendent → in-charges → staff nurses; chronic shortage, high attrition, agency fill-ins</td></tr>
+        <tr><td><b>Clinical support</b></td><td>Lab, radiology, pharmacy, physio, dietetics, OT techs, biomedical engineering</td></tr>
+        <tr><td><b>Revenue cycle</b></td><td>Front office, admission desk, billing, <b>TPA/insurance desk</b>, MRD (medical records) — the paper spine of the money</td></tr>
+        <tr><td><b>Admin</b></td><td>HR, finance, purchase/stores, marketing (referral network mgmt); housekeeping/security/dietary usually outsourced</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism · breaks when</th></tr>
+        <tr><td><b>ADT (admit-discharge-transfer)</b></td><td>Admission register + bed board (whiteboard or HIMS module); truth diverges from the board by mid-afternoon</td></tr>
+        <tr><td><b>Pre-auth → enhancement → final claim</b></td><td>Per-TPA portals, scanned documents, query-response ping-pong; discharge physically waits on it</td></tr>
+        <tr><td><b>OT scheduling</b></td><td>Register + phone calls among surgeon/anesthetist/OT in-charge; emergency cases bump the list</td></tr>
+        <tr><td><b>Medication administration</b></td><td>Paper drug charts; nurse transcription from consultant scrawl — a known, tolerated error source</td></tr>
+        <tr><td><b>Discharge summary</b></td><td>RMO drafts in Word from paper notes; consultant edits at rounds; the single biggest discharge delay</td></tr>
+        <tr><td><b>Stores &amp; pharmacy</b></td><td>Indent registers, purchase committee, expiry checks; ward-stock pilferage known and priced in</td></tr>
+        <tr><td><b>NABH / compliance</b></td><td>Committees, registers, audits — a parallel paper universe maintained for inspectors</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey (planned admission — the revenue spine)</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Decision</b><p>OPD consult or referral ends in "we should operate" — counseling desk quotes package by room category; insurance eligibility checked</p></div></div>
+      <div class="jstep"><div><b>Pre-admission</b><span class="fric">friction</span><p>Pre-auth filed; approval may land the night before or the morning of — patients arrive not knowing if they're covered</p></div></div>
+      <div class="jstep"><div><b>Admission day</b><p>Registration → deposit (cash) or approval letter (insurance) → bed allotment → pre-op workup; family navigates 4 counters</p></div></div>
+      <div class="jstep"><div><b>Treatment</b><p>Surgery/procedure → ICU/ward → daily consultant rounds; family's information diet: corridor conversations and guesswork</p></div></div>
+      <div class="jstep"><div><b>Discharge</b><span class="fric">the notorious wait</span><p>"You can go home today" at 9 AM becomes an exit at 6 PM: summary → sign-off → returns → bill → TPA final approval. The worst-remembered part of the entire stay</p></div></div>
+      <div class="jstep"><div><b>Post-discharge</b><span class="fric">cliff</span><p>A follow-up date on paper. No systematic contact until (or unless) the patient returns — readmission risk unmanaged, loyalty unearned</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>Discharge TAT:</b> 4–8 hours of coordination failure — blocks beds (real revenue) and defines the family's lasting memory</li>
+        <li><b>Claims &amp; receivables:</b> denials, deductions, 30–90+ day cycles; PM-JAY reimbursement delays strain working capital</li>
+        <li><b>Consultant loyalty:</b> admitters can move their patients to the hospital next door; relationship management is existential and entirely informal</li>
+        <li><b>Nursing attrition:</b> constant churn = constant retraining = protocol drift and documentation gaps</li>
+        <li><b>Billing surprises:</b> estimate vs final bill gap is the #1 trust destroyer and grievance source</li>
+        <li><b>OT utilization:</b> first-case delays and turnover gaps waste the most expensive hours in the building</li>
+        <li><b>Paper ICU/ward charts:</b> transcription errors, illegibility, zero analyzability; MRD retrieval takes days</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>HIMS</b></td><td>Mid-market suites (KareXpert, Akhil, Birlamedisoft, MocDoc, Attune, Marg HMIS; legacy Wipro/locals). Billing + ADT modules used; clinical modules bought, abandoned</td></tr>
+        <tr><td><b>Diagnostics</b></td><td>LIS + RIS/PACS, frequently different vendors than the HIMS, interfaced poorly or by re-typing</td></tr>
+        <tr><td><b>Claims</b></td><td>Each TPA/insurer's own portal — the swivel-chair problem; NHCX beginning to standardize submission</td></tr>
+        <tr><td><b>Back office</b></td><td>Tally/Busy (finance), biometric attendance, Excel for rosters, OT lists, bed boards, everything the HIMS can't flex to</td></tr>
+        <tr><td><b>Clinical documentation</b></td><td>Paper. The EMR modules exist; the ward runs on files and drug charts</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>Discharge as an orchestrated pipeline:</b> parallel-track summary, returns, billing and payer approval with a visible countdown — hours recovered per bed per stay</li>
+        <li><b>Claims automation on NHCX rails:</b> standardized submission, deduction analytics, receivable ageing visibility — direct working-capital impact</li>
+        <li><b>Live bed &amp; OT truth:</b> a real command view replacing whiteboard divergence; admission promises the front desk can actually keep</li>
+        <li><b>Consultant experience:</b> mobile rounds view, one-tap discharge sign-off, transparent earnings — the retention tool for the hospital's true customers</li>
+        <li><b>Family communication:</b> proactive status updates and honest running-bill visibility — kills the two biggest grievance classes at once</li>
+        <li><b>Post-discharge programs:</b> structured follow-up converts episodic surgery into continuity (and defensible outcomes data)</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>Cashless-everything:</b> insurance share of IPD climbing steadily; "cashless everywhere" initiatives + NHCX will make claims competence a core operating muscle, not a desk</li>
+        <li><b>PM-JAY volume play:</b> tier-2/3 hospitals building whole service lines around scheme packages at scale</li>
+        <li><b>Daycare carve-out:</b> payers pushing cataract/chemo/endoscopy-class procedures out of inpatient settings — hospitals must respond or lose the volume</li>
+        <li><b>Hospital-at-home:</b> step-down and chronic IPD substitution pilots by insurers and chains</li>
+        <li><b>Staffing crunch deepens:</b> global nurse demand (Gulf/UK/EU recruitment) keeps attrition structural — process resilience must come from systems, not tenure</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>Discharge is treated as paperwork that begins when care ends. It should be a countdown that starts at admission.</b> Every element of the 6-hour wait — summary, returns, bill, payer approval — is predictable on day one. The industry norm of sequential processing is a choice, not a constraint.</p>
+    <p><b>The TPA desk is a human API gateway.</b> Skilled staff spend their days re-typing clinical and billing data into portals. NHCX makes this translation layer obsolete in principle; hospitals that restructure the revenue-cycle team around exceptions (denials, disputes) instead of data entry will run at a different cost base.</p>
+    <p><b>"The family will ask at the nursing station" is an information system.</b> A deliberately bad one. Proactive status and cost communication is cheaper than the grievances, escalations and social-media fallout it prevents.</p>
+  </div>
+</section>
+
+<!-- ============ 05 DIAGNOSTIC CENTER ============ -->
+<section class="doc-section" id="diagnostic">
+  <div class="sec-kicker">05 · Organization Archetype</div>
+  <h2 class="sec-title">Diagnostic Center</h2>
+  <p class="sec-desc">Pathology labs and radiology centers — from a single collection-center-plus-lab to hub-and-spoke networks. A logistics-and-quality business wearing a healthcare coat: samples in, trustworthy reports out, on time, every time.</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>B2C tests &amp; packages + B2B lab-to-lab volume</div>
+    <div class="g"><b>Capacity unit</b>Analyzer throughput · radiologist reads · phlebo routes</div>
+    <div class="g"><b>Typical scale</b>1 processing hub + 3–30 collection points · 200–2,000 samples/day</div>
+    <div class="g"><b>Cost driver</b>Reagents + machines (AMC/lease) + field staff</div>
+    <div class="g"><b>Payer mix</b>Cash/UPI dominant; corporate wellness contracts; scheme rates for empaneled</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:200px">Revenue line</th><th>How it works</th><th style="width:280px">Margin reality</th></tr>
+      <tr><td><b>B2C prescribed tests</b></td><td>Walk-in + home collection (60%+ of metro volume now); driven by doctor prescriptions</td><td>Healthy gross margin, but customer acquisition rides on referring doctors — see the commission problem below</td></tr>
+      <tr><td><b>Wellness packages</b></td><td>Pre-designed panels (full body, diabetes, thyroid) sold direct to consumers — no prescription needed</td><td>The profit and growth engine: batched processing, predictable demand, marketing-driven — margin the referral economy can't tax</td></tr>
+      <tr><td><b>B2B (lab-to-lab)</b></td><td>Small labs, clinics and hospitals outsource specialized tests to the hub at trade rates; monthly credit accounts</td><td>Thin per-test but fills machine capacity; TAT reliability is the entire relationship</td></tr>
+      <tr><td><b>Radiology</b></td><td>X-ray/USG/CT/MRI per scan; capex or lease-heavy; radiologist read is the bottleneck</td><td>High ticket; utilization-sensitive; teleradiology increasingly rents out the bottleneck</td></tr>
+      <tr><td><b>Corporate &amp; camps</b></td><td>Pre-employment, annual checkup contracts, on-site camps</td><td>Volume at discount; seasonal; feeds the B2C funnel</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">The uncomfortable center of B2C economics: <b>referral incentives to prescribing doctors</b> — pervasive, legally grey, ethically corrosive, and margin-destroying. National players compete on brand + price to escape it; everyone else quietly pays. Any honest business model of this sector must name it.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>05:30–10:00</b></td><td>The fasting peak: phlebotomists ride home-collection routes; collection centers queue walk-ins; samples barcode-accessioned and batched to the hub in cold boxes</td></tr>
+      <tr><td><b>08:00–09:00</b></td><td>Analyzers calibrated; daily QC runs pass or the day stops. Reagent stock checked against expected load</td></tr>
+      <tr><td><b>10:00–16:00</b></td><td>Hub processing at full tilt; B2B samples arrive from client labs; radiology appointments run; critical values phoned to doctors as they surface</td></tr>
+      <tr><td><b>16:00–21:00</b></td><td>Pathologist sign-off sessions; reports released in waves (WhatsApp/app/portal); TAT-breach escalations; evening walk-in trickle</td></tr>
+      <tr><td><b>Ongoing</b></td><td>Re-collection callbacks for rejected samples (hemolyzed, insufficient, mislabeled); B2B clients calling about pending reports — the trust tax</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Role</th><th>Reality</th></tr>
+        <tr><td><b>Pathologist</b></td><td>MD sign-off legally required; scarce — often part-time across multiple labs, sometimes signing remotely (a compliance controversy the sector lives with)</td></tr>
+        <tr><td><b>Radiologist</b></td><td>Scarcer still outside metros; teleradiology panels fill the gap</td></tr>
+        <tr><td><b>Lab technicians</b></td><td>Run analyzers, QC, manual tests; the operational core</td></tr>
+        <tr><td><b>Phlebotomists</b></td><td>In-center + field riders; the brand's face at the patient's doorstep — training and verification chronically weak sector-wide</td></tr>
+        <tr><td><b>Front desk / customer care</b></td><td>Booking, billing, report queries, complaint absorption</td></tr>
+        <tr><td><b>B2B sales &amp; logistics</b></td><td>Client-lab relationship reps + sample-pickup riders on fixed routes</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism · breaks when</th></tr>
+        <tr><td><b>Accessioning</b></td><td>Barcode at collection → LIS; breaks at hand-labeled B2B samples and camp chaos</td></tr>
+        <tr><td><b>TAT management</b></td><td>LIS timestamps exist; actual escalation is someone watching a screen and phoning</td></tr>
+        <tr><td><b>Quality (NABL)</b></td><td>Daily internal QC + periodic EQAS + audit documentation — a standing paperwork mountain, mostly manual</td></tr>
+        <tr><td><b>Critical value alerts</b></td><td>Technician flags → pathologist confirms → phone call to prescriber; logged in a register</td></tr>
+        <tr><td><b>B2B rate &amp; recon</b></td><td>Per-client rate cards in Excel; monthly statement disputes; credit chased by the sales rep who owns the account</td></tr>
+        <tr><td><b>Reagent inventory</b></td><td>Expiry-sensitive, lot-tracked in the LIS or a register; stockouts stop test lines cold</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Prescription</b><p>Doctor writes tests; brand choice often steered by the doctor's suggestion (see: commissions) or the patient's price search</p></div></div>
+      <div class="jstep"><div><b>Price discovery</b><span class="fric">race to the bottom</span><p>Patients compare aggressively across apps (Tata 1mg, Healthians, Redcliffe) — the same CBC ranges 3× in price within one pincode</p></div></div>
+      <div class="jstep"><div><b>Collection</b><p>Home slot or walk-in; the phlebotomist's punctuality and skill IS the brand experience</p></div></div>
+      <div class="jstep"><div><b>The wait for reports</b><span class="fric">anxiety window</span><p>Hours to days; zero visibility into progress; "report kab aayega?" calls flood customer care</p></div></div>
+      <div class="jstep"><div><b>Report delivery</b><span class="fric">abandonment</span><p>PDF on WhatsApp. Nobody explains it. Red flags in a table the patient can't read; a meaningful fraction never reach the prescribing doctor again</p></div></div>
+      <div class="jstep"><div><b>Continuity</b><span class="fric">wasted asset</span><p>This year's HbA1c is a PDF; last year's is a different lab's PDF in a different folder. Longitudinal trend data — the most clinically valuable thing a lab owns — is thrown away at delivery</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>TAT breaches:</b> one machine down or one batch delayed → B2B clients defect; trust is rebuilt in months, lost in a day</li>
+        <li><b>Sample rejection &amp; re-collection:</b> costs double logistics + patient fury; usually a phlebotomy quality issue</li>
+        <li><b>Commission economics:</b> 20–40% of a B2C test's price can be referral payout — a margin hemorrhage and an ethics trap</li>
+        <li><b>Price war:</b> venture-funded players selling below cost reset consumer price anchors permanently</li>
+        <li><b>NABL burden:</b> quality documentation consumes senior staff time; audits are dreaded events, not byproducts of operations</li>
+        <li><b>Radiologist scarcity:</b> scan today, report in 3 days — the machine was never the bottleneck</li>
+        <li><b>B2B receivables:</b> credit accounts drift; disputes over rate cards from three revisions ago</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>LIS</b></td><td>CrelioHealth (LiveHealth), Drucare, LabDoc-class SaaS; nationals run custom stacks (Thyrocare famously built its own)</td></tr>
+        <tr><td><b>Radiology</b></td><td>RIS + PACS; teleradiology platforms for remote reads</td></tr>
+        <tr><td><b>Field ops</b></td><td>Phlebo route apps in organized chains; WhatsApp + phone everywhere else</td></tr>
+        <tr><td><b>Delivery</b></td><td>WhatsApp PDF is the universal report channel; patient portals exist, rarely used</td></tr>
+        <tr><td><b>B2B recon</b></td><td>Excel + Tally; the LIS bills, but rate cards and credit live in spreadsheets</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>Longitudinal results as a product:</b> trend lines across years (ABHA-linked) turn a PDF factory into a health-data relationship — the single biggest untapped asset in the sector</li>
+        <li><b>Report comprehension:</b> plain-language explanation + flag triage + "show this to your doctor" routing — closes the abandonment gap and differentiates on trust</li>
+        <li><b>Order-to-report visibility:</b> live status for patients and B2B clients kills the #1 inbound call driver</li>
+        <li><b>B2B portal:</b> self-serve ordering, live TAT, transparent rate cards, automated statements — locks in client labs</li>
+        <li><b>Compliance as a byproduct:</b> QC, critical-alert and audit trails generated by the workflow itself, not re-documented for NABL</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>Consolidation + aggregators:</b> national chains and online players squeezing standalone labs into B2B suppliers or franchisees</li>
+        <li><b>Preventive &amp; wellness growth:</b> subscription checkups and direct-to-consumer panels growing faster than prescribed testing</li>
+        <li><b>AI reads:</b> X-ray screening (TB triage already deployed at scale in India) and pathology assist — bottleneck relief, new QC questions</li>
+        <li><b>At-home everything:</b> home collection normalized; home ECG/imaging vans emerging</li>
+        <li><b>Genomics mainstreaming:</b> carrier panels and onco-genomics entering routine prescribing in metros</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>The referral-commission economy is the sector's real operating system, and it is rotting the business.</b> It taxes margins, criminalizes marketing, and steers patients by kickback rather than quality. The structural exit is making labs directly valuable to prescribers — instant results delivery into the doctor's workflow, trend context, critical alerts — so the referral is earned by service, not bought. A platform can make the clean path the convenient path.</p>
+    <p><b>A lab report's job is not to be delivered; it is to be understood and acted on.</b> The industry optimizes TAT-to-PDF and declares victory. The unmeasured metric — did the result change care? — is where diagnostic value actually lives.</p>
+  </div>
+</section>
+
+<!-- ============ 06 PHARMACY CHAIN ============ -->
+<section class="doc-section" id="pharmacy">
+  <div class="sec-kicker">06 · Organization Archetype</div>
+  <h2 class="sec-title">Pharmacy Chain</h2>
+  <p class="sec-desc">Organized retail pharmacy — 5 to 500 stores, company-owned or franchised, increasingly omnichannel (store + app + delivery). A working-capital and supply-chain business where the customer's chronic condition is the recurring revenue.</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>Medicine margin — branded ~16–20%, generics/private label 30–60%</div>
+    <div class="g"><b>Capacity unit</b>Store footfall × basket size × refill retention</div>
+    <div class="g"><b>Typical scale</b>5–500 stores · 3–8 staff/store · 200–600 bills/store/day</div>
+    <div class="g"><b>Cost driver</b>Inventory working capital + rent + staff</div>
+    <div class="g"><b>Payer mix</b>Almost entirely cash/UPI; OPD pharmacy insurance nascent</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:200px">Revenue line</th><th>How it works</th><th style="width:280px">Margin reality</th></tr>
+      <tr><td><b>Scheduled (Rx) medicines</b></td><td>Dispensed against prescriptions; chronic therapies (diabetes, cardiac, thyroid, BP) are the volume backbone</td><td>Branded margins regulated-thin; the chronic customer's <b>lifetime refill stream</b> is the real asset</td></tr>
+      <tr><td><b>Generic substitution &amp; private label</b></td><td>Counter conversation: "same salt, half price" — chains push own-brand generics hard</td><td>2–3× the branded margin; trust-dependent; the strategic battleground</td></tr>
+      <tr><td><b>OTC + FMCG + devices</b></td><td>Wellness, personal care, nutrition, BP monitors, glucometers</td><td>Better margin than Rx; drives basket size; makes stores look like convenience retail</td></tr>
+      <tr><td><b>B2B / institutional</b></td><td>Supply to clinics, nursing homes, corporates on credit</td><td>Volume at trade margin; credit-collection risk</td></tr>
+      <tr><td><b>Delivery / app channel</b></td><td>Own app or aggregator tie-ins; quick-commerce entering medicines</td><td>Margin-dilutive today; defensive necessity against e-pharmacy</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">The quiet truth: a pharmacy chain is a <b>chronic-disease subscription business that hasn't formalized the subscription.</b> 60–70% of revenue comes from repeat chronic purchases, yet most chains have no systematic refill program — they wait for the customer to remember.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>Opening</b></td><td>Cash float, cold-chain temperature log (insulin/vaccines), overnight app orders picked for delivery batching</td></tr>
+      <tr><td><b>Morning</b></td><td>Distributor deliveries arrive — invoice matching, batch/expiry entry into POS, shelf stocking; expiry-pull list worked</td></tr>
+      <tr><td><b>All day</b></td><td>Dispensing: Rx read (or guessed from a photo/torn strip), substitution conversations, Schedule H judgment calls, UPI billing; counseling in theory, queue pressure in practice</td></tr>
+      <tr><td><b>Evening peak</b></td><td>Post-clinic rush — patients arriving from nearby OPDs with fresh prescriptions; delivery riders cycling</td></tr>
+      <tr><td><b>Close</b></td><td>Cash recon, fast-mover reorder triggers, short-expiry list, H1 register completion (the day's scheduled-drug entries)</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Role</th><th>Reality</th></tr>
+        <tr><td><b>Registered pharmacist</b></td><td>Legally required per store; sector-wide shortage means widespread "name-lending" — a registered pharmacist on paper, counter staff in practice. A compliance time bomb</td></tr>
+        <tr><td><b>Counter staff</b></td><td>Do the actual dispensing, substitution selling, billing; product knowledge from experience, not training</td></tr>
+        <tr><td><b>Store manager</b></td><td>Stock, cash, staff, shrinkage; P&amp;L owner in franchise models</td></tr>
+        <tr><td><b>Delivery riders</b></td><td>Own or gig; Rx-verification-at-doorstep is theoretical</td></tr>
+        <tr><td><b>Chain HQ</b></td><td>Category/procurement, supply chain, compliance officer, franchise ops, marketing — thin teams running wide networks</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism · breaks when</th></tr>
+        <tr><td><b>Rx validation</b></td><td>Counter judgment on paper scraps and WhatsApp photos; Schedule H1 register by hand; antibiotic-without-Rx remains an open sector secret</td></tr>
+        <tr><td><b>Procurement</b></td><td>Distributor credit cycles (21–45 days); bounce between distributors for scheme deals; stock-transfer between stores by phone</td></tr>
+        <tr><td><b>Expiry management</b></td><td>Monthly short-expiry pulls; expiry returns negotiated with distributors — margin recovered or lost invoice by invoice</td></tr>
+        <tr><td><b>Compliance</b></td><td>Drug license renewals, pharmacist registration display, H/H1/X registers, recall notices — per store, mostly paper</td></tr>
+        <tr><td><b>Shrinkage control</b></td><td>Periodic physical stock audits vs POS; pilferage of high-value SKUs priced into the P&amp;L</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Arrival</b><p>Fresh Rx in hand, a photo on the phone, an empty strip ("yehi wala dena"), or memory ("woh blue strip, sugar ki")</p></div></div>
+      <div class="jstep"><div><b>Interpretation</b><span class="fric">risk</span><p>Counter staff decode handwriting and dosage; ambiguity resolved by guess or a callback nobody makes</p></div></div>
+      <div class="jstep"><div><b>Substitution talk</b><p>Brand out of stock or generic pitch; patient trust in the counter person decides the outcome</p></div></div>
+      <div class="jstep"><div><b>Purchase</b><span class="fric">missed moment</span><p>Billing in seconds; counseling (dosage timing, food interactions, course completion) skipped under queue pressure — the pharmacist's entire clinical value, unexercised</p></div></div>
+      <div class="jstep"><div><b>Adherence</b><span class="fric">the void</span><p>Nothing happens until the patient remembers to return. Missed refills = broken therapy = lost revenue — invisible to both doctor and pharmacy</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>Inventory paradox:</b> dead stock and stockouts simultaneously — 20,000+ SKUs, demand guessed store by store</li>
+        <li><b>E-pharmacy discounting:</b> app players' funded discounts reset price expectations; store margins bleed to match</li>
+        <li><b>Pharmacist shortage / name-lending:</b> regulatory exposure the whole sector pretends not to see</li>
+        <li><b>Expiry losses:</b> slow movers expire on shelves; return negotiations recover only part</li>
+        <li><b>Rx ambiguity:</b> illegible handwriting = dispensing risk carried personally by counter staff</li>
+        <li><b>B2B credit collection:</b> clinic and nursing-home accounts drift 60–90 days</li>
+        <li><b>Zero adherence visibility:</b> the chain's biggest revenue lever — chronic refills — is unmanaged</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>POS / pharmacy ERP</b></td><td>Marg ERP dominates; GoFrugal, Medeil, RetailGraph; chain-custom stacks at Apollo/MedPlus scale</td></tr>
+        <tr><td><b>Supply chain</b></td><td>Distributor portals + phone orders; chains run DMS/WMS at HQ</td></tr>
+        <tr><td><b>Compliance</b></td><td>Paper registers; POS prints help but registers rule</td></tr>
+        <tr><td><b>Customer</b></td><td>Loyalty numbers captured at billing; WhatsApp broadcasts; genuine CRM rare below the top chains</td></tr>
+        <tr><td><b>Channels</b></td><td>Own apps at big chains; aggregator/quick-commerce listings; ONDC health experiments beginning</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>Formalize the chronic subscription:</b> refill prediction + proactive outreach + auto-delivery turns the sector's silent core into managed recurring revenue — and measurably better adherence</li>
+        <li><b>Digital Rx rails:</b> ABDM-era e-prescriptions kill handwriting risk, enable clean substitution logic, and create a legal dispensing trail — the compliance time bomb defused</li>
+        <li><b>Demand-driven inventory:</b> store-level demand signals (including nearby prescriber patterns) against the dead-stock/stockout paradox</li>
+        <li><b>Counseling at scale:</b> printed/WhatsApp dosage instructions per dispense — the pharmacist's clinical value delivered even under queue pressure</li>
+        <li><b>Clinic-pharmacy loop:</b> prescription flows from nearby OPDs with patient consent — footfall earned by service, not proximity luck</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>Quick-commerce medicines:</b> 10-minute delivery entering pharma; regulatory friction vs consumer pull</li>
+        <li><b>E-pharmacy regulation:</b> long-pending Drugs Act amendments will eventually draw the online dispensing rules — whoever's compliant early wins</li>
+        <li><b>Jan Aushadhi &amp; generics push:</b> government generic retail expanding; substitution normalization accelerates private-label economics</li>
+        <li><b>ONDC health:</b> open-network listings could unbundle discovery from the big apps</li>
+        <li><b>Store as care point:</b> vaccination, BP/sugar checks, teleconsult kiosks — the pharmacy as primary-care front end (the global pattern arriving in India)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>Waiting for the chronic patient to remember their refill is the sector's largest self-inflicted wound.</b> It harms adherence (a clinical outcome), revenue (the core stream), and loyalty (the switching moment is the stockout/forgotten-refill moment). Refill management isn't a CRM feature; it is the business model, unimplemented.</p>
+    <p><b>The paper prescription is a data black hole the entire chain of care pays for.</b> The doctor loses fulfillment visibility, the pharmacy carries interpretation risk, the patient carries the paper. E-prescription rails exist now; the workflow persists out of habit, not necessity.</p>
+  </div>
+</section>
+
+<!-- ============ 07 DAY CARE CENTER ============ -->
+<section class="doc-section" id="daycare">
+  <div class="sec-kicker">07 · Organization Archetype</div>
+  <h2 class="sec-title">Day Care Center</h2>
+  <p class="sec-desc">Same-day procedure and recurring-therapy centers: dialysis units, cataract/eye surgery centers, chemotherapy day-care, IVF clinics, endoscopy suites. The fastest-restructuring corner of Indian healthcare — procedures walking out of hospitals into purpose-built throughput machines.</p>
+
+  <div class="glance">
+    <div class="g"><b>Revenue engine</b>Fixed-package procedures &amp; per-session therapy</div>
+    <div class="g"><b>Capacity unit</b>Slots — chairs, OT minutes, machines per day</div>
+    <div class="g"><b>Typical scale</b>5–25 stations/OTs · 15–60 staff · 20–150 sessions/day</div>
+    <div class="g"><b>Cost driver</b>Consumable kits + specialist sessions + equipment</div>
+    <div class="g"><b>Payer mix</b>Insurance-heavy (day-care procedure lists) + PM-JAY (dialysis) + cash</div>
+  </div>
+
+  <div class="panel">
+    <div class="label">1 · Business model</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:210px">Model variant</th><th>How it works</th><th style="width:280px">Margin reality</th></tr>
+      <tr><td><b>Recurring therapy</b> (dialysis, chemo)</td><td>Per-session pricing; dialysis patients come 2–3×/week for life — scheduling is a standing subscription. Chains (NephroPlus-class) run hub models and hospital partnerships</td><td>Thin per session (PM-JAY dialysis rates especially); profit = utilization × consumable discipline. A no-show is unrecoverable slot inventory</td></tr>
+      <tr><td><b>Episodic surgery</b> (cataract, endoscopy, minor ortho/ENT)</td><td>Fixed packages; insurance day-care lists make these cashless-friendly; high-volume single-specialty chains dominate cataract</td><td>Good margin at volume; OT turnover time is the whole game — top cataract centers run 10-minute cycles</td></tr>
+      <tr><td><b>Cycle-based programs</b> (IVF)</td><td>Package per cycle with staged payments; heavy counseling; success-rate marketing</td><td>High ticket, high emotion, high marketing cost; counselor conversion rate is the commercial metric</td></tr>
+    </table></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin-top:12px">Common thread: <b>revenue = slots actually filled.</b> Unlike a hospital, there is no occupancy buffer — an empty 2 PM dialysis chair or a cancelled cataract slot is revenue that never existed. Every operational practice orbits slot utilization.</p>
+  </div>
+
+  <div class="panel">
+    <div class="label">2 · Daily operations (dialysis rhythm shown; surgical variants compress the same shape)</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:150px">Time</th><th>What actually happens</th></tr>
+      <tr><td><b>06:00–07:00</b></td><td>Machines tested, dialyzers matched to patients (reuse tracking), water treatment checks logged; first-shift patients arrive</td></tr>
+      <tr><td><b>07:00–19:00</b></td><td>Three 4-hour shifts per chair. Pre-session vitals → cannulation → monitored session → closure and post-vitals → chair turnover. Technicians run the floor; the nephrologist rounds once, is on call otherwise</td></tr>
+      <tr><td><b>Continuous</b></td><td>Slot juggling: a late patient compresses the next shift; a machine alarm pulls the senior tech; a crashing patient triggers the transfer protocol to the partner hospital</td></tr>
+      <tr><td><b>Evening</b></td><td>Consumable count vs sessions run; tomorrow's roster confirmed by phone/WhatsApp; insurance pre-auths filed for the week's sessions; maintenance log signed</td></tr>
+    </table></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">3 · Staff structure</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Role</th><th>Reality</th></tr>
+        <tr><td><b>Specialist</b> (nephrologist / ophthalmic surgeon / oncologist / IVF specialist)</td><td>Often visiting/sessional — the center runs daily on protocols, the specialist supervises and intervenes</td></tr>
+        <tr><td><b>Anesthetist</b></td><td>Sessional, shared across centers; list timing bends around their availability</td></tr>
+        <tr><td><b>Therapy technicians / specialty nurses</b></td><td>Dialysis techs, OT nurses, chemo-trained nurses — the operational backbone; certification-scarce, poached constantly</td></tr>
+        <tr><td><b>Coordinator / counselor</b></td><td>Schedules the recurring roster, quotes packages, handles insurance, absorbs family anxiety; in IVF/chemo the counselor is half the product</td></tr>
+        <tr><td><b>Support</b></td><td>Sterilization/CSSD, housekeeping, transport coordination for weak patients</td></tr>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="label">5 · Internal workflows</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Workflow</th><th>Today's mechanism · breaks when</th></tr>
+        <tr><td><b>Recurring roster</b></td><td>The MWF/TTS grid lives in Excel or a wall chart; every absence is a phone-call cascade to backfill the slot</td></tr>
+        <tr><td><b>Per-session pre-auth</b></td><td>Insurance/PM-JAY approval per session or cycle — a standing clerical load unique to this archetype</td></tr>
+        <tr><td><b>Consumable kits</b></td><td>Per-procedure kits (dialyzer+lines, phaco packs, chemo drugs) counted against sessions; chemo compounding is pharmacist-critical</td></tr>
+        <tr><td><b>Machine upkeep</b></td><td>AMC schedules, water-quality logs, dialyzer-reuse registers — regulator-inspectable, hand-maintained</td></tr>
+        <tr><td><b>Emergency transfer</b></td><td>Mandatory tie-up with a backup hospital; protocol tested for real a few times a year</td></tr>
+        <tr><td><b>Outcome tracking</b></td><td>IVF success rates and surgical outcomes tracked for marketing; methodology private, comparability nil</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">4 · Patient journey (recurring-therapy variant)</div>
+    <div class="journey">
+      <div class="jstep"><div><b>Referral &amp; onboarding</b><p>Nephrologist/oncologist diagnosis → center chosen by doctor affiliation, insurance empanelment, and distance-from-home (patients travel 3×/week — geography is destiny)</p></div></div>
+      <div class="jstep"><div><b>Counseling &amp; package</b><p>Sessions/cycle explained, payer sorted (PM-JAY, insurance, cash), standing schedule slotted into the roster grid</p></div></div>
+      <div class="jstep"><div><b>The recurring visit</b><span class="fric">life logistics</span><p>Same chair, same techs, same co-patients — the center becomes a social fixture of the patient's week; transport and waiting drain caregivers</p></div></div>
+      <div class="jstep"><div><b>Disruptions</b><span class="fric">fragile</span><p>Fever, travel, festival, transport failure → missed session → clinical risk + an empty chair; rescheduling is phone-tag</p></div></div>
+      <div class="jstep"><div><b>Escalation</b><p>Deterioration mid-session → stabilize → transfer to partner hospital; the handoff carries paper, not data</p></div></div>
+      <div class="jstep"><div><b>Continuity of record</b><span class="fric">gap</span><p>Session logs live in center registers; the treating hospital, the nephrologist's clinic, and the center each hold a fragment of one patient's story</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">6 · Operational pain points</div>
+      <ul class="pain">
+        <li><b>No-shows kill the model:</b> a missed dialysis slot is both a clinical event and unrecoverable revenue; backfilling is manual scramble</li>
+        <li><b>Per-session payer admin:</b> pre-auth clerical load per patient per week; scheme portals down = sessions run at financial risk</li>
+        <li><b>Machine downtime:</b> one dead dialysis machine = 3 lost sessions/day until the AMC engineer arrives</li>
+        <li><b>Specialist dependence:</b> visiting-doctor absence stalls lists; protocol care runs, but sign-offs and escalations queue</li>
+        <li><b>Technician churn:</b> certified dialysis/OT techs are poached with ₹2–3k raises; every exit degrades protocol fidelity</li>
+        <li><b>Thin scheme rates:</b> PM-JAY dialysis pricing leaves margin only for the ruthlessly efficient</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">7 · Software used today</div>
+      <div class="tbl-wrap"><table class="tbl">
+        <tr><th>Category</th><th>What's actually in use</th></tr>
+        <tr><td><b>Scheduling</b></td><td>Excel grids, wall charts, WhatsApp — even in organized chains below HQ level</td></tr>
+        <tr><td><b>Clinical records</b></td><td>Paper session sheets; specialty chains (dialysis, IVF) have built custom systems because nothing off-the-shelf fits recurring-care</td></tr>
+        <tr><td><b>Payer</b></td><td>Scheme portals (PM-JAY TMS) + TPA portals, per session — heaviest per-rupee admin burden of any archetype</td></tr>
+        <tr><td><b>Everything else</b></td><td>Clinic-grade billing software stretched past its design; Tally; registers for machines and consumables</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="label">8 · Biggest opportunities</div>
+      <ul class="opp">
+        <li><b>Recurring-care scheduling as a first-class object:</b> standing slots, absence prediction, automatic backfill from a waitlist — utilization points straight to the bottom line</li>
+        <li><b>Session-payer automation:</b> batch pre-auths, scheme-portal integration, per-session claim status — removes the archetype's heaviest clerical load</li>
+        <li><b>Protocol-driven session records:</b> structured vitals/parameters per session → longitudinal graphs the nephrologist actually wants → safer care and inspection-ready logs as a byproduct</li>
+        <li><b>Transfer with data:</b> escalations to the partner hospital carrying the session record, not a verbal summary</li>
+        <li><b>Outcome transparency:</b> credible, methodology-visible outcome stats as the marketing weapon regulators will eventually demand anyway</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="label">9 · Future trends</div>
+      <ul class="trend">
+        <li><b>The great unbundling:</b> payers actively steering cataract/chemo/endoscopy-class procedures from hospitals to day-care — this archetype absorbs hospital volume for a decade</li>
+        <li><b>Single-specialty chain capital:</b> PE/VC money industrializing dialysis, eye, IVF formats; SOP + software as the franchise moat</li>
+        <li><b>PM-JAY dialysis scale:</b> the national dialysis program keeps expanding — volume floor for compliant operators</li>
+        <li><b>Home therapy:</b> peritoneal dialysis and home-chemo pilots shifting the center's role toward supervision hub</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <div class="ch-k">Challenge the workflow</div>
+    <p><b>Recurring care is run on tools built for one-off appointments.</b> The dialysis roster is not "an appointment booked thrice weekly" — it is a standing clinical commitment with absence risk, backfill logic, and lifetime continuity. The industry bends appointment software around this and bleeds utilization at every bend.</p>
+    <p><b>The transfer protocol is a data handoff done by ambulance.</b> A deteriorating patient arrives at the partner hospital with a verbal history and a photocopied file. The clinical record should arrive before the patient does.</p>
+  </div>
+</section>
+
+<!-- ============ 08 SYNTHESIS ============ -->
+<section class="doc-section" id="synthesis">
+  <div class="sec-kicker">08 · Cross-org Synthesis</div>
+  <h2 class="sec-title">The shared operational genome</h2>
+  <p class="sec-desc">Strip the six archetypes of their clinical clothing and the same nine operational primitives appear in every one — each wearing a different costume. This is the central finding of Session 1, and the raw material for Session 2's domain model.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th style="width:180px">Primitive</th><th>Clinic</th><th>Hospital</th><th>Diagnostic</th><th>Pharmacy</th><th>Day Care</th></tr>
+    <tr><td><b>Identity &amp; registration</b></td><td>Patient file / none</td><td>UHID + admission file</td><td>Accession + patient ID</td><td>Loyalty number</td><td>Program enrollment</td></tr>
+    <tr><td><b>Scheduling &amp; queueing</b></td><td>Walk-in tokens</td><td>OT lists, bed allotment</td><td>Home-collection slots, radiology appointments</td><td>Counter queue, delivery batching</td><td><b>Standing recurring slots</b></td></tr>
+    <tr><td><b>Clinical encounter</b></td><td>Consult + Rx</td><td>Rounds, nursing notes, OT record</td><td>Sample → result → sign-off</td><td>Dispense + (missing) counseling</td><td>Protocol session record</td></tr>
+    <tr><td><b>Orders &amp; fulfillment</b></td><td>Rx / test referrals out</td><td>Internal orders (lab, pharmacy, OT)</td><td>Test orders in (B2C + B2B)</td><td>Rx fulfillment in</td><td>Procedure/session orders</td></tr>
+    <tr><td><b>Money — cash side</b></td><td>Cash/UPI per visit</td><td>Deposits, running bills, final bill</td><td>Per-test/package billing</td><td>POS retail</td><td>Package + per-session</td></tr>
+    <tr><td><b>Money — payer side</b></td><td>Panel claims</td><td>Pre-auth → claim → denial mgmt</td><td>Corporate contracts</td><td>(Nascent OPD covers)</td><td>Per-session pre-auth, scheme portals</td></tr>
+    <tr><td><b>Inventory</b></td><td>Dispensing stock</td><td>Pharmacy + consumables + assets</td><td>Reagents (expiry/lot)</td><td><b>The whole business</b></td><td>Procedure kits, machines</td></tr>
+    <tr><td><b>People &amp; payouts</b></td><td>2–3 staff, informal</td><td>Rosters, shifts, consultant fee-share</td><td>Field routes, sign-off duty</td><td>Store staffing, pharmacist compliance</td><td>Sessional specialists, tech rosters</td></tr>
+    <tr><td><b>Compliance &amp; quality</b></td><td>CEA registration</td><td>NABH, committees, MRD</td><td>NABL, QC, EQAS, PC-PNDT</td><td>Drug licenses, H/H1/X registers</td><td>Machine logs, transfer tie-ups</td></tr>
+  </table></div>
+
+  <div class="sub">Workflows this blueprint refuses to digitize as-is</div>
+  <p class="sub-desc">The Session 1 brief demands we challenge workflows, not embalm them in software. These eight industry "normals" are design failures, and carrying any of them unchanged into Auriva would be a defect:</p>
+  <div class="prin">
+    <div class="prin-card"><div class="prin-num">C1</div><h3>The waiting room as capacity buffer</h3><p>Patients' hours absorb the provider's scheduling variance — in clinics, labs, and day-care alike. Time transparency and called-when-ready flows must replace the buffer, not decorate it.</p></div>
+    <div class="prin-card"><div class="prin-num">C2</div><h3>Discharge as end-of-stay paperwork</h3><p>Every component of the 4–8 hour hospital discharge is knowable at admission. It should run as a parallel pipeline with a countdown, initiated on day one.</p></div>
+    <div class="prin-card"><div class="prin-num">C3</div><h3>The human API gateway</h3><p>TPA desks, panel executives and coordinators re-typing the same clinical/billing facts into payer portals. NHCX-era claims should be generated from the operational record, with humans on exceptions only.</p></div>
+    <div class="prin-card"><div class="prin-num">C4</div><h3>Follow-up as the patient's memory problem</h3><p>Clinics lose chronic patients, pharmacies lose refills, hospitals lose post-op continuity — the same failure in four costumes. Recall is the provider's job; software must make it systematic.</p></div>
+    <div class="prin-card"><div class="prin-num">C5</div><h3>The paper prescription as data black hole</h3><p>Doctor loses fulfillment visibility, lab and pharmacy inherit interpretation risk, the patient carries the only copy. The Rx is an order — it should flow as one.</p></div>
+    <div class="prin-card"><div class="prin-num">C6</div><h3>Reports delivered, not understood</h3><p>Diagnostics optimizes TAT-to-PDF; comprehension and action are nobody's metric. Results must land with interpretation, trend context, and a route back to the prescriber.</p></div>
+    <div class="prin-card"><div class="prin-num">C7</div><h3>Referral by commission</h3><p>The kickback economy steers patients by payout, not quality, and taxes every diagnostic rupee. The clean exit is making earned referral (service, speed, data-back-to-doctor) more convenient than the bought kind.</p></div>
+    <div class="prin-card"><div class="prin-num">C8</div><h3>Settlement by monthly dispute</h3><p>Consultant fee-shares, B2B lab accounts, distributor credits — all reconciled after the fact in Excel, all generating friction. Attribution belongs at transaction time, visible to both sides continuously.</p></div>
+  </div>
+
+  <div class="sub">The network insight</div>
+  <div class="notecard" style="margin-top:8px">
+    <b>One patient's single episode routinely touches four of these six organizations</b> — clinic → lab → pharmacy → (sometimes) hospital or day-care — and today <b>zero context travels with them.</b> Every existing vendor sells software to one archetype and reproduces the silo. The ABDM rails (ABHA identity, consent-managed exchange, NHCX claims) now make the connective tissue nationally legal and technically standard. The deepest business opportunity identified in Session 1 is not any single org's efficiency: it is being the layer on which the patient's context, orders, results and money flow <b>between</b> organizations. That is what "Healthcare Operating System" must mean, and it is why Auriva's platform is organization-plural by design.
+  </div>
+</section>
+
+<!-- ============ 09 HANDOFF ============ -->
+<section class="doc-section" id="handoff">
+  <div class="sec-kicker">09 · Handoff</div>
+  <h2 class="sec-title">What Session 2 (Domain Architecture) inherits</h2>
+  <p class="sec-desc">This blueprint deliberately stops at business understanding. The following is the ordered work this document creates for the Domain Architecture session — with the discipline that no domain concept may be invented that this blueprint cannot ground in observed operations.</p>
+
+  <div class="panel">
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:230px">Session 2 must formalize</th><th>Grounded in (this document)</th></tr>
+      <tr><td><b>Organization taxonomy</b></td><td>Six archetypes (§02–07) as configurations of one Organization concept — not six products. Existing code already maps Organization onto Clinic; the taxonomy must define what varies (capacity units, payer mixes, encounter shapes) and what is invariant (the nine primitives, §08)</td></tr>
+      <tr><td><b>The nine primitives as candidate bounded contexts</b></td><td>The genome table (§08): identity, scheduling, encounter, orders, cash, claims, inventory, people, compliance</td></tr>
+      <tr><td><b>Actor catalog</b></td><td>Every staff-structure table (§02–07 lens 3): owner-doctor, visiting consultant, RMO, nurse, technician, phlebotomist, pharmacist, coordinator/counselor, TPA-desk, center manager — with the recurring pattern that <b>the scarcest actor is external to the org</b> (visiting consultant, sessional anesthetist, part-time pathologist)</td></tr>
+      <tr><td><b>Scheduling model</b></td><td>Must natively cover: walk-in queues (clinic), slotted appointments (lab/radiology), resource-bound lists (OT), and <b>standing recurring slots</b> (day care) — the last being the case every incumbent fails (§07 challenge)</td></tr>
+      <tr><td><b>Order &amp; fulfillment model</b></td><td>The Rx/test/procedure as a first-class order that can cross organization boundaries with consent (§08 network insight; C5)</td></tr>
+      <tr><td><b>Money model — two ledgers</b></td><td>Cash-side (bills, deposits, POS) and payer-side (pre-auth → claim → settlement → denial) as distinct but linked flows, present in all six archetypes (§08); NHCX as the standard payer interface</td></tr>
+      <tr><td><b>Settlement &amp; attribution</b></td><td>Consultant fee-share, B2B accounts, distributor credit (C8) — attribution captured at transaction time</td></tr>
+      <tr><td><b>Recall &amp; continuity engine</b></td><td>Follow-ups, refills, recurring sessions, post-discharge programs — one mechanism, four costumes (C4)</td></tr>
+      <tr><td><b>ABDM alignment</b></td><td>ABHA-linked identity, HFR/HPR registry presence, consent-managed record exchange, NHCX claims — rails, not features (§01)</td></tr>
+    </table></div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">Open questions Session 2 must answer (not this document's call)</div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th style="width:60px">#</th><th>Question</th></tr>
+      <tr><td><b>Q1</b></td><td>Is the multi-org network (patient context flowing between organizations) a Phase-1 domain concern or a designed-for-later seam? The rails argument (§08) says model it now, build it later.</td></tr>
+      <tr><td><b>Q2</b></td><td>Does one Encounter abstraction stretch from a 6-minute consult to a 4-hour dialysis session to a 5-day admission — or are these distinct aggregates sharing an interface?</td></tr>
+      <tr><td><b>Q3</b></td><td>Where does the visiting consultant live in the model — a person spanning multiple organizations with per-org engagement terms? (Every archetype's scarcest actor; §02–07.)</td></tr>
+      <tr><td><b>Q4</b></td><td>Is inventory one context (pharmacy retail, hospital stores, lab reagents, procedure kits) or a family? The operating realities differ more than the data shapes do.</td></tr>
+      <tr><td><b>Q5</b></td><td>Which compliance artifacts (registers, QC logs, audit trails) are generated as workflow byproducts in the core domain vs. a separate compliance context?</td></tr>
+    </table></div>
+  </div>
+
+  <div class="notecard" style="margin-top:16px">
+    <b>Discipline carried forward:</b> Sessions 2–5 may not invent business rules this blueprint doesn't evidence, may not design for an imagined "average provider," and must preserve the platform's existing layered architecture and centralized authorization. Where this document names an industry practice as a defect (C1–C8), downstream sessions design the replacement — they do not replicate the defect for familiarity's sake.
+  </div>
+</section>
+
+</main>
+</body>
+</html>

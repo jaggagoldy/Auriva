@@ -1,0 +1,434 @@
+<!-- APS-031 Part 5 — Doctor & Patient workspaces: confirmed excellent per APS-030 audit, light-touch pass only (dark mode + one terminology annotation), no structural redesign. -->
+<title>APS-031 · Doctor &amp; Patient Workspace Review</title>
+<style>
+:root{
+  --surface-page:#F5F7FA; --surface-card:#FFFFFF; --surface-sunken:#F1F5F9;
+  --border-default:#E2E8F0; --border-strong:#CBD5E1;
+  --text-primary:#0F172A; --text-secondary:#475569; --text-tertiary:#94A3B8;
+  --accent:#0D9488; --accent-hover:#0F766E;
+  --success:#16A34A; --success-bg:#F0FDF4; --success-border:#BBF7D0;
+  --warning:#D97706; --warning-bg:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626; --danger-bg:#FEF2F2; --danger-border:#FECACA;
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  --el-2:0 4px 12px rgba(15,23,42,.10);
+}
+[data-theme="dark"]{
+  --surface-page:#0B1220; --surface-card:#111827; --surface-sunken:#0F172A;
+  --border-default:#1E293B; --border-strong:#334155;
+  --text-primary:#F1F5F9; --text-secondary:#94A3B8; --text-tertiary:#64748B;
+  --accent:#2DD4BF; --accent-hover:#5EEAD4;
+}
+body{margin:0;background:var(--surface-page);color:var(--text-primary);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;}
+
+*{box-sizing:border-box;}
+
+/* ---------- page chrome ---------- */
+.page-header{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;background:var(--surface-card);
+  border-bottom:1px solid var(--border-default);
+}
+.page-header h1{font-size:16px;margin:0;font-weight:700;}
+.page-header .sub{font-size:12px;color:var(--text-tertiary);margin-top:2px;font-weight:400;}
+.header-left{display:flex;flex-direction:column;}
+.audit-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;color:var(--success);
+  background:var(--success-bg);border:1px solid var(--success-border);
+  padding:4px 10px;border-radius:var(--r-full);
+}
+.theme-toggle{
+  border:1px solid var(--border-strong);background:var(--surface-card);
+  color:var(--text-primary);border-radius:var(--r-full);
+  padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+}
+.theme-toggle:hover{background:var(--surface-sunken);}
+
+.intro{
+  max-width:1400px;margin:0 auto;padding:20px 28px 0;
+  color:var(--text-secondary);font-size:13px;
+}
+.intro b{color:var(--text-primary);}
+
+.tabs{
+  max-width:1400px;margin:0 auto;padding:16px 28px 0;
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+.tab-btn{
+  border:1px solid var(--border-default);background:var(--surface-card);
+  color:var(--text-secondary);padding:9px 16px;border-radius:var(--r-md);
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+.grid-wrap{
+  max-width:1400px;margin:0 auto;padding:20px 28px 60px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:20px;
+}
+@media (max-width:1000px){.grid-wrap{grid-template-columns:1fr;}}
+
+.panel{
+  background:var(--surface-card);border:1px solid var(--border-default);
+  border-radius:var(--r-xl);box-shadow:var(--el-2);overflow:hidden;
+  display:none;
+}
+.panel.show{display:block;}
+.panel-label{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--border-default);
+  background:var(--surface-sunken);
+}
+.panel-label .title{font-size:13px;font-weight:700;}
+.panel-label .tag{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--accent);background:transparent;border:1px solid var(--border-strong);
+  padding:3px 8px;border-radius:var(--r-full);color:var(--text-tertiary);
+}
+.panel-body{padding:20px;}
+
+/* ---------- doctor: today ---------- */
+.daybar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface-sunken);border:1px solid var(--border-default);
+  border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px;flex-wrap:wrap;gap:10px;
+}
+.daybar .greet{font-size:15px;font-weight:700;}
+.daybar .clinic{font-size:12px;color:var(--text-tertiary);margin-top:2px;}
+.daybar .stats{display:flex;gap:18px;}
+.stat-item{text-align:center;}
+.stat-item .n{font-size:18px;font-weight:800;}
+.stat-item .l{font-size:11px;color:var(--text-tertiary);}
+.pace-pill{
+  font-size:11px;font-weight:700;color:var(--warning);background:var(--warning-bg);
+  border:1px solid var(--warning-border);padding:5px 10px;border-radius:var(--r-full);
+  white-space:nowrap;
+}
+
+.nextup{
+  border:1px solid var(--border-default);border-radius:var(--r-lg);
+  padding:16px 18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.nextup .label{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px;}
+.nextup .name{font-size:15px;font-weight:700;}
+.nextup .meta{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+.btn-primary{
+  background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);
+  padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
+}
+.btn-primary:hover{background:var(--accent-hover);}
+
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media (max-width:700px){.quick-actions{grid-template-columns:repeat(2,1fr);}}
+.qa-btn{
+  border:1px solid var(--border-default);background:var(--surface-card);
+  border-radius:var(--r-md);padding:12px 8px;text-align:center;font-size:12px;font-weight:600;
+  color:var(--text-primary);cursor:pointer;
+}
+.qa-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ---------- doctor: patients faceted ---------- */
+.facet-row{display:flex;gap:6px;border-bottom:1px solid var(--border-default);margin-bottom:14px;flex-wrap:wrap;}
+.facet{
+  padding:9px 4px;margin-right:14px;font-size:13px;font-weight:600;color:var(--text-tertiary);
+  border-bottom:2px solid transparent;cursor:pointer;
+}
+.facet.active{color:var(--accent);border-bottom-color:var(--accent);}
+.patient-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid var(--border-default);
+}
+.patient-row:last-child{border-bottom:none;}
+.p-info{display:flex;align-items:center;gap:12px;}
+.avatar{
+  width:36px;height:36px;border-radius:var(--r-full);background:var(--surface-sunken);
+  border:1px solid var(--border-default);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;
+}
+.p-name{font-size:13px;font-weight:600;}
+.p-meta{font-size:11px;color:var(--text-tertiary);}
+.risk-chip{
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:var(--r-full);
+}
+.risk-chip.high{color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-border);}
+.risk-chip.ok{color:var(--success);background:var(--success-bg);border:1px solid var(--success-border);}
+.risk-chip.due{color:var(--warning);background:var(--warning-bg);border:1px solid var(--warning-border);}
+
+/* ---------- patient home ---------- */
+.p-header{margin-bottom:16px;}
+.p-header h2{font-size:19px;margin:0 0 2px;}
+.p-header .sub{font-size:12px;color:var(--text-tertiary);}
+
+.appt-card{
+  background:var(--surface-sunken);border:1px solid var(--border-default);
+  border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.appt-card .label{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;font-weight:700;letter-spacing:.05em;margin-bottom:4px;}
+.appt-card .doc{font-size:14px;font-weight:700;}
+.appt-card .meta{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+
+.quicknav{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.nav-tile{
+  border:1px solid var(--border-default);border-radius:var(--r-md);
+  padding:14px 10px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;
+}
+.nav-tile:hover{border-color:var(--accent);color:var(--accent);}
+
+.annotation{
+  border:1px dashed var(--border-strong);border-radius:var(--r-lg);
+  padding:14px 16px;background:var(--surface-sunken);
+}
+.annotation .a-title{font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.chip-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.chip{
+  font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--r-full);
+  border:1px solid var(--border-default);
+}
+.chip.before{color:var(--danger);background:var(--danger-bg);border-color:var(--danger-border);text-decoration:line-through;}
+.chip.after{color:var(--success);background:var(--success-bg);border-color:var(--success-border);}
+.chip-arrow{color:var(--text-tertiary);font-size:13px;}
+.annotation .note{font-size:11.5px;color:var(--text-tertiary);margin-top:8px;}
+
+/* ---------- health records ---------- */
+.summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.summary-tile{
+  border:1px solid var(--border-default);border-radius:var(--r-md);
+  padding:12px 14px;background:var(--surface-sunken);
+}
+.summary-tile .l{font-size:11px;color:var(--text-tertiary);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.summary-tile .v{font-size:14px;font-weight:700;margin-top:4px;}
+
+.timeline{position:relative;padding-left:20px;}
+.timeline::before{
+  content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--border-default);
+}
+.t-item{position:relative;padding-bottom:18px;}
+.t-item:last-child{padding-bottom:0;}
+.t-item::before{
+  content:"";position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--surface-card);
+}
+.t-date{font-size:11px;color:var(--text-tertiary);font-weight:700;}
+.t-title{font-size:13px;font-weight:600;margin-top:2px;}
+.t-meta{font-size:12px;color:var(--text-secondary);margin-top:1px;}
+
+footer{
+  max-width:1400px;margin:0 auto;padding:0 28px 40px;color:var(--text-tertiary);font-size:12px;
+}
+</style>
+
+<div class="page-header">
+  <div class="header-left">
+    <h1>APS-031 · Part 5 — Doctor &amp; Patient Workspace Review</h1>
+    <div class="sub">Light-touch pass per APS-030 audit — dark mode + one terminology annotation only</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="audit-pill">✓ Confirmed excellent — no structural changes</span>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Dark mode</span>
+    </button>
+  </div>
+</div>
+
+<div class="intro">
+  The APS-030 audit found the Doctor workspace (Today / Mission Control, faceted Patients, Practice settings) and
+  Patient workspace (Home, Care, Health Records, Family, Profile) are <b>already the quality bar</b> for the product —
+  no redesign needed here. This file applies only two narrow fixes: <b>(1)</b> dark mode support across these screens,
+  and <b>(2)</b> a documented terminology correction that belongs to the pre-login marketing surface, not the signed-in app.
+  Use the tabs below to review each screen, and the toggle above to check both themes.
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-panel="p1" onclick="showPanel('p1', this)">1 · Doctor — Today</button>
+  <button class="tab-btn" data-panel="p2" onclick="showPanel('p2', this)">2 · Doctor — Patients</button>
+  <button class="tab-btn" data-panel="p3" onclick="showPanel('p3', this)">3 · Patient — Home</button>
+  <button class="tab-btn" data-panel="p4" onclick="showPanel('p4', this)">4 · Patient — Health Records</button>
+</div>
+
+<div class="grid-wrap">
+
+  <!-- PANEL 1: Doctor Today / Mission Control -->
+  <div class="panel show" id="p1">
+    <div class="panel-label">
+      <span class="title">Doctor · Today / Mission Control</span>
+      <span class="tag">Unchanged IA · theme-safe</span>
+    </div>
+    <div class="panel-body">
+      <div class="daybar">
+        <div>
+          <div class="greet">Good morning, Dr. Mehta</div>
+          <div class="clinic">Auriva Care — Indiranagar Clinic · 18 patients today</div>
+        </div>
+        <div class="stats">
+          <div class="stat-item"><div class="n">6</div><div class="l">Seen</div></div>
+          <div class="stat-item"><div class="n">12</div><div class="l">Remaining</div></div>
+        </div>
+        <span class="pace-pill">⏱ Running behind by 8 min</span>
+      </div>
+
+      <div class="nextup">
+        <div>
+          <div class="label">Next up</div>
+          <div class="name">Ramesh Iyer · 42 / M</div>
+          <div class="meta">Follow-up · Token #7 · Waiting 6 min</div>
+        </div>
+        <button class="btn-primary">Call in →</button>
+      </div>
+
+      <div class="quick-actions">
+        <div class="qa-btn">▶ Start<br>Consultation</div>
+        <div class="qa-btn">🗓 Open<br>Schedule</div>
+        <div class="qa-btn">⏸ Pause<br>Booking</div>
+        <div class="qa-btn">⇄ Switch<br>Clinic</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Doctor Patients faceted -->
+  <div class="panel" id="p2">
+    <div class="panel-label">
+      <span class="title">Doctor · Patients</span>
+      <span class="tag">Unchanged IA · theme-safe</span>
+    </div>
+    <div class="panel-body">
+      <div class="facet-row">
+        <div class="facet active">Recent</div>
+        <div class="facet">Favourites</div>
+        <div class="facet">High Risk</div>
+        <div class="facet">Chronic</div>
+        <div class="facet">Follow-up Due</div>
+      </div>
+
+      <div class="patient-row">
+        <div class="p-info">
+          <div class="avatar">RI</div>
+          <div><div class="p-name">Ramesh Iyer</div><div class="p-meta">42 / M · Last visit 2 days ago</div></div>
+        </div>
+        <span class="risk-chip ok">Stable</span>
+      </div>
+      <div class="patient-row">
+        <div class="p-info">
+          <div class="avatar">SN</div>
+          <div><div class="p-name">Sunita Nair</div><div class="p-meta">58 / F · Last visit 5 days ago</div></div>
+        </div>
+        <span class="risk-chip high">High risk</span>
+      </div>
+      <div class="patient-row">
+        <div class="p-info">
+          <div class="avatar">AK</div>
+          <div><div class="p-name">Arjun Kumar</div><div class="p-meta">35 / M · Last visit 1 week ago</div></div>
+        </div>
+        <span class="risk-chip due">Follow-up due</span>
+      </div>
+      <div class="patient-row">
+        <div class="p-info">
+          <div class="avatar">PD</div>
+          <div><div class="p-name">Priya Deshmukh</div><div class="p-meta">29 / F · Last visit today</div></div>
+        </div>
+        <span class="risk-chip ok">Stable</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Patient Home -->
+  <div class="panel" id="p3">
+    <div class="panel-label">
+      <span class="title">Patient · Home</span>
+      <span class="tag">Unchanged IA · theme-safe</span>
+    </div>
+    <div class="panel-body">
+      <div class="p-header">
+        <h2>Good morning, Goldy</h2>
+        <div class="sub">Here's what's on your care plan today</div>
+      </div>
+
+      <div class="appt-card">
+        <div>
+          <div class="label">Upcoming appointment</div>
+          <div class="doc">Dr. Mehta · General Medicine</div>
+          <div class="meta">Tomorrow, 10:30 AM · Indiranagar Clinic</div>
+        </div>
+        <button class="btn-primary">View details</button>
+      </div>
+
+      <div class="quicknav">
+        <div class="nav-tile">🩺 Care</div>
+        <div class="nav-tile">📋 Health Records</div>
+        <div class="nav-tile">👪 Family</div>
+      </div>
+
+      <div class="annotation">
+        <div class="a-title">Terminology fix — pre-login surface only</div>
+        <div class="chip-flow">
+          <span class="chip before">Before: "Patient Portal"</span>
+          <span class="chip-arrow">→</span>
+          <span class="chip after">After: "Good morning, Goldy"</span>
+        </div>
+        <div class="note">
+          The word "Patient" was found on the pre-login role-picker card and a marketing stat — not here.
+          This signed-in Home screen already uses the person's real name throughout and needs no change.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 4: Patient Health Records -->
+  <div class="panel" id="p4">
+    <div class="panel-label">
+      <span class="title">Patient · Health Records</span>
+      <span class="tag">Unchanged IA · theme-safe</span>
+    </div>
+    <div class="panel-body">
+      <div class="summary-strip">
+        <div class="summary-tile"><div class="l">Blood Group</div><div class="v">O+</div></div>
+        <div class="summary-tile"><div class="l">Allergies</div><div class="v">Penicillin</div></div>
+        <div class="summary-tile"><div class="l">Chronic Conditions</div><div class="v">Hypertension</div></div>
+      </div>
+
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-date">5 Jul 2026</div>
+          <div class="t-title">Consultation — Dr. Mehta</div>
+          <div class="t-meta">Follow-up for hypertension · BP 128/82</div>
+        </div>
+        <div class="t-item">
+          <div class="t-date">22 Jun 2026</div>
+          <div class="t-title">Lab report — Lipid Profile</div>
+          <div class="t-meta">Cholesterol within normal range</div>
+        </div>
+        <div class="t-item">
+          <div class="t-date">14 May 2026</div>
+          <div class="t-title">Prescription issued</div>
+          <div class="t-meta">Amlodipine 5mg · 30 days</div>
+        </div>
+        <div class="t-item">
+          <div class="t-date">2 Apr 2026</div>
+          <div class="t-title">Consultation — Dr. Mehta</div>
+          <div class="t-meta">Routine checkup · vitals recorded</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>APS-031 Part 5 — Doctor &amp; Patient workspaces reviewed against APS-030 audit findings. No IA changes; dark mode + terminology annotation only.</footer>
+
+<script>
+function showPanel(id, btn){
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('show'); });
+  document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+function toggleTheme(){
+  var root = document.documentElement;
+  var isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = isDark ? 'Dark mode' : 'Light mode';
+}
+</script>

@@ -18,9 +18,9 @@ export const metadata: Metadata = {
 type Status = 'live' | 'in-progress' | 'roadmap';
 
 const STATUS_STYLES: Record<Status, string> = {
-  live: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900',
+  live: 'bg-success/10 text-success border-success/30',
   'in-progress':
-    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900',
+    'bg-warning/10 text-warning border-warning/30',
   roadmap: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -100,9 +100,11 @@ export default function TrustPage() {
             <p className="mb-6 max-w-2xl text-muted-foreground">
               Every permission denial names the specific grant you&apos;re missing — access is scoped by
               role, not by convention. Every appointment, invoice, and record change is written to a
-              tamper-evident, actor-and-timestamp-stamped audit log. Encryption in transit and at rest is
-              a standard commitment across the platform. If something goes wrong, our incident response
-              process starts with notifying affected organizations directly, not with a press release.
+              tamper-evident, actor-and-timestamp-stamped audit log. Traffic to and from Auriva is
+              encrypted in transit (TLS). At-rest encryption depends on your hosting provider&apos;s disk
+              configuration — see our deployment documentation for guidance. If something goes wrong, our
+              incident response process starts with notifying affected organizations directly, not with a
+              press release.
             </p>
           </section>
 

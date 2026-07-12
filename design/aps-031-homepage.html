@@ -1,0 +1,446 @@
+<!-- APS-031 Part 2: static homepage design mockup only — not production code. Do not wire up. -->
+<style>
+:root{
+  --surface-page:#F5F7FA; --surface-card:#FFFFFF; --surface-sunken:#F1F5F9;
+  --border-default:#E2E8F0; --border-strong:#CBD5E1;
+  --text-primary:#0F172A; --text-secondary:#475569; --text-tertiary:#94A3B8;
+  --accent:#0D9488; --accent-hover:#0F766E;
+  --success:#16A34A; --success-bg:#F0FDF4; --success-border:#BBF7D0;
+  --warning:#D97706; --warning-bg:#FFFBEB; --warning-border:#FDE68A;
+  --danger:#DC2626; --danger-bg:#FEF2F2; --danger-border:#FECACA;
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  --el-1:0 1px 2px rgba(15,23,42,.06); --el-2:0 4px 12px rgba(15,23,42,.10);
+  --el-3:0 12px 32px rgba(15,23,42,.16);
+}
+body{margin:0;background:var(--surface-page);color:var(--text-primary);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;}
+
+*{box-sizing:border-box;}
+img,svg{display:block;}
+a{color:inherit;text-decoration:none;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+section{padding:96px 0;}
+h1,h2,h3,p{margin:0;}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);}
+.section-head{max-width:640px;margin:0 auto 48px;text-align:center;}
+.section-head h2{font-size:32px;font-weight:650;letter-spacing:-0.02em;margin-top:10px;}
+.section-head p{color:var(--text-secondary);font-size:16px;margin-top:12px;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-size:14px;font-weight:600;
+  border-radius:var(--r-md);padding:10px 20px;cursor:pointer;border:1px solid transparent;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:var(--surface-card);color:var(--text-primary);border-color:var(--border-strong);}
+.btn-secondary:hover{border-color:var(--text-tertiary);}
+.btn-ghost{background:transparent;color:var(--text-secondary);}
+.btn-lg{padding:13px 26px;font-size:15px;}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(10px);
+  border-bottom:1px solid var(--border-default);}
+.nav-inner{max-width:1180px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-0.01em;}
+.logo-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#0f8a80);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:14px;height:14px;}
+.nav-links{display:flex;align-items:center;gap:30px;font-size:13.5px;color:var(--text-secondary);font-weight:500;}
+.nav-links a:hover{color:var(--text-primary);}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-right .btn{padding:8px 16px;font-size:13.5px;}
+
+/* HERO */
+.hero{padding:96px 0 56px;text-align:center;}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:6px;background:var(--success-bg);border:1px solid var(--success-border);
+  color:var(--success);padding:5px 12px;border-radius:var(--r-full);text-transform:none;letter-spacing:0;font-size:12.5px;}
+.hero h1{font-size:52px;line-height:1.12;font-weight:700;letter-spacing:-0.03em;max-width:820px;margin:24px auto 0;}
+.hero h1 span{color:var(--accent);}
+.hero .sub{max-width:600px;margin:20px auto 0;font-size:17px;color:var(--text-secondary);}
+.hero-ctas{display:flex;gap:12px;justify-content:center;margin-top:34px;}
+.hero-stats{display:flex;justify-content:center;gap:56px;margin-top:72px;padding-top:40px;border-top:1px solid var(--border-default);
+  max-width:900px;margin-left:auto;margin-right:auto;}
+.stat{text-align:center;}
+.stat .num{font-size:28px;font-weight:700;letter-spacing:-0.02em;color:var(--text-primary);}
+.stat .lbl{font-size:12.5px;color:var(--text-tertiary);margin-top:4px;}
+
+/* PILLARS */
+.pillar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.card{background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--r-lg);box-shadow:var(--el-1);}
+.pillar-card{padding:26px 24px;}
+.pillar-icon{width:40px;height:40px;border-radius:var(--r-md);background:var(--surface-sunken);display:flex;align-items:center;
+  justify-content:center;margin-bottom:16px;color:var(--accent);}
+.pillar-icon svg{width:20px;height:20px;}
+.pillar-card h3{font-size:16.5px;font-weight:650;letter-spacing:-0.01em;}
+.pillar-card .desc{color:var(--text-secondary);font-size:13.5px;margin-top:6px;}
+.pillar-card ul{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.pillar-card li{font-size:12.5px;color:var(--text-tertiary);display:flex;align-items:center;gap:7px;}
+.pillar-card li::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+
+/* ARCHETYPES */
+.archetype-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.archetype-card{padding:20px 20px;display:flex;flex-direction:column;gap:8px;}
+.archetype-card .tag{font-size:12px;font-weight:600;color:var(--accent);}
+.archetype-card p{font-size:13px;color:var(--text-secondary);}
+
+/* TRUST STRIP */
+.trust{background:var(--surface-sunken);border-top:1px solid var(--border-default);border-bottom:1px solid var(--border-default);padding:44px 0;}
+.trust-inner{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-secondary);font-weight:500;}
+.trust-item svg{width:17px;height:17px;color:var(--accent);flex-shrink:0;}
+.trust-item a{border-bottom:1px dotted var(--border-strong);padding-bottom:1px;}
+.trust-item a:hover{color:var(--accent);border-color:var(--accent);}
+.trust-label{font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+
+/* QUOTES */
+.quote-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.quote-card{padding:26px 24px;display:flex;flex-direction:column;gap:16px;}
+.quote-tag{align-self:flex-start;font-size:11.5px;font-weight:600;color:var(--accent);background:var(--success-bg);
+  border:1px solid var(--success-border);padding:4px 10px;border-radius:var(--r-full);}
+.quote-card blockquote{margin:0;font-size:14.5px;color:var(--text-primary);line-height:1.6;}
+.quote-person{display:flex;align-items:center;gap:10px;margin-top:auto;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-sunken);border:1px solid var(--border-default);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-secondary);}
+.quote-person .name{font-size:13px;font-weight:600;}
+.quote-person .role{font-size:12px;color:var(--text-tertiary);}
+
+/* GET STARTED */
+.start-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.start-card{padding:30px 26px;text-align:left;}
+.start-emoji{font-size:30px;margin-bottom:14px;}
+.start-card h3{font-size:18px;font-weight:650;letter-spacing:-0.01em;}
+.start-card p{color:var(--text-secondary);font-size:13.5px;margin-top:6px;}
+.start-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px;}
+.start-actions a{font-size:13.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:6px;padding:4px 0;}
+.start-actions a:hover{color:var(--accent-hover);}
+.start-actions .divider{border:none;border-top:1px solid var(--border-default);margin:2px 0;}
+
+/* FINAL CTA */
+.final-cta{background:var(--text-primary);border-radius:var(--r-xl);padding:64px 48px;text-align:center;color:#fff;}
+.final-cta h2{font-size:30px;font-weight:650;letter-spacing:-0.02em;}
+.final-cta p{color:#CBD5E1;margin-top:10px;font-size:15px;}
+.final-cta .hero-ctas{margin-top:28px;}
+.final-cta .btn-secondary{background:transparent;color:#fff;border-color:#334155;}
+.final-cta .btn-secondary:hover{border-color:#64748B;}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border-default);padding:64px 0 28px;background:var(--surface-card);}
+.footer-grid{display:grid;grid-template-columns:1.4fr repeat(5,1fr);gap:24px;}
+.footer-col h4{font-size:12.5px;font-weight:650;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin-bottom:14px;}
+.footer-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.footer-col li a{font-size:13.5px;color:var(--text-secondary);}
+.footer-col li a:hover{color:var(--accent);}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+  margin-top:56px;padding-top:24px;border-top:1px solid var(--border-default);}
+.footer-brand{display:flex;align-items:center;gap:9px;color:var(--text-tertiary);font-size:13px;}
+.status-pill{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);
+  background:var(--surface-sunken);border:1px solid var(--border-default);padding:6px 12px;border-radius:var(--r-full);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-bg);}
+
+@media (max-width:960px){
+  .pillar-grid,.archetype-grid,.quote-grid,.start-grid{grid-template-columns:repeat(2,1fr);}
+  .footer-grid{grid-template-columns:repeat(3,1fr);}
+  .nav-links{display:none;}
+  .hero h1{font-size:38px;}
+  .hero-stats{gap:32px;flex-wrap:wrap;}
+}
+@media (max-width:640px){
+  .pillar-grid,.archetype-grid,.quote-grid,.start-grid,.footer-grid{grid-template-columns:1fr;}
+  section{padding:64px 0;}
+  .wrap{padding:0 20px;}
+}
+</style>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+      </span>
+      Auriva
+    </div>
+    <div class="nav-links">
+      <a href="#pillars">Platform</a>
+      <a href="#archetypes">Solutions</a>
+      <a href="#archetypes">Industries</a>
+      <a href="#">Pricing</a>
+      <a href="#proof">Customers</a>
+      <a href="#trust">Security</a>
+    </div>
+    <div class="nav-right">
+      <a href="#" class="btn btn-ghost">Sign In</a>
+      <a href="#" class="btn btn-primary">Book Demo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero wrap">
+  <span class="eyebrow">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+    Now serving 6 kinds of healthcare organizations
+  </span>
+  <h1>The Healthcare <span>Operating System.</span><br>One platform, six configurations, zero forks.</h1>
+  <p class="sub">Auriva unifies clinical care, practice operations, billing, patient engagement, and organization intelligence into a single system — configured for how your organization already works, not rebuilt around ours.</p>
+  <div class="hero-ctas">
+    <a href="#" class="btn btn-primary btn-lg">Book Demo</a>
+    <a href="#pillars" class="btn btn-secondary btn-lg">Explore Platform</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="num">2.4M+</div><div class="lbl">Appointments coordinated</div></div>
+    <div class="stat"><div class="num">40,000+</div><div class="lbl">Consult hours returned to care</div></div>
+    <div class="stat"><div class="num">6</div><div class="lbl">Organization archetypes served</div></div>
+    <div class="stat"><div class="num">99.95%</div><div class="lbl">Platform uptime</div></div>
+  </div>
+</header>
+
+<!-- ============ SIX PILLARS ============ -->
+<section id="pillars" class="wrap">
+  <div class="section-head">
+    <span class="eyebrow">The Platform</span>
+    <h2>Six pillars. One system of record.</h2>
+    <p>Every part of running a healthcare organization, built to work together instead of being stitched together after the fact.</p>
+  </div>
+  <div class="pillar-grid">
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg></div>
+      <h3>Clinical Excellence</h3>
+      <p class="desc">Everything that happens in and around the exam room, connected end to end.</p>
+      <ul><li>Appointments &amp; Queue</li><li>Consultation &amp; EMR</li><li>Prescriptions &amp; Follow-up</li></ul>
+    </div>
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+      <h3>Practice Operations</h3>
+      <p class="desc">Keep every clinic, room, and doctor's calendar running on schedule.</p>
+      <ul><li>Doctor Availability</li><li>Room Scheduling</li><li>Operational Alerts</li></ul>
+    </div>
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <h3>Financial Operations</h3>
+      <p class="desc">Revenue, insurance, and settlement that reconciles itself by design.</p>
+      <ul><li>Billing &amp; Invoices</li><li>Payments</li><li>Insurance &amp; Settlement</li></ul>
+    </div>
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a2 2 0 0 0-2.8 0l-1 1a5 5 0 0 0-7 0L4.6 10a5 5 0 0 0 0 7l1.4 1.4a5 5 0 0 0 7 0l5.8-5.8a2 2 0 0 0 0-2.8Z"/></svg></div>
+      <h3>Patient Engagement</h3>
+      <p class="desc">Care that meets people where they are, before and after the visit.</p>
+      <ul><li>Patient Portal</li><li>Online Booking</li><li>Teleconsultation</li></ul>
+    </div>
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></div>
+      <h3>Organization Intelligence</h3>
+      <p class="desc">See the whole organization at a glance, from one clinic to the whole network.</p>
+      <ul><li>Command Center</li><li>Reports &amp; Analytics</li><li>Doctor Productivity</li></ul>
+    </div>
+
+    <div class="card pillar-card">
+      <div class="pillar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6Z"/></svg></div>
+      <h3>Platform Foundation</h3>
+      <p class="desc">The identity, authorization, and event infrastructure everything else is built on.</p>
+      <ul><li>Identity &amp; Authorization</li><li>Event Platform</li><li>Notifications</li></ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ ARCHETYPES ============ -->
+<section id="archetypes" class="wrap">
+  <div class="section-head">
+    <span class="eyebrow">Built For</span>
+    <h2>Built for every kind of healthcare organization.</h2>
+    <p>Six configurations of the same platform — no forks, no one-off codebases per customer.</p>
+  </div>
+  <div class="archetype-grid">
+    <div class="card archetype-card"><div class="tag">Independent Clinic</div><p>For solo practitioners who need enterprise-grade tools without enterprise overhead.</p></div>
+    <div class="card archetype-card"><div class="tag">Multi-specialty Clinic</div><p>For clinics coordinating multiple departments and doctors under one roof.</p></div>
+    <div class="card archetype-card"><div class="tag">Hospital</div><p>For institutions running clinical, financial, and operational workflows at scale.</p></div>
+    <div class="card archetype-card"><div class="tag">Diagnostic Center</div><p>For labs and imaging centers managing orders, results, and turnaround time.</p></div>
+    <div class="card archetype-card"><div class="tag">Pharmacy Chain</div><p>For pharmacy networks tracking dispensing and inventory across locations.</p></div>
+    <div class="card archetype-card"><div class="tag">Day Care Center</div><p>For same-day procedure centers built around precise scheduling.</p></div>
+  </div>
+</section>
+
+<!-- ============ TRUST STRIP ============ -->
+<div id="trust" class="trust">
+  <div class="wrap trust-inner">
+    <span class="trust-label">Trust, before features</span>
+    <span class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+      <a href="#">WCAG 2.2 AA accessible</a>
+    </span>
+    <span class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6Z"/></svg>
+      <a href="#">Full audit trail on every record</a>
+    </span>
+    <span class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <a href="#">Your data, your organization, always</a>
+    </span>
+  </div>
+</div>
+
+<!-- ============ CUSTOMER PROOF ============ -->
+<section id="proof" class="wrap">
+  <div class="section-head">
+    <span class="eyebrow">Customer Proof</span>
+    <h2>Trusted by teams running real clinics.</h2>
+  </div>
+  <div class="quote-grid">
+    <div class="card quote-card">
+      <span class="quote-tag">Independent Clinic</span>
+      <blockquote>"We went from three separate tools for booking, billing, and records to just Auriva. Front desk closes out the day twenty minutes faster, every day."</blockquote>
+      <div class="quote-person">
+        <div class="avatar">RM</div>
+        <div><div class="name">Dr. Rina Mehta</div><div class="role">Founder, Mehta Family Clinic</div></div>
+      </div>
+    </div>
+    <div class="card quote-card">
+      <span class="quote-tag">Hospital</span>
+      <blockquote>"Command Center gave our administrators visibility across departments we simply didn't have before — occupancy, doctor load, and revenue in one screen."</blockquote>
+      <div class="quote-person">
+        <div class="avatar">AS</div>
+        <div><div class="name">Anil Suresh</div><div class="role">COO, Lakeview Hospital Group</div></div>
+      </div>
+    </div>
+    <div class="card quote-card">
+      <span class="quote-tag">Diagnostic Center</span>
+      <blockquote>"Turnaround time reporting used to be a spreadsheet someone updated on Fridays. Now it's live, and referring clinics can see status themselves."</blockquote>
+      <div class="quote-person">
+        <div class="avatar">PK</div>
+        <div><div class="name">Priya Kapoor</div><div class="role">Lab Director, Clarity Diagnostics</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GET STARTED THREE WAYS ============ -->
+<section class="wrap">
+  <div class="section-head">
+    <span class="eyebrow">Get Started</span>
+    <h2>Three ways in, one platform underneath.</h2>
+    <p>Whoever you are, Auriva meets you at the right door.</p>
+  </div>
+  <div class="start-grid">
+    <div class="card start-card">
+      <div class="start-emoji">🏥</div>
+      <h3>Healthcare Organization</h3>
+      <p>Set up a clinic, hospital, or network and configure it your way.</p>
+      <div class="start-actions">
+        <a href="#">Create Organization →</a>
+        <hr class="divider">
+        <a href="#">Join an Organization →</a>
+        <hr class="divider">
+        <a href="#">Book Demo →</a>
+      </div>
+    </div>
+    <div class="card start-card">
+      <div class="start-emoji">👩‍⚕️</div>
+      <h3>Healthcare Professional</h3>
+      <p>Already invited by a clinic or hospital on Auriva? Start here.</p>
+      <div class="start-actions">
+        <a href="#">Accept Invitation →</a>
+        <hr class="divider">
+        <a href="#">Sign In →</a>
+      </div>
+    </div>
+    <div class="card start-card">
+      <div class="start-emoji">❤️</div>
+      <h3>Personal Health</h3>
+      <p>Booking a visit or managing your own care and family's records.</p>
+      <div class="start-actions">
+        <a href="#">Book an Appointment →</a>
+        <hr class="divider">
+        <a href="#">My Health →</a>
+        <hr class="divider">
+        <a href="#">Sign In →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="wrap">
+  <div class="final-cta">
+    <h2>See Auriva running your kind of organization.</h2>
+    <p>A 30-minute walkthrough, configured to your archetype — not a generic demo script.</p>
+    <div class="hero-ctas">
+      <a href="#" class="btn btn-primary btn-lg">Book Demo</a>
+      <a href="#pillars" class="btn btn-secondary btn-lg">Explore Platform</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="logo" style="margin-bottom:12px;">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+          </span>
+          Auriva
+        </div>
+        <p style="color:var(--text-tertiary);font-size:13px;max-width:220px;">The Healthcare Operating System — one platform, six configurations, zero forks.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#">Clinical Excellence</a></li>
+          <li><a href="#">Practice Operations</a></li>
+          <li><a href="#">Financial Operations</a></li>
+          <li><a href="#">Patient Engagement</a></li>
+          <li><a href="#">Organization Intelligence</a></li>
+          <li><a href="#">Platform Foundation</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="#">For Owners</a></li>
+          <li><a href="#">For Doctors</a></li>
+          <li><a href="#">For Front Desk</a></li>
+          <li><a href="#">For Patients</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Industries</h4>
+        <ul>
+          <li><a href="#">Independent Clinic</a></li>
+          <li><a href="#">Multi-specialty Clinic</a></li>
+          <li><a href="#">Hospital</a></li>
+          <li><a href="#">Diagnostic Center</a></li>
+          <li><a href="#">Pharmacy Chain</a></li>
+          <li><a href="#">Day Care Center</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Customers</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">Compliance</a></li>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Status</a></li>
+          <li><a href="#">Legal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-brand">© 2026 Auriva. All rights reserved.</div>
+      <div class="status-pill"><span class="status-dot"></span> Status: All systems operational</div>
+    </div>
+  </div>
+</footer>

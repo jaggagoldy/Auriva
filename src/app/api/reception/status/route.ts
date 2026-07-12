@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { badRequest, mapDomainError, notFound, ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
-import { canManageAppointments } from '@/domain/authorization';
 import { transitionStatus } from '@/services/appointment-service';
 import { setPriority } from '@/services/queue-service';
 import { isAppointmentStatus } from '@/domain/appointment-status';
@@ -22,7 +21,7 @@ export async function PATCH(request: NextRequest) {
       return badRequest('status must be a valid appointment status.');
     }
 
-    const auth = await requireStaffContext(canManageAppointments, clinic_id);
+    const auth = await requireStaffContext('reception', clinic_id);
     if (!auth.ok) return auth.response;
 
     if (status !== undefined) {

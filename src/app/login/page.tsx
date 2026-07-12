@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Building2,
   Stethoscope,
   HeartPulse,
   Phone,
@@ -13,7 +12,6 @@ import {
   Mail,
   ArrowLeft,
   ArrowRight,
-  Heart,
   Loader2,
   Sparkles
 } from 'lucide-react';
@@ -45,9 +43,22 @@ export default function UnifiedLoginGateway() {
   const router = useRouter();
 
   // Navigation & Step states
-  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'onboarding'>('role');
-  const [entryPath, setEntryPath] = useState<EntryPath | null>(null);
+  // Modern SaaS convention: "Sign in" lands directly on the login form.
+  // The path chooser (Organization / Professional / Personal) belongs to the
+  // Start Free / Get Started journey, not to returning-user sign-in.
+  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'onboarding'>('auth');
+  const [entryPath, setEntryPath] = useState<EntryPath | null>('professional');
   const [showForgotHelp, setShowForgotHelp] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Deep-link support: /login?as=patient starts on the patient (phone + OTP)
+  // path — used by "Register as a user" on Get Started. Default is provider
+  // (email/phone + password).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const as = new URLSearchParams(window.location.search).get('as');
+    if (as === 'patient' || as === 'personal') setEntryPath('personal');
+  }, []);
 
   // Form states
   const [phoneNumber, setPhoneNumber] = useState('+15550199999');
@@ -80,6 +91,21 @@ export default function UnifiedLoginGateway() {
       // Prefill a seeded demo email for testing convenience — the server
       // derives the actual role from the account, not from this path choice.
       setEmail('admin@aegiscare.com');
+    }
+  };
+
+  // Milestone 1 Batch 6 (Demo Mode): "Skip & explore" — no signup. Opens the
+  // sandbox SmileCare clinic and lands in /clinic with a real owner session.
+  const handleExploreDemo = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/demo/enter', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Could not open the demo');
+      router.push(data.redirect ?? '/clinic');
+    } catch (err) {
+      toast.error(errorMessage(err) ?? 'Could not open the demo. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -163,7 +189,7 @@ export default function UnifiedLoginGateway() {
 
       finishLogin(data);
     } catch (err) {
-      toast.error(errorMessage(err) ?? 'Verification failed. Try 123456.');
+      toast.error(errorMessage(err) ?? 'Verification failed. Request a new code and try again.');
     } finally {
       setLoading(false);
     }
@@ -227,8 +253,12 @@ export default function UnifiedLoginGateway() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // APS-040: credentialed login — the server derives the role from the
-        // account; the role picked on the previous step is UI-only.
-        body: JSON.stringify({ email, password })
+        // account. Accepts email OR phone as the identifier.
+        body: JSON.stringify(
+          email.includes('@')
+            ? { email: email.trim(), password }
+            : { phone: email.trim(), password }
+        )
       });
 
       const data = await res.json();
@@ -257,12 +287,12 @@ export default function UnifiedLoginGateway() {
     professional: {
       title: 'Healthcare Professional',
       icon: Stethoscope,
-      badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+      badge: 'bg-success/10 text-success dark:text-success',
     },
     personal: {
       title: 'Personal Health',
       icon: HeartPulse,
-      badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+      badge: 'bg-info/10 text-info dark:text-info',
     },
   };
   const activeEntry = entryPath ? ENTRY_META[entryPath] : null;
@@ -274,57 +304,74 @@ export default function UnifiedLoginGateway() {
       <Toaster position="top-right" />
 
       {/* Brand / trust panel — hidden below lg, per the split-shell's responsive collapse. */}
-      <div className="relative hidden w-[45%] shrink-0 flex-col justify-between overflow-hidden bg-[#134E4A] p-12 text-white lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0F766E]/40 via-transparent to-transparent" />
+      <div className="relative hidden w-[45%] shrink-0 flex-col justify-between overflow-hidden bg-[#0B4A41] p-12 text-white lg:flex">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-32 -top-40 size-[420px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(232,162,76,.18), transparent 62%)" }}
+        />
 
-        <div className="relative flex items-center space-x-2.5">
-          <div className="rounded-xl border border-white/20 bg-white/10 p-2.5">
-            <Heart className="h-6 w-6 fill-white/10 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Auriva</h1>
-            <p className="text-[10px] font-semibold tracking-widest text-teal-200 uppercase">
-              Unified Workspace Gateway
-            </p>
-          </div>
+        <div className="relative flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-[10px] bg-white/15">
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="#fff"
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 12h3l2-6 4 12 2-6h4" />
+            </svg>
+          </span>
+          <span className="font-heading text-xl font-bold tracking-tight">Auriva</span>
         </div>
 
         <div className="relative space-y-6">
-          <h2 className="max-w-sm text-3xl leading-tight font-bold tracking-tight">
-            Healthcare, Simplified.
-          </h2>
-          <p className="max-w-sm text-sm leading-relaxed text-teal-100/80">
-            One platform connecting patients, doctors and clinics — booking, queueing and
-            consultation in a single, calm workflow.
+          <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#E8A24C" }}>
+            Welcome
           </p>
-          {/* Honest, verifiable facts about the platform itself — not
-              fabricated usage numbers (APS-030 Principle 18). */}
+          <h2 className="max-w-sm font-heading text-3xl leading-tight font-bold tracking-tight">
+            Your clinic and your care, in one calm place.
+          </h2>
+          <p className="max-w-sm text-sm leading-relaxed text-[#DCEAE5]">
+            One platform connecting patients, doctors and clinics — booking, queue and consultation
+            in a single, calm workflow.
+          </p>
           <div className="grid max-w-sm grid-cols-2 gap-4 pt-2">
-            <TrustStat value="1" label="Platform, zero forks" />
-            <TrustStat value="6" label="Organization archetypes" />
-            <TrustStat value="9" label="Operational primitives" />
-            <TrustStat value="AA" label="WCAG 2.2 accessible" />
+            <TrustStat value="Free" label="for solo practice" />
+            <TrustStat value="2 min" label="to set up" />
+            <TrustStat value="UPI" label="payments built in" />
+            <TrustStat value="Yours" label="you own your data" />
           </div>
         </div>
 
-        <p className="relative text-xs text-teal-200/60">
-          &copy; {new Date().getFullYear()} Auriva Healthcare Platform.
+        <p className="relative text-xs text-[#C7DBD4]">
+          &copy; {new Date().getFullYear()} Auriva · the healthcare operating system.
         </p>
       </div>
 
       {/* Form panel */}
       <div className="flex flex-1 flex-col items-center justify-center bg-background p-4">
         {/* Compact brand mark shown only when the trust panel is collapsed. */}
-        <div className="mb-8 flex items-center space-x-2.5 lg:hidden">
-          <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5">
-            <Heart className="h-6 w-6 fill-primary/10 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Auriva</h1>
-            <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-              Unified Workspace Gateway
-            </p>
-          </div>
+        <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+          <span className="flex size-9 items-center justify-center rounded-[10px] bg-primary">
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="#fff"
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 12h3l2-6 4 12 2-6h4" />
+            </svg>
+          </span>
+          <span className="font-heading text-xl font-bold tracking-tight text-foreground">Auriva</span>
         </div>
 
         <div className="w-full max-w-xl">
@@ -403,6 +450,24 @@ export default function UnifiedLoginGateway() {
                       </p>
                     </div>
                   </motion.button>
+
+                  {/* Demo Mode (Batch 6) — no signup, straight into a live clinic */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">
+                      Just looking?
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExploreDemo}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Skip &amp; explore a live demo clinic
+                  </button>
                 </CardContent>
               </Card>
             </motion.div>
@@ -418,27 +483,9 @@ export default function UnifiedLoginGateway() {
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
               <Card className="overflow-hidden rounded-2xl shadow-sm">
-                <CardHeader className="flex flex-row items-center gap-3 px-6 pt-6 pb-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label="Back to entry"
-                    onClick={() => setStep('role')}
-                  >
-                    <ArrowLeft />
-                  </Button>
-                  <div className="space-y-0.5">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <span className={`rounded-md p-1.5 ${activeEntry.badge}`}>
-                        <activeEntry.icon className="h-4 w-4" />
-                      </span>
-                      <span>{activeEntry.title} sign in</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Access your secured Auriva profile environment.
-                    </CardDescription>
-                  </div>
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <CardTitle className="font-heading text-xl font-bold">Welcome back</CardTitle>
+                  <CardDescription>Sign in to your Auriva workspace.</CardDescription>
                 </CardHeader>
 
                 <CardContent className="px-6 py-4">
@@ -462,20 +509,27 @@ export default function UnifiedLoginGateway() {
                       </div>
 
                       <Button type="submit" disabled={loading} className="w-full">
-                        {loading ? <Loader2 className="animate-spin" /> : <span>Send OTP via Twilio</span>}
+                        {loading ? <Loader2 className="animate-spin" /> : (<><span>Send code</span><ArrowRight /></>)}
                       </Button>
+                      <button
+                        type="button"
+                        onClick={() => setEntryPath('professional')}
+                        className="block w-full text-center text-xs font-medium text-primary hover:underline"
+                      >
+                        Sign in with email &amp; password instead
+                      </button>
                     </form>
                   ) : (
                     /* Clinical/Staff login route (Email / Password) */
                     <form onSubmit={handleB2BLogin} className="space-y-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="email">Work Email</Label>
+                        <Label htmlFor="email">Email or phone</Label>
                         <div className="relative">
                           <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             id="email"
-                            type="email"
-                            placeholder="username@domain.com"
+                            type="text"
+                            placeholder="you@clinic.in  ·  or +91 98765 43210"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="pl-9"
@@ -485,7 +539,16 @@ export default function UnifiedLoginGateway() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="pass">Secure Password</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="pass">Password</Label>
+                          <button
+                            type="button"
+                            onClick={() => setShowForgotHelp((v) => !v)}
+                            className="text-xs font-medium text-primary hover:underline"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
                         <div className="relative">
                           <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
@@ -500,52 +563,51 @@ export default function UnifiedLoginGateway() {
                         </div>
                       </div>
 
-                      <Button type="submit" disabled={loading} className="w-full">
-                        {loading ? (
-                          <Loader2 className="animate-spin" />
-                        ) : (
-                          <>
-                            <span>Secure Sign In</span>
-                            <ArrowRight />
-                          </>
-                        )}
-                      </Button>
-
-                      {/* Forgot Password / Magic Link — no reset or magic-link
-                          backend exists yet (only OTP and email+password are
-                          real integrations), so these are honest, non-fake
-                          affordances rather than buttons wired to nothing. */}
-                      <div className="flex items-center justify-between pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotHelp((v) => !v)}
-                          className="text-xs font-medium text-primary hover:underline"
-                        >
-                          Forgot password?
-                        </button>
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          Email me a sign-in link
-                          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium">
-                            Coming soon
-                          </span>
-                        </span>
-                      </div>
                       {showForgotHelp && (
                         <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
                           Password resets aren&apos;t self-service yet — ask your organization owner to
                           reset it for you from People &rarr; Staff.
                         </p>
                       )}
+
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="size-4 rounded border-border accent-primary"
+                        />
+                        Remember me on this device
+                      </label>
+
+                      <Button type="submit" disabled={loading} className="w-full">
+                        {loading ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <>
+                            <span>Sign in</span>
+                            <ArrowRight />
+                          </>
+                        )}
+                      </Button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEntryPath('personal')}
+                        className="block w-full text-center text-xs font-medium text-primary hover:underline"
+                      >
+                        I&apos;m a patient — sign in with OTP
+                      </button>
                     </form>
                   )}
                 </CardContent>
 
-                <div className="px-6 pt-1 pb-6 text-center">
-                  <p className="text-xs text-muted-foreground">
-                    {entryPath === 'personal'
-                      ? 'Use +15550199999 for Alex Rivera (Patient), or any other number to create a new profile.'
-                      : `Use the seeded demo email above — no password check yet.`
-                    }
+                <div className="border-t border-border px-6 py-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    New to Auriva?{' '}
+                    <Link href="/get-started" className="font-semibold text-primary hover:underline">
+                      Create an account
+                    </Link>
                   </p>
                 </div>
               </Card>
@@ -782,7 +844,7 @@ function TrustStat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <p className="text-xl font-bold tracking-tight">{value}</p>
-      <p className="text-[11px] text-teal-200/70">{label}</p>
+      <p className="text-[11px] text-[#C7DBD4]">{label}</p>
     </div>
   );
 }

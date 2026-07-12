@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-004 — Auriva User Journey Maps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:700;width:22px}
+.doc-main{margin-left:248px;padding:0 48px 120px}
+.doc-section{max-width:1120px;margin:0 auto;padding-top:64px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14.5px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-xs)}
+.panel h5{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px}
+.panel+.panel{margin-top:14px}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;background:var(--slate-100);padding:1px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.cover{min-height:380px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px}
+
+/* journey header meta */
+.jmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+.jmeta .m{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--sh-xs)}
+.jmeta .m b{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px}
+.jmeta .m span{font-size:12.5px;color:var(--text-secondary)}
+.jgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+
+/* flow diagram */
+.flow{display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px 18px;box-shadow:var(--sh-xs)}
+.flow-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px;align-self:flex-start}
+.node{border-radius:10px;padding:9px 14px;font-size:12px;max-width:400px;text-align:center;border:1px solid;line-height:1.45}
+.node .who{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;margin-bottom:1px}
+.act{background:#fff;border-color:var(--border-strong);color:var(--text)}
+.act .who{color:var(--slate-400)}
+.sys{background:var(--teal-50);border-color:var(--teal-200);color:var(--teal-900)}
+.sys .who{color:var(--teal-600)}
+.dec{background:var(--warning-bg);border-color:var(--warning-border);color:#92400E;font-weight:600}
+.dec .who{color:var(--warning)}
+.errn{background:var(--danger-bg);border-color:var(--danger-border);color:#991B1B}
+.errn .who{color:var(--danger)}
+.altn{background:var(--blue-bg);border-color:var(--blue-border);color:#1E3A8A}
+.altn .who{color:var(--blue)}
+.endn{background:var(--slate-900);border-color:var(--slate-900);color:#fff;font-weight:600}
+.arr{height:18px;width:1.5px;background:var(--slate-300);position:relative;margin:1px 0 5px}
+.arr::after{content:'';position:absolute;bottom:-1px;left:-3.25px;border:4px solid transparent;border-top-color:var(--slate-300)}
+.arr.tall{height:28px}
+.branches{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:5px}
+.branch{display:flex;flex-direction:column;align-items:center;border:1.5px dashed var(--slate-200);border-radius:12px;padding:12px 8px;background:var(--slate-50)}
+.blabel{font-size:9.5px;font-weight:800;letter-spacing:.06em;border-radius:99px;padding:2px 10px;margin-bottom:8px}
+.yes{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.no{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border)}
+.neut{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.merge{font-size:10.5px;color:var(--text-muted);font-weight:600;margin:2px 0 6px;display:flex;align-items:center;gap:6px}
+.merge::before,.merge::after{content:'';height:1px;width:40px;background:var(--slate-200)}
+.loop{font-size:10.5px;color:var(--indigo);font-weight:600;background:var(--indigo-bg);border:1px solid var(--indigo-border);border-radius:99px;padding:3px 12px;margin:2px 0 6px}
+
+/* right column panels */
+.li-col{display:flex;flex-direction:column;gap:8px}
+.li-col li{font-size:12.5px;color:var(--text-secondary);margin-left:16px}
+.li-col li b{color:var(--text);font-weight:600}
+table.tbl{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+.tbl th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+
+/* persona header */
+.ph{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.ph .av{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ph h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.ph span{font-size:12.5px;color:var(--text-muted);display:block}
+.icon{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* swimlane */
+.swim{display:grid;grid-template-columns:110px repeat(5,1fr);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:#fff;font-size:11.5px}
+.swim>div{padding:10px 10px;border-bottom:1px solid var(--slate-100);border-right:1px solid var(--slate-100)}
+.swim .hd{background:var(--slate-50);font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.swim .rl{background:var(--slate-50);font-weight:700;font-size:11px;color:var(--text)}
+.swim .c{color:var(--text-secondary)}
+.swim .c em{font-style:normal;color:var(--teal-700);font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--text-secondary);margin-bottom:24px}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg i{width:14px;height:14px;border-radius:4px;border:1px solid}
+@media(max-width:960px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.jgrid{grid-template-columns:1fr}.jmeta{grid-template-columns:1fr}.swim{grid-template-columns:90px repeat(5,minmax(120px,1fr));overflow-x:auto}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-004 · User Journeys</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#landscape"><span class="num">01</span> Journey Landscape</a>
+  <a href="#j1"><span class="num">J1</span> Patient</a>
+  <a href="#j2"><span class="num">J2</span> Doctor (in-org)</a>
+  <a href="#j3"><span class="num">J3</span> Receptionist</a>
+  <a href="#j4"><span class="num">J4</span> Hospital Admin</a>
+  <a href="#j5"><span class="num">J5</span> Independent Doctor</a>
+  <a href="#validation"><span class="num">02</span> Inventory Check</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-004 · Phase 1 — Product Blueprint · For Review</div>
+    <h1>User <em>Journey Maps</em></h1>
+    <p>Five personas, five end-to-end journeys — every action, system response, decision point, edge case, error and recovery path, mapped as flow diagrams over the APS-003 architecture. Every step references its APS-005 screen ID, so these journeys are also the proof that the inventory is complete. No UI here — workflow only.</p>
+  </div>
+</section>
+
+<!-- LANDSCAPE -->
+<section class="doc-section" id="landscape">
+  <div class="sec-kicker">01 · Journey Landscape</div>
+  <h2 class="sec-title">One visit, five personas</h2>
+  <p class="sec-desc">Auriva's core loop is a single clinic visit flowing through four people and one system. Each journey below is one lane of this loop, plus the setup journeys that make it possible.</p>
+
+  <div class="swim">
+    <div class="hd"></div><div class="hd">1 · Discover &amp; Book</div><div class="hd">2 · Arrive</div><div class="hd">3 · Consult</div><div class="hd">4 · Treat &amp; Pay</div><div class="hd">5 · After</div>
+    <div class="rl">Patient</div><div class="c">Searches, compares, <em>books slot</em></div><div class="c">Checks in, watches <em>live queue</em></div><div class="c">Is seen; approves record consent</div><div class="c">Pays; receives <em>signed Rx</em></div><div class="c">Records in locker; books follow-up</div>
+    <div class="rl">Receptionist</div><div class="c">Handles phone bookings</div><div class="c"><em>Check-in / walk-in ≤ 60s</em>, issues token</div><div class="c">Manages queue, delays, emergencies</div><div class="c">Generates invoice</div><div class="c">Reconciles day, closes queue</div>
+    <div class="rl">Doctor</div><div class="c">Availability feeds slot inventory</div><div class="c">Reviews queue &amp; next patient</div><div class="c"><em>Consult workbench</em>: notes, Rx, orders</div><div class="c">Signs Rx, sets follow-up</div><div class="c">Reviews follow-ups due</div>
+    <div class="rl">Admin</div><div class="c">Services &amp; price rules live</div><div class="c">—</div><div class="c">Monitors wait times</div><div class="c">Settlement visibility</div><div class="c"><em>Insights</em>: no-shows, revenue</div>
+    <div class="rl">System</div><div class="c">Slot inventory, OTP identity</div><div class="c">Token, queue state, patient push</div><div class="c">Allergy flags, consent, autosave</div><div class="c">Billing lines, digital signature</div><div class="c">Timeline update, reminders</div>
+  </div>
+
+  <div class="legend" style="margin-top:22px">
+    <b style="font-size:11px;letter-spacing:.06em;color:var(--text-muted)">DIAGRAM LEGEND</b>
+    <span class="lg"><i style="background:#fff;border-color:var(--border-strong)"></i> User action</span>
+    <span class="lg"><i style="background:var(--teal-50);border-color:var(--teal-200)"></i> System response</span>
+    <span class="lg"><i style="background:var(--warning-bg);border-color:var(--warning-border)"></i> Decision point</span>
+    <span class="lg"><i style="background:var(--blue-bg);border-color:var(--blue-border)"></i> Alternative flow</span>
+    <span class="lg"><i style="background:var(--danger-bg);border-color:var(--danger-border)"></i> Error / recovery</span>
+    <span class="lg"><i style="background:var(--slate-900);border-color:var(--slate-900)"></i> Journey outcome</span>
+  </div>
+</section>
+
+<!-- ===================== J1 PATIENT ===================== -->
+<section class="doc-section" id="j1">
+  <div class="ph">
+    <span class="av" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></span>
+    <div><h2>J1 · Patient — from symptom to treatment</h2><span>Ananya, 34, urban, books online. Mobile-first, non-technical under stress.</span></div>
+  </div>
+  <div class="jmeta">
+    <div class="m"><b>Goal</b><span>Get seen by the right doctor with minimal friction — and own every record the visit produces.</span></div>
+    <div class="m"><b>Trigger</b><span>A symptom, a referral, or a follow-up reminder notification.</span></div>
+    <div class="m"><b>Success metric</b><span>Search → confirmed booking &lt; 3 min · zero "where do I stand?" anxiety on visit day.</span></div>
+  </div>
+
+  <div class="jgrid">
+    <div class="flow">
+      <div class="flow-title">Primary flow — book → visit → records</div>
+      <div class="node act"><span class="who">PATIENT</span>Searches "general physician near me" <code class="tk">MKT-001→002</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Ranked results: fees, rating, distance, <b>next available slot</b></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Found a suitable doctor?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node act"><span class="who">PATIENT</span>Opens profile, picks a slot <code class="tk">MKT-003</code></div>
+        </div>
+        <div class="branch"><span class="blabel no">NO</span>
+          <div class="node altn"><span class="who">ALT</span>Broadens filters / browses speciality hub <code class="tk">MKT-007</code> → back to results</div>
+        </div>
+      </div>
+      <div class="merge">continue</div>
+      <div class="node dec"><span class="who">DECISION</span>Existing Auriva account?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node act"><span class="who">PATIENT</span>OTP sign-in <code class="tk">AUTH-001/002</code></div>
+        </div>
+        <div class="branch"><span class="blabel no">NO</span>
+          <div class="node sys"><span class="who">SYSTEM</span>Guest details + OTP <b>creates the account inside the flow</b> <code class="tk">MKT-009</code></div>
+        </div>
+      </div>
+      <div class="merge">booking completes</div>
+      <div class="node sys"><span class="who">SYSTEM</span>Confirmation + SMS/WhatsApp · hands off to patient workspace <code class="tk">MKT-010→PAT-001</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Reminders at T-24h and T-2h <code class="tk">NOT-001</code></div>
+      <div class="arr tall"></div>
+      <div class="node act"><span class="who">PATIENT · VISIT DAY</span>Opens appointment → sees <b>live queue: "You are #7 · ~15 min"</b> <code class="tk">PAT-003</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">PATIENT</span>Arrives, checks in at front desk (J3 takes over)</div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Token issued · push when "You're next" · status → In Consultation</div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">PATIENT</span>Consult happens (J2) — approves record-sharing consent if asked</div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Signed prescription + visit land in Records within seconds <code class="tk">PAT-008/009/010</code></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Follow-up needed?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span><div class="node sys"><span class="who">SYSTEM</span>Follow-up pre-scheduled · reminder set</div></div>
+        <div class="branch"><span class="blabel no">NO</span><div class="node act"><span class="who">PATIENT</span>Optionally sends Rx to pharmacy</div></div>
+      </div>
+      <div class="merge">outcome</div>
+      <div class="node endn">Treated, records owned, return path established</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h5>Edge cases</h5>
+        <ul class="li-col">
+          <li><b>Doctor cancels / takes leave</b> — system proposes 3 nearest alternatives (same doctor other day, or similar doctor same day); one-tap rebook.</li>
+          <li><b>Doctor running late</b> — live queue shows revised estimate; bulk "running 20 min late" SMS from front desk (J3).</li>
+          <li><b>Patient no-show</b> — status → No-show after grace window; gentle rebook nudge next day; repeated no-shows may require prepayment (future).</li>
+          <li><b>Booking for a family member</b> — patient selects member context before slot <code class="tk">PAT-016/017</code>; records route to that member.</li>
+          <li><b>No smartphone at clinic</b> — everything works via SMS token + front desk; app is never mandatory for care.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h5>Alternative flows</h5>
+        <ul class="li-col">
+          <li><b>Walk-in</b> — skips discovery/booking entirely; enters at J3 walk-in registration; the account is created by reception and claimed later by the patient via OTP.</li>
+          <li><b>Rebook a known doctor</b> — from Home or history: 2 taps <code class="tk">PAT-001→PAT-007</code>.</li>
+          <li><b>Lab-only journey</b> — book test <code class="tk">MKT-005</code> → sample → report ready notification → trends <code class="tk">PAT-011/012</code>.</li>
+        </ul>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Error state</th><th>Recovery path</th></tr></thead>
+        <tbody>
+          <tr><td><b>OTP not received</b></td><td>Resend after 30s → voice OTP fallback → support link after 3 failures. Never a dead end.</td></tr>
+          <tr><td><b>Slot taken during checkout</b></td><td>Immediate inline notice + 3 nearest alternatives pre-selected; no restart of the flow.</td></tr>
+          <tr><td><b>Network drop mid-booking</b></td><td>Draft persisted server-side; resume link via SMS; flow re-opens at the same step.</td></tr>
+          <tr><td><b>Queue feed stale / offline</b></td><td>Last-updated timestamp always visible; pull-to-refresh; falls back to SMS updates.</td></tr>
+          <tr><td><b>Payment failure (when prepay ships)</b></td><td>Slot held 10 min; retry or switch to pay-at-clinic without losing the slot.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="panel">
+        <h5>Future expansion</h5>
+        <ul class="li-col">
+          <li>Teleconsult as a booking type (same flow, video step replaces arrival).</li>
+          <li>Symptom-based triage suggesting speciality before search.</li>
+          <li>Insurance / cashless eligibility shown at booking.</li>
+          <li>ABDM-fetched history from other providers into the timeline.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== J2 DOCTOR ===================== -->
+<section class="doc-section" id="j2">
+  <div class="ph">
+    <span class="av" style="background:var(--indigo-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg></span>
+    <div><h2>J2 · Doctor (in-organization) — run today's OPD</h2><span>Dr. Mehta, GP at a clinic. 30–40 patients/day, ~3 minutes each. Every extra click is stolen from care.</span></div>
+  </div>
+  <div class="jmeta">
+    <div class="m"><b>Goal</b><span>See every patient with full context and finish notes + Rx inside the consult — zero after-hours paperwork.</span></div>
+    <div class="m"><b>Trigger</b><span>Clinic session start time; queue already populated by reception.</span></div>
+    <div class="m"><b>Success metric</b><span>0 navigation during a consult · Rx signed before the patient leaves the room.</span></div>
+  </div>
+
+  <div class="jgrid">
+    <div class="flow">
+      <div class="flow-title">Primary flow — session loop</div>
+      <div class="node act"><span class="who">DOCTOR</span>Signs in → lands on <b>Today</b>: queue + schedule summary <code class="tk">DOC-001</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">DOCTOR</span>Reviews next patient's one-line context (age, last visit, flags)</div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">DOCTOR</span>Taps <b>Call in</b></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Token announced · status → With Doctor · front-desk board + patient app sync <code class="tk">ORG-001 / PAT-003</code></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Patient present?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node act"><span class="who">DOCTOR</span>Consult workbench opens with history, allergies, vitals <code class="tk">DOC-002/008</code></div>
+        </div>
+        <div class="branch"><span class="blabel no">NO</span>
+          <div class="node altn"><span class="who">ALT</span>Skip → status Skipped, auto re-queued twice, then No-show · next patient called</div>
+        </div>
+      </div>
+      <div class="merge">consult begins</div>
+      <div class="node dec"><span class="who">DECISION</span>Needs history from other providers?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node altn"><span class="who">ALT · CONSENT</span>Requests ABDM consent → patient approves on phone → external records load <code class="tk">PAT-015</code></div>
+        </div>
+        <div class="branch"><span class="blabel no">NO</span>
+          <div class="node act"><span class="who">DOCTOR</span>Proceeds with Auriva timeline</div>
+        </div>
+      </div>
+      <div class="merge">treatment</div>
+      <div class="node act"><span class="who">DOCTOR</span>Writes note · composes Rx from template or fresh <code class="tk">DOC-012</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Dose sanity checks · <b>allergy conflict flagged inline</b> (e.g. penicillin)</div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Labs needed?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span><div class="node sys"><span class="who">SYSTEM</span>Order created → lab worklist <code class="tk">ORG-015</code> · billing line added</div></div>
+        <div class="branch"><span class="blabel no">NO</span><div class="node act"><span class="who">DOCTOR</span>Sets follow-up date (optional)</div></div>
+      </div>
+      <div class="merge">close consult</div>
+      <div class="node sys"><span class="who">SYSTEM</span>Rx digitally signed → patient Records instantly · billing line created · queue advances <code class="tk">PAT-010</code></div>
+      <div class="arr"></div>
+      <div class="loop">⭯ repeat for next patient until queue empty</div>
+      <div class="node sys"><span class="who">SYSTEM</span>End-of-session summary: seen, skipped, follow-ups set, earnings <code class="tk">DOC-013</code></div>
+      <div class="arr"></div>
+      <div class="node endn">OPD complete — no pending paperwork</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h5>Edge cases</h5>
+        <ul class="li-col">
+          <li><b>Emergency jumps the queue</b> — reception escalates (J3); board reorders; doctor sees a red Emergency card next with reason.</li>
+          <li><b>Duplicate patient record spotted</b> — doctor flags from workbench; admin resolves via merge <code class="tk">ORG-009</code>; consult continues on the flagged record.</li>
+          <li><b>Two clinics in one day</b> — Today view is per-affiliation; switching clinic context switches queue and fee rules.</li>
+          <li><b>Patient refuses digital Rx</b> — print view exists; record still stored digitally.</li>
+          <li><b>Mid-consult walk-out</b> — consult saved as incomplete; can be resumed or closed with a reason.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h5>Alternative flows</h5>
+        <ul class="li-col">
+          <li><b>Follow-up consult</b> — workbench pre-loads last consult + response to treatment; follow-up fee rules auto-apply.</li>
+          <li><b>Quick Rx renewal</b> — from patient record, renew with one edit — no queue entry needed (walk-in renewal policy is org-configurable).</li>
+          <li><b>Review-results consult</b> — triggered from Follow-ups Due <code class="tk">DOC-011</code> when a lab report publishes.</li>
+        </ul>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Error state</th><th>Recovery path</th></tr></thead>
+        <tbody>
+          <tr><td><b>Allergy data absent</b></td><td>Hard prompt to confirm allergies before first Rx sign for that patient; "unknown" is an explicit recorded choice.</td></tr>
+          <tr><td><b>Network drop mid-consult</b></td><td>Notes + draft Rx autosaved locally; banner shows offline state; syncs on reconnect — doctor keeps writing.</td></tr>
+          <tr><td><b>e-Sign service down</b></td><td>Rx queued for signing; patient gets provisional copy marked "signature pending"; auto-signs when service recovers.</td></tr>
+          <tr><td><b>Wrong patient called</b></td><td>Un-call within 30s restores queue position; audit-logged.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="panel">
+        <h5>Future expansion</h5>
+        <ul class="li-col">
+          <li>Voice-to-structured-notes during consult.</li>
+          <li>Drug–drug interaction database and formulary checks.</li>
+          <li>AI differential / suggested orders (assistive, never auto).</li>
+          <li>Teleconsult queue merged into the same Today view.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== J3 RECEPTIONIST ===================== -->
+<section class="doc-section" id="j3">
+  <div class="ph">
+    <span class="av" style="background:var(--warning-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><path d="M3 9.5 12 3l9 6.5V21H3z"/><path d="M9 21v-6h6v6"/></svg></span>
+    <div><h2>J3 · Receptionist — run the front desk</h2><span>Sunita, front desk at a busy clinic. 40+ arrivals/day, phone ringing, queue physical and digital. Speed is everything.</span></div>
+  </div>
+  <div class="jmeta">
+    <div class="m"><b>Goal</b><span>Every arriving patient checked in within 60 seconds; the board always reflects the real waiting room.</span></div>
+    <div class="m"><b>Trigger</b><span>Clinic opens; continuous until day close.</span></div>
+    <div class="m"><b>Success metric</b><span>Check-in ≤ 3 clicks · walk-in registration ≤ 60s · zero "lost" patients.</span></div>
+  </div>
+
+  <div class="jgrid">
+    <div class="flow">
+      <div class="flow-title">Primary flow — the arrival loop</div>
+      <div class="node act"><span class="who">RECEPTIONIST</span>Opens Front Desk → day board: bookings per doctor, expected load <code class="tk">ORG-001</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">RECEPTIONIST</span>Patient arrives at the desk</div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Has a booking?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES · CHECK-IN</span>
+          <div class="node act"><span class="who">RECEPTIONIST</span>Search by phone / name <code class="tk">ORG-002</code></div>
+          <div class="arr"></div>
+          <div class="node sys"><span class="who">SYSTEM</span>Booking found → confirm arrival</div>
+        </div>
+        <div class="branch"><span class="blabel no">NO · WALK-IN</span>
+          <div class="node act"><span class="who">RECEPTIONIST</span>Walk-in registration <code class="tk">ORG-003</code></div>
+          <div class="arr"></div>
+          <div class="node dec" style="font-size:11px"><span class="who">DECISION</span>Phone matches existing record?</div>
+          <div class="arr"></div>
+          <div class="node sys" style="font-size:11px"><span class="who">SYSTEM</span>Yes → attach visit · No → 4-field fast create (dedupe by phone)</div>
+        </div>
+      </div>
+      <div class="merge">both paths</div>
+      <div class="node sys"><span class="who">SYSTEM</span>Token issued · queue + token display + patient app update in real time <code class="tk">ORG-004 / PAT-003</code></div>
+      <div class="arr"></div>
+      <div class="loop">⭯ arrival loop repeats all day — in parallel:</div>
+      <div class="node dec"><span class="who">DECISION</span>Doctor delayed / queue imbalanced?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node act"><span class="who">RECEPTIONIST</span>Bulk-notify waiting patients ("~20 min late") · offer reschedule / other doctor</div>
+        </div>
+        <div class="branch"><span class="blabel neut">EMERGENCY</span>
+          <div class="node errn"><span class="who">ESCALATE</span>Mark Emergency → jumps queue, doctor alerted, reason logged</div>
+        </div>
+      </div>
+      <div class="merge">continuous</div>
+      <div class="node act"><span class="who">RECEPTIONIST</span>Handles reschedules &amp; cancellations → slots reopen, patients auto-notified <code class="tk">ORG-006</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">RECEPTIONIST</span>Collects payment post-consult → invoice <code class="tk">ORG-021/022</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">RECEPTIONIST · DAY END</span>Reconciles collections by mode · closes the day's queue <code class="tk">ORG-023</code></div>
+      <div class="arr"></div>
+      <div class="node endn">Floor ran itself — board matched reality all day</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h5>Edge cases</h5>
+        <ul class="li-col">
+          <li><b>Patient at the wrong branch</b> — cross-branch booking search; transfer the booking or rebook locally with fee carried over.</li>
+          <li><b>Elderly patient without a phone</b> — register under a family member's number with a relationship tag; records still per-person.</li>
+          <li><b>Duplicate records found at the desk</b> — attach to the most recent, flag for admin merge <code class="tk">ORG-009</code>; never block check-in on data hygiene.</li>
+          <li><b>Token display screen offline</b> — desk announces verbally; patient app remains the source of truth.</li>
+          <li><b>Doctor absent unexpectedly</b> — one action reassigns or bulk-reschedules that doctor's day; all patients notified.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h5>Alternative flows</h5>
+        <ul class="li-col">
+          <li><b>Phone booking</b> — receptionist books on the patient's behalf inside Appointments Hub <code class="tk">ORG-005</code>; patient gets SMS confirmation and can claim the account later.</li>
+          <li><b>QR self-check-in</b> (P1) — patient scans at the desk; receptionist only handles exceptions.</li>
+          <li><b>Follow-up fast lane</b> — pre-booked follow-ups auto-appear; check-in is a single confirm.</li>
+        </ul>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Error state</th><th>Recovery path</th></tr></thead>
+        <tbody>
+          <tr><td><b>Booking not found</b></td><td>Widen search to all upcoming dates + sibling branches; if truly absent, walk-in path with original booking honoured later.</td></tr>
+          <tr><td><b>Printer down</b></td><td>Token delivered by SMS + shown on patient app; display board carries the number.</td></tr>
+          <tr><td><b>Internet outage</b></td><td>Read-only cached board + paper fallback log; backfill assisted by a reconciliation screen when back online (offline mode: future).</td></tr>
+          <tr><td><b>Double check-in</b></td><td>System blocks duplicate active tokens per patient per doctor; shows the existing token instead.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="panel">
+        <h5>Future expansion</h5>
+        <ul class="li-col">
+          <li>Kiosk mode and WhatsApp-based check-in.</li>
+          <li>Predicted wait times from historical consult durations.</li>
+          <li>Smart queue balancing suggestions across doctors.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== J4 ADMIN ===================== -->
+<section class="doc-section" id="j4">
+  <div class="ph">
+    <span class="av" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <div><h2>J4 · Hospital Administrator — stand up &amp; steer the organization</h2><span>Rajesh, operations head of a 2-branch hospital. Cares about occupancy, revenue, compliance — and not being surprised.</span></div>
+  </div>
+  <div class="jmeta">
+    <div class="m"><b>Goal</b><span>Get the hospital fully operational on Auriva, then run it on numbers instead of walking the floor.</span></div>
+    <div class="m"><b>Trigger</b><span>Setup: org signs up. Steady state: the daily digest, or a metric drifting off-track.</span></div>
+    <div class="m"><b>Success metric</b><span>Org live &amp; bookable in &lt; 1 day · issues seen in Insights before staff report them.</span></div>
+  </div>
+
+  <div class="jgrid">
+    <div class="flow">
+      <div class="flow-title">Primary flow — setup, then the steering loop</div>
+      <div class="node act"><span class="who">ADMIN</span>Registers organization: KYC, branches <code class="tk">AUTH-006</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Verification · org namespace created · <b>go-live checklist</b> appears</div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">ADMIN</span>Configures profile &amp; branches → services, booking rules, price lists <code class="tk">SET-004/005 · ORG-025</code></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Doctor already on Auriva?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span><div class="node sys"><span class="who">SYSTEM</span>Invite links existing profile as affiliation <code class="tk">ORG-010/011</code></div></div>
+        <div class="branch"><span class="blabel no">NO</span><div class="node altn"><span class="who">ALT</span>Invite triggers doctor onboarding <code class="tk">AUTH-005</code>; listing waits on verification</div></div>
+      </div>
+      <div class="merge">supply ready</div>
+      <div class="node act"><span class="who">ADMIN</span>Invites staff with roles — reception, lab, pharmacy, billing <code class="tk">ORG-012 · AUTH-007</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Checklist complete → <b>public profile live, bookings open</b> <code class="tk">MKT-004</code></div>
+      <div class="arr tall"></div>
+      <div class="loop">⭯ steady-state steering loop (daily / weekly)</div>
+      <div class="node sys"><span class="who">SYSTEM</span>Daily digest: appointments, revenue, wait times, no-shows <code class="tk">ORG-026</code></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Any metric off-track?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span>
+          <div class="node act"><span class="who">ADMIN</span>Drills into reports <code class="tk">ORG-027</code> → acts: adjust slots, staffing, pricing</div>
+        </div>
+        <div class="branch"><span class="blabel no">NO</span>
+          <div class="node act"><span class="who">ADMIN</span>Routine: roster changes, schedule approvals, settlement review <code class="tk">ORG-023</code></div>
+        </div>
+      </div>
+      <div class="merge">compliance</div>
+      <div class="node act"><span class="who">ADMIN</span>Periodic audit-log review; consent &amp; access checks <code class="tk">SET-008</code></div>
+      <div class="arr"></div>
+      <div class="node endn">Hospital runs on numbers — surprises reach the admin first, not last</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h5>Edge cases</h5>
+        <ul class="li-col">
+          <li><b>Doctor leaves the org</b> — offboarding wizard: future appointments bulk-reassigned or rebooked, patients notified, access revoked same minute.</li>
+          <li><b>Role misconfiguration locks staff out</b> — owner always retains a recovery path; permission changes take effect without re-login.</li>
+          <li><b>Branch operates differently</b> — services, prices and booking rules override per branch; defaults inherit from org.</li>
+          <li><b>Regulatory audit request</b> — export access logs and consent trail for a date range from <code class="tk">SET-008</code>.</li>
+          <li><b>Dispute over a consult record</b> — record versions + signature trail are immutable and reviewable.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h5>Alternative flows</h5>
+        <ul class="li-col">
+          <li><b>Chain onboarding</b> — bulk branch + doctor import (future); until then, branch-by-branch with cloned settings.</li>
+          <li><b>Delegated administration</b> — branch managers get admin scoped to one branch; owner keeps org-wide view.</li>
+          <li><b>Solo-practice upgrade</b> — an independent doctor's lightweight practice (J5) converts into a full org without data migration.</li>
+        </ul>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Error state</th><th>Recovery path</th></tr></thead>
+        <tbody>
+          <tr><td><b>KYC rejected</b></td><td>Reasons itemized per document; resubmit only the failed items; support escalation after two rejections.</td></tr>
+          <tr><td><b>Doctor verification stalls listing</b></td><td>Go-live checklist shows exactly what's blocking and who was notified; org can go live with verified doctors only.</td></tr>
+          <tr><td><b>Payment gateway misconfigured</b></td><td>Test-transaction step in setup; billing falls back to offline modes until fixed.</td></tr>
+          <tr><td><b>Insights look wrong</b></td><td>Every number links to its source list (e.g. no-show count → the actual appointments), making trust verifiable.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="panel">
+        <h5>Future expansion</h5>
+        <ul class="li-col">
+          <li>Benchmarks vs. similar organizations; capacity forecasting.</li>
+          <li>TPA / insurance desk integrations; IPD (admissions) module.</li>
+          <li>Staff HR: attendance, payroll export.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== J5 INDEPENDENT DOCTOR ===================== -->
+<section class="doc-section" id="j5">
+  <div class="ph">
+    <span class="av" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="m17 11 2 2 4-4"/></svg></span>
+    <div><h2>J5 · Independent Doctor — solo practice, end to end</h2><span>Dr. Iyer, dermatologist with her own single-room clinic. No receptionist, no admin — she is all five roles at once.</span></div>
+  </div>
+  <div class="jmeta">
+    <div class="m"><b>Goal</b><span>Get discovered, booked and paid — run the entire practice alone without operational overhead.</span></div>
+    <div class="m"><b>Trigger</b><span>Wants an online presence; a patient asked "are you on Auriva?"; referral from a peer.</span></div>
+    <div class="m"><b>Success metric</b><span>Verified &amp; bookable in &lt; 24h · runs a full session solo without touching an "org" concept.</span></div>
+  </div>
+
+  <div class="jgrid">
+    <div class="flow">
+      <div class="flow-title">Primary flow — join → practice → grow</div>
+      <div class="node act"><span class="who">DOCTOR</span>Lands on For Providers → Join as Doctor <code class="tk">MKT-013 → AUTH-005</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>NMC registration check</div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION</span>Auto-verified?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span><div class="node sys"><span class="who">SYSTEM</span>Verified badge · proceed</div></div>
+        <div class="branch"><span class="blabel no">NO</span><div class="node errn"><span class="who">RECOVERY</span>Manual review (&lt; 24h SLA) · status visible · docs re-upload path</div></div>
+      </div>
+      <div class="merge">verified</div>
+      <div class="node act"><span class="who">DOCTOR</span>Sets up public profile, fees, availability <code class="tk">SET-002/003 · DOC-004</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span><b>A lightweight solo practice is auto-created behind the scenes</b> — she never sees org admin, but the platform keeps one data model</div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Profile live on marketplace → bookings start <code class="tk">MKT-003</code></div>
+      <div class="arr tall"></div>
+      <div class="loop">⭯ daily practice loop</div>
+      <div class="node sys"><span class="who">SYSTEM</span>Booking requests notify her <code class="tk">NOT-002 · DOC-005</code> (auto-approve configurable)</div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">DOCTOR</span>Session: Today view doubles as her front desk — <b>she taps "Arrived" herself</b>; queue is self-managed <code class="tk">DOC-001</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">DOCTOR</span>Consult → notes → Rx → follow-up (same workbench as J2) <code class="tk">DOC-002</code></div>
+      <div class="arr"></div>
+      <div class="node sys"><span class="who">SYSTEM</span>Payment recorded · earnings tracked <code class="tk">DOC-013</code></div>
+      <div class="arr"></div>
+      <div class="node act"><span class="who">DOCTOR · DAY END</span>Reviews follow-ups due &amp; earnings <code class="tk">DOC-011/013</code></div>
+      <div class="arr"></div>
+      <div class="node dec"><span class="who">DECISION · GROWTH</span>Practice grows — hires a receptionist?</div>
+      <div class="branches">
+        <div class="branch"><span class="blabel yes">YES</span><div class="node altn"><span class="who">ALT · GRADUATE</span>Solo practice upgrades to full Organization workspace — staff invite unlocks Front Desk (J3, J4); zero data migration</div></div>
+        <div class="branch"><span class="blabel no">NO</span><div class="node act"><span class="who">DOCTOR</span>Continues solo — nothing is ever forced</div></div>
+      </div>
+      <div class="merge">outcome</div>
+      <div class="node endn">A one-person clinic with hospital-grade infrastructure</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h5>Edge cases</h5>
+        <ul class="li-col">
+          <li><b>Own clinic + hospital affiliation</b> — both appear in one Today view, clinic-tagged; fees and queues stay separate per affiliation.</li>
+          <li><b>Vacation</b> — time-off blocks slots and auto-handles existing bookings with reschedule offers <code class="tk">DOC-006</code>.</li>
+          <li><b>Walk-in at a solo clinic</b> — doctor adds the patient from Today in two taps (mini walk-in flow, same dedupe rules as ORG-003).</li>
+          <li><b>Assistant shares her login</b> — detected pattern nudges toward a proper staff account with its own role (audit integrity).</li>
+          <li><b>Patient books while she's mid-consult</b> — requests never interrupt; batched into a review moment between patients.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h5>Alternative flows</h5>
+        <ul class="li-col">
+          <li><b>Referral entry</b> — invited by a hospital (J4) first, adds her own clinic later; same account, two affiliations.</li>
+          <li><b>Consultation-only presence</b> — no clinic: listed for teleconsult only (future) or as visiting consultant at partner clinics.</li>
+        </ul>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Error state</th><th>Recovery path</th></tr></thead>
+        <tbody>
+          <tr><td><b>Verification stuck &gt; 24h</b></td><td>Status page with the exact pending item + one-tap support escalation; profile building continues meanwhile.</td></tr>
+          <tr><td><b>Double-booking vs. offline diary</b></td><td>Manual "busy" blocks on the calendar; external calendar sync later closes the gap for good.</td></tr>
+          <tr><td><b>No-show spike</b></td><td>Insights nudge + optional booking-confirmation call requirement or prepayment (future) for new patients.</td></tr>
+          <tr><td><b>Fee dispute</b></td><td>Every invoice line traces to the consult record; receipts regenerable; support mediation path.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="panel">
+        <h5>Future expansion</h5>
+        <ul class="li-col">
+          <li>Teleconsultation; subscription/membership plans for chronic patients.</li>
+          <li>Personal practice micro-site powered by the Auriva profile.</li>
+          <li>External calendar sync (Google/Apple) for busy blocks.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALIDATION -->
+<section class="doc-section" id="validation">
+  <div class="sec-kicker">02 · Inventory Check</div>
+  <h2 class="sec-title">Journeys ↔ Screen Inventory validation</h2>
+  <p class="sec-desc">Every step in the five journeys resolves to an APS-005 screen ID — no journey step is orphaned, and every P0 screen is exercised by at least one journey. Two observations for the backlog:</p>
+  <div class="panel">
+    <ul class="li-col">
+      <li><b>Confirmed gap-free:</b> all P0 (launch-spine) screens appear in J1–J5; the inventory needs no new P0 screens.</li>
+      <li><b>Note 1 — solo walk-in:</b> J5 needs a two-tap "add walk-in" from <code class="tk">DOC-001</code>. This is a variant of <code class="tk">ORG-003</code> surfaced in the doctor workspace, not a new screen — recorded as a requirement on DOC-001 for APS-007.</li>
+      <li><b>Note 2 — offline reconciliation:</b> J3's internet-outage recovery implies a future backfill screen (P2, V1.x). Logged as a future addition <code class="tk">ORG-028</code> when offline mode is scheduled — inventory unchanged for V1.0.</li>
+    </ul>
+  </div>
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Phase 1 status</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">APS-001 ✅ · APS-002 ✅ · APS-003 ✅ · APS-004 (this document) · APS-005 delivered, re-validated here. Next: APS-006 Navigation System → APS-007 Workspace Layouts → APS-008 Interaction Patterns — then screen design begins on the P0 spine in journey order (J1 booking first).</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

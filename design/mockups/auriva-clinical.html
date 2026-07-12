@@ -1,0 +1,335 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --fm:'SF Mono', ui-monospace, Menlo, monospace;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --top:60px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  input,textarea,select{font-family:var(--fb)}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+
+  .topbar{position:sticky;top:0;z-index:40;height:var(--top);display:flex;align-items:center;gap:14px;padding:0 20px;background:rgba(251,248,244,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .back{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:650;color:var(--body);background:none;border:none}
+  .back svg{width:16px;height:16px}
+  .ptchip{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:6px 14px 6px 6px}
+  .ptchip .av{width:36px;height:36px;border-radius:10px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px}
+  .ptchip .nm{font-family:var(--fd);font-weight:700;font-size:14.5px;line-height:1.1}
+  .ptchip .mt{font-size:11.5px;color:var(--muted)}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .timer{font-size:12.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+  .timer svg{width:15px;height:15px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14px;transition:transform .12s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:17px;height:17px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 12px 26px -12px rgba(14,116,102,.6)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:36px;font-size:13px;padding:0 12px}
+  .btn-ghost{background:none;color:var(--pine-deep)}.btn-ghost:hover{background:var(--pine-tint)}
+  .btn-danger-ghost{background:none;color:var(--rose)}
+
+  .layout{display:grid;grid-template-columns:290px 1fr;gap:20px;max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .pad{padding:18px}
+  .ctitle{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+
+  /* left context */
+  .ctx{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(var(--top) + 22px);align-self:start}
+  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .vital{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:10px}
+  .vital .k{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  .vital .v{font-family:var(--fd);font-weight:700;font-size:16px;margin-top:2px;font-variant-numeric:tabular-nums}
+  .vital .u{font-size:10px;color:var(--muted);font-weight:600}
+  .allergy{display:flex;align-items:center;gap:8px;background:var(--rose-tint);border-radius:10px;padding:9px 11px;font-size:12.5px;font-weight:650;color:#A23A2E}
+  .allergy svg{width:15px;height:15px;flex:0 0 auto}
+  .medline,.pvline{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .medline:first-of-type,.pvline:first-of-type{border-top:none}
+  .medline .nm{font-weight:650;color:var(--ink)}
+  .medline .mt,.pvline .mt{color:var(--muted)}
+  .pvline .dt{font-family:var(--fd);font-weight:700;color:var(--pine-deep);width:44px;flex:0 0 auto}
+
+  /* main */
+  .main{display:flex;flex-direction:column;gap:16px}
+  .field label{font-family:var(--fd);font-weight:700;font-size:14px;display:block;margin-bottom:9px}
+  .field label .hint{font-family:var(--fb);font-weight:500;font-size:12px;color:var(--muted);margin-left:8px}
+  textarea{width:100%;border:1.5px solid var(--line-2);border-radius:12px;background:var(--paper);padding:12px 14px;font-size:14.5px;color:var(--ink);resize:vertical;min-height:74px;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.55}
+  textarea:focus{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .chipset{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .cchip{display:inline-flex;align-items:center;gap:7px;background:var(--pine-tint);color:var(--pine-deep);border:none;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:650}
+  .cchip .x{cursor:pointer;opacity:.6}.cchip .x:hover{opacity:1}
+  .cchip .x svg{width:13px;height:13px}
+  .suggest{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1.5px dashed var(--line-2);color:var(--body);border-radius:99px;padding:6px 12px;font-size:12.5px;font-weight:600}
+  .suggest:hover{border-color:var(--pine);color:var(--pine-deep)}
+  .addin{display:flex;gap:8px;margin-top:10px}
+  .addin input{flex:1;border:1.5px solid var(--line-2);border-radius:10px;background:var(--paper);padding:9px 12px;font-size:14px;outline:none}
+  .addin input:focus{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-tint)}
+
+  /* prescription builder */
+  .rxhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .rxrow{display:grid;grid-template-columns:1.5fr 1fr 1fr .9fr 30px;gap:9px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+  .rxrow input{border:1.5px solid var(--line-2);border-radius:9px;background:var(--paper);padding:9px 10px;font-size:13.5px;outline:none;width:100%}
+  .rxrow input:focus{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-tint)}
+  .rxrow .del{width:28px;height:28px;border-radius:8px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center}
+  .rxrow .del:hover{background:var(--rose-tint);color:var(--rose)}
+  .rxrow .del svg{width:15px;height:15px}
+  .rxlabels{display:grid;grid-template-columns:1.5fr 1fr 1fr .9fr 30px;gap:9px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-bottom:2px}
+  .templates{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .segb{padding:9px 14px;border-radius:10px;border:1.5px solid var(--line-2);background:var(--surface);font-family:var(--fd);font-weight:650;font-size:13px;color:var(--body)}
+  .segb.on{border-color:var(--pine);background:var(--pine-tint);color:var(--pine-deep)}
+
+  /* summary overlay */
+  .backdrop{position:fixed;inset:0;background:rgba(20,16,13,.5);backdrop-filter:blur(3px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .backdrop.on{display:flex;animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:#fff;border-radius:20px;box-shadow:var(--shadow);width:100%;max-width:620px;animation:pop .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .sheet .sh-top{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .sheet .sh-top .badge{width:40px;height:40px;border-radius:12px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .sheet .sh-top .badge svg{width:22px;height:22px}
+  .sheet .sh-top h3{font-size:18px}
+  .sheet .sh-top .mt{font-size:12.5px;color:var(--muted)}
+  .rxpaper{padding:24px 26px;font-size:13.5px}
+  .rxpaper .rx-h{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid var(--pine);margin-bottom:16px}
+  .rxpaper .clinic{font-family:var(--fd);font-weight:700;font-size:17px;color:var(--pine-deep)}
+  .rxpaper .clinic small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:2px}
+  .rxpaper .doc{text-align:right;font-size:12px;color:var(--body)}
+  .rxpaper .doc b{font-family:var(--fd);font-size:14px;color:var(--ink)}
+  .rxpaper .ptline{display:flex;justify-content:space-between;font-size:12.5px;color:var(--body);margin-bottom:14px}
+  .rxpaper .rx-sec{margin-bottom:14px}
+  .rxpaper .rx-sec .lb{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .rxpaper .rx-sec .bd{font-size:13.5px;color:var(--ink)}
+  .rxpaper .rxsym{font-family:var(--fd);font-weight:700;color:var(--pine);font-size:20px;margin-bottom:8px}
+  .rxpaper table{width:100%;border-collapse:collapse}
+  .rxpaper td{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  .rxpaper td:first-child{font-weight:650}
+  .rxpaper .foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;color:var(--muted)}
+  .rxpaper .sign{text-align:right}
+  .rxpaper .sign .sg{font-family:'Segoe Script','Bradley Hand',cursive;font-size:20px;color:var(--pine-deep)}
+  .sh-foot{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line);background:var(--paper);border-radius:0 0 20px 20px}
+  .x{width:34px;height:34px;border-radius:10px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center;margin-left:auto}
+  .x:hover{background:var(--sand2)}.x svg{width:17px;height:17px}
+
+  .toastwrap{position:fixed;top:72px;right:16px;z-index:80;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:12px 15px;font-size:13.5px;font-weight:600;animation:tin .3s}
+  .toast .ic{width:24px;height:24px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .ctx{position:static;flex-direction:column}
+    .rxrow,.rxlabels{grid-template-columns:1fr 1fr;gap:8px}
+    .rxlabels{display:none}
+    .frow{grid-template-columns:1fr}
+    .ptchip .mt{display:none}
+  }
+  @media print{
+    .topbar,.ctx,.main,.sh-foot,.sh-top,.x,.toastwrap{display:none!important}
+    .backdrop{position:static;padding:0;background:none;display:block}
+    .sheet{box-shadow:none;max-width:none}
+  }
+</style>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="topbar">
+  <button class="back" data-toast="Back to workspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Workspace</button>
+  <div class="ptchip"><span class="av">RK</span><div><div class="nm">Rohan Kulkarni</div><div class="mt">41 · Male · Follow-up</div></div></div>
+  <div class="tb-right">
+    <span class="timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><span id="timer">00:00</span></span>
+    <button class="btn btn-line btn-sm" data-toast="Draft saved">Save draft</button>
+    <button class="btn btn-primary btn-sm" data-open-summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Sign &amp; complete</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT CONTEXT -->
+  <aside class="ctx">
+    <div class="card pad">
+      <div class="ctitle">Vitals <button class="btn btn-ghost btn-sm" style="height:26px;padding:0 8px" data-toast="Edit vitals">Edit</button></div>
+      <div class="vitals">
+        <div class="vital"><div class="k">BP</div><div class="v">128/84</div><div class="u">mmHg</div></div>
+        <div class="vital"><div class="k">Pulse</div><div class="v">78</div><div class="u">bpm</div></div>
+        <div class="vital"><div class="k">Temp</div><div class="v">98.4</div><div class="u">°F</div></div>
+        <div class="vital"><div class="k">SpO₂</div><div class="v">98</div><div class="u">%</div></div>
+      </div>
+    </div>
+    <div class="card pad">
+      <div class="ctitle">Allergies</div>
+      <div class="allergy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><path d="M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>Penicillin</div>
+    </div>
+    <div class="card pad">
+      <div class="ctitle">Current medicines</div>
+      <div class="medline"><div><div class="nm">Ibuprofen 400mg</div><div class="mt">SOS · since 4 Jul</div></div></div>
+      <div class="medline"><div><div class="nm">Amoxicillin 500mg</div><div class="mt">1-0-1 · ending soon</div></div></div>
+    </div>
+    <div class="card pad">
+      <div class="ctitle">Past visits</div>
+      <div class="pvline"><span class="dt">4 Jul</span><div><div class="nm" style="font-weight:650">Root canal · sitting 1</div><div class="mt">Started RCT on 36</div></div></div>
+      <div class="pvline"><span class="dt">3 May</span><div><div class="nm" style="font-weight:650">Consultation</div><div class="mt">Toothache, prescribed antibiotics</div></div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONSULTATION -->
+  <div class="main">
+    <div class="card pad field">
+      <label>Chief complaint <span class="hint">why they came in</span></label>
+      <textarea placeholder="e.g. Pain in lower left molar, worse on chewing…">Persistent pain in lower left molar (36), tender on biting. 3 days.</textarea>
+      <div class="chipset">
+        <button class="suggest" data-quick>+ Toothache</button><button class="suggest" data-quick>+ Sensitivity</button><button class="suggest" data-quick>+ Swelling</button><button class="suggest" data-quick>+ Bleeding gums</button>
+      </div>
+    </div>
+
+    <div class="card pad field">
+      <label>Examination &amp; notes</label>
+      <textarea placeholder="Clinical findings…">RCT in progress on 36 (sitting 1 done 4 Jul). Mild periapical tenderness. No swelling. Advised to continue and complete second sitting.</textarea>
+    </div>
+
+    <div class="card pad field">
+      <label>Diagnosis</label>
+      <div class="chipset" id="dxset">
+        <span class="cchip">Irreversible pulpitis · 36 <span class="x" data-dx-x><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></span>
+      </div>
+      <div class="addin"><input id="dxin" placeholder="Add a diagnosis and press Enter"><button class="btn btn-line btn-sm" data-dx-add>Add</button></div>
+    </div>
+
+    <div class="card pad">
+      <div class="rxhead"><label style="font-family:var(--fd);font-weight:700;font-size:14px">Prescription</label><span style="font-size:12px;color:var(--muted)">Dose · Frequency · Duration</span></div>
+      <div class="rxlabels"><span>Medicine</span><span>Dosage</span><span>Frequency</span><span>Duration</span><span></span></div>
+      <div id="rxbody">
+        <div class="rxrow"><input value="Amoxicillin 500mg"><input value="1 tab"><input value="1-0-1"><input value="5 days"><button class="del" data-rx-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="rxrow"><input value="Ibuprofen 400mg"><input value="1 tab"><input value="SOS"><input value="3 days"><button class="del" data-rx-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
+      <div class="templates">
+        <button class="btn btn-line btn-sm" data-rx-add>+ Add medicine</button>
+        <button class="suggest" data-tmpl="Pantoprazole 40mg|1 tab|1-0-0|5 days">+ Pantoprazole</button>
+        <button class="suggest" data-tmpl="Chlorhexidine rinse|10ml|0-1-1|7 days">+ Mouth rinse</button>
+        <button class="suggest" data-tmpl="Paracetamol 650mg|1 tab|SOS|3 days">+ Paracetamol</button>
+      </div>
+    </div>
+
+    <div class="card pad field">
+      <label>Investigations <span class="hint">lab / imaging orders</span></label>
+      <div class="chipset" id="labset">
+        <span class="cchip" style="background:var(--honey-soft);color:var(--honey-deep)">IOPA X-ray · 36 <span class="x" data-dx-x><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></span>
+      </div>
+      <div class="chipset"><button class="suggest" data-lab>+ CBC</button><button class="suggest" data-lab>+ Blood sugar</button><button class="suggest" data-lab>+ OPG</button></div>
+    </div>
+
+    <div class="card pad field">
+      <label>Follow-up &amp; advice</label>
+      <div class="frow">
+        <div>
+          <div style="font-size:12px;color:var(--muted);font-weight:650;margin-bottom:8px">Review in</div>
+          <div class="seg" id="fuseg"><button class="segb" data-fu>3 days</button><button class="segb on" data-fu>7 days</button><button class="segb" data-fu>2 weeks</button><button class="segb" data-fu>1 month</button></div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);font-weight:650;margin-bottom:8px">Advice</div>
+          <textarea style="min-height:52px" placeholder="Soft diet, warm saline rinses…">Soft diet. Warm saline rinses 3x/day. Complete RCT next sitting.</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY / SIGN OVERLAY -->
+<div class="backdrop" id="summary">
+  <div class="sheet">
+    <div class="sh-top"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><h3>Visit summary</h3><div class="mt">Review, sign and share with the patient</div></div><button class="x" data-close-summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="rxpaper" id="rxpaper">
+      <div class="rx-h">
+        <div class="clinic">SmileCare Dental<small>Dr. Anjali Rao · Dentist · HSR Layout, Bengaluru</small></div>
+        <div class="doc"><b>Reg. KA/2018/0472</b><br>11 Jul 2026</div>
+      </div>
+      <div class="ptline"><span><b>Rohan Kulkarni</b> · 41 / Male</span><span>+91 98220 •••55</span></div>
+      <div class="rx-sec"><div class="lb">Diagnosis</div><div class="bd" id="sum-dx">Irreversible pulpitis · 36</div></div>
+      <div class="rx-sec">
+        <div class="rxsym">℞</div>
+        <table id="sum-rx"></table>
+      </div>
+      <div class="rx-sec"><div class="lb">Investigations</div><div class="bd">IOPA X-ray · 36</div></div>
+      <div class="rx-sec"><div class="lb">Advice &amp; follow-up</div><div class="bd">Soft diet, warm saline rinses 3x/day. Complete RCT next sitting. <b>Review in <span id="sum-fu">7 days</span>.</b></div></div>
+      <div class="foot"><div>Consultation · <b style="color:var(--ink)">₹600</b> · to collect</div><div class="sign"><div class="sg">A. Rao</div>Dr. Anjali Rao</div></div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-line" data-close-summary>Back to edit</button>
+      <button class="btn btn-line" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>Print</button>
+      <button class="btn btn-primary" style="margin-left:auto" data-toast="Sent to patient · visit closed · ₹600 to collect" data-close-summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Share &amp; close visit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tw=document.getElementById("toasts");
+  function toast(msg){var t=document.createElement("div");t.className="toast";t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';tw.appendChild(t);setTimeout(function(){t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(function(){t.remove();},300);},2600);}
+
+  // timer
+  var sec=0,tel=document.getElementById("timer");
+  setInterval(function(){sec++;var m=String(Math.floor(sec/60)).padStart(2,"0"),s=String(sec%60).padStart(2,"0");tel.textContent=m+":"+s;},1000);
+
+  function rxRow(vals){
+    vals=vals||["","","",""];
+    var d=document.createElement("div");d.className="rxrow";
+    d.innerHTML='<input placeholder="Medicine" value="'+vals[0]+'"><input placeholder="Dosage" value="'+vals[1]+'"><input placeholder="Frequency" value="'+vals[2]+'"><input placeholder="Duration" value="'+vals[3]+'"><button class="del" data-rx-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    document.getElementById("rxbody").appendChild(d);
+  }
+
+  function addChip(setId,text,honey){
+    var span=document.createElement("span");span.className="cchip";if(honey)span.style.cssText="background:var(--honey-soft);color:var(--honey-deep)";
+    span.innerHTML=text+' <span class="x" data-dx-x><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>';
+    document.getElementById(setId).appendChild(span);
+  }
+
+  document.addEventListener("click",function(e){
+    var t=e.target;
+    if(t.closest("[data-rx-add]")){rxRow();return;}
+    var tm=t.closest("[data-tmpl]");if(tm){rxRow(tm.getAttribute("data-tmpl").split("|"));return;}
+    if(t.closest("[data-rx-del]")){t.closest(".rxrow").remove();return;}
+    if(t.closest("[data-dx-x]")){t.closest(".cchip").remove();return;}
+    if(t.closest("[data-dx-add]")){var i=document.getElementById("dxin");if(i.value.trim()){addChip("dxset",i.value.trim());i.value="";}return;}
+    var q=t.closest("[data-quick]");if(q){toast("Added: "+q.textContent.replace("+ ",""));return;}
+    var lb=t.closest("[data-lab]");if(lb){addChip("labset",lb.textContent.replace("+ ",""),true);return;}
+    var fu=t.closest("[data-fu]");if(fu){[].forEach.call(fu.parentNode.children,function(c){c.classList.remove("on");});fu.classList.add("on");return;}
+    if(t.closest("[data-open-summary]")){buildSummary();document.getElementById("summary").classList.add("on");return;}
+    if(t.closest("[data-close-summary]")){document.getElementById("summary").classList.remove("on");return;}
+    if(t.classList&&t.classList.contains("backdrop")){t.classList.remove("on");return;}
+    var tt=t.closest("[data-toast]");if(tt){toast(tt.getAttribute("data-toast"));return;}
+  });
+  document.getElementById("dxin").addEventListener("keydown",function(e){if(e.key==="Enter"&&this.value.trim()){addChip("dxset",this.value.trim());this.value="";}});
+
+  function buildSummary(){
+    // diagnosis
+    var dx=[].map.call(document.querySelectorAll("#dxset .cchip"),function(c){return c.textContent.trim();}).join(", ");
+    document.getElementById("sum-dx").textContent=dx||"—";
+    // rx table
+    var rows=[].map.call(document.querySelectorAll("#rxbody .rxrow"),function(r){
+      var v=[].map.call(r.querySelectorAll("input"),function(i){return i.value;});
+      if(!v[0])return "";
+      return '<tr><td>'+v[0]+'</td><td>'+v[1]+' &middot; '+v[2]+'</td><td style="text-align:right;color:var(--muted)">'+v[3]+'</td></tr>';
+    }).join("");
+    document.getElementById("sum-rx").innerHTML=rows||'<tr><td>—</td></tr>';
+    // follow-up
+    var fu=document.querySelector("#fuseg .segb.on");
+    document.getElementById("sum-fu").textContent=fu?fu.textContent:"—";
+  }
+})();
+</script>

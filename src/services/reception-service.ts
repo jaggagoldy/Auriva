@@ -6,6 +6,7 @@ import {
   logAppointmentEvent,
 } from "@/services/appointment-service";
 import { assignQueueNumber, getQueue, QUEUE_INCLUDE } from "@/services/queue-service";
+import { publishEvent } from "@/lib/events";
 
 /**
  * Check-in transitions a scheduled appointment straight to "waiting" (see
@@ -19,7 +20,7 @@ export async function checkIn(
   clinicId: string,
   actorUserId?: string | null
 ) {
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const appointment = await tx.appointment.findUnique({ where: { id: appointmentId } });
     if (!appointment || appointment.clinic_id !== clinicId) {
       throw new AppointmentNotFoundError(`Appointment ${appointmentId} not found.`);
@@ -34,7 +35,7 @@ export async function checkIn(
     const queueNumber =
       appointment.queue_number ?? (await assignQueueNumber(tx, appointment.doctor_id, now));
 
-    const updated = await tx.appointment.update({
+    const result = await tx.appointment.update({
       where: { id: appointmentId },
       data: { status: "waiting", checked_in_at: now, queue_number: queueNumber },
       include: QUEUE_INCLUDE,
@@ -53,8 +54,19 @@ export async function checkIn(
       actorUserId,
     });
 
-    return updated;
+    return result;
   });
+
+  await publishEvent({
+    eventType: "appointment.checked_in",
+    organizationId: updated.clinic.organization_id,
+    entityId: updated.id,
+    correlationId: updated.id,
+    actorId: actorUserId,
+    payload: { appointmentId: updated.id, queueNumber: updated.queue_number },
+  });
+
+  return updated;
 }
 
 export async function getDashboardSummary(clinicId: string) {
@@ -66,14 +78,37 @@ export async function getDashboardSummary(clinicId: string) {
     counts[appointment.status] = (counts[appointment.status] ?? 0) + 1;
   }
 
+  // Sprint 3: membership rows are org-scoped, not clinic-scoped — a
+  // clinic's own id only doubled as its organization_id for pre-Sprint-3,
+  // single-clinic organizations. Resolve the clinic's real organization_id
+  // first (matches the same fix in /api/doctors and staff-repository).
+  const clinic = await prisma.clinic.findUnique({
+    where: { id: clinicId },
+    select: { organization_id: true },
+  });
+
   const staff = await prisma.staffProfile.findMany({
     where: { clinic_id: clinicId },
-    select: { id: true, full_name: true, specialty: true },
+    select: {
+      id: true,
+      full_name: true,
+      specialty: true,
+      user: {
+        select: {
+          memberships: {
+            where: { organization_id: clinic?.organization_id },
+            select: { role: true },
+          },
+        },
+      },
+    },
   });
-  // Staff_Profiles has no role column — role derivation is centralized in
-  // src/domain/organization.ts so all consumers agree.
+  // APS-040: the membership row is the role source of truth; the specialty
+  // heuristic remains only for profiles that predate the backfill.
   const doctors = staff.filter(
-    (member) => memberRoleFromSpecialty(member.specialty) === "doctor"
+    (member) =>
+      (member.user.memberships[0]?.role ??
+        memberRoleFromSpecialty(member.specialty)) === "doctor"
   );
 
   const doctorLoad = doctors.map((doctor) => {

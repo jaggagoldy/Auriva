@@ -1,0 +1,481 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-2:#0F8171; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --fm:'SF Mono', ui-monospace, Menlo, monospace;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --nav:76px; --top:64px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700;text-wrap:balance}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+
+  /* ===== APP SHELL ===== */
+  .app{display:grid;grid-template-columns:var(--nav) 1fr;grid-template-rows:var(--top) 1fr;min-height:100vh}
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 20px;background:rgba(251,248,244,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .tb-clinic{display:flex;align-items:center;gap:11px}
+  .tb-clinic .lg{width:34px;height:34px;border-radius:11px;background:var(--pine);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(14,116,102,.7)}
+  .tb-clinic .lg svg{width:19px;height:19px}
+  .tb-clinic .nm{font-family:var(--fd);font-weight:700;font-size:16px;line-height:1.1}
+  .tb-clinic .sw{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;cursor:pointer}
+  .tb-clinic .sw svg{width:13px;height:13px}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .accept{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:650;color:var(--body)}
+  .tgl{width:44px;height:26px;border-radius:99px;background:var(--ok);position:relative;transition:background .2s;flex:0 0 auto;border:none;cursor:pointer}
+  .tgl::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+  .tgl.off{background:var(--line-2)}
+  .tgl.off::after{transform:translateX(0)}
+  .tgl:not(.off)::after{transform:translateX(18px)}
+  .tb-date{font-size:12.5px;color:var(--muted);font-weight:600}
+  .tb-av{width:38px;height:38px;border-radius:12px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px}
+
+  /* nav */
+  .nav{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;position:sticky;top:var(--top);height:calc(100vh - var(--top))}
+  .navb{width:56px;height:56px;border-radius:15px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:650;transition:background .15s,color .15s}
+  .navb svg{width:22px;height:22px}
+  .navb:hover{background:var(--sand);color:var(--ink)}
+  .navb.on{background:var(--pine-tint);color:var(--pine-deep)}
+  .nav .sp{flex:1}
+
+  .main{padding:clamp(20px,3vw,34px);max-width:1100px;width:100%}
+  .view{display:none;animation:vin .4s cubic-bezier(.2,.8,.2,1)}
+  .view.on{display:block}
+  @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+
+  .vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .vh .eyebrow{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+  .vh h1{font-size:clamp(24px,3vw,32px);margin-top:4px}
+  .vh .sub{color:var(--body);font-size:14px;margin-top:6px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14.5px;transition:transform .12s,filter .2s,box-shadow .2s,background .2s,border-color .2s}
+  .btn svg{width:17px;height:17px}
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 12px 26px -12px rgba(14,116,102,.6)}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-honey{background:var(--honey);color:#4A3413}
+  .btn-sm{height:38px;font-size:13.5px;padding:0 14px}
+  .btn-ghost{background:none;color:var(--pine-deep)}.btn-ghost:hover{background:var(--pine-tint)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-s)}
+  .pad{padding:20px}
+
+  /* stat row */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .stat .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin-bottom:12px}
+  .stat .ic svg{width:19px;height:19px}
+  .stat .n{font-family:var(--fd);font-weight:700;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .stat.a .ic{background:var(--honey-soft);color:var(--honey-deep)}
+  .stat.g .ic{background:var(--pine-tint);color:var(--pine-deep)}
+  .stat.k .ic{background:var(--ok-tint);color:var(--ok)}
+  .stat.r .ic{background:var(--sand2);color:var(--body)}
+
+  /* up next */
+  .upnext{background:linear-gradient(158deg,var(--night),#0A423A);color:#fff;border-radius:20px;padding:24px;position:relative;overflow:hidden;margin-bottom:22px}
+  .upnext::after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.18),transparent 62%);right:-100px;top:-120px}
+  .upnext .lbl{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--honey);position:relative}
+  .upnext .who{display:flex;align-items:center;gap:15px;margin-top:14px;position:relative}
+  .upnext .who .av{width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:20px;flex:0 0 auto}
+  .upnext .who .nm{font-family:var(--fd);font-weight:700;font-size:22px}
+  .upnext .who .mt{color:#CFE3DC;font-size:13.5px;margin-top:3px}
+  .upnext .acts{display:flex;gap:10px;margin-top:20px;position:relative;flex-wrap:wrap}
+  .upnext .acts .btn-primary{background:#fff;color:var(--pine-deep)}
+  .upnext .acts .btn-line{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);color:#fff}
+
+  /* queue list */
+  .qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .qhead h3{font-size:17px}
+  .qlist{display:flex;flex-direction:column;gap:10px}
+  .qrow{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:14px 16px;transition:box-shadow .18s,border-color .18s}
+  .qrow:hover{box-shadow:var(--shadow-s);border-color:var(--line-2)}
+  .qrow .tm{font-family:var(--fd);font-weight:700;font-size:14px;color:var(--ink);width:62px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .qrow .av{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:15px;flex:0 0 auto;background:var(--pine-tint);color:var(--pine-deep)}
+  .qrow .av.h{background:var(--honey-soft);color:var(--honey-deep)}
+  .qrow .who .nm{font-family:var(--fd);font-weight:700;font-size:15px}
+  .qrow .who .mt{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .qrow .tags{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .qtype{font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:99px;padding:3px 9px}
+  .qtype.book{background:var(--pine-tint);color:var(--pine-deep)}
+  .qtype.walk{background:var(--honey-soft);color:var(--honey-deep)}
+  .qtype.follow{background:var(--sand2);color:var(--body)}
+  .qstat{font-size:11px;font-weight:700;border-radius:99px;padding:4px 11px}
+  .qstat.wait{background:var(--sand2);color:var(--body)}
+  .qstat.now{background:var(--ok-tint);color:var(--ok)}
+  .qstat.done{background:var(--pine-tint);color:var(--pine)}
+  .qrow .qact{display:flex;gap:7px}
+  .qrow.isdone{opacity:.6}
+
+  /* schedule */
+  .weekstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
+  .day{text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 6px;cursor:pointer;transition:.15s}
+  .day:hover{border-color:var(--pine)}
+  .day.on{background:var(--pine);border-color:var(--pine);color:#fff}
+  .day .d{font-size:11px;color:var(--muted);font-weight:650}
+  .day.on .d{color:#CFE3DC}
+  .day .n{font-family:var(--fd);font-weight:700;font-size:18px;margin-top:3px}
+  .day .dot{width:5px;height:5px;border-radius:50%;background:var(--honey);margin:5px auto 0}
+  .day.on .dot{background:#fff}
+  .sched{display:flex;flex-direction:column;gap:2px}
+  .slot{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+  .slot .t{font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px;font-variant-numeric:tabular-nums}
+  .appt{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--pine);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:12px}
+  .appt.free{border-style:dashed;border-left-color:var(--line-2);color:var(--muted);justify-content:center;font-size:13px;font-weight:600;cursor:pointer}
+  .appt.free:hover{border-color:var(--pine);color:var(--pine)}
+  .appt.h{border-left-color:var(--honey)}
+  .appt .nm{font-family:var(--fd);font-weight:700;font-size:14px}
+  .appt .mt{font-size:12px;color:var(--muted)}
+  .appt .r{margin-left:auto;display:flex;gap:6px}
+
+  /* people */
+  .search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:13px;padding:0 14px;margin-bottom:18px;max-width:420px}
+  .search svg{width:18px;height:18px;color:var(--muted)}
+  .search input{flex:1;border:none;background:none;outline:none;font-family:var(--fb);font-size:14.5px;padding:12px 0;color:var(--ink)}
+  .ppllayout{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
+  .pplist{display:flex;flex-direction:column;gap:8px}
+  .pperson{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px;text-align:left;transition:.15s;width:100%}
+  .pperson:hover,.pperson.on{border-color:var(--pine);box-shadow:var(--shadow-s)}
+  .pperson .av{width:40px;height:40px;border-radius:11px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px;flex:0 0 auto}
+  .pperson .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .pperson .mt{font-size:12px;color:var(--muted);margin-top:1px}
+  .precord .rhead{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .precord .rhead .av{width:52px;height:52px;border-radius:15px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:18px}
+  .precord .rhead h3{font-size:18px}
+  .precord .rhead .mt{font-size:13px;color:var(--muted);margin-top:2px}
+  .minirec{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+  .minirec .k{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .minirec .v{font-size:14px;font-weight:650;color:var(--ink);margin-top:3px}
+  .tl{position:relative;padding-left:22px;margin-top:8px}
+  .tl::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--line-2)}
+  .tli{position:relative;padding:10px 0}
+  .tli::before{content:"";position:absolute;left:-19px;top:15px;width:10px;height:10px;border-radius:50%;background:var(--pine);border:2px solid var(--surface)}
+  .tli .dt{font-size:11.5px;color:var(--muted);font-weight:600}
+  .tli .ti{font-family:var(--fd);font-weight:700;font-size:14px;margin-top:2px}
+  .tli .ds{font-size:12.5px;color:var(--body);margin-top:2px}
+
+  /* practice */
+  .prow{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+  .prow:first-child{border-top:none}
+  .prow .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .prow .mt{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .prow .fee{margin-left:auto;font-family:var(--fd);font-weight:700;font-size:15px}
+  .previewcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+  .previewcard .pv-h{display:flex;align-items:center;gap:12px}
+  .previewcard .pv-h .av{width:46px;height:46px;border-radius:13px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+  /* modal */
+  .backdrop{position:fixed;inset:0;background:rgba(20,16,13,.42);backdrop-filter:blur(3px);z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+  .backdrop.on{display:flex;animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);width:100%;max-width:440px;padding:26px;animation:pop .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+  .modal h3{font-size:20px}
+  .modal .sub{color:var(--body);font-size:13.5px;margin-top:6px}
+  .fld{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+  .fld label{font-size:12.5px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld .inp{display:flex;align-items:center;gap:9px;background:var(--paper);border:1.5px solid var(--line-2);border-radius:12px;padding:0 13px;transition:border-color .15s,box-shadow .15s}
+  .fld .inp:focus-within{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .fld .inp .pre{color:var(--muted);font-size:14px;font-weight:600}
+  .fld input{flex:1;border:none;background:none;outline:none;font-family:var(--fb);font-size:15px;padding:12px 0;color:var(--ink)}
+  .recognized{display:none;align-items:center;gap:9px;background:var(--ok-tint);border-radius:10px;padding:9px 12px;margin-top:9px;font-size:12.5px;color:#2E7B44;font-weight:600}
+  .recognized.on{display:flex}
+  .recognized svg{width:15px;height:15px}
+  .seg{display:flex;gap:8px;margin-top:2px}
+  .segb{flex:1;padding:11px;border-radius:11px;border:1.5px solid var(--line-2);background:var(--surface);font-family:var(--fd);font-weight:650;font-size:13.5px;color:var(--body);transition:.15s}
+  .segb.on{border-color:var(--pine);background:var(--pine-tint);color:var(--pine-deep)}
+  .modal .mfoot{display:flex;gap:10px;margin-top:22px}
+  .x{margin-left:auto;width:34px;height:34px;border-radius:10px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center}
+  .x:hover{background:var(--sand2)}
+  .x svg{width:17px;height:17px}
+  .mhead{display:flex;align-items:flex-start}
+
+  /* toasts */
+  .toastwrap{position:fixed;top:76px;right:16px;z-index:80;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:12px 15px;min-width:230px;font-size:13.5px;font-weight:600;animation:tin .3s;pointer-events:auto}
+  .toast .ic{width:24px;height:24px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  .note{background:var(--honey-tint);border:1px solid var(--honey-soft);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--honey-deep);display:flex;gap:9px;align-items:flex-start;margin-top:16px}
+  .note svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
+
+  /* mobile */
+  .mobnav{display:none}
+  @media (max-width:820px){
+    .app{grid-template-columns:1fr}
+    .nav{display:none}
+    .stats{grid-template-columns:1fr 1fr}
+    .ppllayout{grid-template-columns:1fr}
+    .grid2{grid-template-columns:1fr}
+    .weekstrip{grid-template-columns:repeat(7,1fr);gap:4px}
+    .main{padding-bottom:88px}
+    .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:50;padding:6px 4px;justify-content:space-around}
+    .mobnav .navb{width:auto;height:auto;padding:6px 10px;border-radius:12px;flex:1}
+  }
+  @media (max-width:520px){.stats{grid-template-columns:1fr 1fr}.minirec{grid-template-columns:1fr 1fr}}
+</style>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-clinic">
+      <span class="lg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>
+      <div><div class="nm">SmileCare Dental</div><div class="sw">HSR Layout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div></div>
+    </div>
+    <div class="tb-right">
+      <div class="accept">Accepting bookings <button class="tgl" id="accept" aria-label="Toggle accepting bookings"></button></div>
+      <span class="tb-date">Sat, 11 Jul</span>
+      <span class="tb-av">AR</span>
+    </div>
+  </div>
+
+  <!-- SIDE NAV -->
+  <nav class="nav">
+    <button class="navb on" data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Today</button>
+    <button class="navb" data-view="queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Queue</button>
+    <button class="navb" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>Schedule</button>
+    <button class="navb" data-view="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>People</button>
+    <button class="navb" data-view="practice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13M14 21v-8l6 3v5"/></svg>Practice</button>
+    <span class="sp"></span>
+    <button class="navb" data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>You</button>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== TODAY ===== -->
+    <section class="view on" data-v="today">
+      <div class="vh"><div><div class="eyebrow">Saturday, 11 July</div><h1>Good morning, Dr. Rao 👋</h1><div class="sub">You have 3 people waiting and 4 appointments left today.</div></div>
+        <div style="display:flex;gap:10px"><button class="btn btn-line" data-modal-open="walkin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Walk-in</button><button class="btn btn-primary" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4"/></svg>New appointment</button></div>
+      </div>
+      <div class="stats">
+        <div class="stat a"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></span><div class="n">3</div><div class="l">Waiting now</div></div>
+        <div class="stat k"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div class="n">5</div><div class="l">Seen today</div></div>
+        <div class="stat g"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4"/></svg></span><div class="n">4</div><div class="l">Left today</div></div>
+        <div class="stat r"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><div class="n">₹4,200</div><div class="l">Collected today</div></div>
+      </div>
+
+      <div class="upnext">
+        <div class="lbl">Up next</div>
+        <div class="who"><span class="av">RK</span><div><div class="nm">Rohan Kulkarni</div><div class="mt">10:15 · Follow-up · waiting 4 min</div></div></div>
+        <div class="acts"><button class="btn btn-primary" data-toast="Starting consultation with Rohan…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Start consultation</button><button class="btn btn-line" data-toast="Rohan called in">Call in</button></div>
+        <div class="note" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#DCEAE5;margin-top:18px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--honey)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span>The consultation canvas &amp; prescription builder open here — that's <b>Phase 5 (Clinical Workflows)</b>.</span></div>
+      </div>
+
+      <div class="card pad">
+        <div class="qhead"><h3>Live queue</h3><button class="btn btn-ghost btn-sm" data-view="queue">See all →</button></div>
+        <div class="qlist" id="today-queue"></div>
+      </div>
+    </section>
+
+    <!-- ===== QUEUE ===== -->
+    <section class="view" data-v="queue">
+      <div class="vh"><div><div class="eyebrow">Live now</div><h1>Today's queue</h1><div class="sub">Booked, follow-ups and walk-ins — in the order they'll be seen.</div></div>
+        <button class="btn btn-primary" data-modal-open="walkin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Register walk-in</button>
+      </div>
+      <div class="qlist" id="full-queue"></div>
+    </section>
+
+    <!-- ===== SCHEDULE ===== -->
+    <section class="view" data-v="schedule">
+      <div class="vh"><div><div class="eyebrow">This week</div><h1>Schedule</h1><div class="sub">Your day at a glance. Tap a free slot to book.</div></div>
+        <button class="btn btn-line" data-toast="Availability editor opens here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Edit availability</button>
+      </div>
+      <div class="weekstrip">
+        <div class="day"><div class="d">Mon</div><div class="n">7</div></div>
+        <div class="day"><div class="d">Tue</div><div class="n">8</div><div class="dot"></div></div>
+        <div class="day"><div class="d">Wed</div><div class="n">9</div></div>
+        <div class="day"><div class="d">Thu</div><div class="n">10</div><div class="dot"></div></div>
+        <div class="day on"><div class="d">Sat</div><div class="n">11</div><div class="dot"></div></div>
+        <div class="day"><div class="d">Sun</div><div class="n">12</div></div>
+        <div class="day"><div class="d">Mon</div><div class="n">13</div></div>
+      </div>
+      <div class="card pad">
+        <div class="sched">
+          <div class="slot"><div class="t">9:30</div><div class="appt"><span class="nm">Aarav Mehta</span><span class="mt">· New patient</span><span class="r"><span class="qstat done">Done</span></span></div></div>
+          <div class="slot"><div class="t">10:00</div><div class="appt"><span class="nm">Sunita Patil</span><span class="mt">· Consultation</span><span class="r"><span class="qstat done">Done</span></span></div></div>
+          <div class="slot"><div class="t">10:15</div><div class="appt h"><span class="nm">Rohan Kulkarni</span><span class="mt">· Follow-up</span><span class="r"><span class="qstat now">Now</span></span></div></div>
+          <div class="slot"><div class="t">10:45</div><div class="appt"><span class="nm">Mohammed Iqbal</span><span class="mt">· Consultation</span><span class="r"><button class="btn btn-ghost btn-sm" data-toast="Reschedule Mohammed">Reschedule</button></span></div></div>
+          <div class="slot"><div class="t">11:15</div><div class="appt free" data-modal-open="walkin">+ Free · tap to book</div></div>
+          <div class="slot"><div class="t">11:45</div><div class="appt"><span class="nm">Kavya Reddy</span><span class="mt">· Follow-up</span><span class="r"><button class="btn btn-ghost btn-sm" data-toast="Reschedule Kavya">Reschedule</button></span></div></div>
+          <div class="slot"><div class="t">12:15</div><div class="appt free" data-modal-open="walkin">+ Free · tap to book</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PEOPLE ===== -->
+    <section class="view" data-v="people">
+      <div class="vh"><div><div class="eyebrow">Your people</div><h1>People</h1><div class="sub">Everyone you've seen — search by name or number.</div></div></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search people…"></div>
+      <div class="ppllayout">
+        <div class="pplist" id="pplist"></div>
+        <div class="card pad precord" id="precord"></div>
+      </div>
+    </section>
+
+    <!-- ===== PRACTICE ===== -->
+    <section class="view" data-v="practice">
+      <div class="vh"><div><div class="eyebrow">Your clinic</div><h1>Practice</h1><div class="sub">Services, fees and how patients find you.</div></div></div>
+      <div class="grid2">
+        <div class="card pad">
+          <div class="qhead"><h3>Services &amp; fees</h3><button class="btn btn-ghost btn-sm" data-toast="Add a service">+ Add</button></div>
+          <div class="prow"><div><div class="nm">Consultation</div><div class="mt">Follow-up within 7 days</div></div><span class="fee">₹600</span></div>
+          <div class="prow"><div><div class="nm">Scaling &amp; cleaning</div><div class="mt">45 min</div></div><span class="fee">₹1,200</span></div>
+          <div class="prow"><div><div class="nm">Root canal</div><div class="mt">Per sitting</div></div><span class="fee">₹3,500</span></div>
+        </div>
+        <div class="card pad">
+          <h3 style="font-size:17px">Your public page</h3>
+          <p style="font-size:13px;color:var(--body);margin-top:6px">This is what patients see when they book online.</p>
+          <div class="previewcard">
+            <div class="pv-h"><span class="av">SC</span><div><div class="nm" style="font-family:var(--fd);font-weight:700">SmileCare Dental</div><div class="mt" style="font-size:12.5px;color:var(--muted)">Dr. Anjali Rao · Dentist · HSR Layout</div></div></div>
+            <div style="display:flex;align-items:center;gap:9px;margin-top:14px;font-size:12.5px;color:var(--body)"><span class="qstat now">● Accepting bookings</span><span style="color:var(--muted)">Mon–Sat · 9:30–6:00</span></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-line btn-sm" data-toast="Opening public page preview">Preview</button><button class="btn btn-line btn-sm" data-toast="Booking link copied">Copy link</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROFILE ===== -->
+    <section class="view" data-v="profile">
+      <div class="vh"><div><div class="eyebrow">Account</div><h1>You</h1><div class="sub">Your profile and account.</div></div></div>
+      <div class="grid2">
+        <div class="card pad">
+          <div class="precord"><div class="rhead"><span class="av" style="background:var(--pine-tint);color:var(--pine-deep)">AR</span><div><h3>Dr. Anjali Rao</h3><div class="mt">Dentist · Reg. KA/2018/0472</div></div></div>
+          <div class="minirec"><div><div class="k">Phone</div><div class="v">+91 98765 43210</div></div><div><div class="k">Email</div><div class="v">anjali@clinic.in</div></div><div><div class="k">Since</div><div class="v">2024</div></div></div>
+          <button class="btn btn-line btn-sm" data-toast="Edit profile">Edit profile</button></div>
+        </div>
+        <div class="card pad">
+          <h3 style="font-size:17px">Settings</h3>
+          <div class="prow"><div><div class="nm">Clinic details &amp; hours</div><div class="mt">Address, timings</div></div><button class="btn btn-ghost btn-sm" data-toast="Deep settings — Phase 11">Open</button></div>
+          <div class="prow"><div><div class="nm">Notifications &amp; reminders</div><div class="mt">WhatsApp, SMS</div></div><button class="btn btn-ghost btn-sm" data-toast="Comms — Phase 9">Open</button></div>
+          <div class="prow"><div><div class="nm">Billing &amp; payments</div><div class="mt">UPI, invoices</div></div><button class="btn btn-ghost btn-sm" data-toast="Financial ops — Phase 6B">Open</button></div>
+          <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Deep settings live in <b>Phase 11</b>. This screen is the entry point.</span></div>
+          <button class="btn btn-line btn-sm" style="margin-top:16px" data-toast="Signed out">Sign out</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobnav">
+  <button class="navb on" data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Today</button>
+  <button class="navb" data-view="queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Queue</button>
+  <button class="navb" data-view="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4"/></svg>Schedule</button>
+  <button class="navb" data-view="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>People</button>
+  <button class="navb" data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>You</button>
+</nav>
+
+<!-- WALK-IN MODAL -->
+<div class="backdrop" id="walkin">
+  <div class="modal">
+    <div class="mhead"><div><h3>Register a walk-in</h3><p class="sub">Just the essentials to add them to the queue.</p></div><button class="x" data-modal-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="fld"><label>Phone number</label><div class="inp"><span class="pre">🇮🇳 +91</span><input id="wk-phone" type="tel" inputmode="numeric" placeholder="98765 43210"></div></div>
+    <div class="recognized" id="wk-reco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span>We've seen this number — <b>Priya Sharma</b>. Details filled in.</span></div>
+    <div class="fld"><label>Full name</label><div class="inp"><input id="wk-name" type="text" placeholder="Name"></div></div>
+    <div class="fld"><label>Gender</label><div class="seg" id="wk-gender"><button class="segb" data-seg>Female</button><button class="segb" data-seg>Male</button><button class="segb" data-seg>Other</button></div></div>
+    <div class="fld"><label>Age or date of birth</label><div class="inp"><input id="wk-age" type="text" placeholder="e.g. 32  ·  or  12 Mar 1993"></div></div>
+    <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span>That's all — no full profile. If they ever sign in with this number, they'll see <b>"we found your profile."</b></span></div>
+    <div class="mfoot"><button class="btn btn-line" data-modal-close style="flex:1">Cancel</button><button class="btn btn-primary" style="flex:1.4" data-walkin-add>Add to queue</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // data
+  var queue=[
+    {tm:"10:15",nm:"Rohan Kulkarni",mt:"Follow-up",type:"follow",tl:"Follow-up",stat:"now",h:false,init:"RK"},
+    {tm:"10:30",nm:"Sunita Patil",mt:"New patient",type:"book",tl:"Booked",stat:"wait",h:true,init:"SP"},
+    {tm:"10:45",nm:"Mohammed Iqbal",mt:"Consultation",type:"book",tl:"Booked",stat:"wait",h:false,init:"MI"},
+    {tm:"walk-in",nm:"Deepa Nair",mt:"Toothache",type:"walk",tl:"Walk-in",stat:"wait",h:true,init:"DN"}
+  ];
+  var people=[
+    {init:"PS",nm:"Priya Sharma",mt:"+91 98765 •••10 · F · 32",gender:"Female",age:"32 yrs",first:"10 Jul 2026",tl:[["10 Jul","Consultation","Dr. Rao · Rx + follow-up in 7 days"],["2 Jun","Scaling & cleaning","₹1,200 · paid"],["14 Apr","Consultation","First visit"]]},
+    {init:"RK",nm:"Rohan Kulkarni",mt:"+91 98220 •••55 · M · 41",gender:"Male",age:"41 yrs",first:"3 May 2026",tl:[["11 Jul","Follow-up","In progress"],["4 Jul","Root canal","Sitting 1 of 2"]]},
+    {init:"AM",nm:"Aarav Mehta",mt:"+91 90080 •••21 · M · 7",gender:"Male",age:"7 yrs",first:"11 Jul 2026",tl:[["11 Jul","New patient","Registered today"]]},
+    {init:"KR",nm:"Kavya Reddy",mt:"+91 99001 •••88 · F · 28",gender:"Female",age:"28 yrs",first:"1 Jun 2026",tl:[["11 Jul","Follow-up","Booked 11:45"],["1 Jun","Consultation","₹600 · paid"]]}
+  ];
+
+  function qrow(p,withActions){
+    var av='<span class="av '+(p.h?"h":"")+'">'+p.init+'</span>';
+    var acts=withActions?('<div class="qact">'+(p.stat==="done"?'':'<button class="btn btn-line btn-sm" data-q-done>Done</button>')+'</div>'):'';
+    return '<div class="qrow'+(p.stat==="done"?" isdone":"")+'"><span class="tm">'+p.tm+'</span>'+av+
+      '<div class="who"><div class="nm">'+p.nm+'</div><div class="mt">'+p.mt+'</div></div>'+
+      '<div class="tags"><span class="qtype '+p.type+'">'+p.tl+'</span><span class="qstat '+p.stat+'" data-stat>'+(p.stat==="now"?"Now":p.stat==="done"?"Done":"Waiting")+'</span>'+acts+'</div></div>';
+  }
+  function renderQueues(){
+    document.getElementById("today-queue").innerHTML=queue.slice(0,3).map(function(p){return qrow(p,false);}).join("");
+    document.getElementById("full-queue").innerHTML=queue.map(function(p){return qrow(p,true);}).join("");
+  }
+  renderQueues();
+
+  // people
+  function renderPeople(sel){
+    document.getElementById("pplist").innerHTML=people.map(function(p,i){
+      return '<button class="pperson'+(i===sel?" on":"")+'" data-person="'+i+'"><span class="av">'+p.init+'</span><div><div class="nm">'+p.nm+'</div><div class="mt">'+p.mt+'</div></div></button>';
+    }).join("");
+    var p=people[sel];
+    document.getElementById("precord").innerHTML=
+      '<div class="rhead"><span class="av">'+p.init+'</span><div><h3>'+p.nm+'</h3><div class="mt">'+p.mt+'</div></div></div>'+
+      '<div class="minirec"><div><div class="k">Gender</div><div class="v">'+p.gender+'</div></div><div><div class="k">Age</div><div class="v">'+p.age+'</div></div><div><div class="k">First seen</div><div class="v">'+p.first+'</div></div></div>'+
+      '<div style="display:flex;gap:9px;margin-bottom:6px"><button class="btn btn-primary btn-sm" data-toast="Start consultation — Phase 5">Start consultation</button><button class="btn btn-line btn-sm" data-toast="Book a follow-up">Book follow-up</button></div>'+
+      '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:16px 0 4px">Visit timeline</div>'+
+      '<div class="tl">'+p.tl.map(function(t){return '<div class="tli"><div class="dt">'+t[0]+'</div><div class="ti">'+t[1]+'</div><div class="ds">'+t[2]+'</div></div>';}).join("")+'</div>';
+  }
+  renderPeople(0);
+
+  // toasts
+  var tw=document.getElementById("toasts");
+  function toast(msg){var t=document.createElement("div");t.className="toast";t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';tw.appendChild(t);setTimeout(function(){t.style.opacity="0";t.style.transition="opacity .3s";setTimeout(function(){t.remove();},300);},2600);}
+
+  // view switching
+  function setView(v){
+    [].forEach.call(document.querySelectorAll(".view"),function(s){s.classList.toggle("on",s.dataset.v===v);});
+    [].forEach.call(document.querySelectorAll(".navb"),function(b){b.classList.toggle("on",b.dataset.view===v);});
+    document.querySelector(".main").scrollTo?window.scrollTo(0,0):0;
+  }
+
+  // delegated clicks
+  document.addEventListener("click",function(e){
+    var nv=e.target.closest("[data-view]"); if(nv){setView(nv.getAttribute("data-view"));return;}
+    var mo=e.target.closest("[data-modal-open]"); if(mo){var m=document.getElementById(mo.getAttribute("data-modal-open"));if(m)m.classList.add("on");return;}
+    var mc=e.target.closest("[data-modal-close]"); if(mc){mc.closest(".backdrop").classList.remove("on");return;}
+    if(e.target.classList&&e.target.classList.contains("backdrop")){e.target.classList.remove("on");return;}
+    var tt=e.target.closest("[data-toast]"); if(tt){toast(tt.getAttribute("data-toast"));return;}
+    var sg=e.target.closest("[data-seg]"); if(sg){[].forEach.call(sg.parentNode.querySelectorAll("[data-seg]"),function(b){b.classList.remove("on");});sg.classList.add("on");return;}
+    var pr=e.target.closest("[data-person]"); if(pr){renderPeople(parseInt(pr.getAttribute("data-person"),10));return;}
+    var dn=e.target.closest("[data-q-done]"); if(dn){var row=dn.closest(".qrow");var nm=row.querySelector(".nm").textContent;var q=queue.find(function(x){return x.nm===nm;});if(q){q.stat="done";q.tl=q.tl;}renderQueues();toast(nm+" marked done");return;}
+    var wa=e.target.closest("[data-walkin-add]"); if(wa){document.getElementById("walkin").classList.remove("on");toast("Added to the queue");return;}
+  });
+
+  // accepting toggle
+  document.getElementById("accept").addEventListener("click",function(){this.classList.toggle("off");toast(this.classList.contains("off")?"Bookings paused":"Now accepting bookings");});
+
+  // walk-in recognition
+  var wkPhone=document.getElementById("wk-phone"),wkName=document.getElementById("wk-name"),wkAge=document.getElementById("wk-age"),wkReco=document.getElementById("wk-reco");
+  wkPhone.addEventListener("input",function(){
+    var digits=wkPhone.value.replace(/\D/g,"");
+    if(digits.indexOf("98765")===0){wkReco.classList.add("on");wkName.value="Priya Sharma";wkAge.value="32";var segs=document.querySelectorAll("#wk-gender [data-seg]");segs.forEach(function(b){b.classList.remove("on");});segs[0].classList.add("on");}
+    else{wkReco.classList.remove("on");}
+  });
+})();
+</script>

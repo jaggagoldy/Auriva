@@ -1,0 +1,1124 @@
+<title>Auriva — Patient &amp; Doctor Sign-Up + Patient App (Review Draft)</title>
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-300:#5EEAD4;--teal-400:#2DD4BF;
+  --teal-500:#14B8A6;--teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --info:#0284C7;--info-bg:#F0F9FF;--info-border:#BAE6FD;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg:#FFFFFF;--bg-subtle:#F8FAFC;--bg-page:#F5F7FA;
+  --border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;--text-inverse:#FFFFFF;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-sm:0 1px 3px rgba(15,23,42,.07),0 1px 2px rgba(15,23,42,.04);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --sh-lg:0 12px 32px rgba(15,23,42,.12),0 4px 8px rgba(15,23,42,.05);
+  --ring:0 0 0 3px rgba(13,148,136,.25);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* ---- doc shell ---- */
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:264px;background:#fff;border-right:1px solid var(--border);padding:20px 12px;overflow-y:auto;z-index:100}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.doc-logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
+.doc-logo b{font-size:14px;letter-spacing:-.02em;display:block}
+.doc-logo span{display:block;font-size:10.5px;color:var(--text-muted);font-weight:500}
+.nav-group{margin-bottom:4px}
+.nav-group-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:14px 12px 6px}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:12.5px;font-weight:500;margin-bottom:1px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .tag-id{font-size:9.5px;font-weight:700;color:var(--text-muted);background:var(--slate-100);border-radius:4px;padding:1px 5px;font-family:ui-monospace,Menlo,monospace}
+.doc-nav a.active .tag-id{background:var(--teal-100);color:var(--teal-700)}
+.doc-main{margin-left:264px;padding:0 0 140px}
+.doc-section{padding-top:56px;scroll-margin-top:20px;border-bottom:1px solid var(--border)}
+.doc-section-inner{max-width:1240px;margin:0 auto;padding:0 40px 56px}
+.sec-eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600)}
+.sec-id{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--teal-700);background:var(--teal-50);border:1px solid var(--teal-200);border-radius:5px;padding:2px 7px}
+.sec-title{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.sec-desc{font-size:14px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+
+/* ---- cover ---- */
+.cover{min-height:420px;display:flex;flex-direction:column;justify-content:center;padding:72px 40px 56px;max-width:1240px;margin:0 auto}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px;margin-bottom:20px}
+.cover-meta{display:flex;gap:28px;font-size:12px;color:var(--text-muted);flex-wrap:wrap}
+.cover-meta b{display:block;font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:2px}
+.flow-map{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:28px}
+.flow-map .st{background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:8px 14px;font-size:12px;font-weight:600;color:var(--text);box-shadow:var(--sh-xs)}
+.flow-map .st span{display:block;font-weight:400;color:var(--text-muted);font-size:10.5px;margin-top:1px}
+.flow-map .ar{color:var(--text-muted);font-weight:700}
+
+/* ---- device frame (sells "this is a real screen") ---- */
+.frame-wrap{display:flex;justify-content:center}
+.frame{width:100%;max-width:1180px;border-radius:14px;border:1px solid var(--border-strong);box-shadow:var(--sh-lg);overflow:hidden;background:#fff}
+.frame.narrow{max-width:460px}
+.frame-chrome{height:38px;background:var(--slate-100);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 12px}
+.frame-dots{display:flex;gap:5px}
+.frame-dots span{width:9px;height:9px;border-radius:50%;background:var(--slate-300)}
+.frame-url{flex:1;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:4px 12px;font-size:11px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace;max-width:340px;margin:0 auto}
+.frame-body{background:var(--bg-page)}
+.annot{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+.annot .pill{font-size:11.5px;color:var(--text-secondary);background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:5px 12px;display:flex;align-items:center;gap:6px}
+.annot .pill b{color:var(--text)}
+.annot .pill .n{width:16px;height:16px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ---- shared component classes (from APS-002) ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--font);font-weight:600;border-radius:var(--r-md);border:1px solid transparent;cursor:pointer;transition:.15s;font-size:13.5px;padding:9px 16px;line-height:1;white-space:nowrap}
+.btn.lg{font-size:14.5px;padding:12px 20px;border-radius:var(--r-lg)}
+.btn.sm{font-size:12.5px;padding:6px 12px}
+.btn.block{width:100%}
+.btn-primary{background:var(--teal-600);color:#fff;box-shadow:var(--sh-xs)}
+.btn-secondary{background:#fff;color:var(--text);border-color:var(--border-strong);box-shadow:var(--sh-xs)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}
+.btn-soft{background:var(--teal-50);color:var(--teal-700)}
+.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:600;color:var(--slate-700)}
+.input{font-family:var(--font);font-size:13.5px;padding:10px 12px;border:1px solid var(--border-strong);border-radius:var(--r-md);background:#fff;color:var(--text);outline:none;width:100%}
+.input:focus{border-color:var(--teal-500);box-shadow:var(--ring)}
+.input.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+.hint{font-size:11.5px;color:var(--text-muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:var(--r-full);border:1px solid;line-height:1.4}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag{display:inline-flex;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:var(--r-sm);background:var(--slate-100);color:var(--slate-600)}
+.avatar{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex-shrink:0}
+.avatar.sm{width:28px;height:28px;font-size:10.5px}
+.avatar.lg{width:56px;height:56px;font-size:19px}
+.av-teal{background:var(--teal-100);color:var(--teal-800)}
+.av-blue{background:var(--blue-bg);color:var(--blue)}
+.av-indigo{background:var(--indigo-bg);color:var(--indigo)}
+.av-amber{background:var(--warning-bg);color:var(--warning)}
+.av-org{border-radius:var(--r-md);background:var(--slate-900);color:#fff}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:18px;box-shadow:var(--sh-xs)}
+.hr{height:1px;background:var(--slate-100);margin:14px 0}
+.progress{display:flex;gap:6px}
+.progress .seg{height:4px;flex:1;border-radius:2px;background:var(--slate-200)}
+.progress .seg.on{background:var(--teal-600)}
+</style>
+
+<!-- ================= NAV ================= -->
+<nav class="doc-nav" id="docnav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>Patient &amp; Doctor Flow · Draft v0.1</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Sign in / Sign up</div>
+    <a href="#s-auth001"><span class="tag-id">001</span>Phone entry</a>
+    <a href="#s-auth002"><span class="tag-id">002</span>OTP verify</a>
+    <a href="#s-auth004"><span class="tag-id">004</span>Patient onboarding</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Doctor sign-up</div>
+    <a href="#s-auth005a"><span class="tag-id">005a</span>Identity &amp; registration</a>
+    <a href="#s-auth005b"><span class="tag-id">005b</span>Qualifications &amp; clinic</a>
+    <a href="#s-auth005c"><span class="tag-id">005c</span>Profile review → live</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Patient app · full-screen web</div>
+    <a href="#s-pat001"><span class="tag-id">PAT-001</span>Home</a>
+    <a href="#s-pat007a"><span class="tag-id">PAT-007</span>Find Care · Doctors</a>
+    <a href="#s-pat007b"><span class="tag-id">PAT-007</span>Find Care · Hospitals</a>
+    <a href="#s-pat007c"><span class="tag-id">PAT-007</span>Find Care · Labs / Pharmacy</a>
+    <a href="#s-mkt003"><span class="tag-id">MKT-003</span>Doctor Details</a>
+    <a href="#s-mkt009"><span class="tag-id">MKT-009</span>Book a Slot</a>
+    <a href="#s-mkt010"><span class="tag-id">MKT-010</span>Booking Confirmed</a>
+    <a href="#s-pat002"><span class="tag-id">PAT-002</span>Care</a>
+    <a href="#s-pat008"><span class="tag-id">PAT-008</span>Health Records</a>
+    <a href="#s-pat016"><span class="tag-id">PAT-016</span>Family</a>
+    <a href="#s-pro001"><span class="tag-id">PRO-001</span>Profile</a>
+    <a href="#s-set001"><span class="tag-id">SET-001</span>Settings</a>
+  </div>
+</nav>
+
+<main class="doc-main">
+
+<!-- ================= COVER ================= -->
+<section class="cover">
+  <div class="cover-badge"><span class="dot"></span> Review draft · not built · for approval before code</div>
+  <h1>Patient &amp; Doctor <em>sign-up, onboarding and app</em>.</h1>
+  <p>Full end-to-end flow: one unified phone-based sign-in for every role, branching into Patient onboarding or Doctor onboarding, into a full-screen desktop web Patient app (Home, Care, Health Records, Family, Profile). Built against the approved blueprint — AUTH-001/002/004/005, PAT-001/002/008/016, PRO-001.</p>
+  <div class="cover-meta">
+    <div><b>Scope this round</b> Patient + Doctor only — Organization onboarding (AUTH-006) is next</div>
+    <div><b>Layout</b> Patient app is full-screen desktop web (top nav), not the blueprint's mobile-first shell — by your direction</div>
+    <div><b>Status</b> Static review only — no code changes yet</div>
+  </div>
+  <div class="flow-map">
+    <div class="st">Phone number<span>AUTH-001</span></div><div class="ar">→</div>
+    <div class="st">OTP<span>AUTH-002</span></div><div class="ar">→</div>
+    <div class="st">New patient?<span>branch</span></div><div class="ar">→</div>
+    <div class="st">Patient onboarding<span>AUTH-004</span></div><div class="ar">or</div>
+    <div class="st">Doctor onboarding<span>AUTH-005</span></div><div class="ar">→</div>
+    <div class="st">App / Console</div>
+  </div>
+</section>
+
+<!-- ================= AUTH-001 ================= -->
+<section class="doc-section" id="s-auth001">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-001</span><span class="sec-kicker">Sign in / Sign up</span></div>
+    <h2 class="sec-title">One phone number. No "create account" toggle.</h2>
+    <p class="sec-desc">The gap you flagged — there's no sign-up today, only a role-select login for seeded demo users. This screen replaces the role-select gateway: everyone starts here, existing or new, patient or doctor. The system tells them apart after OTP — nobody has to declare it upfront.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/sign-in</div></div>
+      <div class="frame-body" style="padding:40px 32px;display:flex;flex-direction:column;align-items:center;gap:20px">
+        <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:34px;height:34px;font-size:16px">A</div><b style="font-size:17px">Auriva</b></div>
+        <div style="text-align:center"><div style="font-size:19px;font-weight:700;margin-bottom:4px">Welcome to Auriva</div><div style="font-size:13px;color:var(--text-secondary)">Enter your mobile number to continue</div></div>
+        <div class="field" style="width:100%">
+          <label>Mobile number</label>
+          <div style="display:flex;gap:8px">
+            <select class="input select" style="width:88px;flex-shrink:0"><option>🇮🇳 +91</option></select>
+            <input class="input" placeholder="98450 12210" style="flex:1">
+          </div>
+        </div>
+        <button class="btn btn-primary block lg">Continue</button>
+        <div style="font-size:11px;color:var(--text-muted);text-align:center;max-width:280px;line-height:1.5">By continuing you agree to Auriva's <a style="color:var(--teal-700)">Terms</a> and <a style="color:var(--teal-700)">Privacy Policy</a>. We'll text a one-time code to verify it's you.</div>
+        <div class="hr" style="width:100%"></div>
+        <div style="font-size:12.5px;color:var(--text-secondary)">Signing up as a hospital or clinic? <a style="color:var(--teal-700);font-weight:600">Register your organization →</a></div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Same screen for a returning patient, a new patient, or a first-time doctor — role is resolved after OTP, not asked here.</span>
+      <span class="pill"><span class="n">2</span>Org signup gets its own explicit link out, since AUTH-006 is a heavier KYC flow that doesn't belong on this fast path.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AUTH-002 ================= -->
+<section class="doc-section" id="s-auth002">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-002</span><span class="sec-kicker">OTP Verification</span></div>
+    <h2 class="sec-title">Verify, then resolve who they are.</h2>
+    <p class="sec-desc">After this screen, the backend looks up the phone number. Known + patient → straight to Home. Known + doctor → straight to Today's Queue. Unknown number → branches to onboarding (next two sections). No manual role picker anymore — <code style="font-family:ui-monospace,Menlo,monospace;background:var(--slate-100);padding:1px 6px;border-radius:4px;font-size:12px">defaultWorkspacePathForRole</code> already does this server-side resolution, it just needs a real identity to resolve.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/verify</div></div>
+      <div class="frame-body" style="padding:40px 32px;display:flex;flex-direction:column;align-items:center;gap:18px">
+        <div style="width:52px;height:52px;border-radius:14px;background:var(--teal-50);display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:var(--teal-700)"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div>
+        <div style="text-align:center"><div style="font-size:19px;font-weight:700;margin-bottom:4px">Enter the code</div><div style="font-size:13px;color:var(--text-secondary)">Sent to +91 98450 12210 · <a style="color:var(--teal-700);font-weight:600">Edit</a></div></div>
+        <div style="display:flex;gap:8px">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700" value="4" maxlength="1">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700" value="8" maxlength="1">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700" value="2" maxlength="1">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;border-color:var(--teal-500);box-shadow:var(--ring)" maxlength="1">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700" maxlength="1">
+          <input class="input" style="width:44px;height:52px;text-align:center;font-size:20px;font-weight:700" maxlength="1">
+        </div>
+        <div style="font-size:12.5px;color:var(--text-muted)">Resend code in <b style="color:var(--text)">00:24</b></div>
+        <button class="btn btn-primary block lg">Verify &amp; continue</button>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>30s resend cooldown per APS-008; never a silent lockout — a voice-call fallback appears after 2 failed resends.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AUTH-004 ================= -->
+<section class="doc-section" id="s-auth004">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-004</span><span class="sec-kicker">Patient Onboarding</span></div>
+    <h2 class="sec-title">Minimal profile. Under a minute to Home.</h2>
+    <p class="sec-desc">Only shown to a phone number the system has never seen. Three required fields, one optional ABHA link that can be completed later from Profile — the goal is speed, not completeness. Everything else (address, insurance, family) is filled in later from a friendlier, lower-stakes moment: the Profile screen.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/onboarding/patient</div></div>
+      <div class="frame-body" style="padding:36px 32px;display:flex;flex-direction:column;gap:16px">
+        <div class="progress"><div class="seg on"></div><div class="seg"></div></div>
+        <div><div style="font-size:19px;font-weight:700;margin-bottom:4px">Tell us about you</div><div style="font-size:13px;color:var(--text-secondary)">This is what your doctors and clinics will see</div></div>
+        <div class="field"><label>Full name</label><input class="input" placeholder="e.g. Ananya Sharma"></div>
+        <div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>Date of birth</label><input class="input" placeholder="DD / MM / YYYY"></div>
+          <div class="field" style="flex:1"><label>Gender</label><select class="input select"><option>Select</option><option>Female</option><option>Male</option><option>Other</option></select></div>
+        </div>
+        <div class="field"><label>Blood group <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label><select class="input select"><option>Select if known</option></select></div>
+        <div class="hr"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--teal-50);border:1px solid var(--teal-200);border-radius:var(--r-lg)">
+          <div style="display:flex;align-items:center;gap:10px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg><div><div style="font-size:13px;font-weight:600">Link your ABHA ID</div><div style="font-size:11.5px;color:var(--text-muted)">Import records instantly · optional</div></div></div>
+          <button class="btn btn-secondary sm">Link now</button>
+        </div>
+        <button class="btn btn-primary block lg">Go to my dashboard</button>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>ABHA linking is explicitly skippable — never a blocking step to first value.</span>
+      <span class="pill"><span class="n">2</span>Lands on PAT-001 Home immediately after — see the Patient App section below.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DOCTOR SIGN-UP ================= -->
+<section class="doc-section" id="s-auth005a">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-005 · 1 of 3</span><span class="sec-kicker">Doctor Onboarding — Identity</span></div>
+    <h2 class="sec-title">A different phone number, a completely different onboarding.</h2>
+    <p class="sec-desc">Same AUTH-001/002 entry (phone + OTP) — but an unrecognized number that identifies as a doctor branches here instead of AUTH-004. This is the heavier flow you called out: registration-number verification is a hard gate, because an unverified "doctor" account is a trust and safety problem, not just a UX one.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/onboarding/doctor</div></div>
+      <div class="frame-body" style="padding:36px 32px;display:flex;flex-direction:column;gap:16px">
+        <div class="progress"><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div>
+        <div><div style="font-size:19px;font-weight:700;margin-bottom:4px">Verify your medical registration</div><div style="font-size:13px;color:var(--text-secondary)">Step 1 of 3 · Identity &amp; registration</div></div>
+        <div class="field"><label>Full name (as per registration)</label><input class="input" placeholder="e.g. Dr. Arjun Mehta"></div>
+        <div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>State Medical Council</label><select class="input select"><option>Karnataka Medical Council</option></select></div>
+          <div class="field" style="flex:1"><label>Registration number</label><input class="input" placeholder="e.g. KMC-48213"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--r-lg)">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--info);flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div style="font-size:12px;color:var(--text-secondary)">We verify this against the NMC registry. Most checks complete instantly; a small number are manually reviewed within 24h.</div>
+        </div>
+        <button class="btn btn-primary block lg">Verify &amp; continue</button>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<section class="doc-section" id="s-auth005b">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-005 · 2 of 3</span><span class="sec-kicker">Doctor Onboarding — Qualifications &amp; Clinic</span></div>
+    <h2 class="sec-title">What they treat, and where.</h2>
+    <p class="sec-desc">This step feeds two things at once: the doctor's public marketplace profile (MKT-003) and their first Organization affiliation — a doctor can practice solo (their own booking link) or attach to an existing clinic that's already on Auriva.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/onboarding/doctor</div></div>
+      <div class="frame-body" style="padding:36px 32px;display:flex;flex-direction:column;gap:16px">
+        <div class="progress"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div>
+        <div><div style="font-size:19px;font-weight:700;margin-bottom:4px">Your practice</div><div style="font-size:13px;color:var(--text-secondary)">Step 2 of 3 · Qualifications &amp; clinic</div></div>
+        <div class="field"><label>Speciality</label><select class="input select"><option>General Physician</option></select></div>
+        <div class="field"><label>Qualifications</label><input class="input" placeholder="e.g. MBBS, MD (Internal Medicine)"></div>
+        <div class="field"><label>Years of experience</label><input class="input" placeholder="e.g. 12"></div>
+        <div class="hr"></div>
+        <div class="field">
+          <label>Where do you practice?</label>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--teal-500);background:var(--teal-50);border-radius:var(--r-lg);cursor:pointer">
+              <input type="radio" checked style="accent-color:var(--teal-600)"><div><div style="font-size:13px;font-weight:600">Join an existing clinic on Auriva</div><div style="font-size:11.5px;color:var(--text-muted)">Search by name — an admin there approves your affiliation</div></div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--r-lg);cursor:pointer">
+              <input type="radio" style="accent-color:var(--teal-600)"><div><div style="font-size:13px;font-weight:600">Independent practice</div><div style="font-size:11.5px;color:var(--text-muted)">Set your own address, hours and fee — no clinic needed</div></div>
+            </label>
+          </div>
+          <input class="input" placeholder="Search clinics… e.g. Aegis Family Clinic" style="margin-top:8px">
+        </div>
+        <button class="btn btn-primary block lg">Continue</button>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<section class="doc-section" id="s-auth005c">
+  <div class="doc-section-inner">
+    <div class="sec-eyebrow"><span class="sec-id">AUTH-005 · 3 of 3</span><span class="sec-kicker">Doctor Onboarding — Review &amp; go live</span></div>
+    <h2 class="sec-title">See the public profile before it's public.</h2>
+    <p class="sec-desc">The doctor sees exactly what a patient will see on the marketplace (MKT-003) before confirming — no surprises about how they're presented. Status is "Pending review" until the clinic admin approves the affiliation and NMC verification clears, then it flips to live automatically.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/onboarding/doctor</div></div>
+      <div class="frame-body" style="padding:36px 32px;display:flex;flex-direction:column;gap:16px">
+        <div class="progress"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div></div>
+        <div><div style="font-size:19px;font-weight:700;margin-bottom:4px">Review your profile</div><div style="font-size:13px;color:var(--text-secondary)">This is how patients will find you</div></div>
+        <div class="card" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="display:flex;gap:12px"><span class="avatar lg av-indigo">AM</span><div><b style="font-size:15px;display:block">Dr. Arjun Mehta</b><span style="font-size:12px;color:var(--text-muted)">General Physician · MBBS, MD</span><div style="display:flex;gap:6px;margin-top:6px"><span class="tag">Aegis Family Clinic</span></div></div></div>
+            <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A">Pending review</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:var(--r-lg)">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success);flex-shrink:0"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+          <div style="font-size:12px;color:var(--text-secondary)">Registration verified instantly. Waiting on Aegis Family Clinic to approve your affiliation — usually under a day.</div>
+        </div>
+        <button class="btn btn-primary block lg">Go to my console</button>
+        <div style="font-size:11.5px;color:var(--text-muted);text-align:center">You can start seeing patients once the clinic approves you.</div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Lands on the existing Doctor Console (Today/Live Queue) even mid-approval — shown empty/pending, not blocked out entirely.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PAT-001 HOME ================= -->
+<section class="doc-section" id="s-pat001">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-001</span><span class="sec-kicker">Patient App · Home</span></div>
+    <h2 class="sec-title">"What needs me now" — not a wall of menus.</h2>
+    <p class="sec-desc">Full-screen desktop web, top nav (your call, deviating from the blueprint's mobile-first shell). Same IA as the spec — Home / Care / Health Records / Family — reflowed into a wide dashboard instead of a scrolling mobile feed.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/home</div></div>
+      <div class="frame-body">
+        <!-- top nav -->
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 28px;height:58px">
+          <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+          <nav style="display:flex;gap:4px;flex:1">
+            <a style="padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-size:13px;font-weight:600;text-decoration:none">Home</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Care</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Health Records</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Family</a>
+          </nav>
+          <button class="btn btn-primary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Book</button>
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+
+        <div style="padding:28px;display:grid;grid-template-columns:2fr 1fr;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div>
+              <div style="font-size:22px;font-weight:700;letter-spacing:-.01em">Good morning, Ananya</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">Here's what needs your attention today</div>
+            </div>
+            <!-- next appointment hero -->
+            <div class="card" style="background:linear-gradient(135deg,var(--teal-700),var(--teal-800));border:none;color:#fff;padding:22px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-200)">Next appointment</div>
+                <div style="font-size:18px;font-weight:700;margin-top:6px">Dr. Arjun Mehta · Tomorrow, 10:30 AM</div>
+                <div style="font-size:12.5px;color:var(--teal-100);margin-top:3px">Apollo Clinic, Koramangala · Follow-up</div></div>
+                <span class="avatar lg" style="background:rgba(255,255,255,.15);color:#fff">AM</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px">
+                <button class="btn" style="background:#fff;color:var(--teal-800);flex:1">Get directions</button>
+                <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;flex:1">Reschedule</button>
+              </div>
+            </div>
+            <!-- quick actions -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div class="card" style="text-align:center;padding:16px 10px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700);margin:0 auto 8px"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><div style="font-size:12px;font-weight:600">Find a doctor</div></div>
+              <div class="card" style="text-align:center;padding:16px 10px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--info);margin:0 auto 8px"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg><div style="font-size:12px;font-weight:600">Book a lab test</div></div>
+              <div class="card" style="text-align:center;padding:16px 10px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success);margin:0 auto 8px"><path d="M19 5h-4V3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v2H5a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a2 2 0 0 0-2-2Z"/><path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/></svg><div style="font-size:12px;font-weight:600">Order medicines</div></div>
+              <div class="card" style="text-align:center;padding:16px 10px"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning);margin:0 auto 8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><div style="font-size:12px;font-weight:600">View records</div></div>
+            </div>
+            <!-- active meds -->
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:13.5px">Active medicines</b><a style="font-size:12px;color:var(--teal-700);font-weight:600;text-decoration:none">View all</a></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--slate-100)"><div><b style="font-size:13px">Metformin 500mg</b><div style="font-size:11.5px;color:var(--text-muted)">Twice daily · 12 days left</div></div><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">On track</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div><b style="font-size:13px">Atorvastatin 10mg</b><div style="font-size:11.5px;color:var(--text-muted)">Once at night · 3 days left</div></div><span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A">Refill soon</span></div>
+            </div>
+          </div>
+
+          <!-- right rail -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <b style="font-size:13px">Follow-ups due</b>
+              <div style="margin-top:10px;display:flex;gap:10px;align-items:center"><span class="avatar sm av-blue">RK</span><div style="flex:1"><div style="font-size:12.5px;font-weight:600">Blood pressure re-check</div><div style="font-size:11px;color:var(--text-muted)">Dr. Iyer · due in 4 days</div></div></div>
+            </div>
+            <div class="card">
+              <b style="font-size:13px">Recent lab report</b>
+              <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12.5px;font-weight:600">CBC Panel</div><div style="font-size:11px;color:var(--text-muted)">28 Jun 2026</div></div><span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A">1 flag</span></div>
+            </div>
+            <div class="card" style="background:var(--slate-50);border-style:dashed">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--teal-700)"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg><b style="font-size:12.5px">Complete your profile</b></div>
+              <div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:10px">Add insurance and ABHA to speed up every future visit.</div>
+              <button class="btn btn-soft sm block">Go to Profile</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Hero card = the single most useful fact right now, not a generic banner.</span>
+      <span class="pill"><span class="n">2</span>Quick actions surface the full network (doctor / lab / pharmacy) from Home, not buried in a menu.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PAT-007a FIND CARE — DOCTORS ================= -->
+<section class="doc-section" id="s-pat007a">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-007 / MKT-002</span><span class="sec-kicker">Find Care · Doctors</span></div>
+    <h2 class="sec-title">Location first, then everything else narrows around it.</h2>
+    <p class="sec-desc">Opened from "Book" in the top nav or any "Find a doctor" quick action. A focused flow (APS-002 T6), not the main app chrome — a back arrow, not the full nav, because the job here is one decision: who am I booking. Location is the first control because "near me" is what actually filters a doctor list down to something choosable.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/book</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Find care</b>
+          <span style="flex:1"></span>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+
+        <div style="padding:20px 28px 0">
+          <!-- location + search bar -->
+          <div style="display:flex;gap:10px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--teal-500);box-shadow:var(--ring);border-radius:var(--r-md);padding:9px 14px;min-width:240px">
+              <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--teal-600)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style="font-size:13px;font-weight:600;flex:1">Koramangala, Bengaluru</span>
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text-muted)"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:9px 14px;flex:1">
+              <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <span style="font-size:13px;color:var(--text-muted)">Search doctors, specialities, hospitals…</span>
+            </div>
+          </div>
+
+          <!-- location picker popover (shown open, annotated) -->
+          <div style="position:relative">
+            <div style="position:absolute;top:-12px;left:0;width:300px;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);padding:6px;z-index:5">
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r-md);background:var(--teal-50);color:var(--teal-700);font-size:12.5px;font-weight:600;cursor:pointer"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Use current location</div>
+              <div style="padding:6px 10px 2px;font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Recent</div>
+              <div style="padding:8px 10px;font-size:12.5px;color:var(--text-secondary);cursor:pointer">Koramangala, Bengaluru</div>
+              <div style="padding:8px 10px;font-size:12.5px;color:var(--text-secondary);cursor:pointer">Indiranagar, Bengaluru</div>
+              <div style="padding:8px 10px;font-size:12.5px;color:var(--text-secondary);cursor:pointer">HSR Layout, Bengaluru</div>
+            </div>
+            <div style="height:180px"></div>
+          </div>
+
+          <!-- tabs -->
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-top:8px">
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;font-weight:600;color:var(--teal-700);border-bottom:2px solid var(--teal-600)">Doctors</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-secondary)">Hospitals &amp; Clinics</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">Lab Tests<span class="tag" style="font-size:9.5px;padding:1px 6px">Soon</span></div>
+            <div style="padding:9px 4px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">Pharmacy<span class="tag" style="font-size:9.5px;padding:1px 6px">Soon</span></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:0">
+          <!-- filters -->
+          <div style="padding:20px 20px 20px 28px;border-right:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Speciality</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px"><input type="checkbox" checked style="accent-color:var(--teal-600)">General Physician</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px"><input type="checkbox" style="accent-color:var(--teal-600)">Cardiologist</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px"><input type="checkbox" style="accent-color:var(--teal-600)">Pediatrician</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px"><input type="checkbox" style="accent-color:var(--teal-600)">Dermatologist</label>
+            </div>
+            <div class="hr"></div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Availability</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px"><input type="checkbox" style="accent-color:var(--teal-600)">Available today</label>
+            <div class="hr"></div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Sort</div>
+            <div style="font-size:12.5px;color:var(--teal-700);font-weight:600">Nearest first ▾</div>
+          </div>
+
+          <!-- results -->
+          <div style="padding:20px 28px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:2px">14 doctors near Koramangala</div>
+
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:14px;align-items:center"><span class="avatar lg av-indigo">AM</span>
+                <div><b style="font-size:14px">Dr. Arjun Mehta</b> <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0;margin-left:4px">Available today</span>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">General Physician · MBBS, MD · 12 yrs exp</div>
+                <div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;display:flex;gap:4px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text-muted)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Apollo Clinic, Koramangala · 0.8 km · ★ 4.9 (1.2k)</div></div>
+              </div>
+              <div style="text-align:right"><div style="font-size:11.5px;color:var(--text-muted);margin-bottom:6px">Next slot: Today, 4:30 PM</div><button class="btn btn-primary sm">Book slot</button></div>
+            </div>
+
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:14px;align-items:center"><span class="avatar lg av-blue">RK</span>
+                <div><b style="font-size:14px">Dr. Rohan Kapoor</b>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Cardiologist · MBBS, DM Cardiology · 18 yrs exp</div>
+                <div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;display:flex;gap:4px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text-muted)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Summit Medical Center · 1.4 km · ★ 4.8 (860)</div></div>
+              </div>
+              <div style="text-align:right"><div style="font-size:11.5px;color:var(--text-muted);margin-bottom:6px">Next slot: Tomorrow, 9:00 AM</div><button class="btn btn-primary sm">Book slot</button></div>
+            </div>
+
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:14px;align-items:center"><span class="avatar lg av-amber">EP</span>
+                <div><b style="font-size:14px">Dr. Elena Patel</b> <span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0;margin-left:4px">Available today</span>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px">General Practitioner · MBBS · 8 yrs exp</div>
+                <div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;display:flex;gap:4px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;stroke:var(--text-muted)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Aegis Family Clinic · 2.1 km · ★ 4.7 (540)</div></div>
+              </div>
+              <div style="text-align:right"><div style="font-size:11.5px;color:var(--text-muted);margin-bottom:6px">Next slot: Today, 6:15 PM</div><button class="btn btn-primary sm">Book slot</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Location pill is always visible and editable — never a one-time prompt you can't change your mind on.</span>
+      <span class="pill"><span class="n">2</span>Distance + "available today" are the two facts that actually decide a booking, so they're on the card, not one tap deeper.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PAT-007b FIND CARE — HOSPITALS ================= -->
+<section class="doc-section" id="s-pat007b">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-007 / MKT-004</span><span class="sec-kicker">Find Care · Hospitals &amp; Clinics</span></div>
+    <h2 class="sec-title">Same shell, same location — the org side of the network.</h2>
+    <p class="sec-desc">Identical frame to the Doctors tab, just the tab and card content changed — this is deliberate: switching tabs should feel like changing a filter, not landing on a different product.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/book</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Find care</b><span style="flex:1"></span><span class="avatar sm av-teal">AS</span>
+        </div>
+        <div style="padding:20px 28px 0">
+          <div style="display:flex;gap:10px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:9px 14px;min-width:240px">
+              <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--teal-600)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style="font-size:13px;font-weight:600;flex:1">Koramangala, Bengaluru</span>
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text-muted)"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border-strong);border-radius:var(--r-md);padding:9px 14px;flex:1">
+              <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <span style="font-size:13px;color:var(--text-muted)">Search hospitals, clinics…</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border)">
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-secondary)">Doctors</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;font-weight:600;color:var(--teal-700);border-bottom:2px solid var(--teal-600)">Hospitals &amp; Clinics</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">Lab Tests<span class="tag" style="font-size:9.5px;padding:1px 6px">Soon</span></div>
+            <div style="padding:9px 4px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">Pharmacy<span class="tag" style="font-size:9.5px;padding:1px 6px">Soon</span></div>
+          </div>
+        </div>
+        <div style="padding:20px 28px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px"><span class="avatar lg av-org">AF</span><div><b style="font-size:14px">Aegis Family Clinic</b><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Multi-speciality · 742 Evergreen Terrace</div></div></div><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">Auriva Verified</span></div>
+            <div class="hr"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11.5px;color:var(--text-secondary)">0.6 km · ★ 4.7 · 3 doctors</div><button class="btn btn-secondary sm">View profile</button></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px"><span class="avatar lg av-org">SM</span><div><b style="font-size:14px">Summit Medical Center</b><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Multi-speciality · 24×7 Emergency</div></div></div><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">Auriva Verified</span></div>
+            <div class="hr"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11.5px;color:var(--text-secondary)">1.4 km · ★ 4.8 · 6 doctors</div><button class="btn btn-secondary sm">View profile</button></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= PAT-007c FIND CARE — LABS / PHARMACY (COMING SOON) ================= -->
+<section class="doc-section" id="s-pat007c">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-007 / MKT-005 / MKT-006</span><span class="sec-kicker">Find Care · Lab Tests &amp; Pharmacy</span></div>
+    <h2 class="sec-title">Shown, not hidden — and honest that it isn't real yet.</h2>
+    <p class="sec-desc">Per your call: demo the tabs so the platform's full breadth is visible, but label them clearly rather than pretending they work. This mirrors the pattern already in the built app (Admin's "Soon" nav items, the honest "backend hasn't shipped it" toasts) — no fake success states, no dead clicks that look broken.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/book</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Find care</b><span style="flex:1"></span><span class="avatar sm av-teal">AS</span>
+        </div>
+        <div style="padding:20px 28px 0">
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border)">
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-secondary)">Doctors</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;color:var(--text-secondary)">Hospitals &amp; Clinics</div>
+            <div style="padding:9px 4px;margin-right:22px;font-size:13px;font-weight:600;color:var(--teal-700);border-bottom:2px solid var(--teal-600);display:flex;align-items:center;gap:6px">Lab Tests<span class="tag" style="font-size:9.5px;padding:1px 6px;background:var(--teal-100);color:var(--teal-700)">Soon</span></div>
+            <div style="padding:9px 4px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">Pharmacy<span class="tag" style="font-size:9.5px;padding:1px 6px">Soon</span></div>
+          </div>
+        </div>
+        <div style="padding:60px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px">
+          <div style="width:64px;height:64px;border-radius:18px;background:var(--teal-50);display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--teal-600)"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg></div>
+          <div><div style="font-size:16px;font-weight:700;margin-bottom:4px">Lab test booking is coming soon</div><div style="font-size:13px;color:var(--text-secondary);max-width:340px">Book home-collection or in-lab tests directly from Auriva. We'll notify you the moment it's live.</div></div>
+          <button class="btn btn-soft">Notify me when it's ready</button>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Same empty-state pattern applies to the Pharmacy tab — swap icon and copy only.</span>
+      <span class="pill"><span class="n">2</span>"Notify me" captures real demand signal instead of a dead button — cheap to wire once we're ready to build it for real.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MKT-003 DOCTOR DETAILS ================= -->
+<section class="doc-section" id="s-mkt003">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">MKT-003</span><span class="sec-kicker">Doctor Details (public)</span></div>
+    <h2 class="sec-title">The gap between "search" and "book" — a real decision point.</h2>
+    <p class="sec-desc">Reached by tapping any doctor card. This is the canonical doctor page — same one a signed-out visitor sees on the public marketplace (MKT-003 doubles as both), so a doctor's profile is identical whether you found them logged in or not.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/dr/arjun-mehta</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Doctor profile</b><span style="flex:1"></span>
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M4 12v7a1 1 0 0 0 1 1h4v-5h6v5h4a1 1 0 0 0 1-1v-7"/><path d="M2 10l10-8 10 8"/></svg>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+
+        <div style="padding:28px;display:grid;grid-template-columns:2fr 1fr;gap:24px">
+          <div>
+            <div style="display:flex;gap:18px;align-items:flex-start">
+              <span class="avatar" style="width:76px;height:76px;font-size:26px" class="av-indigo">AM</span>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px"><b style="font-size:20px">Dr. Arjun Mehta</b><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">✓ Verified</span></div>
+                <div style="font-size:13.5px;color:var(--text-secondary);margin-top:2px">General Physician · MBBS, MD (Internal Medicine)</div>
+                <div style="display:flex;gap:14px;margin-top:8px;font-size:12.5px;color:var(--text-muted)"><span>★ 4.9 (1,204 reviews)</span><span>12 yrs experience</span><span>English · Hindi · Kannada</span></div>
+              </div>
+              <button class="btn btn-ghost" aria-label="Save to favourites" style="color:var(--text-muted)"><svg class="icon" viewBox="0 0 24 24"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg></button>
+            </div>
+
+            <div class="hr"></div>
+            <b style="font-size:13.5px">About</b>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6">Dr. Mehta has been practicing internal medicine for over 12 years, with a focus on chronic disease management including diabetes and hypertension. He completed his MD at St. John's Medical College and has been affiliated with Aegis Family Clinic since 2019.</p>
+
+            <div class="hr"></div>
+            <b style="font-size:13.5px">Practices at</b>
+            <div class="card" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:12px;align-items:center"><span class="avatar av-org">AF</span><div><b style="font-size:13px">Aegis Family Clinic</b><div style="font-size:11.5px;color:var(--text-muted)">742 Evergreen Terrace, Springfield · 0.8 km</div></div></div>
+              <button class="btn btn-secondary sm">View clinic</button>
+            </div>
+
+            <div class="hr"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:13.5px">Patient reviews</b><a style="font-size:12px;color:var(--teal-700);font-weight:600;text-decoration:none">See all 1,204</a></div>
+            <div class="card">
+              <div style="display:flex;justify-content:space-between"><b style="font-size:12.5px">Priya J.</b><span style="font-size:11.5px;color:var(--text-muted)">★★★★★</span></div>
+              <p style="font-size:12.5px;color:var(--text-secondary);margin-top:4px">Very patient and explains everything clearly. Never feels rushed.</p>
+            </div>
+          </div>
+
+          <!-- booking sidebar -->
+          <div>
+            <div class="card" style="position:sticky;top:0">
+              <b style="font-size:13.5px">Consultation fee</b>
+              <div style="font-size:22px;font-weight:700;margin-top:4px">₹600</div>
+              <div class="hr"></div>
+              <b style="font-size:12.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Next available</b>
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <span class="tag" style="background:var(--teal-600);color:#fff">Today 4:30 PM</span>
+                <span class="tag">Today 5:15 PM</span>
+                <span class="tag">Tomorrow 9:00 AM</span>
+              </div>
+              <button class="btn btn-primary block lg" style="margin-top:16px">Book appointment</button>
+              <button class="btn btn-secondary block" style="margin-top:8px">Get directions</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Favourite is a single heart/star toggle right on the profile — not a separate "manage favourites" screen to visit.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MKT-009 BOOK A SLOT ================= -->
+<section class="doc-section" id="s-mkt009">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">MKT-009</span><span class="sec-kicker">Booking Flow</span></div>
+    <h2 class="sec-title">Slot → confirm. Two steps, not a wizard.</h2>
+    <p class="sec-desc">Signed-in patients skip the OTP step in the blueprint's guest-checkout version of this flow — that's only needed for a visitor with no account yet. Date strip + time grid, because "next Tuesday afternoon" is how people actually think about scheduling, not a dropdown.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/dr/arjun-mehta/book</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Book appointment</b>
+        </div>
+        <div style="padding:28px;display:grid;grid-template-columns:1fr 320px;gap:28px">
+          <div>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px"><span class="avatar av-indigo">AM</span><div><b style="font-size:14px">Dr. Arjun Mehta</b><div style="font-size:12px;color:var(--text-muted)">General Physician · Aegis Family Clinic</div></div></div>
+
+            <b style="font-size:12.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Select date</b>
+            <div style="display:flex;gap:8px;margin-top:10px;margin-bottom:22px">
+              <div style="text-align:center;padding:10px 14px;border-radius:var(--r-lg);background:var(--teal-600);color:#fff;min-width:56px"><div style="font-size:10.5px;opacity:.85">TODAY</div><div style="font-size:17px;font-weight:700">3</div></div>
+              <div style="text-align:center;padding:10px 14px;border-radius:var(--r-lg);border:1px solid var(--border);min-width:56px"><div style="font-size:10.5px;color:var(--text-muted)">SAT</div><div style="font-size:17px;font-weight:700">4</div></div>
+              <div style="text-align:center;padding:10px 14px;border-radius:var(--r-lg);border:1px solid var(--border);min-width:56px"><div style="font-size:10.5px;color:var(--text-muted)">SUN</div><div style="font-size:17px;font-weight:700">5</div></div>
+              <div style="text-align:center;padding:10px 14px;border-radius:var(--r-lg);border:1px solid var(--border);min-width:56px"><div style="font-size:10.5px;color:var(--text-muted)">MON</div><div style="font-size:17px;font-weight:700">6</div></div>
+              <div style="text-align:center;padding:10px 14px;border-radius:var(--r-lg);border:1px solid var(--border);min-width:56px;opacity:.4"><div style="font-size:10.5px;color:var(--text-muted)">TUE</div><div style="font-size:17px;font-weight:700">7</div></div>
+            </div>
+
+            <b style="font-size:12.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Available times · Today</b>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">
+              <div class="btn btn-secondary sm" style="opacity:.35;cursor:not-allowed">2:00 PM</div>
+              <div class="btn btn-secondary sm" style="opacity:.35;cursor:not-allowed">3:15 PM</div>
+              <div class="btn" style="background:var(--teal-600);color:#fff;font-size:12.5px;padding:6px 12px">4:30 PM</div>
+              <div class="btn btn-secondary sm">5:15 PM</div>
+              <div class="btn btn-secondary sm">6:00 PM</div>
+              <div class="btn btn-secondary sm">6:45 PM</div>
+            </div>
+
+            <div class="hr"></div>
+            <div class="field"><label>Reason for visit <span style="font-weight:400;color:var(--text-muted)">(optional, helps the doctor prepare)</span></label><input class="input" placeholder="e.g. Follow-up on blood pressure medication"></div>
+          </div>
+
+          <div>
+            <div class="card">
+              <b style="font-size:13px">Booking summary</b>
+              <div class="hr"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px">
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Doctor</span><span>Dr. Arjun Mehta</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Date</span><span>Today, 3 Jul</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Time</span><span style="font-weight:600;color:var(--teal-700)">4:30 PM</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Clinic</span><span>Aegis Family Clinic</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Patient</span><span>Ananya Sharma</span></div>
+              </div>
+              <div class="hr"></div>
+              <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700"><span>Consultation fee</span><span>₹600</span></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Pay at clinic — online payment coming soon</div>
+              <button class="btn btn-primary block lg" style="margin-top:16px">Confirm booking</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= MKT-010 BOOKING CONFIRMED ================= -->
+<section class="doc-section" id="s-mkt010">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">MKT-010</span><span class="sec-kicker">Booking Confirmation</span></div>
+    <h2 class="sec-title">Confirm, then hand straight back into the app.</h2>
+    <p class="sec-desc">Success state, not a dead end — the two actions here (add to calendar, view appointment) are the only two things worth doing next.</p>
+
+    <div class="frame-wrap"><div class="frame narrow">
+      <div class="frame-body" style="padding:48px 32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="width:30px;height:30px;stroke:var(--success)"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg></div>
+        <div><div style="font-size:19px;font-weight:700">Appointment confirmed</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">You're booked with Dr. Arjun Mehta</div></div>
+        <div class="card" style="width:100%;text-align:left">
+          <div style="display:flex;gap:12px;align-items:center"><span class="avatar av-indigo">AM</span><div><b style="font-size:13.5px">Dr. Arjun Mehta</b><div style="font-size:12px;color:var(--text-muted)">Today, 4:30 PM · Aegis Family Clinic</div></div></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">A confirmation SMS has been sent to +91 98450 12210</div>
+        <button class="btn btn-primary block lg">View appointment</button>
+        <button class="btn btn-ghost block">Add to calendar</button>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= PAT-002 CARE ================= -->
+<section class="doc-section" id="s-pat002">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-002 / PAT-003</span><span class="sec-kicker">Patient App · Care</span></div>
+    <h2 class="sec-title">Every visit, past and upcoming, one list.</h2>
+    <p class="sec-desc">This is a direct desktop reflow of the app's existing appointments list — same data, same status chips — with a detail panel that opens beside the list instead of a mobile full-screen push, so the list is never lost (APS-002 drawer rule, adapted to a side panel at this width).</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/care</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 28px;height:58px">
+          <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+          <nav style="display:flex;gap:4px;flex:1">
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Home</a>
+            <a style="padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-size:13px;font-weight:600;text-decoration:none">Care</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Health Records</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Family</a>
+          </nav>
+          <button class="btn btn-primary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Book</button>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 400px;min-height:520px">
+          <div style="padding:24px 28px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div style="font-size:18px;font-weight:700">Appointments</div>
+              <div style="display:flex;gap:6px;background:var(--slate-100);border-radius:8px;padding:3px"><button class="btn sm" style="background:#fff;box-shadow:var(--sh-xs)">Upcoming</button><button class="btn sm btn-ghost">Past</button></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="card" style="border-color:var(--teal-300);box-shadow:0 0 0 1px var(--teal-300)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px"><span class="avatar av-indigo">AM</span><div><b style="font-size:13.5px">Dr. Arjun Mehta</b><div style="font-size:12px;color:var(--text-muted)">General Physician · Tomorrow, 10:30 AM</div></div></div><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">Confirmed</span></div>
+              </div>
+              <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px"><span class="avatar av-blue">RK</span><div><b style="font-size:13.5px">Dr. Rohan Kapoor</b><div style="font-size:12px;color:var(--text-muted)">Cardiologist · Sun, Jul 5 · 10:21 AM</div></div></div><span class="chip" style="color:#2563EB;background:#EFF6FF;border-color:#BFDBFE">Scheduled</span></div>
+              </div>
+              <div class="card" style="opacity:.7">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;gap:12px"><span class="avatar av-teal">AS</span><div><b style="font-size:13.5px">Apollo Diagnostics — CBC Panel</b><div style="font-size:12px;color:var(--text-muted)">Lab test · Sun, Jun 28</div></div></div><span class="chip" style="color:#64748B;background:#F1F5F9;border-color:#E2E8F0">Completed</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="border-left:1px solid var(--border);background:var(--bg-page);padding:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><b style="font-size:14px">Appointment details</b><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-muted)"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><span class="avatar lg av-indigo">AM</span><div><b style="font-size:14.5px">Dr. Arjun Mehta</b><div style="font-size:12px;color:var(--text-muted)">General Physician · MBBS, MD</div></div></div>
+            <div class="hr"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--text-secondary)">
+              <div style="display:flex;gap:8px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Tomorrow · 10:30 AM · Follow-up</div>
+              <div style="display:flex;gap:8px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted)"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Apollo Clinic, Koramangala</div>
+            </div>
+            <div class="hr"></div>
+            <div style="padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:14px">
+              <div style="font-size:11.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">On the day</div>
+              <div style="font-size:12.5px;color:var(--text-secondary)">Live queue position and wait time will appear here once you check in.</div>
+            </div>
+            <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1">Reschedule</button><button class="btn" style="flex:1;color:var(--danger);background:var(--danger-bg)">Cancel</button></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= PAT-008 HEALTH RECORDS ================= -->
+<section class="doc-section" id="s-pat008">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-008 / 009 / 011</span><span class="sec-kicker">Patient App · Health Records</span></div>
+    <h2 class="sec-title">Timeline, prescriptions and reports — one spine.</h2>
+    <p class="sec-desc">Tabs within the section instead of separate nav items — Timeline, Prescriptions and Lab Reports are three views of the same underlying record, so they stay together.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/records</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 28px;height:58px">
+          <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+          <nav style="display:flex;gap:4px;flex:1">
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Home</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Care</a>
+            <a style="padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-size:13px;font-weight:600;text-decoration:none">Health Records</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Family</a>
+          </nav>
+          <button class="btn btn-primary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Book</button>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+        <div style="padding:24px 28px">
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px">
+            <div style="padding:9px 4px;margin-right:20px;font-size:13px;font-weight:600;color:var(--teal-700);border-bottom:2px solid var(--teal-600)">Timeline</div>
+            <div style="padding:9px 4px;margin-right:20px;font-size:13px;color:var(--text-secondary)">Prescriptions</div>
+            <div style="padding:9px 4px;margin-right:20px;font-size:13px;color:var(--text-secondary)">Lab Reports</div>
+            <div style="padding:9px 4px;margin-right:20px;font-size:13px;color:var(--text-secondary)">Vitals</div>
+            <div style="padding:9px 4px;margin-right:20px;font-size:13px;color:var(--text-secondary)">Documents</div>
+            <div style="padding:9px 4px;font-size:13px;color:var(--text-secondary)">Bills</div>
+          </div>
+          <div style="display:grid;grid-template-columns:2.2fr 1fr;gap:24px">
+            <div style="position:relative;padding-left:26px">
+              <div style="position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--slate-200)"></div>
+              <div style="position:relative;padding-bottom:24px">
+                <span style="position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--teal-500);background:#fff"></span>
+                <span style="font-size:11px;color:var(--text-muted);font-weight:500">TODAY · 10:52 AM</span>
+                <div style="font-size:13.5px;font-weight:600;margin-top:2px">Consultation — Dr. Mehta</div>
+                <p style="font-size:12.5px;color:var(--text-secondary);margin-top:2px">Viral fever, prescribed 3 medicines. Follow-up in 5 days.</p>
+              </div>
+              <div style="position:relative;padding-bottom:24px">
+                <span style="position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--indigo);background:#fff"></span>
+                <span style="font-size:11px;color:var(--text-muted);font-weight:500">28 JUN 2026</span>
+                <div style="font-size:13.5px;font-weight:600;margin-top:2px">Lab report — CBC Panel</div>
+                <p style="font-size:12.5px;color:var(--text-secondary);margin-top:2px">Hemoglobin 11.2 g/dL <span class="chip" style="color:#D97706;background:#FFFBEB;border-color:#FDE68A;font-size:10.5px;padding:1px 8px">Low</span></p>
+              </div>
+              <div style="position:relative;padding-bottom:0">
+                <span style="position:absolute;left:-25px;top:4px;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--blue);background:#fff"></span>
+                <span style="font-size:11px;color:var(--text-muted);font-weight:500">12 JUN 2026</span>
+                <div style="font-size:13.5px;font-weight:600;margin-top:2px">Prescription — Metformin renewed</div>
+                <p style="font-size:12.5px;color:var(--text-secondary);margin-top:2px">500mg · twice daily · 30 days</p>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;height:fit-content">
+              <div style="background:var(--slate-50);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:13px">Prescription #RX-20431</b><div style="font-size:11px;color:var(--text-muted)">Dr. Mehta · Today</div></div><span class="chip" style="color:#16A34A;background:#F0FDF4;border-color:#BBF7D0">Signed</span></div>
+              <div style="padding:11px 16px;border-bottom:1px solid var(--slate-100);display:flex;justify-content:space-between"><div><b style="font-size:13px">Paracetamol 500mg</b><div style="font-size:11.5px;color:var(--text-muted)">After meals · 5 days</div></div><span class="tag" style="color:var(--teal-700);background:var(--teal-50)">1-0-1</span></div>
+              <div style="padding:11px 16px;display:flex;justify-content:space-between"><div><b style="font-size:13px">Cetirizine 10mg</b><div style="font-size:11.5px;color:var(--text-muted)">At night · 5 days</div></div><span class="tag" style="color:var(--teal-700);background:var(--teal-50)">0-0-1</span></div>
+              <div style="padding:10px 16px;background:var(--slate-50);border-top:1px solid var(--border);display:flex;gap:8px"><button class="btn btn-secondary sm" style="flex:1">Download</button><button class="btn btn-primary sm" style="flex:1">Send to pharmacy</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>Lab Reports / Vitals / Documents tabs follow the same list+detail pattern shown for Prescriptions above — not separately mocked here to avoid repeating the identical pattern five times.</span>
+      <span class="pill"><span class="n">2</span><b>New:</b> Bills tab — one line per visit (date, provider, amount, paid/pending), pulling the billing lines the journey doc already says get created at consult time. Not a payments product, just a statement view — no online payment yet.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PAT-016 FAMILY ================= -->
+<section class="doc-section" id="s-pat016">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PAT-016 / 018</span><span class="sec-kicker">Patient App · Family</span></div>
+    <h2 class="sec-title">Manage care for people who can't do it themselves.</h2>
+    <p class="sec-desc">Every member is a full patient record underneath — switching context re-scopes Home/Care/Records to them, per the blueprint's caregiver model.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/family</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 28px;height:58px">
+          <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+          <nav style="display:flex;gap:4px;flex:1">
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Home</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Care</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Health Records</a>
+            <a style="padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-size:13px;font-weight:600;text-decoration:none">Family</a>
+          </nav>
+          <button class="btn btn-primary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Book</button>
+          <span class="avatar sm av-teal">AS</span>
+        </div>
+        <div style="padding:24px 28px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="font-size:18px;font-weight:700">Family members</div><button class="btn btn-secondary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Add member</button></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <div class="card" style="border-color:var(--teal-300);box-shadow:0 0 0 1px var(--teal-300)"><div style="display:flex;justify-content:space-between"><span class="avatar lg av-teal">AS</span><span class="chip" style="color:#0F766E;background:#F0FDFA;border-color:#99F6E4">Viewing</span></div><div style="margin-top:10px"><b style="font-size:14px">Ananya Sharma</b><div style="font-size:12px;color:var(--text-muted)">You · 34 · O+</div></div></div>
+            <div class="card"><span class="avatar lg av-amber">MS</span><div style="margin-top:10px"><b style="font-size:14px">Meera Sharma</b><div style="font-size:12px;color:var(--text-muted)">Mother · 61 · B+</div><div style="font-size:11px;color:var(--warning);margin-top:4px">2 refills due</div></div></div>
+            <div class="card"><span class="avatar lg av-blue">KS</span><div style="margin-top:10px"><b style="font-size:14px">Kabir Sharma</b><div style="font-size:12px;color:var(--text-muted)">Son · 8 · A+</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Up to date</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================= PRO-001 PROFILE ================= -->
+<section class="doc-section" id="s-pro001" style="border-bottom:none">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">PRO-001</span><span class="sec-kicker">Patient App · Profile</span></div>
+    <h2 class="sec-title">This is the answer to "what does a user want to see about themselves."</h2>
+    <p class="sec-desc">Not just an edit form. Three things patients actually want here: <b>their own details</b> (identity, health ID, medical basics), <b>their care network made visible</b> (which doctors, which clinic, which pharmacy, which lab — the breadth of the platform, shown as real cards not a settings list), and <b>control</b> (insurance, consent, security). This is the direct answer to "the more detail it looks, the more interactive."</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/profile</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 28px;height:58px">
+          <div style="display:flex;align-items:center;gap:8px"><div class="doc-logo-mark" style="width:26px;height:26px;font-size:13px;border-radius:7px">A</div><b style="font-size:14px">Auriva</b></div>
+          <nav style="display:flex;gap:4px;flex:1">
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Home</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Care</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Health Records</a>
+            <a style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:500;text-decoration:none">Family</a>
+          </nav>
+          <button class="btn btn-primary sm"><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Book</button>
+          <span class="avatar sm av-teal" style="box-shadow:0 0 0 2px var(--teal-500)">AS</span>
+        </div>
+
+        <div style="padding:28px;display:grid;grid-template-columns:340px 1fr;gap:24px">
+          <!-- left: identity + digital health card -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="text-align:center;padding:24px 18px">
+              <span class="avatar" style="width:72px;height:72px;font-size:24px;margin:0 auto" class="av-teal">AS</span>
+              <div style="font-size:16px;font-weight:700;margin-top:12px">Ananya Sharma</div>
+              <div style="font-size:12px;color:var(--text-muted)">Patient since Feb 2025</div>
+              <button class="btn btn-secondary sm block" style="margin-top:14px">Edit profile</button>
+            </div>
+            <!-- digital health card -->
+            <div class="card" style="background:linear-gradient(135deg,var(--slate-900),var(--slate-700));color:#fff;border:none;padding:20px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-300)">Digital Health Card</span><div class="doc-logo-mark" style="width:22px;height:22px;font-size:11px">A</div></div>
+              <div style="font-size:15px;font-weight:700">Ananya Sharma</div>
+              <div style="font-size:11.5px;color:var(--slate-300);margin-top:2px">DOB 14 Mar 1992 · Female · O+</div>
+              <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:11px"><span style="color:var(--slate-400)">Auriva ID</span><span style="font-family:ui-monospace,Menlo,monospace">AUR-88231-K</span></div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px"><span style="color:var(--slate-400)">ABHA</span><span style="color:var(--teal-300)">✓ Linked</span></div>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Personal details</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px">
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Phone</span><span>+91 98450 12210</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Email</span><span>ananya.s@gmail.com</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Blood group</span><span style="color:var(--danger);font-weight:600">O Positive</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Address</span><span>Koramangala, Bengaluru</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- right: network + settings -->
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <b style="font-size:14px">My care network</b>
+                <div style="display:flex;gap:6px;background:var(--slate-100);border-radius:8px;padding:3px">
+                  <button class="btn sm" style="background:#fff;box-shadow:var(--sh-xs)">All</button>
+                  <button class="btn sm btn-ghost" style="display:flex;align-items:center;gap:4px"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg>Favourites</button>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px">
+                  <span class="avatar av-indigo">AM</span>
+                  <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block">Dr. Arjun Mehta</b><span style="font-size:11px;color:var(--text-muted)">Primary physician</span></div>
+                  <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--warning);fill:var(--warning)"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg>
+                </div>
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px">
+                  <span class="avatar av-org">AF</span>
+                  <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block">Aegis Family Clinic</b><span style="font-size:11px;color:var(--text-muted)">Home clinic · 3 visits</span></div>
+                  <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--warning);fill:var(--warning)"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg>
+                </div>
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px">
+                  <span class="avatar av-blue">RK</span>
+                  <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block">Dr. Rohan Kapoor</b><span style="font-size:11px;color:var(--text-muted)">Cardiologist</span></div>
+                  <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg>
+                </div>
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px;border-style:dashed;justify-content:center;color:var(--text-muted);cursor:pointer">
+                  <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+                  <span style="font-size:12px;font-weight:600">Find more doctors</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <b style="font-size:14px;display:block;margin-bottom:10px">Pharmacy &amp; labs</b>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px">
+                  <div style="width:36px;height:36px;border-radius:10px;background:var(--success-bg);display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--success)"><path d="M19 5h-4V3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v2H5a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a2 2 0 0 0-2-2Z"/><path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/></svg></div>
+                  <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block">MedPlus Pharmacy</b><span style="font-size:11px;color:var(--text-muted)">Preferred · 2.1 km</span></div>
+                </div>
+                <div class="card" style="display:flex;gap:12px;align-items:center;padding:14px">
+                  <div style="width:36px;height:36px;border-radius:10px;background:var(--indigo-bg);display:flex;align-items:center;justify-content:center"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg></div>
+                  <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block">Apollo Diagnostics</b><span style="font-size:11px;color:var(--text-muted)">Preferred lab · 3 reports</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <b style="font-size:14px;display:block;margin-bottom:10px">Account &amp; settings</b>
+              <div class="card" style="padding:0;overflow:hidden">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--slate-100)"><div style="display:flex;gap:10px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg><span style="font-size:12.5px;font-weight:500">Insurance &amp; payment methods</span></div><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted)"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--slate-100)"><div style="display:flex;gap:10px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span style="font-size:12.5px;font-weight:500">Consents &amp; data sharing</span></div><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted)"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px"><div style="display:flex;gap:10px;align-items:center"><svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text-muted)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span style="font-size:12.5px;font-weight:500">Sign-in &amp; security</span></div><svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted)"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="annot">
+      <span class="pill"><span class="n">1</span>"My care network" is real, browsable entities — not a static text list — this is what makes it feel like a platform with breadth, not a single clinic's app.</span>
+      <span class="pill"><span class="n">2</span>Pharmacy &amp; labs get equal billing to doctors, since that's explicitly part of the platform per APS-003's IA (diagnostics + pharmacy modules).</span>
+      <span class="pill"><span class="n">3</span><b>New:</b> Favourites is a star toggle on "My care network," not five separate list screens — one page, one filter, matches your own "avoid unnecessary pages" principle. Override me if you want dedicated Favourites pages instead.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SET-001 SETTINGS ================= -->
+<section class="doc-section" id="s-set001" style="border-bottom:none">
+  <div class="doc-section-inner" style="max-width:1240px">
+    <div class="sec-eyebrow"><span class="sec-id">SET-001</span><span class="sec-kicker">Patient App · Settings</span></div>
+    <h2 class="sec-title">Everything that isn't "my health data" lives here.</h2>
+    <p class="sec-desc">Deliberately separate from Profile: Profile is who you are and your care network; Settings is how the app behaves for you. Reached from the avatar menu, not the main nav — it's a destination you visit rarely, not a primary tab.</p>
+
+    <div class="frame-wrap"><div class="frame">
+      <div class="frame-chrome"><div class="frame-dots"><span></span><span></span><span></span></div><div class="frame-url">auriva.in/app/patient/settings</div></div>
+      <div class="frame-body">
+        <div style="background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;height:58px">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--text-secondary)"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <b style="font-size:14.5px">Settings</b>
+        </div>
+        <div style="display:grid;grid-template-columns:200px 1fr;min-height:460px">
+          <div style="border-right:1px solid var(--border);padding:20px 12px">
+            <div style="padding:8px 12px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);font-size:13px;font-weight:600;margin-bottom:2px">Notifications</div>
+            <div style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px">Language &amp; region</div>
+            <div style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px">Sign-in &amp; security</div>
+            <div style="padding:8px 12px;border-radius:8px;color:var(--text-secondary);font-size:13px">Linked devices</div>
+            <div style="padding:8px 12px;border-radius:8px;color:var(--danger);font-size:13px;margin-top:16px">Delete account</div>
+          </div>
+          <div style="padding:24px 32px;max-width:520px">
+            <b style="font-size:15px">Notifications</b>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-top:2px;margin-bottom:18px">Choose what Auriva can notify you about, and how.</p>
+            <div style="display:flex;flex-direction:column;gap:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--slate-100)"><div><div style="font-size:13px;font-weight:600">Appointment reminders</div><div style="font-size:11.5px;color:var(--text-muted)">24h and 1h before a visit</div></div><div style="width:38px;height:22px;border-radius:11px;background:var(--teal-600);position:relative"><div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;right:3px"></div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--slate-100)"><div><div style="font-size:13px;font-weight:600">Report ready alerts</div><div style="font-size:11.5px;color:var(--text-muted)">When a new lab report is published</div></div><div style="width:38px;height:22px;border-radius:11px;background:var(--teal-600);position:relative"><div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;right:3px"></div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--slate-100)"><div><div style="font-size:13px;font-weight:600">Refill reminders</div><div style="font-size:11.5px;color:var(--text-muted)">3 days before a prescription runs out</div></div><div style="width:38px;height:22px;border-radius:11px;background:var(--teal-600);position:relative"><div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;right:3px"></div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0"><div><div style="font-size:13px;font-weight:600">Product updates</div><div style="font-size:11.5px;color:var(--text-muted)">New features, occasional tips</div></div><div style="width:38px;height:22px;border-radius:11px;background:var(--slate-200);position:relative"><div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<160);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>

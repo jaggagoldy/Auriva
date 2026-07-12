@@ -4,7 +4,7 @@ import AdminWorkspace from "@/components/admin/workspace";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Workspace · Aegis Clinic OS",
+  title: "Workspace",
   description: "Manage your clinic profile, staff and role access.",
 };
 

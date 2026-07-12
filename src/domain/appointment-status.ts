@@ -10,6 +10,7 @@ export type AppointmentStatus =
   | "waiting"
   | "doctor_ready"
   | "in_consultation"
+  | "skipped"
   | "completed"
   | "no_show"
   | "cancelled";
@@ -20,6 +21,7 @@ export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
   "waiting",
   "doctor_ready",
   "in_consultation",
+  "skipped",
   "completed",
   "no_show",
   "cancelled",
@@ -28,11 +30,17 @@ export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
 // scheduled -> waiting and scheduled -> in_consultation are kept valid
 // because the existing doctor console (consultation-pane.tsx) already
 // performs those transitions directly; this table must not break it.
+//
+// `skipped` (Doctor Workspace Q1): the doctor may temporarily skip a called
+// patient — recallable back to `waiting`, never a permanent reorder. Only
+// reachable from waiting/doctor_ready (i.e. after the patient is already in
+// the active queue), and only recallable to `waiting`.
 const TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
   scheduled: ["checked_in", "waiting", "in_consultation", "cancelled", "no_show"],
   checked_in: ["waiting", "in_consultation", "cancelled", "no_show"],
-  waiting: ["doctor_ready", "in_consultation", "cancelled", "no_show"],
-  doctor_ready: ["in_consultation", "cancelled", "no_show"],
+  waiting: ["doctor_ready", "in_consultation", "skipped", "cancelled", "no_show"],
+  doctor_ready: ["in_consultation", "skipped", "cancelled", "no_show"],
+  skipped: ["waiting", "in_consultation"],
   in_consultation: ["completed"],
   completed: [],
   no_show: [],

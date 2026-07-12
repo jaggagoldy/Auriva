@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
 import prisma from "@/lib/prisma";
-import { getCurrentSession } from "@/api/session";
-import { canAccessReception } from "@/domain/authorization";
+import { getCurrentSession, getEffectiveCapabilitiesForSession } from "@/api/session";
+import { hasCapability } from "@/domain/authorization";
 import StaffShell from "@/components/staff/staff-shell";
 
 export default async function StaffLayout({
@@ -11,7 +11,15 @@ export default async function StaffLayout({
   children: React.ReactNode;
 }) {
   const session = await getCurrentSession();
-  if (!session || !canAccessReception(session.role)) {
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Batch 2: the front desk is reachable by anyone with the `reception`
+  // capability — a receptionist, an owner, or a solo practitioner (a doctor
+  // granted reception) — not only the receptionist/super_admin roles.
+  const capabilities = await getEffectiveCapabilitiesForSession(session);
+  if (!hasCapability("reception", capabilities)) {
     redirect("/login");
   }
 
@@ -26,7 +34,8 @@ export default async function StaffLayout({
   return (
     <StaffShell
       displayName={user.staffProfile?.full_name ?? user.email ?? "Staff"}
-      role={session.role as "receptionist" | "super_admin"}
+      role={session.role}
+      capabilities={capabilities}
     >
       {children}
     </StaffShell>

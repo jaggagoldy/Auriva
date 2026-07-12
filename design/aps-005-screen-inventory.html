@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-005 — Auriva Screen Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-900:#0F172A;
+  --success:#16A34A;--success-bg:#F0FDF4;--success-border:#BBF7D0;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--danger-bg:#FEF2F2;--danger-border:#FECACA;
+  --blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;--indigo-border:#C7D2FE;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:10.5px;color:var(--text-muted);font-weight:700;width:34px}
+.doc-nav a .cnt{margin-left:auto;font-size:10.5px;color:var(--text-muted);background:var(--slate-100);border-radius:99px;padding:1px 7px;font-weight:600}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1100px;margin:0 auto;padding-top:64px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14.5px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-xs)}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--slate-100);padding:2px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.cover{min-height:380px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px;margin-bottom:28px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--sh-xs)}
+.stat b{font-size:22px;font-weight:700;letter-spacing:-.02em;display:block}
+.stat span{font-size:11.5px;color:var(--text-muted);font-weight:500}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600;font-size:12.5px}
+.tbl td .pur{display:block;font-size:11.5px;color:var(--text-muted);margin-top:2px;max-width:300px}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+.pri{display:inline-flex;align-items:center;font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;letter-spacing:.04em}
+.p0{background:var(--teal-100);color:var(--teal-800)}
+.p1{background:var(--blue-bg);color:var(--blue)}
+.p2{background:var(--slate-100);color:var(--slate-500)}
+.ws-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ws-badge{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ws-head h3{font-size:16px;letter-spacing:-.01em}
+.ws-head .sub{font-size:12px;color:var(--text-muted);display:block;font-weight:400}
+.icon{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text-secondary);margin-bottom:24px}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-005 · Screen Inventory</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#scheme"><span class="num">01</span> ID Scheme</a>
+  <a href="#auth"><span class="num">AUTH</span> Authentication<span class="cnt">7</span></a>
+  <a href="#mkt"><span class="num">MKT</span> Marketplace<span class="cnt">13</span></a>
+  <a href="#pat"><span class="num">PAT</span> Patient<span class="cnt">18</span></a>
+  <a href="#doc"><span class="num">DOC</span> Doctor<span class="cnt">14</span></a>
+  <a href="#org"><span class="num">ORG</span> Organization<span class="cnt">27</span></a>
+  <a href="#set"><span class="num">SET</span> Settings<span class="cnt">8</span></a>
+  <a href="#not"><span class="num">NOT</span> Notifications<span class="cnt">3</span></a>
+  <a href="#pro"><span class="num">PRO</span> Profile<span class="cnt">3</span></a>
+  <a href="#sup"><span class="num">SUP</span> Support<span class="cnt">3</span></a>
+  <a href="#rollout"><span class="num">02</span> Rollout View</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-005 · Phase 1 — Product Blueprint · For Review</div>
+    <h1>Screen <em>Inventory</em></h1>
+    <p>The master list of every screen in Auriva V1 — 96 screens across 9 groups, each with an ID, purpose, primary user, dependencies and future enhancements. This is the single reference for APS-006/007/008 and for engineering estimation. No screen gets designed unless it exists here.</p>
+    <div class="stats">
+      <div class="stat"><b>96</b><span>Total screens (V1 scope)</span></div>
+      <div class="stat"><b style="color:var(--teal-700)">41</b><span>P0 · launch spine</span></div>
+      <div class="stat"><b style="color:var(--blue)">36</b><span>P1 · fast follow</span></div>
+      <div class="stat"><b style="color:var(--slate-500)">19</b><span>P2 · V1.x</span></div>
+      <div class="stat"><b>8</b><span>Templates reused (T1–T8)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEME -->
+<section class="doc-section" id="scheme">
+  <div class="sec-kicker">01 · Conventions</div>
+  <h2 class="sec-title">ID Scheme &amp; Priority Definitions</h2>
+  <div class="panel">
+    <div class="legend">
+      <code class="tk">AUTH</code> Authentication · <code class="tk">MKT</code> Marketplace · <code class="tk">PAT</code> Patient · <code class="tk">DOC</code> Doctor · <code class="tk">ORG</code> Organization · <code class="tk">SET</code> Settings · <code class="tk">NOT</code> Notifications · <code class="tk">PRO</code> Profile · <code class="tk">SUP</code> Support
+    </div>
+    <ul style="font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px">
+      <li><span class="pri p0">P0</span>&nbsp; <b style="color:var(--text)">Launch spine</b> — the APS-003 critical path (Identity → Booking → Check-in → Queue → Consult → Prescription) plus what it minimally needs. Auriva cannot launch without these 41.</li>
+      <li><span class="pri p1">P1</span>&nbsp; <b style="color:var(--text)">Fast follow</b> — completes each workspace's core value (labs, family, billing, insights overview). Weeks after launch, not months.</li>
+      <li><span class="pri p2">P2</span>&nbsp; <b style="color:var(--text)">V1.x</b> — planned and inventoried now so the IA holds, built when the spine is stable (pharmacy ops, claims, trackers).</li>
+      <li>IDs are permanent: never reused, never renumbered. Killed screens keep their ID marked <i>retired</i>. Sub-variants use suffixes (e.g. <code class="tk">PAT-003a</code>) only for responsive alternates, never for new purposes.</li>
+      <li>Every screen names its APS-002 template (T1–T8). Modals, drawers and flow steps are <b>not</b> separate screens — they belong to their parent screen.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- AUTH -->
+<section class="doc-section" id="auth">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--warning-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+    <h3>Authentication — <code class="tk">AUTH</code> · 7 screens<span class="sub">One OTP-first identity for all roles. Auth layout (APS-002). Everything on the platform depends on this group.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">AUTH-001</code></td><td><b>Sign in / Sign up</b><span class="pur">Single phone-number entry point for every role; no separate registration path.</span></td><td>All</td><td><span class="pri p0">P0</span></td><td>T6</td><td>—</td><td>Passkeys, email fallback, truecaller-style one-tap</td></tr>
+      <tr><td><code class="tk">AUTH-002</code></td><td><b>OTP Verification</b><span class="pur">Verify phone, create session, resolve existing roles on the Auriva ID.</span></td><td>All</td><td><span class="pri p0">P0</span></td><td>T6</td><td>AUTH-001</td><td>SMS auto-read, voice OTP, WhatsApp OTP</td></tr>
+      <tr><td><code class="tk">AUTH-003</code></td><td><b>Workspace Chooser</b><span class="pur">Post-login role selection when an account holds multiple roles; sets default workspace.</span></td><td>Multi-role users</td><td><span class="pri p0">P0</span></td><td>T6</td><td>AUTH-002</td><td>Remember last workspace per device</td></tr>
+      <tr><td><code class="tk">AUTH-004</code></td><td><b>Patient Onboarding</b><span class="pur">Minimal profile (name, DOB, gender) with optional ABHA link; gets a new patient to Home in under a minute.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T6</td><td>AUTH-002</td><td>ABHA-first onboarding, insurance capture, language pick</td></tr>
+      <tr><td><code class="tk">AUTH-005</code></td><td><b>Doctor Onboarding</b><span class="pur">Registration-number verification, qualifications, public profile draft, first clinic affiliation.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T6</td><td>AUTH-002</td><td>Automated NMC registry verification, document OCR</td></tr>
+      <tr><td><code class="tk">AUTH-006</code></td><td><b>Organization Registration</b><span class="pur">Org KYC, branch setup, first admin account; creates the org namespace.</span></td><td>Org owner</td><td><span class="pri p0">P0</span></td><td>T6</td><td>AUTH-002</td><td>GST auto-fill, multi-branch bulk import, HFR linking</td></tr>
+      <tr><td><code class="tk">AUTH-007</code></td><td><b>Staff Invite Acceptance</b><span class="pur">Invited staff joins an org with a pre-assigned role; no self-serve org access.</span></td><td>Org staff</td><td><span class="pri p1">P1</span></td><td>T6</td><td>ORG-012, AUTH-002</td><td>Bulk invites, SSO for hospital chains</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- MKT -->
+<section class="doc-section" id="mkt">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+    <h3>Public Marketplace — <code class="tk">MKT</code> · 13 screens<span class="sub">Anonymous, SEO-indexed acquisition surface. Marketplace layout. Converts visitors into patients via booking.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">MKT-001</code></td><td><b>Marketplace Home</b><span class="pur">Search hero, speciality shortcuts, trust strip; the front door of Auriva.</span></td><td>Visitor</td><td><span class="pri p0">P0</span></td><td>T7</td><td>Provider onboarding (AUTH-005/006)</td><td>City auto-detect, personalized re-visit state</td></tr>
+      <tr><td><code class="tk">MKT-002</code></td><td><b>Search Results</b><span class="pur">Unified results with tabs for Doctors / Clinics / Hospitals / Labs / Pharmacies; filters as URL state.</span></td><td>Visitor</td><td><span class="pri p0">P0</span></td><td>T7</td><td>MKT-001</td><td>Map view, sort by wait-time, availability-today filter</td></tr>
+      <tr><td><code class="tk">MKT-003</code></td><td><b>Doctor Profile (public)</b><span class="pur">Canonical doctor page — bio, clinics, live slots, reviews. Booking entry point.</span></td><td>Visitor / Patient</td><td><span class="pri p0">P0</span></td><td>T7</td><td>SET-002, DOC-004</td><td>Video-consult badge, verified reviews, Q&amp;A</td></tr>
+      <tr><td><code class="tk">MKT-004</code></td><td><b>Hospital / Clinic Profile</b><span class="pur">Departments, doctors, facilities, timings for an organization branch.</span></td><td>Visitor</td><td><span class="pri p0">P0</span></td><td>T7</td><td>SET-004</td><td>Insurance-accepted list, photo tours</td></tr>
+      <tr><td><code class="tk">MKT-005</code></td><td><b>Lab Profile</b><span class="pur">Test catalog with prices and home-collection availability.</span></td><td>Visitor</td><td><span class="pri p1">P1</span></td><td>T7</td><td>ORG-014</td><td>Test package builder, prep instructions</td></tr>
+      <tr><td><code class="tk">MKT-006</code></td><td><b>Pharmacy Profile</b><span class="pur">Delivery area, timings, upload-prescription entry.</span></td><td>Visitor</td><td><span class="pri p2">P2</span></td><td>T7</td><td>ORG-018</td><td>Live stock lookup, substitutes</td></tr>
+      <tr><td><code class="tk">MKT-007</code></td><td><b>Speciality Hub</b><span class="pur">Curated SEO landing per speciality (cardiology, derma…), feeding search.</span></td><td>Visitor</td><td><span class="pri p1">P1</span></td><td>T7</td><td>MKT-002</td><td>Editorial content, top-rated widgets</td></tr>
+      <tr><td><code class="tk">MKT-008</code></td><td><b>City / Locality Landing</b><span class="pur">SEO landing per geography ("doctors in Koramangala").</span></td><td>Visitor</td><td><span class="pri p1">P1</span></td><td>T7</td><td>MKT-002</td><td>Locality health-service rankings</td></tr>
+      <tr><td><code class="tk">MKT-009</code></td><td><b>Booking Flow</b><span class="pur">Slot → patient details → OTP → confirm. Guest checkout that creates the patient account (X2 handoff).</span></td><td>Visitor → Patient</td><td><span class="pri p0">P0</span></td><td>T6</td><td>MKT-003/004, AUTH-001/002</td><td>Prepayment, teleconsult slots, family-member booking</td></tr>
+      <tr><td><code class="tk">MKT-010</code></td><td><b>Booking Confirmation</b><span class="pur">Success state with visit instructions and handoff into /app/patient.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T6</td><td>MKT-009</td><td>Add-to-calendar, WhatsApp updates opt-in</td></tr>
+      <tr><td><code class="tk">MKT-011</code></td><td><b>Health Library Home</b><span class="pur">Articles and conditions A–Z index; long-tail SEO.</span></td><td>Visitor</td><td><span class="pri p2">P2</span></td><td>T7</td><td>—</td><td>Symptom checker, regional languages</td></tr>
+      <tr><td><code class="tk">MKT-012</code></td><td><b>Article / Condition Page</b><span class="pur">Single content page with related-doctor links into search.</span></td><td>Visitor</td><td><span class="pri p2">P2</span></td><td>T7</td><td>MKT-011</td><td>Doctor-reviewed badges, citations</td></tr>
+      <tr><td><code class="tk">MKT-013</code></td><td><b>For Providers</b><span class="pur">Marketing page + entry to doctor/org onboarding; the supply-side funnel.</span></td><td>Doctor / Org owner</td><td><span class="pri p0">P0</span></td><td>T7</td><td>AUTH-005/006</td><td>ROI calculator, demo scheduling</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- PAT -->
+<section class="doc-section" id="pat">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></span>
+    <h3>Patient Workspace — <code class="tk">PAT</code> · 18 screens<span class="sub">Mobile-first. Patient layout, bottom tabs. The patient-owned health locker plus everything scheduled.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">PAT-001</code></td><td><b>Home</b><span class="pur">"What needs me now": next appointment, active meds, follow-ups due, quick actions.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T5</td><td>PAT-002, PAT-009</td><td>Health nudges, refill reminders, insurance card</td></tr>
+      <tr><td><code class="tk">PAT-002</code></td><td><b>Appointments List</b><span class="pur">Upcoming / past visits across all providers, one tap from detail.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T5</td><td>MKT-009 or PAT-007</td><td>Calendar sync, recurring visits</td></tr>
+      <tr><td><code class="tk">PAT-003</code></td><td><b>Appointment Detail</b><span class="pur">Time, doctor, directions, reschedule/cancel — plus live queue position on visit day ("You are #7 · ~15 min").</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T4</td><td>PAT-002, ORG-001 (queue feed)</td><td>Live ETA push, pre-visit forms, co-pay online</td></tr>
+      <tr><td><code class="tk">PAT-004</code></td><td><b>Lab Bookings List</b><span class="pur">Booked tests with sample/report status.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T5</td><td>MKT-005, ORG-015</td><td>Home-collection slot tracking</td></tr>
+      <tr><td><code class="tk">PAT-005</code></td><td><b>Lab Booking Detail</b><span class="pur">Single test order: prep instructions, sample status, link to report when published.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T4</td><td>PAT-004</td><td>Phlebotomist live tracking</td></tr>
+      <tr><td><code class="tk">PAT-006</code></td><td><b>Care Plans &amp; Follow-ups</b><span class="pur">Doctor-set follow-ups and ongoing care programs in one list.</span></td><td>Patient</td><td><span class="pri p2">P2</span></td><td>T5</td><td>DOC-002</td><td>Chronic-care programs, adherence scoring</td></tr>
+      <tr><td><code class="tk">PAT-007</code></td><td><b>Book Flow (in-app)</b><span class="pur">Center tab action: doctor / lab / pharmacy → provider → slot → confirm. Reuses marketplace inventory.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T6</td><td>MKT-002 inventory, DOC-004</td><td>Rebook last doctor in 2 taps, family booking</td></tr>
+      <tr><td><code class="tk">PAT-008</code></td><td><b>Health Timeline</b><span class="pur">Unified chronological record: visits, prescriptions, labs, vitals. The locker's spine.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T5</td><td>DOC-002, ORG-016</td><td>ABDM-fetched external records, filters by condition</td></tr>
+      <tr><td><code class="tk">PAT-009</code></td><td><b>Prescriptions List</b><span class="pur">All prescriptions, active meds surfaced first.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T5</td><td>DOC-002</td><td>Refill request, medicine info in plain language</td></tr>
+      <tr><td><code class="tk">PAT-010</code></td><td><b>Prescription Detail</b><span class="pur">Readable Rx card (1-0-1 dosing), PDF download, send-to-pharmacy.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T4</td><td>PAT-009</td><td>Dose reminders, interaction warnings</td></tr>
+      <tr><td><code class="tk">PAT-011</code></td><td><b>Lab Reports List</b><span class="pur">All reports across labs, newest and abnormal first.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T5</td><td>ORG-016</td><td>Abnormal-value alerts</td></tr>
+      <tr><td><code class="tk">PAT-012</code></td><td><b>Lab Report Detail</b><span class="pur">Values vs. ranges with per-parameter trend over time.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T4</td><td>PAT-011</td><td>Plain-language explanations, share with doctor</td></tr>
+      <tr><td><code class="tk">PAT-013</code></td><td><b>Vitals &amp; Trackers</b><span class="pur">Self-recorded BP, sugar, weight with charts.</span></td><td>Patient</td><td><span class="pri p2">P2</span></td><td>T5</td><td>PAT-008</td><td>Wearable sync, doctor-visible streams</td></tr>
+      <tr><td><code class="tk">PAT-014</code></td><td><b>Documents</b><span class="pur">Patient uploads and external records (scans, old files).</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T5</td><td>PAT-008</td><td>OCR into structured records</td></tr>
+      <tr><td><code class="tk">PAT-015</code></td><td><b>Consents &amp; Sharing</b><span class="pur">ABDM consent manager: grants, revocations, full access log. Data ownership made visible.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T5</td><td>PAT-008, ABDM integration</td><td>Time-boxed share links, emergency access</td></tr>
+      <tr><td><code class="tk">PAT-016</code></td><td><b>Family Members</b><span class="pur">Dependents list; entry to per-member context.</span></td><td>Patient (caregiver)</td><td><span class="pri p1">P1</span></td><td>T5</td><td>PRO-001</td><td>Elder-care mode, shared caregiving</td></tr>
+      <tr><td><code class="tk">PAT-017</code></td><td><b>Member Context</b><span class="pur">A member's profile; switching re-scopes Home/Care/Records to them.</span></td><td>Patient (caregiver)</td><td><span class="pri p1">P1</span></td><td>T4</td><td>PAT-016</td><td>Independent accounts graduation (teen → adult)</td></tr>
+      <tr><td><code class="tk">PAT-018</code></td><td><b>Add / Invite Member</b><span class="pur">Create a dependent or invite an existing Auriva user into the family group.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T6</td><td>PAT-016</td><td>ABHA-linked dependents</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- DOC -->
+<section class="doc-section" id="doc">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--indigo-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg></span>
+    <h3>Doctor Workspace — <code class="tk">DOC</code> · 14 screens<span class="sub">Desktop-first. Doctor layout, slim sidebar. Optimized for a 3-minute consult with zero navigation.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">DOC-001</code></td><td><b>Today — Live Queue</b><span class="pur">Default landing: the doctor's slice of the org queue with call / skip.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T3</td><td>ORG-001/002</td><td>Multi-clinic day view, tele-queue merge</td></tr>
+      <tr><td><code class="tk">DOC-002</code></td><td><b>Consult Workbench</b><span class="pur">Current patient on one screen: summary, notes, Rx composer, lab orders, follow-up. The most important screen in Auriva.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T3</td><td>DOC-001, DOC-008</td><td>Voice-to-notes, AI Rx suggestions, drug-interaction checks</td></tr>
+      <tr><td><code class="tk">DOC-003</code></td><td><b>Schedule Calendar</b><span class="pur">Day/week calendar of appointments; detail opens in drawer.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T1</td><td>MKT-009 / ORG-005</td><td>Drag-reschedule, clinic color-coding</td></tr>
+      <tr><td><code class="tk">DOC-004</code></td><td><b>Availability &amp; Slots</b><span class="pur">Slot rules per clinic affiliation; feeds marketplace booking inventory.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T1</td><td>SET-003</td><td>Smart slot suggestions from demand</td></tr>
+      <tr><td><code class="tk">DOC-005</code></td><td><b>Appointment Requests</b><span class="pur">Approve / propose-new-time on pending requests and reschedules.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T1</td><td>DOC-003</td><td>Auto-approval rules</td></tr>
+      <tr><td><code class="tk">DOC-006</code></td><td><b>Time Off</b><span class="pur">Block leave; auto-handles affected bookings.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>DOC-004</td><td>—</td><td>Locum handover</td></tr>
+      <tr><td><code class="tk">DOC-007</code></td><td><b>My Patients</b><span class="pur">Everyone this doctor has treated; search and recency sort.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T1</td><td>DOC-002</td><td>Cohorts (diabetics, post-op), bulk follow-up</td></tr>
+      <tr><td><code class="tk">DOC-008</code></td><td><b>Patient Record (clinical)</b><span class="pur">Clinical projection: Overview · Timeline · Prescriptions · Reports · Notes tabs.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T4</td><td>PAT-008 core, PAT-015 consent</td><td>Cross-provider history via ABDM consent</td></tr>
+      <tr><td><code class="tk">DOC-009</code></td><td><b>Consult History</b><span class="pur">Past consults, filterable; audit-friendly.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T1</td><td>DOC-002</td><td>Outcome tagging</td></tr>
+      <tr><td><code class="tk">DOC-010</code></td><td><b>Consult Detail</b><span class="pur">One finished consult: notes, Rx issued, orders placed.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T4</td><td>DOC-009</td><td>Amendments with audit trail</td></tr>
+      <tr><td><code class="tk">DOC-011</code></td><td><b>Follow-ups Due</b><span class="pur">Patients due back, with one-click reminder nudges.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T1</td><td>DOC-002</td><td>Auto-reminder sequences</td></tr>
+      <tr><td><code class="tk">DOC-012</code></td><td><b>Rx Templates</b><span class="pur">Favourite prescriptions for common diagnoses; the doctor's speed layer.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T1</td><td>DOC-002</td><td>Speciality template packs, sharing between doctors</td></tr>
+      <tr><td><code class="tk">DOC-013</code></td><td><b>Earnings Overview</b><span class="pur">Consult volume and earnings summary per clinic.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T8</td><td>ORG-021</td><td>Forecasting, tax summaries</td></tr>
+      <tr><td><code class="tk">DOC-014</code></td><td><b>Payouts &amp; Statements</b><span class="pur">Settlement history and downloadable statements.</span></td><td>Doctor</td><td><span class="pri p2">P2</span></td><td>T1</td><td>DOC-013</td><td>Instant payouts</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ORG -->
+<section class="doc-section" id="org">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <h3>Organization Workspace — <code class="tk">ORG</code> · 27 screens<span class="sub">Desktop, role-scoped sidebar (Operate / Manage / Understand). The largest group — it runs the clinic floor, departments and money.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">ORG-001</code></td><td><b>Front Desk — Queue Board</b><span class="pur">Live board, columns per doctor/department; reorder, emergency escalation. Reception's home.</span></td><td>Receptionist</td><td><span class="pri p0">P0</span></td><td>T2</td><td>ORG-002/003</td><td>Multi-branch board, TV auto-refresh pairing</td></tr>
+      <tr><td><code class="tk">ORG-002</code></td><td><b>Check-in</b><span class="pur">Find booking → confirm arrival → issue token, in ≤ 3 clicks.</span></td><td>Receptionist</td><td><span class="pri p0">P0</span></td><td>T1</td><td>ORG-005</td><td>QR self-check-in kiosk, WhatsApp check-in</td></tr>
+      <tr><td><code class="tk">ORG-003</code></td><td><b>Walk-in Registration</b><span class="pur">Fast patient create + queue add in under 60 seconds; dedupe by phone.</span></td><td>Receptionist</td><td><span class="pri p0">P0</span></td><td>T6</td><td>ORG-007</td><td>Aadhaar/ABHA scan-to-fill</td></tr>
+      <tr><td><code class="tk">ORG-004</code></td><td><b>Token Display</b><span class="pur">Full-screen read-only waiting-room display of now-serving tokens.</span></td><td>Waiting patients</td><td><span class="pri p1">P1</span></td><td>T2</td><td>ORG-001</td><td>Multi-language, audio announcements</td></tr>
+      <tr><td><code class="tk">ORG-005</code></td><td><b>Appointments Hub</b><span class="pur">All bookings as list + calendar + per-doctor views; detail in drawer.</span></td><td>Receptionist / Admin</td><td><span class="pri p0">P0</span></td><td>T1</td><td>MKT-009, DOC-004</td><td>Capacity heatmap, overbooking rules</td></tr>
+      <tr><td><code class="tk">ORG-006</code></td><td><b>Requests &amp; Reschedules</b><span class="pur">Pending patient requests needing front-desk action.</span></td><td>Receptionist</td><td><span class="pri p1">P1</span></td><td>T1</td><td>ORG-005</td><td>Auto-rebooking suggestions</td></tr>
+      <tr><td><code class="tk">ORG-007</code></td><td><b>Patient Registry</b><span class="pur">The org's patient index; search by phone/name/MRN.</span></td><td>Receptionist / Admin</td><td><span class="pri p0">P0</span></td><td>T1</td><td>ORG-003 / MKT-009</td><td>Registry health metrics</td></tr>
+      <tr><td><code class="tk">ORG-008</code></td><td><b>Patient Record (admin)</b><span class="pur">Admin projection: Demographics · Visits · Billing · Documents · Consents tabs.</span></td><td>Receptionist / Admin</td><td><span class="pri p0">P0</span></td><td>T4</td><td>ORG-007</td><td>Document requests to patient</td></tr>
+      <tr><td><code class="tk">ORG-009</code></td><td><b>ABHA Linking &amp; Merge</b><span class="pur">Link ABHA IDs; find and merge duplicate patient records safely.</span></td><td>Admin</td><td><span class="pri p1">P1</span></td><td>T1</td><td>ORG-007, ABDM</td><td>Auto-dedupe suggestions</td></tr>
+      <tr><td><code class="tk">ORG-010</code></td><td><b>Doctors Roster</b><span class="pur">All affiliated doctors with status and today's load.</span></td><td>Admin</td><td><span class="pri p0">P0</span></td><td>T1</td><td>AUTH-005</td><td>Utilization insights inline</td></tr>
+      <tr><td><code class="tk">ORG-011</code></td><td><b>Doctor Detail &amp; Schedule</b><span class="pur">One doctor in this org: schedule, fees, room assignment.</span></td><td>Admin</td><td><span class="pri p0">P0</span></td><td>T4</td><td>ORG-010</td><td>Contract & payout terms</td></tr>
+      <tr><td><code class="tk">ORG-012</code></td><td><b>Staff &amp; Roles</b><span class="pur">Staff list, invite, role assignment (reception / lab / pharmacy / admin).</span></td><td>Owner / Admin</td><td><span class="pri p1">P1</span></td><td>T1</td><td>AUTH-007, SET-006</td><td>Granular permission sets</td></tr>
+      <tr><td><code class="tk">ORG-013</code></td><td><b>Shifts &amp; Rosters</b><span class="pur">Staff duty schedules per branch.</span></td><td>Admin</td><td><span class="pri p2">P2</span></td><td>T1</td><td>ORG-012</td><td>Swap requests, attendance</td></tr>
+      <tr><td><code class="tk">ORG-014</code></td><td><b>Diagnostics — Test Catalog</b><span class="pur">Tests, panels, prices, prep instructions; feeds lab profile & ordering.</span></td><td>Lab manager</td><td><span class="pri p1">P1</span></td><td>T1</td><td>SET-005</td><td>NABL mapping, package bundles</td></tr>
+      <tr><td><code class="tk">ORG-015</code></td><td><b>Diagnostics — Orders Worklist</b><span class="pur">Incoming test orders by status (ordered → collected → processing → ready).</span></td><td>Lab tech</td><td><span class="pri p1">P1</span></td><td>T1</td><td>DOC-002 / ORG-014</td><td>Analyzer (LIS) integrations</td></tr>
+      <tr><td><code class="tk">ORG-016</code></td><td><b>Results Entry &amp; Publish</b><span class="pur">Enter/verify values against ranges; publishing pushes the report to the patient record.</span></td><td>Lab tech / Pathologist</td><td><span class="pri p1">P1</span></td><td>T3</td><td>ORG-015</td><td>Auto-flagging, digital signing</td></tr>
+      <tr><td><code class="tk">ORG-017</code></td><td><b>Sample Tracking</b><span class="pur">Barcode-level sample chain of custody.</span></td><td>Lab tech</td><td><span class="pri p2">P2</span></td><td>T1</td><td>ORG-015</td><td>Home-collection logistics</td></tr>
+      <tr><td><code class="tk">ORG-018</code></td><td><b>Pharmacy — Catalog &amp; Inventory</b><span class="pur">Stock, batches, expiry per branch.</span></td><td>Pharmacist</td><td><span class="pri p2">P2</span></td><td>T1</td><td>SET-005</td><td>Expiry alerts, reorder points</td></tr>
+      <tr><td><code class="tk">ORG-019</code></td><td><b>Pharmacy — Dispense Queue</b><span class="pur">Incoming prescriptions to fill; dispensing decrements stock and bills.</span></td><td>Pharmacist</td><td><span class="pri p2">P2</span></td><td>T1</td><td>PAT-010 / DOC-002, ORG-018</td><td>Substitute suggestions, delivery orders</td></tr>
+      <tr><td><code class="tk">ORG-020</code></td><td><b>Pharmacy — Purchase Orders</b><span class="pur">Supplier orders and goods receipt.</span></td><td>Pharmacist</td><td><span class="pri p2">P2</span></td><td>T1</td><td>ORG-018</td><td>Supplier catalogs</td></tr>
+      <tr><td><code class="tk">ORG-021</code></td><td><b>Billing — Invoices</b><span class="pur">All invoices; create from visit, order or dispense.</span></td><td>Billing staff</td><td><span class="pri p1">P1</span></td><td>T1</td><td>ORG-005/015/019, ORG-025</td><td>GST e-invoicing</td></tr>
+      <tr><td><code class="tk">ORG-022</code></td><td><b>Invoice Detail</b><span class="pur">Line items, payments, refunds, print.</span></td><td>Billing staff</td><td><span class="pri p1">P1</span></td><td>T4</td><td>ORG-021</td><td>Part-payments, payment links</td></tr>
+      <tr><td><code class="tk">ORG-023</code></td><td><b>Payments &amp; Daily Settlement</b><span class="pur">Day's collections by mode; cash-drawer close.</span></td><td>Billing staff</td><td><span class="pri p1">P1</span></td><td>T8</td><td>ORG-021</td><td>UPI reconciliation feeds</td></tr>
+      <tr><td><code class="tk">ORG-024</code></td><td><b>Insurance Claims</b><span class="pur">Claim creation and status tracking against invoices.</span></td><td>Billing staff</td><td><span class="pri p2">P2</span></td><td>T1</td><td>ORG-021</td><td>TPA integrations, pre-auth</td></tr>
+      <tr><td><code class="tk">ORG-025</code></td><td><b>Price Lists</b><span class="pur">Service and consultation pricing per branch.</span></td><td>Admin</td><td><span class="pri p1">P1</span></td><td>T1</td><td>SET-005</td><td>Payer-specific price lists</td></tr>
+      <tr><td><code class="tk">ORG-026</code></td><td><b>Insights Overview</b><span class="pur">The org pulse: appointments, revenue, wait times, no-shows.</span></td><td>Owner / Admin</td><td><span class="pri p1">P1</span></td><td>T8</td><td>Reads all ORG data</td><td>Benchmarks vs. similar orgs</td></tr>
+      <tr><td><code class="tk">ORG-027</code></td><td><b>Insights Reports</b><span class="pur">Deep views: appointments, revenue, operations, doctor performance; exports.</span></td><td>Owner / Admin</td><td><span class="pri p2">P2</span></td><td>T8</td><td>ORG-026</td><td>Scheduled email reports, custom builders</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- SET -->
+<section class="doc-section" id="set">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+    <h3>Settings — <code class="tk">SET</code> · 8 screens<span class="sub">Configuration surfaces per workspace. Doctor/org P0 items exist because booking inventory depends on them.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">SET-001</code></td><td><b>Patient Preferences</b><span class="pur">Language, notification channels, privacy defaults.</span></td><td>Patient</td><td><span class="pri p1">P1</span></td><td>T4</td><td>PRO-001</td><td>Per-family-member preferences</td></tr>
+      <tr><td><code class="tk">SET-002</code></td><td><b>Doctor — Public Profile</b><span class="pur">Edit the marketplace listing: bio, specialities, photos, languages.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T4</td><td>AUTH-005</td><td>Profile completeness score</td></tr>
+      <tr><td><code class="tk">SET-003</code></td><td><b>Doctor — Clinics &amp; Fees</b><span class="pur">Affiliations, consult fees, follow-up windows per clinic.</span></td><td>Doctor</td><td><span class="pri p0">P0</span></td><td>T4</td><td>SET-002, ORG-010</td><td>Dynamic follow-up pricing</td></tr>
+      <tr><td><code class="tk">SET-004</code></td><td><b>Org — Profile &amp; Branches</b><span class="pur">Org identity, branches, timings, facilities; feeds public profile.</span></td><td>Owner</td><td><span class="pri p0">P0</span></td><td>T4</td><td>AUTH-006</td><td>Branch cloning</td></tr>
+      <tr><td><code class="tk">SET-005</code></td><td><b>Org — Services &amp; Booking Rules</b><span class="pur">Services catalog, slot rules, walk-in policy, token format.</span></td><td>Owner / Admin</td><td><span class="pri p0">P0</span></td><td>T4</td><td>SET-004</td><td>Department-level rules</td></tr>
+      <tr><td><code class="tk">SET-006</code></td><td><b>Org — Roles &amp; Permissions</b><span class="pur">Role definitions mapping to sidebar visibility (IA rule N6).</span></td><td>Owner</td><td><span class="pri p1">P1</span></td><td>T1</td><td>ORG-012</td><td>Custom roles</td></tr>
+      <tr><td><code class="tk">SET-007</code></td><td><b>Org — Templates &amp; Integrations</b><span class="pur">SMS/print templates, ABDM, payment gateway connections.</span></td><td>Owner / Admin</td><td><span class="pri p1">P1</span></td><td>T4</td><td>SET-004</td><td>WhatsApp Business, webhook API</td></tr>
+      <tr><td><code class="tk">SET-008</code></td><td><b>Org — Audit Log</b><span class="pur">Who did what, when — record access and changes. Compliance backbone.</span></td><td>Owner</td><td><span class="pri p2">P2</span></td><td>T1</td><td>All ORG writes</td><td>Anomaly alerts, export for audits</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- NOT -->
+<section class="doc-section" id="not">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--warning-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+    <h3>Notifications — <code class="tk">NOT</code> · 3 screens<span class="sub">Shared module surfaced per workspace; deep-links follow cross-nav rule X6.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">NOT-001</code></td><td><b>Patient Notification Centre</b><span class="pur">Appointment updates, report-ready, queue calls, reminders.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T5</td><td>PAT-001</td><td>Smart grouping, digest mode</td></tr>
+      <tr><td><code class="tk">NOT-002</code></td><td><b>Staff / Doctor Notification Centre</b><span class="pur">Operational alerts: requests, cancellations, results ready.</span></td><td>Doctor / Org staff</td><td><span class="pri p1">P1</span></td><td>T5</td><td>DOC-001 / ORG-001</td><td>Priority routing by role</td></tr>
+      <tr><td><code class="tk">NOT-003</code></td><td><b>Notification Preferences</b><span class="pur">Per-channel (push / SMS / WhatsApp / email) and per-event controls.</span></td><td>All</td><td><span class="pri p1">P1</span></td><td>T4</td><td>NOT-001/002</td><td>Quiet hours</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- PRO -->
+<section class="doc-section" id="pro">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></span>
+    <h3>Profile — <code class="tk">PRO</code> · 3 screens<span class="sub">Account-level identity, distinct from workspace settings.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">PRO-001</code></td><td><b>Patient Profile</b><span class="pur">Personal details, ABHA ID, insurance, addresses, payment methods.</span></td><td>Patient</td><td><span class="pri p0">P0</span></td><td>T4</td><td>AUTH-004</td><td>Digital health card, emergency info</td></tr>
+      <tr><td><code class="tk">PRO-002</code></td><td><b>Doctor Account</b><span class="pur">Account identity, credentials, linked orgs, sign-in security.</span></td><td>Doctor</td><td><span class="pri p1">P1</span></td><td>T4</td><td>AUTH-005</td><td>Credential renewal reminders</td></tr>
+      <tr><td><code class="tk">PRO-003</code></td><td><b>Staff Account</b><span class="pur">Staff identity, org memberships, security.</span></td><td>Org staff</td><td><span class="pri p1">P1</span></td><td>T4</td><td>AUTH-007</td><td>2FA enforcement per org policy</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- SUP -->
+<section class="doc-section" id="sup">
+  <div class="ws-head">
+    <span class="ws-badge" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg></span>
+    <h3>Support — <code class="tk">SUP</code> · 3 screens<span class="sub">Reachable from every workspace footer/menu; legal is a launch requirement.</span></h3>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:80px">ID</th><th>Screen &amp; purpose</th><th style="width:100px">Primary user</th><th style="width:50px">Pri</th><th style="width:52px">Tpl</th><th style="width:150px">Dependencies</th><th style="width:190px">Future enhancements</th></tr></thead>
+    <tbody>
+      <tr><td><code class="tk">SUP-001</code></td><td><b>Help Centre</b><span class="pur">Searchable FAQs per workspace role.</span></td><td>All</td><td><span class="pri p1">P1</span></td><td>T7</td><td>—</td><td>In-context help panels</td></tr>
+      <tr><td><code class="tk">SUP-002</code></td><td><b>Contact / Tickets</b><span class="pur">Raise and track support requests.</span></td><td>All</td><td><span class="pri p1">P1</span></td><td>T6</td><td>SUP-001</td><td>Live chat, phone callback</td></tr>
+      <tr><td><code class="tk">SUP-003</code></td><td><b>Legal Pages</b><span class="pur">Privacy, terms, refund policy, grievance officer (regulatory requirement).</span></td><td>All</td><td><span class="pri p0">P0</span></td><td>T7</td><td>—</td><td>Version history, consent re-prompts</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ROLLOUT -->
+<section class="doc-section" id="rollout">
+  <div class="sec-kicker">02 · Rollout View</div>
+  <h2 class="sec-title">The P0 spine, in journey order</h2>
+  <p class="sec-desc">Read as one patient's visit flowing through the platform — this is also the design order for the screen-design phase and mirrors the APS-003 critical path.</p>
+  <div class="panel">
+    <ol style="font-size:13px;color:var(--text-secondary);margin-left:20px;display:flex;flex-direction:column;gap:8px">
+      <li><b style="color:var(--text)">Acquire &amp; book</b> — MKT-001 → MKT-002 → MKT-003/004 → MKT-009 → MKT-010 (with AUTH-001/002 inline)</li>
+      <li><b style="color:var(--text)">Patient prepares</b> — PAT-001 → PAT-002 → PAT-003 (live queue) · NOT-001 · PRO-001</li>
+      <li><b style="color:var(--text)">Clinic operates</b> — ORG-002 check-in / ORG-003 walk-in → ORG-001 queue board → ORG-005 appointments · ORG-007/008 registry</li>
+      <li><b style="color:var(--text)">Doctor treats</b> — DOC-001 queue → DOC-002 workbench (→ Rx) · DOC-003/004 schedule · DOC-007/008 patients</li>
+      <li><b style="color:var(--text)">Care lands back with the patient</b> — PAT-008 timeline → PAT-009/010 prescriptions</li>
+      <li><b style="color:var(--text)">Supply-side setup that makes it all possible</b> — AUTH-004/005/006 · SET-002/003/004/005 · ORG-010/011 · MKT-013 · SUP-003</li>
+    </ol>
+  </div>
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Next in Phase 1</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">APS-004 User Journey Maps (traces the flows above step-by-step, validating this inventory) · then APS-006 Navigation System, APS-007 Workspace Layouts and APS-008 Interaction Patterns. Once those are approved, screen design starts with the P0 spine in the order listed here.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

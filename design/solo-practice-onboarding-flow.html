@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auriva — My Clinic: Quick Setup (Two-Phase)</title>
+<style>
+  :root{--bg:#eef2f4;--card:#fff;--fg:#0f172a;--muted:#64748b;--faint:#94a3b8;--border:#e2e8f0;
+    --primary:#0d9488;--primary-fg:#fff;--soft:#f0fdfa;--ring:#99f6e4;--ok:#16a34a;--oks:#f0fdf4;--warn:#d97706;--warns:#fffbeb;--danger:#dc2626;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--r:10px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;
+    min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
+  .wz{width:100%;max-width:600px;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 6px 30px rgba(15,23,42,.06)}
+  .wh{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border)}
+  .lg{width:26px;height:26px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700}
+  .prog{display:flex;gap:4px;margin-left:auto;width:180px}
+  .prog i{flex:1;height:5px;border-radius:3px;background:var(--border)}
+  .prog i.on{background:var(--primary)}
+  .stepn{font-size:12px;color:var(--muted);margin-left:10px;white-space:nowrap}
+  .clk{font-size:11.5px;color:var(--faint);margin-left:auto;white-space:nowrap}
+  .wb{padding:24px;min-height:326px}
+  h3{font-size:20px;margin:0 0 4px;font-weight:650}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .fld{margin-bottom:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  input,select{width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14px;background:#fff}
+  input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--soft)}
+  .hint{font-size:11.5px;color:var(--faint);margin-top:5px}
+  .wf{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--border)}
+  .grow{flex:1}
+  .btn{border:1px solid var(--border);background:#fff;color:var(--fg);border-radius:9px;padding:10px 16px;font-size:13.5px;font-family:inherit;cursor:pointer;font-weight:500}
+  .btn:hover{background:var(--bg)}
+  .btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn.pri:hover{background:#0b7d73}
+  .btn.gh{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn.lg2{padding:12px 18px;font-size:15px;width:100%;justify-content:center;display:flex;gap:8px;align-items:center}
+  .otp{display:flex;gap:10px}
+  .otp input{width:48px;height:54px;text-align:center;font-size:22px;font-weight:600}
+  .day{width:44px;height:40px;border-radius:9px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:12.5px;margin-right:7px;cursor:pointer;font-weight:600}
+  .day.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .hero{text-align:center;padding:14px 8px 4px}
+  .hero .badge{display:inline-block;background:var(--soft);color:#0e7490;border:1px solid var(--ring);border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600;margin-bottom:16px}
+  .hero h2{font-size:24px;margin:0 0 8px;font-weight:680}
+  .hero p{color:var(--muted);margin:0 auto 22px;max-width:400px}
+  .cel{text-align:center;padding:6px 8px}
+  .cel .big{font-size:54px;line-height:1;margin-bottom:10px}
+  .cel h2{font-size:23px;margin:0 0 6px;font-weight:680}
+  .cel p{color:var(--muted);margin:0 auto 18px;max-width:420px}
+  .link{background:var(--soft);color:#0e7490;border:1px solid var(--ring);border-radius:var(--r);padding:11px 14px;font-size:13.5px;display:flex;align-items:center;gap:8px;word-break:break-all;font-weight:600;margin:0 0 18px}
+  .cta2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .sum{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px;text-align:left}
+  .ok{color:var(--ok);font-weight:800}
+  .note{background:var(--warns);color:#92400e;border:1px solid #fde68a;border-radius:var(--r);padding:10px 13px;font-size:12.5px;text-align:left;margin-top:16px}
+  .demo{background:#f8fafc;border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:left;margin-top:14px;display:flex;gap:12px;align-items:center}
+  .demo .di{font-size:26px}
+</style>
+</head>
+<body>
+<div class="wz">
+  <div class="wh"><div class="lg">A</div><div style="font-weight:700">Auriva</div>
+    <div class="prog" id="prog"></div><div class="stepn" id="stepn"></div></div>
+  <div class="wb" id="wb"></div>
+  <div class="wf" id="wf"></div>
+</div>
+<script>
+// Phase 1 = Quick Setup (under 2 minutes). Everything else moves to the in-product guided checklist.
+var st={step:0,days:{Mon:1,Tue:1,Wed:1,Thu:1,Fri:1,Sat:1,Sun:0}};
+function L(t){return '<label>'+t+'</label>';}
+
+// index 0 = start screen; 1..4 = quick setup; 5 = celebration
+var QUICK=[
+ {n:'Account',b:function(){return '<h3>Create your clinic account</h3><div class="sub">This is your owner login. Your mobile number is your username — no email required.</div>'+
+   '<div class="fld">'+L('Your name')+'<input value="Dr. Anaya Rao" /></div>'+
+   '<div class="two"><div class="fld">'+L('Mobile number')+'<input value="+91 98450 12345" /></div>'+
+   '<div class="fld">'+L('Create password')+'<input type="password" value="········" /></div></div>'+
+   '<div class="hint">We only ask for what we need to get you booking patients. You can add everything else later.</div>';}},
+ {n:'Verify',b:function(){return '<h3>Verify your mobile</h3><div class="sub">Enter the 6-digit code we sent to +91 98450 12345.</div>'+
+   '<div class="otp"><input value="4"/><input value="1"/><input value="9"/><input value="2"/><input value="0"/><input value="7"/></div>'+
+   '<div class="hint" style="margin-top:12px">Didn\'t get it? <a href="#" style="color:var(--primary)">Resend code</a> · <a href="#" style="color:var(--muted)">Change number</a></div>';}},
+ {n:'Name',b:function(){return '<h3>Name your clinic</h3><div class="sub">This is the only thing patients need to find and book you. Everything else is optional and can wait.</div>'+
+   '<div class="fld">'+L('Clinic name')+'<input value="Rao Physiotherapy & Rehab" /></div>'+
+   '<div class="fld">'+L('What do you do? (optional)')+'<select><option>Physiotherapy</option><option>General Practice</option><option>Dentistry</option><option>Dermatology</option><option>Nutrition & Diet</option><option>Other</option></select></div>'+
+   '<div class="hint">Your public booking page will be created automatically from this.</div>';}},
+ {n:'Hours',b:function(){return '<h3>When are you open?</h3><div class="sub">We\'ll only let patients book during these hours. You can fine-tune this any time.</div>'+
+   '<div class="fld">'+L('Working days')+'<div id="days"></div></div>'+
+   '<div class="two"><div class="fld">'+L('Opens at')+'<select><option>08:00 AM</option><option selected>09:00 AM</option><option>10:00 AM</option></select></div>'+
+   '<div class="fld">'+L('Closes at')+'<select><option>05:00 PM</option><option selected>06:00 PM</option><option>07:00 PM</option></select></div></div>'+
+   '<div class="hint">Default consultation length is 30 min — change it later under Treatments &amp; Services.</div>';}}
+];
+
+function render(){
+  var prog=document.getElementById('prog'), stepn=document.getElementById('stepn'),
+      wb=document.getElementById('wb'), wf=document.getElementById('wf');
+  // START
+  if(st.step===0){
+    prog.innerHTML=''; stepn.innerHTML='';
+    wb.innerHTML='<div class="hero"><div class="badge">⚡ Set up in under 2 minutes</div>'+
+      '<h2>Let\'s get your clinic ready</h2>'+
+      '<p>Four quick questions and your online booking page goes live. Add your logo, treatments and profile later — from inside the product, whenever you like.</p>'+
+      '<button class="btn pri lg2" onclick="next()">Create my clinic →</button>'+
+      '<div class="demo"><div class="di">🧪</div><div><div style="font-weight:650">Not ready to sign up?</div>'+
+      '<div style="color:var(--muted);font-size:12.5px">Jump straight into a fully-loaded sample clinic — real appointments, a consultation, a pending payment and a follow-up due tomorrow.</div></div></div>'+
+      '<button class="btn lg2" style="margin-top:12px" onclick="explore()">Skip and explore Auriva →</button>'+
+      '</div>';
+    wf.innerHTML='';
+    return;
+  }
+  // CELEBRATION
+  if(st.step===5){
+    prog.innerHTML=''; stepn.innerHTML='';
+    wb.innerHTML='<div class="cel"><div class="big">🎉</div>'+
+      '<h2>Congratulations — My Clinic is ready</h2>'+
+      '<p>Your booking page is live. Patients can find you and book online right now.</p>'+
+      '<div class="link">🔗 auriva.health/rao-physiotherapy</div>'+
+      '<div style="max-width:420px;margin:0 auto">'+
+        '<div class="sum"><span class="ok">✓</span> Clinic created — <b>Rao Physiotherapy &amp; Rehab</b></div>'+
+        '<div class="sum"><span class="ok">✓</span> Working hours set — Mon–Sat, 9:00 AM – 6:00 PM</div>'+
+        '<div class="sum"><span class="ok">✓</span> Booking page published &amp; accepting bookings</div>'+
+      '</div>'+
+      '<div class="cta2"><button class="btn pri lg2" onclick="alert(\'→ Opens Book First Patient\')">📅 Book first patient</button>'+
+      '<button class="btn lg2" onclick="alert(\'→ Share booking link (copy / WhatsApp / QR)\')">🔗 Share booking link</button></div>'+
+      '<div class="note">Next, inside <b>My Clinic</b> we\'ll walk you through getting your first patient — add a treatment, take a booking, and record a payment. No manuals, just your first real day.</div>'+
+      '</div>';
+    wf.innerHTML='<button class="btn gh" onclick="reset()">↺ Replay flow</button><div class="grow"></div><button class="btn pri" onclick="alert(\'→ Enters the My Clinic workspace\')">Go to My Clinic →</button>';
+    return;
+  }
+  // QUICK SETUP 1..4
+  var i=st.step-1, s=QUICK[i];
+  prog.innerHTML=QUICK.map(function(_,k){return '<i class="'+(k<=i?'on':'')+'"></i>';}).join('');
+  stepn.innerHTML='Step '+(i+1)+' of 4';
+  wb.innerHTML=s.b();
+  if(s.n==='Hours'){
+    document.getElementById('days').innerHTML=Object.keys(st.days).map(function(d){
+      return '<button class="day '+(st.days[d]?'on':'')+'" onclick="tg(\''+d+'\')">'+d+'</button>';}).join('');
+  }
+  wf.innerHTML='<button class="btn gh" onclick="back()">← Back</button><div class="grow"></div>'+
+    (i===3?'<button class="btn pri" onclick="next()">Create my clinic ✓</button>'
+          :'<button class="btn pri" onclick="next()">Continue →</button>');
+}
+function tg(d){st.days[d]=st.days[d]?0:1;render();}
+function next(){st.step++;render();}
+function back(){if(st.step>0){st.step--;render();}}
+function reset(){st.step=0;render();}
+function explore(){alert('→ Enters Demo Mode: a fully-loaded sample clinic. A banner reads "You\'re exploring sample data — Set up my real clinic" so it never converts by accident.');}
+render();
+</script>
+</body>
+</html>

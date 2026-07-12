@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 
-import LiveQueue from "@/components/doctor/live-queue";
-import { Toaster } from "@/components/ui/sonner";
+import DoctorToday from "@/components/doctor/doctor-today";
 
 export const metadata: Metadata = {
-  title: "Live Queue · Aegis Clinic OS",
-  description: "Real-time patient queue and consultation workspace.",
+  title: "Today",
+  description: "Mission Control — today's queue and consultation workspace.",
 };
 
-export default function DoctorQueuePage() {
-  return (
-    <>
-      <Toaster position="bottom-right" />
-      <LiveQueue />
-    </>
-  );
+export default function DoctorTodayPage() {
+  return <DoctorToday />;
 }

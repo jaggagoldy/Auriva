@@ -65,7 +65,7 @@ export default function ContextPanel({ appointment, history }: ContextPanelProps
             icon={Droplets}
             label="Blood Group"
             value={patient.blood_group}
-            valueClassName="text-red-600 dark:text-red-400"
+            valueClassName="text-destructive dark:text-destructive"
           />
           <SnapshotTile
             icon={Phone}

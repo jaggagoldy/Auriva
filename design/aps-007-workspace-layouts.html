@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS-007 — Auriva Workspace Layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-50:#F0FDFA;--teal-100:#CCFBF1;--teal-200:#99F6E4;--teal-400:#2DD4BF;--teal-500:#14B8A6;
+  --teal-600:#0D9488;--teal-700:#0F766E;--teal-800:#115E59;--teal-900:#134E4A;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;--slate-300:#CBD5E1;--slate-400:#94A3B8;
+  --slate-500:#64748B;--slate-600:#475569;--slate-700:#334155;--slate-800:#1E293B;--slate-900:#0F172A;
+  --warning:#D97706;--warning-bg:#FFFBEB;--warning-border:#FDE68A;
+  --danger:#DC2626;--blue:#2563EB;--blue-bg:#EFF6FF;--blue-border:#BFDBFE;
+  --indigo:#4F46E5;--indigo-bg:#EEF2FF;
+  --bg-page:#F5F7FA;--border:#E2E8F0;--border-strong:#CBD5E1;
+  --text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:999px;
+  --sh-xs:0 1px 2px rgba(15,23,42,.05);
+  --sh-md:0 4px 12px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg-page);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.doc-nav{position:fixed;top:0;left:0;bottom:0;width:248px;background:#fff;border-right:1px solid var(--border);padding:24px 12px;overflow-y:auto;z-index:50}
+.doc-logo{display:flex;align-items:center;gap:10px;padding:4px 12px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.doc-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--teal-600),var(--teal-800));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
+.doc-logo b{font-size:15px;letter-spacing:-.02em}
+.doc-logo span{display:block;font-size:11px;color:var(--text-muted);font-weight:500}
+.doc-nav a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r-md);color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;margin-bottom:2px}
+.doc-nav a:hover{background:var(--slate-100);color:var(--text)}
+.doc-nav a.active{background:var(--teal-50);color:var(--teal-700);font-weight:600}
+.doc-nav a .num{font-size:11px;color:var(--text-muted);font-weight:600;width:22px}
+.doc-main{margin-left:248px;padding:0 56px 120px}
+.doc-section{max-width:1060px;margin:0 auto;padding-top:64px;scroll-margin-top:24px}
+.sec-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px}
+.sec-title{font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.sec-desc{font-size:14.5px;color:var(--text-secondary);max-width:680px;margin-bottom:28px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;box-shadow:var(--sh-xs)}
+.panel+.panel{margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:20px 0 10px}
+.label:first-child{margin-top:0}
+code.tk{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;background:var(--slate-100);padding:2px 6px;border-radius:5px;color:var(--slate-700);white-space:nowrap}
+.cover{min-height:380px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--border);padding:72px 0 48px}
+.cover-badge{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:var(--r-full);padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-secondary);width:fit-content;box-shadow:var(--sh-xs);margin-bottom:24px}
+.cover-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal-500)}
+.cover h1{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.08;margin-bottom:14px}
+.cover h1 em{font-style:normal;color:var(--teal-600)}
+.cover p{font-size:15.5px;color:var(--text-secondary);max-width:640px}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--slate-100);color:var(--text-secondary);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td b{color:var(--text);font-weight:600}
+.tbl td:first-child{font-weight:600;color:var(--text);width:130px}
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-xs);background:#fff}
+ul.rules{font-size:13px;color:var(--text-secondary);margin-left:18px;display:flex;flex-direction:column;gap:7px}
+ul.rules b{color:var(--text)}
+
+/* layout schematics */
+.schem{border:1.5px dashed var(--slate-300);border-radius:var(--r-lg);padding:18px;background:var(--slate-50);display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.dim{font-size:9.5px;font-weight:700;color:var(--indigo);background:var(--indigo-bg);border-radius:4px;padding:1px 6px;letter-spacing:.02em;white-space:nowrap}
+.reg{border:1px solid var(--border-strong);background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;font-weight:600;color:var(--text-secondary);text-align:center;padding:4px}
+.reg.hl{background:var(--teal-50);border-color:var(--teal-200);color:var(--teal-800)}
+.reg.mut{background:var(--slate-100);border-style:dashed;color:var(--text-muted)}
+.frame{background:#fff;border:1px solid var(--border-strong);border-radius:10px;overflow:hidden;box-shadow:var(--sh-md);flex-shrink:0}
+.schem-notes{flex:1;min-width:260px}
+.schem-notes div{font-size:12px;color:var(--text-secondary);display:flex;gap:8px;align-items:baseline;margin-bottom:7px}
+.schem-notes b{color:var(--text);font-weight:600;white-space:nowrap}
+.ph-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.ph-head .av{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ph-head h2{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.ph-head span{font-size:12.5px;color:var(--text-muted);display:block}
+.icon{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.dev{display:inline-flex;font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:5px;padding:2px 8px;text-transform:uppercase}
+.dev.d{background:var(--indigo-bg);color:var(--indigo)}
+.dev.t{background:var(--blue-bg);color:var(--blue)}
+.dev.m{background:var(--teal-100);color:var(--teal-800)}
+@media(max-width:900px){.doc-nav{display:none}.doc-main{margin-left:0;padding:0 16px 80px}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="doc-nav">
+  <div class="doc-logo">
+    <div class="doc-logo-mark">A</div>
+    <div><b>Auriva</b><span>APS-007 · Workspace Layouts</span></div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#system"><span class="num">01</span> Layout System</a>
+  <a href="#l1"><span class="num">L1</span> Patient Mobile</a>
+  <a href="#l2"><span class="num">L2</span> Doctor Desktop</a>
+  <a href="#l3"><span class="num">L3</span> Organization Desktop</a>
+  <a href="#l4"><span class="num">L4</span> Marketplace</a>
+  <a href="#l5"><span class="num">L5</span> Authentication</a>
+  <a href="#matrix"><span class="num">02</span> Template Matrix</a>
+</nav>
+
+<main class="doc-main">
+
+<!-- COVER -->
+<section class="doc-section" id="cover">
+  <div class="cover">
+    <div class="cover-badge"><span class="dot"></span> APS-007 · Phase 1 — Product Blueprint · For Review</div>
+    <h1>Workspace <em>Layouts</em></h1>
+    <p>Five reusable layout shells — the structural frames every Auriva screen composes into. Each shell defines its grid, spacing, regions, surface rules and responsive behavior once, so no future screen ever invents its own frame. Built on APS-002 tokens, APS-003 architecture and APS-006 navigation.</p>
+  </div>
+</section>
+
+<!-- 01 SYSTEM -->
+<section class="doc-section" id="system">
+  <div class="sec-kicker">01 · Layout System</div>
+  <h2 class="sec-title">Shared foundations</h2>
+  <p class="sec-desc">Rules that hold across all five shells. Each layout section below only specifies what differs from these defaults.</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="label">Canvas &amp; density</div>
+      <ul class="rules">
+        <li><b>Page canvas</b> is <code class="tk">#F5F7FA</code>; content sits on white surfaces. Never white-on-white (APS-002).</li>
+        <li><b>Two density modes:</b> <b>Comfortable</b> (Patient, Marketplace, Auth — 16px base type, 48px controls) and <b>Compact</b> (Doctor, Organization — 14px base, 36px controls, 48px table rows).</li>
+        <li><b>Base unit 4px.</b> All region paddings and gaps are spacing tokens: 16 mobile / 24 desktop card padding, 24 page padding, 32–48 section gaps.</li>
+        <li><b>Radius:</b> surfaces 12–16px, controls 8px, sheets 16px top corners (APS-002 tokens).</li>
+      </ul>
+      <div class="label">Z-index scale (platform-wide)</div>
+      <div class="tbl-wrap"><table class="tbl"><tbody>
+        <tr><td>0 · content</td><td>Page surfaces, cards, tables</td></tr>
+        <tr><td>100 · chrome</td><td>Sticky top bar, sidebar, bottom tabs</td></tr>
+        <tr><td>200 · drawer</td><td>Right drawers, bottom sheets (+ scrim)</td></tr>
+        <tr><td>300 · dialog</td><td>Modal dialogs, flows-as-modals</td></tr>
+        <tr><td>400 · palette</td><td>⌘K command palette</td></tr>
+        <tr><td>500 · toast</td><td>Toasts, connectivity banner</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="label">Overlay standards (all layouts)</div>
+      <ul class="rules">
+        <li><b>Drawers</b> — desktop: right-anchored over their list, scrim 45% slate-900, list state preserved (B2/B3). Mobile: bottom sheets with drag handle, snap points 50% / 92%.</li>
+        <li><b>Dialogs</b> — confirm 420px, task 560px, 16px radius, shadow-lg. Max one dialog over one drawer; never two of either.</li>
+        <li><b>Flows (T6)</b> — full-screen on mobile, 560px modal on desktop; stepper header, sticky footer CTA, explicit exit confirm.</li>
+      </ul>
+      <div class="label">Empty / loading / error standards</div>
+      <ul class="rules">
+        <li><b>Empty states</b> — centered icon-tile (56px) + title + one-line body + single primary action; 48px vertical padding. First-use empties teach; filtered-empties offer "clear filters".</li>
+        <li><b>Loading</b> — skeleton-first (B6): the shell paints instantly, each region skeletons independently. Spinners only inside buttons. Skeletons mirror the real layout's geometry.</li>
+        <li><b>Error regions</b> — inline panel with retry, never a blank page; full-page errors reserved for 404/403 (B5).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- L1 PATIENT MOBILE -->
+<section class="doc-section" id="l1">
+  <div class="ph-head">
+    <span class="av" style="background:var(--teal-50)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--teal-700)"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
+    <div><h2>L1 · Patient Mobile</h2><span>Comfortable density · hosts T5 Feed, T6 Flow, T4 Record (mobile form) · design base 390×844</span></div>
+  </div>
+
+  <div class="schem">
+    <div class="frame" style="width:180px">
+      <div class="reg" style="height:34px;border:none;border-bottom:1px solid var(--border);border-radius:0">Header <span class="dim">48</span></div>
+      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg-page)">
+        <div class="reg hl" style="height:56px">Content cards <span class="dim">16 pad</span></div>
+        <div class="reg" style="height:56px"></div>
+        <div class="reg" style="height:56px"></div>
+        <div class="reg mut" style="height:30px">…scroll…</div>
+      </div>
+      <div class="reg" style="height:40px;border:none;border-top:1px solid var(--border);border-radius:0">Bottom tabs <span class="dim">56+safe</span></div>
+    </div>
+    <div class="schem-notes">
+      <div><b>Grid</b> 4 columns · 16px side margins · 12px gutters. Cards span full width; half-width only for stat pairs.</div>
+      <div><b>Regions</b> header 48px (Home variant 72px with greeting) · scrollable content · fixed bottom tabs 56px + safe-area.</div>
+      <div><b>Content padding</b> bottom 88px so the last card clears the tab bar.</div>
+      <div><b>Detail pages</b> replace header with back + title; tabs remain visible except inside flows.</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:16px"><table class="tbl">
+    <tbody>
+      <tr><td>Grid</td><td>4-col / 16px margins / 12px gutters. Vertical rhythm: 12px between cards, 24px between sections.</td></tr>
+      <tr><td>Spacing</td><td>Card padding 16 · list-row height 64 (56 min touch) · section header 24 top / 10 bottom.</td></tr>
+      <tr><td>Header</td><td>48px: back/avatar + title + bell. Home: 72px greeting header. Scroll: title condenses, header stays (no hide-on-scroll).</td></tr>
+      <tr><td>Sidebar</td><td>None. Navigation is bottom tabs (APS-006 §04).</td></tr>
+      <tr><td>Footer</td><td>Bottom tab bar 56px + safe-area; flows replace it with a sticky CTA footer 72px.</td></tr>
+      <tr><td>Content width</td><td>100% of viewport; on ≥768 the column caps at 480px centered.</td></tr>
+      <tr><td>Cards</td><td>Radius 16 · shadow-sm · full-width. Hero card (next appointment) may use teal-50 tint; all others white.</td></tr>
+      <tr><td>Tables</td><td>Never. Tabular data renders as key-value rows (label left-muted, value right-strong) or card lists.</td></tr>
+      <tr><td>Forms</td><td>Single column · labels above · 48px inputs · 16px input font (blocks iOS zoom) · sticky bottom CTA · one topic per screen in flows.</td></tr>
+      <tr><td>Drawers</td><td>Bottom sheets: drag handle, snap 50/92%, radius 16 top. Used for pickers, appointment quick view, share options.</td></tr>
+      <tr><td>Dialogs</td><td>Centered alerts only for destructive confirms (cancel appointment); everything else is a sheet.</td></tr>
+      <tr><td>Empty states</td><td>Per standard; patient-tone copy ("No appointments yet — find a doctor near you").</td></tr>
+      <tr><td>Loading</td><td>Skeleton cards ×3 per section; pull-to-refresh on lists; queue position uses live-updating shimmer number.</td></tr>
+      <tr><td>Responsive</td><td><span class="dev t">Tablet</span> same shell, 480px column, tabs persist. <span class="dev d">Desktop</span> switches to patient-desktop variant: left rail 220px with the same 4 items + Book (rarely used, never the design driver).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- L2 DOCTOR DESKTOP -->
+<section class="doc-section" id="l2">
+  <div class="ph-head">
+    <span class="av" style="background:var(--indigo-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--indigo)"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg></span>
+    <div><h2>L2 · Doctor Desktop</h2><span>Compact density · hosts T3 Workbench, T1 List+Drawer, T4 Record · min viewport 1280</span></div>
+  </div>
+
+  <div class="schem">
+    <div class="frame" style="width:340px">
+      <div style="display:flex">
+        <div style="width:56px;background:var(--slate-50);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:6px;padding:8px 6px">
+          <div class="reg" style="height:20px;font-size:8px">Nav <span class="dim">220</span></div>
+          <div class="reg mut" style="height:14px"></div><div class="reg mut" style="height:14px"></div><div class="reg mut" style="height:14px"></div>
+        </div>
+        <div style="flex:1">
+          <div class="reg" style="height:26px;border:none;border-bottom:1px solid var(--border);border-radius:0">Top bar <span class="dim">56</span></div>
+          <div style="display:flex;gap:8px;padding:8px;background:var(--bg-page)">
+            <div class="reg hl" style="width:84px;height:120px;flex-direction:column">Queue rail <span class="dim">320</span></div>
+            <div class="reg" style="flex:1;height:120px;flex-direction:column">Workbench center <span class="dim">fluid</span></div>
+            <div class="reg" style="width:76px;height:120px;flex-direction:column">Context rail <span class="dim">360</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="schem-notes">
+      <div><b>Workbench (T3)</b> three fixed rails: queue 320px · center fluid (min 560) · context 360px. Center hosts notes + Rx composer with its own sticky action bar (64px) — <b>zero navigation during consult</b>.</div>
+      <div><b>List screens (T1)</b> collapse to: page header 64 → filter row 48 → table → drawer 440.</div>
+      <div><b>Sidebar</b> 220px slim (6 items, no sections) · collapses to 64px rail.</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:16px"><table class="tbl">
+    <tbody>
+      <tr><td>Grid</td><td>12-col / 24px gutters for standard pages; T3 workbench uses the fixed 3-rail grid above. Page padding 24.</td></tr>
+      <tr><td>Spacing</td><td>Compact: 16px between panels · card padding 20 · control height 36.</td></tr>
+      <tr><td>Header</td><td>App top bar 56px (APS-006 §02). Page header 64px: title + clinic-context pills + quick action.</td></tr>
+      <tr><td>Sidebar</td><td>220px slim, flat 6 items, collapsible to 64px (<code class="tk">[</code>); state persists.</td></tr>
+      <tr><td>Footer</td><td>None. Workbench center pane carries a sticky action bar (Sign &amp; complete · Save draft) 64px.</td></tr>
+      <tr><td>Content width</td><td>Fluid to 1440 max; below 1280 the context rail folds into tabs above the center pane.</td></tr>
+      <tr><td>Cards</td><td>Radius 12 · shadow-xs · padding 20. Queue cards 88px fixed height for scannability.</td></tr>
+      <tr><td>Tables</td><td>48px rows · sticky header · first column = person (avatar + name + meta) · status always a chip · row hover reveals actions.</td></tr>
+      <tr><td>Forms</td><td>Max 640px, 2-col for short fields; inline validation on blur. Rx composer = line-item editor: search-add row on top, med rows beneath, dose pills (1-0-1).</td></tr>
+      <tr><td>Drawers</td><td>Right 440px — appointment detail, patient quick view. Full record (<code class="tk">DOC-008</code>) is a page, not a drawer.</td></tr>
+      <tr><td>Dialogs</td><td>Confirm 420 (skip patient, discard Rx) · task 560 (time-off). Sign &amp; complete is an in-pane action, never a dialog.</td></tr>
+      <tr><td>Empty states</td><td>Queue empty: "No patients waiting — next appointment 11:30". List empties per standard.</td></tr>
+      <tr><td>Loading</td><td>Rails skeleton independently; queue updates re-render in place with 300ms highlight (B8). Autosave chip "Draft saved · 10:42" in the action bar.</td></tr>
+      <tr><td>Responsive</td><td><span class="dev t">Tablet</span> icon rail 64; context rail becomes tabs; drawers 60vw. <span class="dev m">Mobile</span> bottom tabs (Today/Schedule/Patients/More); workbench becomes sequential full-screen steps (queue → patient → Rx).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- L3 ORG DESKTOP -->
+<section class="doc-section" id="l3">
+  <div class="ph-head">
+    <span class="av" style="background:var(--slate-100)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--slate-700)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <div><h2>L3 · Organization Desktop</h2><span>Compact density · hosts T1 List+Drawer, T2 Live Board, T8 Insights, T4 Record · min viewport 1280</span></div>
+  </div>
+
+  <div class="schem">
+    <div class="frame" style="width:340px">
+      <div style="display:flex">
+        <div style="width:62px;background:var(--slate-50);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:5px;padding:8px 6px">
+          <div class="reg" style="height:18px;font-size:8px">Switcher</div>
+          <div class="reg mut" style="height:12px"></div><div class="reg mut" style="height:12px"></div><div class="reg mut" style="height:12px"></div><div class="reg mut" style="height:12px"></div>
+          <div class="reg" style="height:14px;font-size:7.5px;margin-top:auto">Profile</div>
+        </div>
+        <div style="flex:1">
+          <div class="reg" style="height:24px;border:none;border-bottom:1px solid var(--border);border-radius:0;font-size:9px">Top bar <span class="dim">56</span></div>
+          <div class="reg" style="height:22px;border:none;border-bottom:1px solid var(--border);border-radius:0;font-size:9px">Page header + actions <span class="dim">64</span></div>
+          <div class="reg" style="height:18px;border:none;border-bottom:1px solid var(--border);border-radius:0;font-size:9px">Filter bar <span class="dim">48</span></div>
+          <div style="display:flex;gap:8px;padding:8px;background:var(--bg-page)">
+            <div class="reg hl" style="flex:1.6;height:96px;flex-direction:column">Table / board <span class="dim">fluid</span></div>
+            <div class="reg" style="flex:1;height:96px;flex-direction:column">Drawer <span class="dim">480</span></div>
+          </div>
+          <div class="reg" style="height:18px;border:none;border-top:1px solid var(--border);border-radius:0;font-size:9px">Pagination <span class="dim">52</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="schem-notes">
+      <div><b>Standard ops page</b> = page header 64 → filter bar 48 → table → pagination 52. Detail always in a right drawer 480 (T1).</div>
+      <div><b>Board variant (T2)</b> replaces table with horizontally scrolling 300px columns of queue cards; stat strip 96px above.</div>
+      <div><b>Sidebar</b> 248px, sectioned OPERATE / MANAGE / UNDERSTAND / CONFIGURE, role-scoped (N6).</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:16px"><table class="tbl">
+    <tbody>
+      <tr><td>Grid</td><td>12-col / 24px gutters. Ops screens run fluid to 1600 max (width = throughput); Insights caps at 1200 for readability.</td></tr>
+      <tr><td>Spacing</td><td>Compact. Stat cards 4-up grid, 16px gaps. Board columns 300px fixed, 12px gaps.</td></tr>
+      <tr><td>Header</td><td>Top bar 56 → page header 64 (title, count, primary action) → filter bar 48 (chips + saved views). All three sticky as one 168px unit on scroll.</td></tr>
+      <tr><td>Sidebar</td><td>248px sectioned; branch switcher in header zone; collapses to 64px rail. Receptionist role sees Operate only.</td></tr>
+      <tr><td>Footer</td><td>Pagination bar 52px on tables (rows-per-page, range, pager). Boards have no footer — they are live.</td></tr>
+      <tr><td>Content width</td><td>Fluid 1024–1600; drawer open shrinks table region, never overlaps content below 1440.</td></tr>
+      <tr><td>Cards</td><td>Stat cards (APS-002) radius 16; queue cards radius 12 with 44px token square; hover lift only on clickable cards.</td></tr>
+      <tr><td>Tables</td><td>The primary surface. 48px rows · sticky header · bulk-select column when batch actions exist · sortable columns · row click opens drawer, row menu (⋯) for secondary actions.</td></tr>
+      <tr><td>Forms</td><td>Settings: single column 640px with section groups + sticky save bar. Operational forms (walk-in) live in drawers/flows with autofocus first field.</td></tr>
+      <tr><td>Drawers</td><td>Right 480px; header = entity identity + status chip; footer = action bar. Max one drawer; opening another replaces with slide transition.</td></tr>
+      <tr><td>Dialogs</td><td>Confirm 420; destructive pattern: red title icon, consequence line, named-object confirm ("Cancel Ananya's 10:30?").</td></tr>
+      <tr><td>Empty states</td><td>Table empty = 8-row-height zone per standard. Board column empty: "No patients waiting". Filter-empty offers Clear all.</td></tr>
+      <tr><td>Loading</td><td>Table: skeleton rows ×8 matching column widths. Board: skeleton columns. Realtime patches rows in place with highlight (B8); no full refreshes.</td></tr>
+      <tr><td>Responsive</td><td><span class="dev t">Tablet</span> icon rail; tables keep horizontal scroll with sticky first column; boards scroll. <span class="dev m">Mobile</span> hamburger drawer nav; tables become card lists (view-mostly); Token display (<code class="tk">ORG-004</code>) is its own chrome-free full-screen layout at all sizes.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- L4 MARKETPLACE -->
+<section class="doc-section" id="l4">
+  <div class="ph-head">
+    <span class="av" style="background:var(--blue-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+    <div><h2>L4 · Marketplace</h2><span>Comfortable density · hosts T7 Explore, T6 Flow · public, SEO-first, SSR</span></div>
+  </div>
+
+  <div class="schem">
+    <div class="frame" style="width:340px">
+      <div class="reg" style="height:26px;border:none;border-bottom:1px solid var(--border);border-radius:0">Public top bar <span class="dim">64</span></div>
+      <div style="display:flex;gap:8px;padding:8px;background:var(--bg-page)">
+        <div class="reg" style="width:74px;height:110px;flex-direction:column">Filter rail <span class="dim">264</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:6px"><div class="reg hl" style="flex:1;height:34px">Card</div><div class="reg hl" style="flex:1;height:34px">Card</div><div class="reg hl" style="flex:1;height:34px">Card</div></div>
+          <div style="display:flex;gap:6px"><div class="reg" style="flex:1;height:34px"></div><div class="reg" style="flex:1;height:34px"></div><div class="reg" style="flex:1;height:34px"></div></div>
+          <div class="reg mut" style="height:20px">…results…</div>
+        </div>
+      </div>
+      <div class="reg" style="height:30px;border:none;border-top:1px solid var(--border);border-radius:0;font-size:9px">Footer: sitemap 4-col + legal <span class="dim">only real footer</span></div>
+    </div>
+    <div class="schem-notes">
+      <div><b>Content max 1200px</b> centered, 24px gutters; hero sections 640px text measure.</div>
+      <div><b>Results (T7)</b> = filter rail 264 left + 3-up card grid (min card 320).</div>
+      <div><b>Provider profiles</b> = header band + 2-col body (content 720 / booking panel 380 sticky).</div>
+      <div><b>Vertical rhythm</b> 64–96px between marketing sections — the only layout with big air.</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:16px"><table class="tbl">
+    <tbody>
+      <tr><td>Grid</td><td>12-col / 1200px max / 24px gutters. Card grid 3-up ≥1024, min card width 320.</td></tr>
+      <tr><td>Spacing</td><td>Comfortable; section spacing 64 (in-page) / 96 (marketing bands). Card gaps 20.</td></tr>
+      <tr><td>Header</td><td>Public top bar 64px sticky (APS-006 §02): logo · inline search · For Providers · session.</td></tr>
+      <tr><td>Sidebar</td><td>No nav sidebar. Results pages have a 264px filter rail (facets, collapsible groups) — content, not chrome.</td></tr>
+      <tr><td>Footer</td><td>Full footer: 4-column sitemap (Find care · Specialities · For providers · Company) + trust strip + legal bar. The only layout with a true footer.</td></tr>
+      <tr><td>Content width</td><td>1200 max; profile body 720/380 split; booking flow modal 560.</td></tr>
+      <tr><td>Cards</td><td>Provider cards (APS-002): radius 16, shadow-sm, hover lift + border-teal; whole card clickable, Book as explicit inner CTA.</td></tr>
+      <tr><td>Tables</td><td>None. Comparison data renders inside cards (fees, next slot, distance).</td></tr>
+      <tr><td>Forms</td><td>Booking flow (T6): 560px modal desktop / full-screen mobile; one decision per step; slot picker = day strip + time chip grid.</td></tr>
+      <tr><td>Drawers</td><td>Mobile filter sheet (bottom, 92% snap); slot-picker sheet on mobile profiles.</td></tr>
+      <tr><td>Dialogs</td><td>Auth (OTP) as a 420px modal inside the booking flow — never a redirect that loses the slot.</td></tr>
+      <tr><td>Empty states</td><td>Zero results = routing moment (APS-006 §06): nearby localities, sibling specialities, browse-all. Never a dead end on the acquisition surface.</td></tr>
+      <tr><td>Loading</td><td>SSR first render (SEO — no skeleton on landing). Client-side filter changes skeleton the card grid only; slot availability streams into cards with shimmer chips.</td></tr>
+      <tr><td>Responsive</td><td><span class="dev t">Tablet</span> 2-up cards; filter rail persists ≥900, else sheet. <span class="dev m">Mobile</span> 1-up cards; filter sheet + sticky "Filters (3)" bar; profile pages get a sticky bottom Book bar 64px.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- L5 AUTH -->
+<section class="doc-section" id="l5">
+  <div class="ph-head">
+    <span class="av" style="background:var(--warning-bg)"><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--warning)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+    <div><h2>L5 · Authentication</h2><span>Comfortable density · hosts T6 Flow (sign-in, OTP, onboarding wizards) · the platform's front gate</span></div>
+  </div>
+
+  <div class="schem">
+    <div class="frame" style="width:340px;display:flex">
+      <div class="reg" style="width:45%;height:150px;background:var(--teal-900);color:#fff;border:none;border-radius:0;flex-direction:column;font-size:9.5px">Brand panel <span class="dim" style="background:rgba(255,255,255,.15);color:#fff">45%</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;background:#fff">
+        <div class="reg mut" style="height:12px;width:50%">Logo</div>
+        <div class="reg" style="height:20px">Field <span class="dim">400 col</span></div>
+        <div class="reg hl" style="height:20px">Primary CTA</div>
+        <div class="reg mut" style="height:10px;font-size:8px">Legal row</div>
+      </div>
+    </div>
+    <div class="schem-notes">
+      <div><b>Split shell</b> — brand/trust panel 45% (teal-900, quote + trust signals, no photos of doctors pointing at clipboards) · form panel 55% with a 400px column, vertically centered.</div>
+      <div><b>Wizard variant</b> — same shell; stepper replaces logo row; step content max 480; back link top-left.</div>
+      <div><b>OTP step</b> — 6 boxes 48×56, auto-advance, auto-submit on last digit.</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:16px"><table class="tbl">
+    <tbody>
+      <tr><td>Grid</td><td>2-panel split 45/55; form column 400px centered (480 for wizards). No 12-col grid — this shell is a single focused column.</td></tr>
+      <tr><td>Spacing</td><td>Field gap 20 · title block 32 below logo · CTA 24 below fields. Generous — one decision at a time.</td></tr>
+      <tr><td>Header</td><td>None. Logo sits top-left of the form panel (returns to marketplace home). Wizards: stepper row + back link.</td></tr>
+      <tr><td>Sidebar</td><td>None.</td></tr>
+      <tr><td>Footer</td><td>Legal micro-row (Terms · Privacy) pinned at the form panel's bottom; language switch bottom-right.</td></tr>
+      <tr><td>Content width</td><td>Form column 400px; brand panel text measure 360px.</td></tr>
+      <tr><td>Cards</td><td>None — the panel is the surface. Role cards appear once: the Workspace Chooser (<code class="tk">AUTH-003</code>) as 3 identity cards.</td></tr>
+      <tr><td>Tables</td><td>None.</td></tr>
+      <tr><td>Forms</td><td>One field group per step · 48px inputs · autofocus · phone field with +91 prefix fixed · inline errors under fields (APS-002) · primary CTA full-width 48px.</td></tr>
+      <tr><td>Drawers</td><td>None.</td></tr>
+      <tr><td>Dialogs</td><td>None. Recovery paths (resend, voice OTP, support) render inline beneath the CTA, appearing progressively (30s, 3 failures).</td></tr>
+      <tr><td>Empty states</td><td>N/A — the shell always has exactly one job on screen.</td></tr>
+      <tr><td>Loading</td><td>CTA button spinner state ("Verifying…"); OTP auto-verify inline. Onboarding doc-verification steps show a status card with SLA copy, never a blocking spinner.</td></tr>
+      <tr><td>Responsive</td><td><span class="dev t">Tablet</span> brand panel narrows to 38%. <span class="dev m">Mobile</span> brand panel collapses to a 96px top band (logo + tagline); form full-width with 24px margins; keyboard-aware — CTA never hidden behind the keyboard. Embedded auth (inside booking, APS-006) reuses the form column only, as a modal.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- MATRIX -->
+<section class="doc-section" id="matrix">
+  <div class="sec-kicker">02 · Composition</div>
+  <h2 class="sec-title">Template × Layout matrix</h2>
+  <p class="sec-desc">Every APS-005 screen = one layout shell + one template. This matrix closes the loop: if a future screen can't be expressed as a cell here, the request goes back to IA — not into a custom frame.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th style="width:170px">Template (APS-002)</th><th>L1 Patient</th><th>L2 Doctor</th><th>L3 Organization</th><th>L4 Marketplace</th><th>L5 Auth</th></tr></thead>
+    <tbody>
+      <tr><td>T1 · List + Drawer</td><td>—</td><td>Schedule, Patients, Consults</td><td>Appointments, Registry, Billing, Worklists</td><td>—</td><td>—</td></tr>
+      <tr><td>T2 · Live Board</td><td>—</td><td>—</td><td>Queue Board, Token Display*</td><td>—</td><td>—</td></tr>
+      <tr><td>T3 · Workbench</td><td>—</td><td>Today, Consult</td><td>Results Entry</td><td>—</td><td>—</td></tr>
+      <tr><td>T4 · Record</td><td>Rx / report detail</td><td>Patient Record</td><td>Patient Record, Invoice, Doctor Detail</td><td>—</td><td>—</td></tr>
+      <tr><td>T5 · Feed</td><td>Home, Timeline, Care, Family</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>T6 · Flow</td><td>Book, Add member</td><td>Time off</td><td>Walk-in, Check-in</td><td>Booking</td><td>Sign-in, OTP, Onboarding</td></tr>
+      <tr><td>T7 · Explore</td><td>—</td><td>—</td><td>—</td><td>Home, Results, Hubs, Profiles</td><td>—</td></tr>
+      <tr><td>T8 · Insights</td><td>—</td><td>Earnings</td><td>Insights, Settlement</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p style="font-size:12px;color:var(--text-muted);margin-top:10px">* Token Display uses L3's board variant with all chrome removed — broadcast surface (APS-006 §11).</p>
+
+  <div class="panel" style="margin-top:16px;background:var(--teal-50);border-color:var(--teal-200)">
+    <b style="font-size:14px;color:var(--teal-900)">Phase 1 status &amp; next</b>
+    <p style="font-size:13px;color:var(--teal-800);margin-top:4px">APS-001 → APS-006 ✅ · APS-007 (this document). One remaining: <b>APS-008 Interaction Patterns</b> — micro-level behavior (selection, inline edit, swipes, realtime updates, form validation choreography). After its approval, Phase 1 is complete and screen design begins on the P0 spine in APS-004 journey order.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const links=[...document.querySelectorAll('.doc-nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const spy=()=>{let i=secs.findLastIndex(s=>s&&s.getBoundingClientRect().top<150);if(i<0)i=0;links.forEach((a,j)=>a.classList.toggle('active',j===i))};
+document.addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

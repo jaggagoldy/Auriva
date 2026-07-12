@@ -41,7 +41,7 @@ function ContactSalesForm() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center">
-        <CheckCircle2 className="size-10 text-emerald-500" />
+        <CheckCircle2 className="size-10 text-success" />
         <h2 className="text-lg font-bold text-foreground">Thanks, {name.split(' ')[0]}.</h2>
         <p className="max-w-sm text-sm text-muted-foreground">
           Our team will get back to you at {email} shortly.

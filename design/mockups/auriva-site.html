@@ -1,0 +1,1379 @@
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-2:#0F8171; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --ok:#3F9D5A;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41; --night-2:#0E5A4F;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', 'Hiragino Maru Gothic ProN', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --fm:'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+    --maxw:1200px;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.34);
+    --shadow-l:0 40px 80px -34px rgba(36,31,26,.44);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  .ey{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--pine);margin:0}
+  .ey.hy{color:var(--honey-deep)}
+  h1,h2,h3{font-family:var(--fd);letter-spacing:-.025em;text-wrap:balance;margin:0;font-weight:700}
+  h2{font-size:clamp(28px,3.6vw,44px);line-height:1.08}
+  p{margin:0}
+  .lede{color:var(--body);font-size:clamp(16px,1.5vw,19px);line-height:1.6;max-width:60ch}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:52px;padding:0 24px;border-radius:14px;border:none;cursor:pointer;font-family:var(--fd);font-weight:650;font-size:16px;transition:transform .12s cubic-bezier(.2,.8,.2,1),filter .2s,box-shadow .25s,background .2s}
+  .btn svg{width:19px;height:19px}
+  .btn:active{transform:translateY(1px) scale(.985)}
+  .btn-primary{background:var(--pine);color:#fff;box-shadow:0 14px 30px -12px rgba(14,116,102,.62)}
+  .btn-primary:hover{filter:brightness(1.07);box-shadow:0 20px 40px -14px rgba(14,116,102,.7)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-honey{background:var(--honey);color:#4A3413;box-shadow:0 14px 30px -12px rgba(232,162,76,.6)}
+  .btn-honey:hover{filter:brightness(1.05)}
+  .btn-sm{height:44px;font-size:15px;padding:0 18px}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:3px;border-radius:6px}
+
+  body.js .reveal{opacity:0;transform:translateY(20px)}
+  body.js .reveal.in{opacity:1;transform:none;transition:opacity .7s ease,transform .8s cubic-bezier(.2,.75,.2,1)}
+  body.js .reveal[data-d="1"].in{transition-delay:.08s}
+  body.js .reveal[data-d="2"].in{transition-delay:.16s}
+  body.js .reveal[data-d="3"].in{transition-delay:.24s}
+  @media (prefers-reduced-motion:reduce){body.js .reveal{opacity:1!important;transform:none!important}}
+
+  /* ===== NAV ===== */
+  nav{position:sticky;top:0;z-index:80;background:rgba(251,248,244,.82);backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
+  nav.stuck{border-color:var(--line);box-shadow:0 8px 24px -20px rgba(36,31,26,.5)}
+  .nav-in{max-width:var(--maxw);margin:0 auto;height:70px;display:flex;align-items:center;gap:8px;padding:0 26px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:-.02em;margin-right:18px}
+  .logo .mk{width:30px;height:30px;border-radius:10px;background:var(--pine);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(14,116,102,.7)}
+  .logo .mk svg{width:17px;height:17px}
+  .nav-links{display:flex;align-items:center;gap:2px}
+  .navitem{position:relative}
+  .navitem > .trg{display:inline-flex;align-items:center;gap:5px;padding:9px 12px;border-radius:9px;font-size:14.5px;font-weight:600;color:var(--body);cursor:pointer;background:none;border:none;font-family:var(--fb);transition:background .16s,color .16s}
+  .navitem > .trg:hover,.navitem.open > .trg{background:var(--sand);color:var(--ink)}
+  .navitem > .trg .chev{width:14px;height:14px;transition:transform .2s;opacity:.6}
+  .navitem.open > .trg .chev{transform:rotate(180deg)}
+  .dd{position:absolute;top:calc(100% + 8px);left:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-l);padding:12px;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .22s cubic-bezier(.2,.8,.2,1),visibility .2s;z-index:90}
+  .navitem.open .dd{opacity:1;visibility:visible;transform:none}
+  .dd .row{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border-radius:12px;transition:background .15s;cursor:pointer}
+  .dd .row:hover{background:var(--sand2)}
+  .dd .row .ic{width:38px;height:38px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto}
+  .dd .row .ic svg{width:19px;height:19px}
+  .dd .row .nm{font-family:var(--fd);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .dd .row .ds{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .dd .row.soon .ic{background:var(--sand2);color:var(--muted)}
+  .soontag{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 7px}
+  .livetag{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ok);background:#E4F2E7;border-radius:99px;padding:2px 7px}
+  .dd-h{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);padding:8px 12px 4px}
+  .mega{width:680px;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .mega .colhead{grid-column:1/-1}
+  .mega-2{width:440px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .dd-patient{width:300px}
+  .nav-act{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .nav-act .si{font-size:14.5px;font-weight:650;color:var(--ink);cursor:pointer}
+  .burger{display:none;margin-left:auto;width:44px;height:44px;border-radius:11px;border:1px solid var(--line-2);background:var(--surface);cursor:pointer;place-items:center}
+  .burger svg{width:22px;height:22px}
+
+  /* ===== HERO ===== */
+  .hero{position:relative;padding:clamp(44px,6vw,80px) 0 clamp(52px,6vw,84px);overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(760px 460px at 14% 4%,#FBEBD3 0%,rgba(251,235,211,0) 62%),radial-gradient(720px 620px at 100% 26%,#E7F0EC 0%,rgba(231,240,236,0) 58%);pointer-events:none}
+  .hero-in{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,4vw,54px);align-items:center}
+  .plat-chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:7px 8px 7px 14px;font-size:12.5px;font-weight:650;color:var(--body);box-shadow:var(--shadow-s)}
+  .plat-chip .dt{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(63,157,90,.2)}
+  .plat-chip .t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--pine);background:var(--pine-tint);border-radius:99px;padding:3px 9px}
+  .hero h1{font-size:clamp(34px,4.9vw,60px);line-height:1.04;margin:20px 0 0;max-width:16ch}
+  .hero h1 .glow{color:var(--pine)}
+  .hero .lede{margin-top:22px;font-size:clamp(16px,1.55vw,19px);max-width:54ch}
+  .hero .cta{display:flex;flex-wrap:wrap;gap:13px;margin-top:28px}
+  .hero .microtrust{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:24px;color:var(--muted);font-size:13.5px;font-weight:500}
+  .hero .microtrust span{display:inline-flex;align-items:center;gap:7px}
+  .hero .microtrust svg{width:15px;height:15px;color:var(--pine)}
+  .collage{position:relative;height:clamp(360px,42vw,460px)}
+  .fcard{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:15px 17px}
+  .fcard .r{display:flex;align-items:center;gap:13px}
+  .avatar{border-radius:13px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;flex:0 0 auto;background:var(--pine-tint);color:var(--pine-deep)}
+  .avatar.h{background:var(--honey-soft);color:var(--honey-deep)}
+  .fcard .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .fcard .mt{font-size:12px;color:var(--muted);margin-top:1px}
+  .fcard .pill{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;margin-left:auto}
+  .pill.g{background:var(--pine-tint);color:var(--pine)}.pill.a{background:var(--honey-soft);color:var(--honey-deep)}.pill.k{background:#E4F2E7;color:#2E7B44}
+  .c1{top:2%;left:0;right:22%;z-index:3;animation:float1 7s ease-in-out infinite}
+  .c2{top:30%;left:20%;right:-5%;z-index:4;animation:float2 8s ease-in-out infinite}
+  .c3{top:58%;left:2%;right:34%;z-index:2;animation:float1 9s ease-in-out infinite reverse}
+  .c4{top:84%;left:26%;right:-2%;z-index:3;animation:float2 7.5s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+  @media (prefers-reduced-motion:reduce){.c1,.c2,.c3,.c4{animation:none}}
+
+  section{position:relative}
+  .pad{padding:clamp(56px,7vw,104px) 0}
+  .lbl-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .lbl-row.center{justify-content:center}
+  .lbl-row .ln{height:1px;flex:1;background:var(--line-2)}
+  .aud-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .aud-head .tab{display:inline-flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:700;font-size:13px;letter-spacing:.02em;padding:8px 15px;border-radius:99px}
+  .aud-head .tab.prov{background:var(--pine-tint);color:var(--pine-deep)}
+  .aud-head .tab.pat{background:var(--honey-tint);color:var(--honey-deep)}
+  .aud-head .tab .d{width:7px;height:7px;border-radius:50%}
+  .aud-head .tab.prov .d{background:var(--pine)}.aud-head .tab.pat .d{background:var(--honey)}
+  .center-head{text-align:center;max-width:26ch;margin:0 auto}
+  .center-lede{text-align:center;margin:14px auto 0;max-width:56ch}
+
+  /* ===== ECOSYSTEM GRID ===== */
+  .ecosystem{background:var(--sand)}
+  .ecogrid{margin-top:clamp(34px,4vw,50px);display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .ecocard{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .2s;overflow:hidden}
+  .ecocard:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--pine)}
+  .ecocard .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;margin-bottom:14px}
+  .ecocard .ic svg{width:22px;height:22px}
+  .ecocard h3{font-size:16.5px;display:flex;align-items:center;gap:8px}
+  .ecocard p{color:var(--body);font-size:13px;margin-top:5px;line-height:1.42}
+  .ecocard .arrow{position:absolute;top:20px;right:20px;color:var(--line-2);transition:color .2s,transform .2s}
+  .ecocard:hover .arrow{color:var(--pine);transform:translateX(2px)}
+  .ecocard .arrow svg{width:18px;height:18px}
+  .eco-pat .ic{background:var(--honey-soft);color:var(--honey-deep)}
+  .eco-prov .ic{background:var(--pine-tint);color:var(--pine-deep)}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(63,157,90,.2)}
+  .soon-mini{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 7px}
+
+  /* ===== FRAGMENTATION / MISSION ===== */
+  .mission{background:linear-gradient(165deg,var(--night) 0%,#0A423A 55%,#093B34 100%);color:#fff;position:relative;overflow:hidden}
+  .mission::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.16),transparent 62%);right:-120px;top:-160px}
+  .mission .ey{color:var(--honey)}
+  .mission h2{color:#fff;font-size:clamp(30px,4.4vw,52px);line-height:1.06;max-width:20ch;margin-top:16px}
+  .mission h2 em{font-style:normal;color:var(--honey)}
+  .mission .lede{color:#EAF3EF;max-width:60ch;margin-top:24px;font-size:clamp(17px,1.6vw,20px);font-weight:450;line-height:1.62}
+  .frag{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+  .frag .silo{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 14px;color:#D6E7E1;font-size:13.5px;font-weight:600}
+  .frag .silo svg{width:15px;height:15px;color:rgba(232,162,76,.9)}
+  .frag .arrow{display:flex;align-items:center;color:rgba(255,255,255,.35)}
+  .frag .arrow svg{width:16px;height:16px}
+  .frag .join{display:inline-flex;align-items:center;gap:8px;background:var(--honey);border-radius:12px;padding:9px 15px;color:#3B2708;font-family:var(--fd);font-weight:700;font-size:13.5px}
+  .mission .sig{margin-top:30px;display:inline-flex;align-items:center;gap:11px;color:#CFE3DC;font-size:14px;font-weight:500}
+  .mission .sig .d{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center}
+  .mission .sig .d svg{width:18px;height:18px;color:var(--honey)}
+
+  /* ===== CONNECTED / GOLDEN THREAD ===== */
+  .connected{overflow:hidden}
+  .thread{margin-top:clamp(36px,4vw,54px);position:relative}
+  .thread .track{position:absolute;left:0;right:0;top:39px;height:3px;background:var(--line-2);border-radius:99px;z-index:0}
+  .thread .fill{position:absolute;left:0;top:39px;height:3px;background:linear-gradient(90deg,var(--pine),var(--honey));border-radius:99px;z-index:1;width:0;transition:width 1.4s cubic-bezier(.3,.7,.2,1)}
+  .steps{position:relative;z-index:2;display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+  .step{text-align:center}
+  .step .node{width:56px;height:56px;border-radius:18px;background:var(--surface);border:1.5px solid var(--line);display:grid;place-items:center;margin:0 auto;color:var(--muted);transition:.4s;box-shadow:var(--shadow-s)}
+  .step .node svg{width:24px;height:24px}
+  .step.on .node{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint);box-shadow:0 0 0 5px var(--pine-tint),var(--shadow-s)}
+  .step .who{font-family:var(--fd);font-weight:700;font-size:12.5px;margin-top:11px}
+  .step .act{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
+  .thread-note{margin-top:30px;text-align:center;font-family:var(--fd);font-weight:650;font-size:clamp(16px,1.9vw,21px);color:var(--pine-deep)}
+  @media (max-width:900px){.steps{grid-template-columns:repeat(4,1fr);gap:16px 8px}.thread .track,.thread .fill{display:none}}
+  @media (max-width:520px){.steps{grid-template-columns:repeat(2,1fr)}}
+
+  /* ===== PROVIDERS / TIMELINE ===== */
+  .prov-sec .head{max-width:54ch}
+  .prov-sec .lede{margin-top:14px}
+  .timeline{margin-top:clamp(38px,5vw,58px);display:grid;grid-template-columns:190px 1fr;gap:clamp(24px,4vw,64px);align-items:start}
+  .rail{position:sticky;top:120px;display:flex;flex-direction:column;align-self:start}
+  .rnode{display:flex;align-items:center;gap:13px;padding:14px 0;cursor:pointer;position:relative}
+  .rnode .dot{width:15px;height:15px;border-radius:50%;background:var(--surface);border:2.5px solid var(--line-2);flex:0 0 auto;transition:.3s;z-index:2}
+  .rnode .t{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;transition:color .3s}
+  .rnode::before{content:"";position:absolute;left:6.5px;top:50%;bottom:-14px;width:2px;background:var(--line-2);z-index:1}
+  .rnode:last-child::before{display:none}
+  .rnode.on .dot{background:var(--pine);border-color:var(--pine);box-shadow:0 0 0 5px var(--pine-tint)}
+  .rnode.on .t{color:var(--pine-deep)}
+  .moments{display:flex;flex-direction:column;gap:clamp(26px,3.5vw,44px)}
+  .moment{scroll-margin-top:120px}
+  .moment .time{font-family:var(--fd);font-weight:700;font-size:14px;color:var(--honey-deep);letter-spacing:.02em}
+  .moment h3{font-size:clamp(21px,2.5vw,29px);line-height:1.12;margin:8px 0 0;max-width:20ch}
+  .moment p{color:var(--body);margin-top:10px;max-width:48ch}
+  .mcard{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-s);overflow:hidden;max-width:530px}
+  .mcard .top{padding:13px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;background:var(--sand2)}
+  .mcard .top .k{font-family:var(--fd);font-weight:700;font-size:13px;color:var(--body)}
+  .mcard .top .k2{margin-left:auto;font-size:11px;font-weight:700;color:var(--pine);background:var(--pine-tint);border-radius:99px;padding:3px 9px}
+  .mcard .bd{padding:15px 18px}
+  .row{display:flex;align-items:center;gap:13px}
+  .row+.row{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .nm{font-family:var(--fd);font-weight:700;font-size:15px}.mt{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .amt{font-family:var(--fd);font-weight:700;font-variant-numeric:tabular-nums}
+  .upi{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--pine);background:var(--pine-tint);border-radius:6px;padding:3px 7px}
+  .slotpair{display:flex;gap:9px;margin-top:4px}
+  .slotpill{border:1.5px solid var(--line-2);border-radius:10px;padding:8px 12px;font-family:var(--fd);font-weight:650;font-size:14px;font-variant-numeric:tabular-nums}
+  .slotpill.on{background:var(--pine);border-color:var(--pine);color:#fff}
+  .barline{height:8px;border-radius:99px;background:var(--sand2);overflow:hidden;margin-top:2px}
+  .barline i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pine),var(--pine-2))}
+
+  /* ===== PATIENTS ===== */
+  .patients{background:linear-gradient(180deg,var(--honey-tint),#FBF6EE 70%,var(--paper));overflow:hidden}
+  .pin{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(30px,5vw,68px);align-items:center}
+  .patients h2{max-width:16ch}
+  .plife{margin-top:26px;display:flex;flex-direction:column}
+  .lifeitem{display:flex;gap:15px;position:relative;padding-bottom:20px}
+  .lifeitem::before{content:"";position:absolute;left:19px;top:44px;bottom:-2px;width:2px;background:var(--line-2)}
+  .lifeitem:last-child{padding-bottom:0}.lifeitem:last-child::before{display:none}
+  .lifeitem .ic{width:40px;height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;flex:0 0 auto;box-shadow:var(--shadow-s);z-index:1}
+  .lifeitem .ic svg{width:19px;height:19px;color:var(--honey-deep)}
+  .lifeitem h3{font-size:15.5px}.lifeitem p{color:var(--body);font-size:13px;margin-top:2px;max-width:40ch}
+  .patients .cta{margin-top:30px;display:flex;gap:12px;flex-wrap:wrap}
+  .phone-stage{position:relative;display:grid;place-items:center;min-height:540px}
+  .phone-stage::before{content:"";position:absolute;width:min(380px,84%);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#F7E9D2,transparent 66%)}
+  .phone{position:relative;width:300px;background:var(--surface);border-radius:42px;padding:10px;border:1px solid #F0E8DC;box-shadow:0 44px 80px -34px rgba(36,31,26,.55),inset 0 0 0 2px #fff;z-index:2}
+  .phscr{background:var(--paper);border-radius:33px;overflow:hidden}
+  .phtop{padding:16px 16px 12px;background:linear-gradient(160deg,#FDF3E4,#FBF8F4);border-bottom:1px solid var(--line)}
+  .phscl{display:flex;justify-content:space-between;font-family:var(--fd);font-weight:700;font-size:12px;margin-bottom:12px}
+  .phhi{font-family:var(--fd);font-weight:700;font-size:18px}
+  .phsub{font-size:12px;color:var(--muted)}
+  .phbody{padding:14px 16px 18px}
+  .pl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+  .phnext{background:linear-gradient(150deg,#0F7A6B,#0C5A4E);border-radius:16px;padding:14px;color:#fff}
+  .phnext .r{display:flex;align-items:center;gap:11px}
+  .phnext .nm{font-family:var(--fd);font-weight:700;font-size:14px}.phnext .mt{font-size:11.5px;color:rgba(255,255,255,.82);margin-top:1px}
+  .phtiles{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+  .phtile{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px}
+  .phtile .ic{width:30px;height:30px;border-radius:9px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;margin-bottom:8px}
+  .phtile .ic svg{width:16px;height:16px}
+  .phtile .tn{font-family:var(--fd);font-weight:700;font-size:12.5px}.phtile .tm{font-size:10.5px;color:var(--muted)}
+  .wa{position:absolute;right:-22px;top:64px;width:210px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;z-index:4;animation:float2 7s ease-in-out infinite}
+  .wa .h{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;color:#25923b}
+  .wa .h svg{width:15px;height:15px}
+  .wa .m{font-size:12px;color:var(--body);margin-top:6px;line-height:1.4}
+  @media (prefers-reduced-motion:reduce){.wa{animation:none}}
+
+  /* ===== PLATFORM ARCHITECTURE ===== */
+  .arch{background:var(--sand)}
+  .archgrid{margin-top:clamp(34px,4vw,52px);display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .archcol{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px}
+  .archcol .ch{display:flex;align-items:center;gap:11px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .archcol .ch .ic{width:38px;height:38px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto}
+  .archcol .ch .ic svg{width:19px;height:19px}
+  .archcol .ch .t{font-family:var(--fd);font-weight:700;font-size:16px}
+  .archcol .ch .s{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .modrow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:500;color:var(--ink)}
+  .modrow:last-child{border-bottom:none}
+  .modrow .mi{width:26px;height:26px;border-radius:8px;background:var(--sand2);color:var(--pine);display:grid;place-items:center;flex:0 0 auto}
+  .modrow .mi svg{width:14px;height:14px}
+  .modrow .st{margin-left:auto;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .modrow .st.live{color:var(--ok)}.modrow .st.soon{color:var(--muted)}
+  .archnote{margin-top:26px;text-align:center;color:var(--body);font-size:14.5px}
+
+  /* ===== BUILT TO SCALE ===== */
+  .scale{text-align:center}
+  .scale .head{max-width:24ch;margin:0 auto}
+  .scale .lede{margin:14px auto 0;max-width:54ch}
+  .scalechecks{margin-top:clamp(32px,4vw,46px);display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .schk{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:11px 18px;font-family:var(--fd);font-weight:650;font-size:14.5px;box-shadow:var(--shadow-s)}
+  .schk svg{width:17px;height:17px;color:var(--pine);flex:0 0 auto}
+  .schk.first{border-color:var(--pine);background:var(--pine-tint);color:var(--pine-deep)}
+  .schk .now{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ok);background:#E4F2E7;border-radius:99px;padding:2px 7px}
+  .schk .soon{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 7px}
+
+  /* ===== TRUST ===== */
+  .trust .tgrid{margin-top:clamp(34px,4vw,52px);display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .tcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px}
+  .tcard .ic{width:48px;height:48px;border-radius:15px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;margin-bottom:16px}
+  .tcard .ic svg{width:24px;height:24px}
+  .tcard h3{font-size:18px}.tcard p{color:var(--body);font-size:14px;margin-top:9px}
+
+  /* ===== PRICING ===== */
+  .pricing .lede{margin-top:14px;max-width:50ch}
+  .pricegrid{margin-top:clamp(34px,4vw,50px);display:grid;grid-template-columns:1.12fr .88fr;gap:18px;align-items:stretch}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:30px;display:flex;flex-direction:column}
+  .pcard.feature{background:linear-gradient(165deg,#0F7A6B,#0B5347);color:#fff;border:none;box-shadow:0 26px 54px -26px rgba(11,83,71,.7);position:relative;overflow:hidden}
+  .pcard.feature::after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.16),transparent 62%);right:-100px;bottom:-120px}
+  .pcard .tag{font-family:var(--fd);font-weight:700;font-size:14px}.pcard.feature .tag{color:var(--honey)}
+  .pcard .price{font-family:var(--fd);font-weight:700;font-size:clamp(34px,4vw,46px);letter-spacing:-.02em;margin:12px 0 2px;position:relative}
+  .pcard .price small{font-size:16px;font-weight:600;color:var(--muted)}.pcard.feature .price small{color:rgba(255,255,255,.7)}
+  .pcard .sub{font-size:14px;color:var(--body);position:relative}.pcard.feature .sub{color:rgba(255,255,255,.82)}
+  .plist{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:11px;position:relative}
+  .plist li{display:flex;gap:10px;font-size:14.5px;align-items:flex-start}
+  .plist li svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px;color:var(--pine)}.pcard.feature .plist li svg{color:var(--honey)}
+  .pcard .btn{position:relative}
+  .pcard.feature .go{margin-top:26px}.pcard.feature .go .btn{width:100%;background:#fff;color:var(--pine-deep)}
+  .pcard.plain .price{color:var(--ink)}.pcard.plain .btn{margin-top:26px}
+
+  /* ===== FAQ ===== */
+  .faq .qs{margin-top:clamp(30px,4vw,44px);max-width:800px}
+  .q{border-bottom:1px solid var(--line)}
+  .q summary{list-style:none;cursor:pointer;padding:20px 0;display:flex;align-items:center;gap:16px;font-family:var(--fd);font-weight:650;font-size:17px}
+  .q summary::-webkit-details-marker{display:none}
+  .q summary .pls{margin-left:auto;width:26px;height:26px;flex:0 0 auto;position:relative;transition:transform .25s}
+  .q summary .pls::before,.q summary .pls::after{content:"";position:absolute;background:var(--muted);border-radius:2px}
+  .q summary .pls::before{left:5px;right:5px;top:12px;height:2px}
+  .q summary .pls::after{top:5px;bottom:5px;left:12px;width:2px;transition:opacity .25s}
+  .q[open] summary .pls::after{opacity:0}
+  .q .a{padding:0 42px 22px 0;color:var(--body);font-size:15px;line-height:1.6}
+
+  /* ===== FINAL CTA ===== */
+  .final{text-align:center}
+  .final .box{background:linear-gradient(165deg,#0F7A6B,#0A473E);border-radius:32px;padding:clamp(44px,6vw,76px) 30px;color:#fff;position:relative;overflow:hidden;box-shadow:0 34px 70px -30px rgba(10,71,62,.7)}
+  .final .box::after{content:"";position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.16),transparent 60%);left:50%;top:-50%;transform:translateX(-50%);pointer-events:none}
+  .final h2{color:#fff;font-size:clamp(28px,4vw,48px);max-width:22ch;margin:0 auto;position:relative}
+  .final .cta{margin-top:30px;display:flex;gap:13px;justify-content:center;flex-wrap:wrap;position:relative}
+  .final .talk{color:#fff;border:1.5px solid rgba(255,255,255,.34);background:transparent}
+  .final .talk:hover{background:rgba(255,255,255,.1)}
+  .final .mt{margin-top:18px;color:rgba(255,255,255,.72);font-size:13.5px;position:relative}
+
+  /* ===== FOOTER ===== */
+  footer{border-top:1px solid var(--line);padding:clamp(44px,5vw,64px) 0 30px}
+  .fgrid{display:grid;grid-template-columns:1.5fr repeat(5,1fr);gap:26px}
+  .fcol h4{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .fcol a{display:block;font-size:13.5px;color:var(--body);padding:5px 0}
+  .fcol a:hover{color:var(--pine-deep)}
+  .fbrand .lede{font-size:14px;margin-top:14px;max-width:28ch}
+  .fbot{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+
+  .mcta{position:fixed;left:0;right:0;bottom:0;z-index:70;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(251,248,244,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:none;gap:10px}
+  .mcta .btn{flex:1}
+
+  @media (max-width:980px){
+    .nav-links,.nav-act .si{display:none}.burger{display:grid}
+    .hero-in{grid-template-columns:1fr;gap:36px}.collage{height:360px;max-width:460px}
+    .ecogrid{grid-template-columns:repeat(2,1fr)}
+    .timeline{grid-template-columns:1fr}.rail{flex-direction:row;position:static;overflow-x:auto;gap:2px;padding-bottom:6px}.rnode::before{display:none}.rnode{flex-direction:column;gap:7px;padding:8px 14px;flex:0 0 auto}
+    .pin{grid-template-columns:1fr;gap:44px}
+    .archgrid{grid-template-columns:1fr}
+    .pricegrid{grid-template-columns:1fr}.tgrid{grid-template-columns:1fr}
+    .fgrid{grid-template-columns:1fr 1fr}
+    .mcta{display:flex}body{padding-bottom:78px}
+  }
+  @media (max-width:560px){.ecogrid{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}.wa{right:-4px}}
+
+  /* ===== ROUTER / PAGES ===== */
+  [data-go]{cursor:pointer}
+  .page{display:none}
+  .page.active{display:block;animation:pagein .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pagein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.page.active{animation:none}}
+  .navitem .trg.rl.active,.navitem > a.trg.rl.on{color:var(--pine-deep);background:var(--pine-tint)}
+
+  /* ===== PAGE HERO (interior pages) ===== */
+  .phero{position:relative;padding:clamp(48px,6vw,88px) 0 clamp(30px,3.4vw,44px);overflow:hidden}
+  .phero::before{content:"";position:absolute;inset:0;background:radial-gradient(720px 420px at 8% -6%,#FBEBD3 0%,rgba(251,235,211,0) 60%),radial-gradient(680px 520px at 102% 20%,#E7F0EC 0%,rgba(231,240,236,0) 56%);pointer-events:none}
+  .phero-in{position:relative;max-width:60ch}
+  .phero-in.wide{max-width:76ch}
+  .phero h1{font-family:var(--fd);font-weight:700;letter-spacing:-.025em;text-wrap:balance;font-size:clamp(32px,4.4vw,54px);line-height:1.05;margin:18px 0 0}
+  .phero h1 .glow{color:var(--pine)}
+  .phero .lede{margin-top:20px}
+  .phero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .crumb{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:650;color:var(--muted)}
+  .crumb b{color:var(--pine);font-weight:700}
+
+  /* ===== SPLIT FEATURE ROW ===== */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,4.6vw,68px);align-items:center}
+  .split.rev .txt{order:2}
+  .split + .split{margin-top:clamp(48px,6vw,92px)}
+  .split .txt h2{font-size:clamp(24px,2.8vw,36px)}
+  .split .txt .lede{margin-top:14px}
+  .flist{margin-top:20px;display:flex;flex-direction:column;gap:12px}
+  .flist .li{display:flex;gap:12px;align-items:flex-start}
+  .flist .li .ck{width:24px;height:24px;border-radius:8px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto;margin-top:1px}
+  .flist .li .ck svg{width:14px;height:14px}
+  .flist .li b{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .flist .li p{font-size:13.5px;color:var(--body);margin-top:2px;line-height:1.45}
+
+  /* mock panel */
+  .mock{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:18px;position:relative;overflow:hidden}
+  .mock .bar{display:flex;align-items:center;gap:7px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .mock .bar i{width:10px;height:10px;border-radius:50%;background:var(--line-2)}
+  .mock .bar .t{margin-left:8px;font-size:12px;font-weight:650;color:var(--muted)}
+  .mrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:13px;border:1px solid var(--line);margin-bottom:9px;background:var(--paper)}
+  .mrow .av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px;background:var(--pine-tint);color:var(--pine-deep);flex:0 0 auto}
+  .mrow .av.h{background:var(--honey-soft);color:var(--honey-deep)}
+  .mrow .nm{font-family:var(--fd);font-weight:700;font-size:14px}
+  .mrow .mt{font-size:12px;color:var(--muted);margin-top:1px}
+  .mrow .pill{margin-left:auto;font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px}
+
+  /* ===== FEATURE CARDS GRID ===== */
+  .featgrid{margin-top:clamp(32px,4vw,48px);display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .fcard2{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .2s}
+  .fcard2:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--pine)}
+  .fcard2 .ic{width:46px;height:46px;border-radius:13px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;margin-bottom:16px}
+  .fcard2 .ic svg{width:23px;height:23px}
+  .fcard2.h .ic{background:var(--honey-soft);color:var(--honey-deep)}
+  .fcard2 h3{font-size:17px}
+  .fcard2 p{color:var(--body);font-size:13.5px;margin-top:7px;line-height:1.5}
+
+  /* section tint variants */
+  .tint{background:var(--sand)}
+  .tint2{background:var(--pine-tint)}
+
+  /* product roster (Products page) */
+  .roster{margin-top:clamp(30px,3.6vw,44px);display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .prodcard{position:relative;display:flex;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;transition:transform .25s,box-shadow .25s,border-color .2s}
+  .prodcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-s);border-color:var(--pine)}
+  .prodcard.soon{background:var(--sand);border-style:dashed}
+  .prodcard.soon:hover{transform:none;box-shadow:none;border-color:var(--line-2)}
+  .prodcard .pic{width:50px;height:50px;border-radius:14px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto}
+  .prodcard.soon .pic{background:var(--sand2);color:var(--muted)}
+  .prodcard .pic svg{width:25px;height:25px}
+  .prodcard h3{font-size:17px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .prodcard p{color:var(--body);font-size:13.5px;margin-top:6px;line-height:1.48}
+
+  /* comparison / metric strip */
+  .mstrip{margin-top:clamp(30px,3.6vw,44px);display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .metric{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center}
+  .metric .big{font-family:var(--fd);font-weight:700;font-size:clamp(28px,3.4vw,38px);color:var(--pine);letter-spacing:-.02em}
+  .metric .cap{font-size:13px;color:var(--body);margin-top:6px}
+
+  /* ===== SOLUTIONS · profession grid ===== */
+  .profgrid{margin-top:clamp(30px,3.6vw,44px);display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .profcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;transition:transform .22s,box-shadow .22s,border-color .2s;cursor:pointer}
+  .profcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-s);border-color:var(--pine)}
+  .profcard .ic{width:42px;height:42px;border-radius:12px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;margin-bottom:13px}
+  .profcard .ic svg{width:21px;height:21px}
+  .profcard h3{font-size:15.5px}
+  .profcard p{font-size:12.5px;color:var(--body);margin-top:5px;line-height:1.42}
+
+  /* ===== SECURITY · trust points ===== */
+  .seclist{margin-top:22px;display:flex;flex-direction:column;gap:14px}
+  .secpt{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .secpt .ic{width:40px;height:40px;border-radius:12px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;flex:0 0 auto}
+  .secpt .ic svg{width:20px;height:20px}
+  .secpt b{font-family:var(--fd);font-weight:700;font-size:15px}
+  .secpt p{font-size:13.5px;color:var(--body);margin-top:3px;line-height:1.5}
+
+  /* ===== CONTACT · form ===== */
+  .cform{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-s);padding:clamp(22px,3vw,32px)}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .fld{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+  .fld label{font-size:12.5px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld input,.fld textarea,.fld select{font-family:var(--fb);font-size:15px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line-2);border-radius:12px;padding:12px 14px;transition:border-color .16s,box-shadow .16s}
+  .fld textarea{resize:vertical;min-height:110px}
+  .fld input:focus,.fld textarea:focus,.fld select:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .contact-side{display:flex;flex-direction:column;gap:14px}
+  .cway{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .cway .ic{width:42px;height:42px;border-radius:12px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;flex:0 0 auto}
+  .cway .ic svg{width:20px;height:20px}
+  .cway b{font-family:var(--fd);font-weight:700;font-size:14.5px}
+  .cway p{font-size:13px;color:var(--body);margin-top:2px}
+  .cway a{color:var(--pine);font-weight:650}
+
+  /* ===== CAREERS · roles ===== */
+  .rolelist{margin-top:clamp(28px,3.4vw,42px);display:flex;flex-direction:column;gap:12px}
+  .role{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;transition:transform .18s,box-shadow .2s,border-color .2s;cursor:pointer}
+  .role:hover{transform:translateY(-2px);box-shadow:var(--shadow-s);border-color:var(--pine)}
+  .role .rt{font-family:var(--fd);font-weight:700;font-size:16px}
+  .role .rm{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+  .role .rm span{display:inline-flex;align-items:center;gap:5px}
+  .role .rarrow{margin-left:auto;color:var(--line-2);transition:color .2s,transform .2s}
+  .role:hover .rarrow{color:var(--pine);transform:translateX(2px)}
+  .role .rarrow svg{width:20px;height:20px}
+  .rtag{font-size:11px;font-weight:700;color:var(--pine);background:var(--pine-tint);border-radius:99px;padding:4px 10px;flex:0 0 auto}
+
+  /* ===== RESOURCES · cards ===== */
+  .resgrid{margin-top:clamp(30px,3.6vw,44px);display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .rescard{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:transform .22s,box-shadow .22s,border-color .2s;cursor:pointer}
+  .rescard:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--pine)}
+  .rescard .cover{height:140px;background:linear-gradient(135deg,var(--pine-tint),var(--honey-soft));display:grid;place-items:center;color:var(--pine-deep)}
+  .rescard .cover svg{width:40px;height:40px;opacity:.7}
+  .rescard .rb{padding:20px}
+  .rescard .rk{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pine)}
+  .rescard h3{font-size:16px;margin-top:9px;line-height:1.25}
+  .rescard p{font-size:13px;color:var(--body);margin-top:8px;line-height:1.45}
+  .rescard .rmeta{font-size:12px;color:var(--muted);margin-top:14px}
+
+  /* ===== HELP CENTER ===== */
+  .helpsearch{max-width:620px;margin:26px auto 0;position:relative}
+  .helpsearch input{width:100%;font-family:var(--fb);font-size:16px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:14px;padding:16px 18px 16px 50px;box-shadow:var(--shadow-s)}
+  .helpsearch input:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .helpsearch .si{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .helpsearch .si svg{width:20px;height:20px}
+
+  @media (max-width:900px){
+    .split{grid-template-columns:1fr;gap:30px}.split.rev .txt{order:0}
+    .featgrid{grid-template-columns:1fr}.roster{grid-template-columns:1fr}
+    .mstrip{grid-template-columns:1fr 1fr}
+    .profgrid{grid-template-columns:1fr 1fr}.resgrid{grid-template-columns:1fr}
+    .frow{grid-template-columns:1fr}
+    .contact-cols{grid-template-columns:1fr!important}
+  }
+</style>
+
+<nav id="nav">
+  <div class="nav-in">
+    <a class="logo" data-go="home" style="cursor:pointer"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</a>
+    <div class="nav-links">
+      <div class="navitem"><button class="trg rl" data-go="products">Products<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd mega">
+          <div class="dd-h colhead">Live today</div>
+          <div class="row" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span><div><div class="nm">Auriva Solo Practice <span class="livetag">Live</span></div><div class="ds">Everything an independent practitioner needs to run a full clinic.</div></div></div>
+          <div class="row" style="visibility:hidden"></div>
+          <div class="dd-h colhead">Coming soon</div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M9 10a3 3 0 106 0 3 3 0 00-6 0z"/></svg></span><div><div class="nm">Auriva Multi-Doctor <span class="soontag">Soon</span></div><div class="ds">Shared schedules, cross-functional queues, multi-tier billing.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13M14 21v-8l6 3v5"/></svg></span><div><div class="nm">Auriva Clinic Groups <span class="soontag">Soon</span></div><div class="ds">Centralized operations for multi-location medical groups.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M18 21V9h2a2 2 0 012 2v10M9 7h2M9 11h2"/></svg></span><div><div class="nm">Auriva Hospital <span class="soontag">Soon</span></div><div class="ds">Enterprise operations, department management, admissions.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><div><div class="nm">Auriva Labs <span class="soontag">Soon</span></div><div class="ds">Diagnostic management, sample tracking, rapid report delivery.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/><path d="M8 8l6 6"/></svg></span><div><div class="nm">Auriva Pharmacy <span class="soontag">Soon</span></div><div class="ds">Intelligent inventory, e-prescriptions, dispensing.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><div><div class="nm">Auriva Insurance <span class="soontag">Soon</span></div><div class="ds">Real-time claims routing, cashless authorizations.</div></div></div>
+          <div class="row soon"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5l3 8M16.5 7.5l-3 8"/></svg></span><div><div class="nm">Auriva Networks <span class="soontag">Soon</span></div><div class="ds">Seamless cross-system referrals across the platform.</div></div></div>
+        </div>
+      </div>
+      <div class="navitem"><button class="trg rl" data-go="solutions">Solutions<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd mega-2">
+          <div class="dd-h" style="grid-column:1/-1">By profession</div>
+          <div class="row" data-go="solutions"><div><div class="nm">Physiotherapists</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Dentists</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Dietitians</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Psychologists</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Speech Therapists</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Dermatologists</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm">Orthopedic Clinics</div></div></div>
+          <div class="row" data-go="solutions"><div><div class="nm" style="color:var(--pine)">More every month →</div></div></div>
+        </div>
+      </div>
+      <div class="navitem"><button class="trg rl" data-go="patients">For Patients<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd dd-patient">
+          <div class="dd-h">Your health, in one place</div>
+          <a class="row" data-go="patients"><span class="ic" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span><div><div class="nm">Find a doctor</div></div></a>
+          <a class="row" data-go="patients"><span class="ic" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><div><div class="nm">Book an appointment</div></div></a>
+          <a class="row" data-go="patients"><span class="ic" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span><div><div class="nm">Records, prescriptions &amp; reports</div></div></a>
+          <a class="row" data-go="patients"><span class="ic" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9"/></svg></span><div><div class="nm">Family health</div></div></a>
+        </div>
+      </div>
+      <div class="navitem"><button class="trg rl" data-go="resources">Resources<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd dd-patient"><a class="row" data-go="resources"><div><div class="nm">Blog</div></div></a><a class="row" data-go="help"><div><div class="nm">Help Center</div></div></a><a class="row" data-go="resources"><div><div class="nm">Guides &amp; Templates</div></div></a></div>
+      </div>
+      <div class="navitem"><a class="trg rl" data-go="pricing" style="cursor:pointer">Pricing</a></div>
+      <div class="navitem"><button class="trg rl" data-go="about">Company<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd dd-patient"><a class="row" data-go="about"><div><div class="nm">About</div></div></a><a class="row" data-go="security"><div><div class="nm">Security &amp; Trust</div></div></a><a class="row" data-go="careers"><div><div class="nm">Careers</div></div></a><a class="row" data-go="contact"><div><div class="nm">Contact</div></div></a></div>
+      </div>
+    </div>
+    <div class="nav-act"><span class="si" style="cursor:pointer">Sign in</span><button class="btn btn-primary btn-sm" data-go="provider">Start free</button></div>
+    <button class="burger" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</nav>
+
+<div id="top"></div>
+<main id="app">
+<section class="page active" data-route="home">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="plat-chip reveal"><span class="dt"></span>The healthcare operating system<span class="t">Solo Practice live</span></span>
+      <h1 class="reveal" data-d="1">One platform. Every patient. Every provider. <span class="glow">Every stage of care.</span></h1>
+      <p class="lede reveal" data-d="2">Available today for independent practitioners. Actively expanding into multi-doctor clinics, hospitals, diagnostics and the entire connected healthcare network — without ever changing your software infrastructure.</p>
+      <div class="cta reveal" data-d="3">
+        <button class="btn btn-primary" data-go="provider">Start free — 2 minutes<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button class="btn btn-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>See the platform</button>
+      </div>
+      <div class="microtrust reveal" data-d="3">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Patients &amp; providers</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No card required</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Built in India</span>
+      </div>
+    </div>
+    <div class="collage reveal" data-d="2">
+      <div class="fcard c1"><div class="r"><span class="avatar" style="width:40px;height:40px">PS</span><div><div class="nm">Priya booked online</div><div class="mt">Tomorrow · 10:30 · Physio</div></div><span class="pill g">Patient</span></div></div>
+      <div class="fcard c2"><div class="r"><span class="avatar" style="width:40px;height:40px;background:#E8EEF7;color:#2C5AA0">Rx</span><div><div class="nm">Lab order routed</div><div class="mt">CBC · to PathLabs</div></div><span class="pill k">Lab</span></div></div>
+      <div class="fcard c3"><div class="r"><span class="avatar h" style="width:40px;height:40px;font-size:16px">₹</span><div><div class="nm">₹600 · UPI</div><div class="mt">Collected at visit</div></div><span class="pill a">Provider</span></div></div>
+      <div class="fcard c4"><div class="r"><span class="avatar" style="width:40px;height:40px;background:#EFE7F7;color:#6B4BA0">✚</span><div><div class="nm">Claim submitted</div><div class="mt">Cashless · approved</div></div><span class="pill g">Insurance</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ECOSYSTEM GRID -->
+<section class="ecosystem pad" id="ecosystem">
+  <div class="wrap">
+    <div class="lbl-row center reveal"><p class="ey">The whole ecosystem</p></div>
+    <h2 class="center-head reveal" data-d="1">One platform. Built for everyone in healthcare.</h2>
+    <p class="lede center-lede reveal" data-d="2">Auriva isn't clinic software with extras bolted on. It's one system, native-built for every role in care — starting with independent practitioners today.</p>
+    <div class="ecogrid">
+      <a class="ecocard eco-pat reveal" data-d="0" href="#patients"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><h3>Patients <span class="live-dot"></span></h3><p>Find doctors, book, pay and keep every record for life.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="0" href="#providers"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span><h3>Doctors <span class="live-dot"></span></h3><p>Run a full practice — consults, prescriptions, billing.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="1" href="#scale"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14"/></svg></span><h3>Clinics <span class="soon-mini">Soon</span></h3><p>Many doctors, one front desk, one shared calendar.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="1" href="#scale"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M18 21V9h2a2 2 0 012 2v10M9 7h2M9 11h2"/></svg></span><h3>Hospitals <span class="soon-mini">Soon</span></h3><p>Departments, admissions, round-the-clock operations.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="2" href="#scale"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><h3>Labs <span class="soon-mini">Soon</span></h3><p>Orders in, samples tracked, reports out — instantly.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="2" href="#scale"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/><path d="M8 8l6 6"/></svg></span><h3>Pharmacy <span class="soon-mini">Soon</span></h3><p>Prescriptions arrive ready to dispense, stock managed.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="3" href="#scale"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><h3>Insurance <span class="soon-mini">Soon</span></h3><p>Claims and cashless authorization, routed in real time.</p></a>
+      <a class="ecocard eco-prov reveal" data-d="3" href="#connected"><div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5l3 8M16.5 7.5l-3 8"/></svg></span><h3>Networks <span class="soon-mini">Soon</span></h3><p>Referrals that flow across the whole connected system.</p></a>
+    </div>
+  </div>
+</section>
+
+<!-- FRAGMENTATION / MISSION -->
+<section class="mission pad" id="mission">
+  <div class="wrap">
+    <div class="lbl-row reveal"><p class="ey">Why we exist</p></div>
+    <h2 class="reveal" data-d="1">Healthcare is fragmented. <em>Auriva connects it.</em></h2>
+    <p class="lede reveal" data-d="2">Patients use one app, doctors use another. Labs, hospitals and insurers each run on isolated, legacy silos that never talk to each other. Auriva is the unified infrastructure that connects them all into a single, seamless flow of care.</p>
+    <div class="frag reveal" data-d="3">
+      <span class="silo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Patients</span>
+      <span class="silo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Doctors</span>
+      <span class="silo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Labs</span>
+      <span class="silo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Hospitals</span>
+      <span class="silo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Insurers</span>
+      <span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <span class="join"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg>One Auriva</span>
+    </div>
+    <div class="sig reveal" data-d="3"><span class="d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Built alongside practicing doctors, therapists and their patients across India.</div>
+  </div>
+</section>
+
+<!-- CONNECTED / GOLDEN THREAD -->
+<section class="connected pad" id="connected">
+  <div class="wrap">
+    <div class="lbl-row center reveal"><p class="ey">Connected healthcare</p></div>
+    <h2 class="center-head reveal" data-d="1">One prescription. The whole system moves.</h2>
+    <p class="lede center-lede reveal" data-d="2">The magic isn't any single tool — it's that they're connected. Watch a single visit flow through the entire ecosystem, without a phone call, a fax, or a re-typed form.</p>
+    <div class="thread reveal" data-d="1" id="thread">
+      <div class="track"></div><div class="fill" id="threadfill"></div>
+      <div class="steps">
+        <div class="step" data-s="0"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div><div class="who">Patient</div><div class="act">books online</div></div>
+        <div class="step" data-s="1"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></div><div class="who">Doctor</div><div class="act">consults</div></div>
+        <div class="step" data-s="2"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/><path d="M8 8l6 6"/></svg></div><div class="who">Prescription</div><div class="act">auto-generated</div></div>
+        <div class="step" data-s="3"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="who">Lab order</div><div class="act">routed instantly</div></div>
+        <div class="step" data-s="4"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></div><div class="who">Lab</div><div class="act">uploads report</div></div>
+        <div class="step" data-s="5"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/></svg></div><div class="who">Pharmacy</div><div class="act">prepares meds</div></div>
+        <div class="step" data-s="6"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></div><div class="who">Insurance</div><div class="act">claim processed</div></div>
+        <div class="step" data-s="7"><div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div><div class="who">Patient</div><div class="act">notified securely</div></div>
+      </div>
+    </div>
+    <p class="thread-note reveal">No phone calls. No faxes. No re-typing. Just care, flowing.</p>
+  </div>
+</section>
+
+<!-- PROVIDERS -->
+<section class="prov-sec pad" id="providers">
+  <div class="wrap">
+    <div class="aud-head reveal"><span class="tab prov"><span class="d"></span>For healthcare providers</span></div>
+    <div class="head">
+      <h2 class="reveal" data-d="1">Your practice, quietly handling the busywork.</h2>
+      <p class="lede reveal" data-d="2">An ordinary Monday, taking care of itself — with the whole ecosystem working behind every tap.</p>
+    </div>
+    <div class="timeline">
+      <div class="rail" id="rail">
+        <div class="rnode on" data-i="0"><span class="dot"></span><span class="t">8:30 AM</span></div>
+        <div class="rnode" data-i="1"><span class="dot"></span><span class="t">10:15 AM</span></div>
+        <div class="rnode" data-i="2"><span class="dot"></span><span class="t">12:00 PM</span></div>
+        <div class="rnode" data-i="3"><span class="dot"></span><span class="t">5:00 PM</span></div>
+      </div>
+      <div class="moments">
+        <div class="moment reveal" data-i="0" id="m0"><div class="time">8:30 AM</div><h3>Reception checks your first patient in.</h3><p>They arrive, the front desk taps once, and their whole history — past visits, allergies, last prescription — is waiting for you.</p><div class="mcard"><div class="top"><svg viewBox="0 0 24 24" fill="none" stroke="var(--pine)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><span class="k">Checked in by reception</span><span class="k2">Handoff</span></div><div class="bd"><div class="row"><span class="avatar" style="width:44px;height:44px">PS</span><div style="flex:1"><div class="nm">Priya Sharma</div><div class="mt">32 · Lower back pain · follow-up</div></div><span class="pill a">Waiting 4 min</span></div></div></div></div>
+        <div class="moment reveal" data-i="1" id="m1"><div class="time">10:15 AM</div><h3>You consult — the lab order sends itself.</h3><p>Mid-consult you order a blood test and it routes to the connected lab instantly. Payment is collected by UPI before the patient leaves the room.</p><div class="mcard"><div class="top"><svg viewBox="0 0 24 24" fill="none" stroke="var(--pine)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg><span class="k">Lab order · sent to PathLabs</span><span class="k2">Auto-routed</span></div><div class="bd"><div class="row"><div style="flex:1"><div class="nm">CBC + Vitamin D</div><div class="mt" style="margin-top:4px"><span class="upi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M20 6L9 17l-5-5"/></svg>Consult paid · ₹600 UPI</span></div></div><span class="amt" style="font-size:16px;color:var(--pine-deep)">Sent</span></div></div></div></div>
+        <div class="moment reveal" data-i="2" id="m2"><div class="time">12:00 PM</div><h3>Next week fills itself.</h3><p>While you saw patients, three of them booked their next visit from your link — and one insurance pre-auth cleared in the background.</p><div class="mcard"><div class="top"><svg viewBox="0 0 24 24" fill="none" stroke="var(--pine)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z"/></svg><span class="k">Booked online · Tue 15</span><span class="k2">Pre-auth ✓</span></div><div class="bd"><div class="row" style="gap:10px"><div style="flex:1"><div class="mt" style="margin-bottom:6px;font-weight:600">3 new bookings this morning</div><div class="slotpair"><span class="slotpill on">9:30</span><span class="slotpill on">11:00</span><span class="slotpill on">4:30</span></div></div></div></div></div></div>
+        <div class="moment reveal" data-i="3" id="m3"><div class="time">5:00 PM</div><h3>Your day, already totalled.</h3><p>Every visit, every rupee, every claim reconciled — across cash, UPI and cashless — without touching a calculator.</p><div class="mcard"><div class="top"><svg viewBox="0 0 24 24" fill="none" stroke="var(--pine)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M3 3v18h18M7 14l3-3 3 3 5-6"/></svg><span class="k">Today · collected</span></div><div class="bd"><div class="row"><div style="flex:1"><div class="nm" style="font-size:24px">₹8,400</div><div class="mt">14 visits · 11 UPI/cash · 3 cashless</div></div></div><div class="barline" style="margin-top:14px"><i style="width:86%"></i></div></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PATIENTS -->
+<section class="patients pad" id="patients">
+  <div class="wrap pin">
+    <div>
+      <div class="aud-head reveal"><span class="tab pat"><span class="d"></span>For patients</span></div>
+      <h2 class="reveal" data-d="1">Care that remembers you.</h2>
+      <p class="lede reveal" data-d="2">Auriva isn't only for the clinic. It's for you — the person being cared for. One thread, from the moment you book to a lifetime of records that follow you everywhere.</p>
+      <div class="plife">
+        <div class="lifeitem reveal" data-d="0"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><div><h3>Book instantly</h3><p>Find a trusted doctor and pick a slot in seconds — no app, no phone call.</p></div></div>
+        <div class="lifeitem reveal" data-d="0"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span><div><h3>Get smart local reminders</h3><p>A friendly WhatsApp nudge before your visit — with directions to the door.</p></div></div>
+        <div class="lifeitem reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><div><h3>Walk into zero-wait check-in</h3><p>You're expected. No forms, no queue — the clinic already has your details.</p></div></div>
+        <div class="lifeitem reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg></span><div><h3>Pay securely by UPI</h3><p>Scan, pay, done — your receipt is instant, no fumbling for change.</p></div></div>
+        <div class="lifeitem reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span><div><h3>Keep everything, for life</h3><p>Prescriptions and lab reports arrive automatically and stay yours forever — for you and your whole family.</p></div></div>
+      </div>
+      <div class="cta reveal" data-d="2"><button class="btn btn-honey" data-go="patients">Find a doctor near you<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line">The patient app · soon</button></div>
+    </div>
+    <div class="phone-stage reveal" data-d="1">
+      <div class="phone">
+        <div class="phscr">
+          <div class="phtop"><div class="phscl"><span>9:41</span><span>▮▮▮ ▲ ▮</span></div><div class="phhi">Hello, Priya 👋</div><div class="phsub">Your health, all in one place</div></div>
+          <div class="phbody">
+            <p class="pl">Your next visit</p>
+            <div class="phnext"><div class="r"><span class="avatar" style="width:40px;height:40px;background:rgba(255,255,255,.16);color:#fff;border-radius:12px">AR</span><div><div class="nm">Dr. Anaya Rao</div><div class="mt">Tomorrow · 10:30 AM · HSR Layout</div></div></div></div>
+            <div class="phtiles">
+              <div class="phtile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><div class="tn">Records</div><div class="tm">3 visits</div></div>
+              <div class="phtile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/></svg></span><div class="tn">Prescriptions</div><div class="tm">2 active</div></div>
+              <div class="phtile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><div class="tn">Lab reports</div><div class="tm">1 new</div></div>
+              <div class="phtile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div class="tn">Family</div><div class="tm">4 people</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wa"><div class="h"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2z"/></svg>Auriva · WhatsApp</div><div class="m">Hi Priya 👋 Reminder: your visit with Dr. Rao is tomorrow at <b>10:30 AM</b>. Reply 1 to confirm.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORM ARCHITECTURE -->
+<section class="arch pad" id="architecture">
+  <div class="wrap">
+    <div class="lbl-row reveal"><p class="ey">The platform</p><span class="ln"></span></div>
+    <h2 class="reveal" data-d="1" style="max-width:20ch">One operating system. Modular by design.</h2>
+    <p class="lede reveal" data-d="2" style="margin-top:14px">Like the best platforms, Auriva is built as clean, composable layers — so every new edition plugs into the same core, and nothing is ever rebuilt.</p>
+    <div class="archgrid">
+      <div class="archcol reveal" data-d="0">
+        <div class="ch"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span><div><div class="t">Clinical Core</div><div class="s">How care gets delivered</div></div></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>Scheduling &amp; queue<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span>EMR &amp; records<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/></svg></span>Prescriptions<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg></span>Billing &amp; UPI<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5zM1 5h15v14H1z"/></svg></span>Teleconsults<span class="st soon">Soon</span></div>
+      </div>
+      <div class="archcol reveal" data-d="1">
+        <div class="ch"><span class="ic" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><div><div class="t">Patient Vault</div><div class="s">The care that follows you</div></div></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4"/></svg></span>Appointments<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></span>Health records<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/></svg></span>Wallet &amp; payments<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span>Family accounts<span class="st live">Live</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span>Lab reports<span class="st live">Live</span></div>
+      </div>
+      <div class="archcol reveal" data-d="2">
+        <div class="ch"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M18 21V9h2a2 2 0 012 2v10"/></svg></span><div><div class="t">Enterprise Rails</div><div class="s">When you scale up</div></div></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></span>Department routing<span class="st soon">Soon</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14"/></svg></span>Admissions &amp; beds<span class="st soon">Soon</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4v10l8 4 8-4z"/></svg></span>Inventory systems<span class="st soon">Soon</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span>Insurance cashless<span class="st soon">Soon</span></div>
+        <div class="modrow"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/></svg></span>Referral networks<span class="st soon">Soon</span></div>
+      </div>
+    </div>
+    <p class="archnote reveal">Every module speaks the same language — so a prescription written in a solo clinic is already understood by a lab, a pharmacy and an insurer.</p>
+  </div>
+</section>
+
+<!-- BUILT TO SCALE -->
+<section class="scale pad" id="scale">
+  <div class="wrap">
+    <div class="lbl-row center reveal"><p class="ey">Built to scale</p></div>
+    <h2 class="head reveal" data-d="1">One platform. Your whole journey.</h2>
+    <p class="lede center-lede reveal" data-d="2">Start as a solo practitioner today. The day you become a clinic, a hospital, a lab or a whole network — it's the same login, the same data, the same calm. You never switch software again.</p>
+    <div class="scalechecks">
+      <span class="schk first reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Solo Practices<span class="now">Live</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Polyclinics<span class="soon">Soon</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Multi-location Groups<span class="soon">Soon</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Hospitals<span class="soon">Soon</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Diagnostic Networks<span class="soon">Soon</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pharmacies<span class="soon">Soon</span></span>
+      <span class="schk reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Insurance Providers<span class="soon">Soon</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing pad" id="pricing">
+  <div class="wrap">
+    <div class="lbl-row reveal"><p class="ey">Simple pricing</p><span class="ln"></span></div>
+    <h2 class="reveal" data-d="1">Start free. Pay only when you grow.</h2>
+    <p class="lede reveal" data-d="2">No setup fees, no lock-in, no surprises. And for patients, Auriva is always free.</p>
+    <div class="pricegrid">
+      <div class="pcard feature reveal" data-d="1">
+        <span class="tag">Auriva Solo Practice</span>
+        <div class="price">Free<small> forever</small></div>
+        <p class="sub">Everything one practitioner needs to run a calm, full clinic today.</p>
+        <ul class="plist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited patients &amp; appointments</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Your own online booking page</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Consults, prescriptions &amp; UPI billing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>WhatsApp &amp; SMS reminders</li>
+        </ul>
+        <div class="go"><button class="btn" data-go="provider">Start free — 2 minutes<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+      </div>
+      <div class="pcard plain reveal" data-d="2">
+        <span class="tag" style="color:var(--pine-deep)">As you grow</span>
+        <div class="price">₹999<small>/mo</small></div>
+        <p class="sub">When you add a second doctor or a front desk — everything in Solo, plus your team.</p>
+        <ul class="plist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Add doctors &amp; reception staff</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Shared clinic calendar &amp; queue</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Practice insights &amp; reports</li>
+        </ul>
+        <button class="btn btn-line" data-go="pricing">See full pricing</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq pad" id="faq">
+  <div class="wrap">
+    <div class="lbl-row reveal"><p class="ey">Questions</p></div>
+    <h2 class="reveal" data-d="1">Everything you're wondering.</h2>
+    <div class="qs">
+      <details class="q reveal"><summary>Is Auriva for me if I'm a solo practitioner? <span class="pls"></span></summary><div class="a">Yes — Auriva Solo Practice is live today and free forever. You get the full platform, but only ever see the part you need. Setup takes about two minutes.</div></details>
+      <details class="q reveal"><summary>What makes it a "platform" and not just clinic software? <span class="pls"></span></summary><div class="a">Everything connects. A prescription you write flows to labs, pharmacies and insurers on the same system — no faxes, no re-typing. As new editions launch (hospitals, labs, pharmacy), they plug into the same core you already use.</div></details>
+      <details class="q reveal"><summary>What can patients do on Auriva? <span class="pls"></span></summary><div class="a">Find and book doctors, get WhatsApp reminders, pay by UPI, and keep every prescription, record and lab report for life — for themselves and their family. Always free.</div></details>
+      <details class="q reveal"><summary>What happens when I grow into a clinic or hospital? <span class="pls"></span></summary><div class="a">Nothing breaks. The same login and data simply unlock more — a shared calendar, more doctors, departments, admissions. You never migrate to different software.</div></details>
+      <details class="q reveal"><summary>Is it built for India? <span class="pls"></span></summary><div class="a">Deeply. UPI payments, WhatsApp reminders, rupee billing and cashless insurance rails — shaped with practitioners here, not translated after the fact.</div></details>
+      <details class="q reveal"><summary>Who owns the data? <span class="pls"></span></summary><div class="a">You do — provider and patient both. Export anytime, zero lock-in, and a tamper-evident log of every change.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final pad">
+  <div class="wrap">
+    <div class="box reveal">
+      <h2>The operating system for all of healthcare. Start where you are today.</h2>
+      <div class="cta">
+        <button class="btn" style="background:#fff;color:var(--pine-deep)" data-go="provider">Start free — I'm a provider<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button class="btn talk" data-go="patients">Find a doctor — I'm a patient</button>
+      </div>
+      <p class="mt">No card required · Live in 2 minutes · Built in India, for Indian healthcare</p>
+    </div>
+  </div>
+</section>
+</section><!-- /page home -->
+
+<!-- ============ PAGE: PRODUCTS ============ -->
+<section class="page" data-route="products">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Products</b> · The Auriva platform</span>
+    <h1>One platform. <span class="glow">Every kind of practice.</span></h1>
+    <p class="lede">Auriva grows from a single practitioner to an entire connected network — on the same foundation, the same data, the same login. Start where you are today. Never migrate again.</p>
+    <div class="cta"><button class="btn btn-primary" data-go="pricing">Start free<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line" data-go="patients">For patients</button></div>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row reveal"><span class="ey">Live today</span><span class="ln"></span></div>
+      <div class="roster">
+        <div class="prodcard reveal">
+          <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3a3 3 0 003 3h1a3 3 0 013 3v9a3 3 0 006 0v-2"/><circle cx="20" cy="10" r="2"/></svg></span>
+          <div><h3>Auriva Solo Practice <span class="livetag">Live</span></h3>
+          <p>Everything an independent doctor needs to run a full clinic — appointments, a live queue, consultation notes, prescriptions, billing and a patient portal. Set up in an afternoon.</p>
+          <button class="btn btn-line btn-sm" style="margin-top:14px" data-go="provider">See the workspace →</button></div>
+        </div>
+        <div class="prodcard soon reveal" data-d="1">
+          <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M9 10a3 3 0 106 0 3 3 0 00-6 0z"/></svg></span>
+          <div><h3>Auriva Multi-Doctor <span class="soontag">Soon</span></h3>
+          <p>Shared schedules, cross-functional queues and multi-tier billing for practices with more than one doctor and a front desk.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="lbl-row reveal"><span class="ey">On the roadmap</span><span class="ln"></span></div>
+      <p class="lede reveal" style="margin-bottom:8px">The same platform expands outward — every module shares one patient record, one identity, one operational spine. Nothing to re-buy, nothing to re-migrate.</p>
+      <div class="roster">
+        <div class="prodcard soon reveal"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l5-3 5 3v13M14 21v-8l6 3v5"/></svg></span><div><h3>Auriva Clinic Groups <span class="soontag">Soon</span></h3><p>Centralized operations, reporting and revenue across multiple locations.</p></div></div>
+        <div class="prodcard soon reveal" data-d="1"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M18 21V9h2a2 2 0 012 2v10M9 7h2M9 11h2"/></svg></span><div><h3>Auriva Hospital <span class="soontag">Soon</span></h3><p>Departments, admissions, room scheduling and enterprise operations.</p></div></div>
+        <div class="prodcard soon reveal"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V3"/></svg></span><div><h3>Auriva Labs <span class="soontag">Soon</span></h3><p>Diagnostic orders, sample tracking and reports delivered straight to the record.</p></div></div>
+        <div class="prodcard soon reveal" data-d="1"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l7-7a4 4 0 015.5 5.5l-7 7a4 4 0 01-5.5-5.5z"/><path d="M8 8l6 6"/></svg></span><div><h3>Auriva Pharmacy <span class="soontag">Soon</span></h3><p>E-prescriptions, dispensing and inventory that talks to the doctor.</p></div></div>
+        <div class="prodcard soon reveal"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><div><h3>Auriva Insurance <span class="soontag">Soon</span></h3><p>Real-time claims routing and cashless authorizations at the counter.</p></div></div>
+        <div class="prodcard soon reveal" data-d="1"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5l3 8M16.5 7.5l-3 8"/></svg></span><div><h3>Auriva Networks <span class="soontag">Soon</span></h3><p>Cross-system referrals that carry the full record with them.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">Why one platform</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">Buy once. Grow forever.</h2>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg></span><h3>Never migrate again</h3><p>Add a second doctor, a location, a lab — your patients, history and settings come with you. No export, no re-training.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M4 6h16M4 18h10"/></svg></span><h3>One patient record</h3><p>The prescription a doctor writes is the one the pharmacy fills and the record the patient sees. One truth, everywhere.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg></span><h3>Built for India</h3><p>₹ billing, UPI, WhatsApp reminders and workflows shaped around how Indian clinics actually run.</p></div>
+      </div>
+    </div>
+  </section>
+</section><!-- /page products -->
+
+<!-- ============ PAGE: PROVIDER EXPERIENCE ============ -->
+<section class="page" data-route="provider">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>For Providers</b> · Auriva Solo Practice</span>
+    <h1>Run your whole clinic <span class="glow">from one calm screen.</span></h1>
+    <p class="lede">No front desk, no software team, no chaos. Auriva Solo Practice gives an independent doctor a live queue, consultation notes, prescriptions, billing and a patient portal — working together, all day.</p>
+    <div class="cta"><button class="btn btn-primary" data-go="pricing">Start free<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line" data-go="products">See the full platform</button></div>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="split">
+        <div class="txt reveal">
+          <span class="ey">Your morning</span>
+          <h2>The day is already organised when you arrive.</h2>
+          <p class="lede">Bookings, walk-ins and follow-ups land in one live queue — sorted, timed and ready. You just call the next patient.</p>
+          <div class="flist">
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Live queue</b><p>See who's waiting, who's next and who's running late — at a glance.</p></div></div>
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Online booking</b><p>Patients book from your public profile. It drops straight into your day.</p></div></div>
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>WhatsApp reminders</b><p>Fewer no-shows, without you lifting a finger.</p></div></div>
+          </div>
+        </div>
+        <div class="mock reveal" data-d="1">
+          <div class="bar"><i></i><i></i><i></i><span class="t">Today · Dr. Anjali Rao</span></div>
+          <div class="mrow"><span class="av">RK</span><div><div class="nm">Rohan Kulkarni</div><div class="mt">10:15 · Follow-up</div></div><span class="pill" style="background:var(--pine-tint);color:var(--pine)">Now</span></div>
+          <div class="mrow"><span class="av h">SP</span><div><div class="nm">Sunita Patil</div><div class="mt">10:30 · New patient</div></div><span class="pill" style="background:var(--honey-soft);color:var(--honey-deep)">Waiting</span></div>
+          <div class="mrow"><span class="av">MI</span><div><div class="nm">Mohammed Iqbal</div><div class="mt">10:45 · Walk-in</div></div><span class="pill" style="background:#E4F2E7;color:#2E7B44">Checked in</span></div>
+        </div>
+      </div>
+
+      <div class="split rev">
+        <div class="txt reveal">
+          <span class="ey">In the room</span>
+          <h2>Consult, prescribe and bill without breaking flow.</h2>
+          <p class="lede">Notes, prescriptions and the patient's history sit on one screen. Finish the visit, collect payment, and the record updates itself.</p>
+          <div class="flist">
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Consultation notes &amp; prescriptions</b><p>Reusable templates, printed or shared to the patient in one tap.</p></div></div>
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Billing &amp; UPI collection</b><p>Line-item invoices and instant ₹ collection at the counter.</p></div></div>
+            <div class="li"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Clinical timeline</b><p>Every past visit, prescription and report in one scrollable history.</p></div></div>
+          </div>
+        </div>
+        <div class="mock reveal" data-d="1">
+          <div class="bar"><i></i><i></i><i></i><span class="t">Consultation · Sunita Patil</span></div>
+          <div class="mrow" style="align-items:flex-start"><span class="av h">Rx</span><div><div class="nm">Prescription</div><div class="mt">Amoxicillin 500mg · 1-0-1 · 5 days</div><div class="mt">Paracetamol 650mg · SOS</div></div></div>
+          <div class="mrow"><span class="av">₹</span><div><div class="nm">Invoice · ₹600</div><div class="mt">Consultation · Follow-up in 7 days</div></div><span class="pill" style="background:#E4F2E7;color:#2E7B44">Paid · UPI</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">What you get</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">A complete clinic, out of the box.</h2>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><h3>Appointments &amp; queue</h3><p>Bookings, walk-ins, follow-ups and a real-time waiting list in one view.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span><h3>Notes &amp; prescriptions</h3><p>Structured consultation records and printable Rx with reusable templates.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><h3>Billing &amp; payments</h3><p>Line-item invoices, ₹ collection and daily revenue at a glance.</p></div>
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span><h3>Public clinic profile</h3><p>A shareable page where patients find you and book online, 24/7.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><h3>Patient portal</h3><p>Patients see their prescriptions, reports, bills and next visit.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/></svg></span><h3>Reminders</h3><p>Automatic WhatsApp confirmations and visit reminders.</p></div>
+      </div>
+      <div style="text-align:center;margin-top:36px" class="reveal"><button class="btn btn-primary" data-go="pricing">Start free — set up today<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>
+  </section>
+</section><!-- /page provider -->
+
+<!-- ============ PAGE: PATIENT EXPERIENCE ============ -->
+<section class="page" data-route="patients">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>For Patients</b> · Your health, in one place</span>
+    <h1>Your whole health story, <span class="glow" style="color:var(--honey-deep)">in your pocket.</span></h1>
+    <p class="lede">Book your doctor, keep every prescription and report, and care for your family — all in one calm, private place. No more paper files, no more lost reports.</p>
+    <div class="cta"><button class="btn btn-honey">Find a doctor<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line" data-go="provider">Are you a doctor?</button></div>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey hy">A calmer way to get care</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">Everything you need, nothing you dread.</h2>
+      <div class="featgrid">
+        <div class="fcard2 h reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><h3>Book in seconds</h3><p>Find your doctor, pick a slot, get a WhatsApp confirmation. No calls, no waiting on hold.</p></div>
+        <div class="fcard2 h reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span><h3>All your records</h3><p>Prescriptions, lab reports and bills, saved forever — ready when any doctor asks.</p></div>
+        <div class="fcard2 h reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9"/></svg></span><h3>Family health</h3><p>Manage appointments and records for your parents and children from your own account.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="split">
+        <div class="txt reveal">
+          <span class="ey hy">Your health timeline</span>
+          <h2>Never lose a report again.</h2>
+          <p class="lede">Every visit adds to your private timeline — the prescription, the diagnosis, the lab result. It's all there, in order, the next time you need it.</p>
+          <div class="flist">
+            <div class="li"><span class="ck" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>One timeline, every doctor</b><p>Visits from any Auriva clinic land in the same history.</p></div></div>
+            <div class="li"><span class="ck" style="background:var(--honey-soft);color:var(--honey-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Private by default</b><p>Your records are yours. You choose what to share, and with whom.</p></div></div>
+          </div>
+        </div>
+        <div class="mock reveal" data-d="1">
+          <div class="bar"><i></i><i></i><i></i><span class="t">Priya's health · Timeline</span></div>
+          <div class="mrow"><span class="av h">Rx</span><div><div class="nm">Dr. Anjali Rao</div><div class="mt">10 Jul · Prescription + follow-up</div></div></div>
+          <div class="mrow"><span class="av">Lab</span><div><div class="nm">PathLabs · CBC</div><div class="mt">8 Jul · Report ready</div></div><span class="pill" style="background:#E4F2E7;color:#2E7B44">View</span></div>
+          <div class="mrow"><span class="av h">₹</span><div><div class="nm">Invoice · ₹600</div><div class="mt">10 Jul · Paid</div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="wrap" style="text-align:center">
+      <h2 class="center-head reveal">Your care, connected.</h2>
+      <p class="center-lede reveal">When your doctor's clinic runs on Auriva, everything just works — the booking, the reminder, the prescription, the report. You simply get better care.</p>
+      <div style="margin-top:30px" class="reveal"><button class="btn btn-honey">Find a doctor near you<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>
+  </section>
+</section><!-- /page patients -->
+
+<!-- ============ PAGE: PRICING ============ -->
+<section class="page" data-route="pricing">
+  <div class="phero"><div class="wrap"><div class="phero-in wide reveal" style="text-align:center;margin:0 auto">
+    <span class="crumb" style="justify-content:center"><b>Pricing</b> · Simple &amp; honest</span>
+    <h1 style="max-width:20ch;margin-left:auto;margin-right:auto">Free to start. <span class="glow">Pay only when you grow.</span></h1>
+    <p class="lede" style="margin-left:auto;margin-right:auto">Auriva Solo Practice is free forever for independent practitioners — the whole product, no feature locks. You only pay when you add a team. And for patients, Auriva is always free.</p>
+  </div></div></div>
+
+  <section class="pad" style="padding-top:clamp(20px,2vw,32px)">
+    <div class="wrap">
+      <div class="pricegrid" style="max-width:920px;margin:0 auto">
+        <div class="pcard feature reveal">
+          <span class="tag">Auriva Solo Practice</span>
+          <div class="price">Free<small> forever</small></div>
+          <p class="sub">Everything one practitioner needs to run a calm, full clinic — today.</p>
+          <ul class="plist">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Unlimited patients &amp; appointments</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Your own online booking page</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Consults, prescriptions &amp; UPI billing</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Patient portal, records &amp; timeline</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>WhatsApp &amp; SMS reminders</li>
+          </ul>
+          <div class="go"><button class="btn" data-go="provider">Start free — 2 minutes<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+        </div>
+        <div class="pcard plain reveal" data-d="1">
+          <span class="tag" style="color:var(--pine-deep)">As you grow</span>
+          <div class="price">₹999<small>/mo</small></div>
+          <p class="sub">When you add a second doctor or a front desk — everything in Solo, plus your team.</p>
+          <ul class="plist">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Everything in Solo Practice</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Add doctors &amp; reception staff</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Shared clinic calendar &amp; queue</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Practice insights &amp; reports</li>
+          </ul>
+          <div class="go"><button class="btn btn-line" data-go="provider">Talk to us</button></div>
+        </div>
+      </div>
+      <p class="reveal" style="text-align:center;color:var(--muted);font-size:13.5px;margin-top:26px">Multi-doctor, clinic groups and hospital plans arrive as those editions go live — on the same account, at the same login. You never migrate.</p>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">Questions</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">Pricing, answered.</h2>
+      <div class="qs" style="max-width:760px;margin:clamp(28px,3vw,40px) auto 0">
+        <details class="q reveal"><summary>Is Solo Practice really free? <span class="pls"></span></summary><div class="a">Yes — free forever for one practitioner, with the complete product and no feature locks. No card, no trial clock. You only pay when you add a team.</div></details>
+        <details class="q reveal"><summary>Do I pay per patient or per appointment? <span class="pls"></span></summary><div class="a">Never. Unlimited patients and appointments are included. There are no usage meters and no per-feature upsells.</div></details>
+        <details class="q reveal"><summary>What does the ₹999/mo plan add? <span class="pls"></span></summary><div class="a">Everything in Solo Practice, plus a team — additional doctors and reception staff, a shared clinic calendar and queue, and practice insights. It kicks in only when you grow beyond a solo practice.</div></details>
+        <details class="q reveal"><summary>What happens when I add a second doctor? <span class="pls"></span></summary><div class="a">You move onto the team plan on the same account — same login, same patients, same history. Nothing to export, nothing to re-learn.</div></details>
+        <details class="q reveal"><summary>Can I leave and take my data? <span class="pls"></span></summary><div class="a">Anytime. Export your records whenever you like — zero lock-in. It's your practice and your patients' data.</div></details>
+        <details class="q reveal"><summary>Is Auriva free for patients too? <span class="pls"></span></summary><div class="a">Always. Booking, reminders, records, prescriptions and family health are free for patients, forever.</div></details>
+      </div>
+    </div>
+  </section>
+</section><!-- /page pricing -->
+
+<!-- ============ PAGE: SOLUTIONS ============ -->
+<section class="page" data-route="solutions">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Solutions</b> · Built around your specialty</span>
+    <h1>Software that fits <span class="glow">the way you practise.</span></h1>
+    <p class="lede">Auriva Solo Practice adapts to your profession — the fields you chart, the way you prescribe, the follow-ups you run. One platform, shaped to your specialty.</p>
+    <div class="cta"><button class="btn btn-primary" data-go="provider">Start free<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line" data-go="pricing">See pricing</button></div>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row reveal"><span class="ey">Live today</span><span class="ln"></span></div>
+      <div class="profgrid">
+        <div class="profcard reveal" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0116 0M8 12v4a4 4 0 008 0v-4"/></svg></span><h3>Physiotherapists</h3><p>Session plans, exercise notes and recurring follow-ups.</p></div>
+        <div class="profcard reveal" data-d="1" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-3-3-8-1-8 4 0 6 4 10 5 10s1-3 3-3 2 3 3 3 5-4 5-10c0-5-5-7-8-4z"/></svg></span><h3>Dentists</h3><p>Tooth charts, treatment plans and staged billing.</p></div>
+        <div class="profcard reveal" data-d="2" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a4 4 0 018-1 4 4 0 018 1c0 5.5-9 10-9 10z"/></svg></span><h3>Dietitians</h3><p>Diet plans, progress tracking and check-in reminders.</p></div>
+        <div class="profcard reveal" data-d="3" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18a6 6 0 116 0M9 18v2a3 3 0 006 0v-2"/></svg></span><h3>Psychologists</h3><p>Private notes, session cadence and gentle reminders.</p></div>
+        <div class="profcard reveal" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1118 0 9 9 0 01-18 0zM8 10h.01M16 10h.01M8 15c1 1.5 7 1.5 8 0"/></svg></span><h3>Dermatologists</h3><p>Photo records, procedure notes and package billing.</p></div>
+        <div class="profcard reveal" data-d="1" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 013 3v6a3 3 0 01-6 0V5a3 3 0 013-3zM6 11a6 6 0 0012 0M12 17v4"/></svg></span><h3>Speech Therapists</h3><p>Goal tracking, session logs and parent updates.</p></div>
+        <div class="profcard reveal" data-d="2" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span><h3>Orthopedics</h3><p>Imaging references, procedure notes and recovery plans.</p></div>
+        <div class="profcard reveal" data-d="3" data-go="provider"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><h3>More every month</h3><p>New specialties are added continuously. Yours next.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">Why it fits</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">One product. Configured, not customised.</h2>
+      <p class="center-lede reveal">You don't buy a different system for your specialty — you switch on the parts that matter to you. Everything else stays out of your way.</p>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><h3>Specialty templates</h3><p>Consultation and prescription templates tuned to how your field charts.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg></span><h3>Follow-up rhythms</h3><p>Recurring visits and check-ins that match your treatment cycles.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><h3>Billing that suits you</h3><p>Single visits, packages or staged plans — priced the way your work is.</p></div>
+      </div>
+    </div>
+  </section>
+</section><!-- /page solutions -->
+
+<!-- ============ PAGE: SECURITY & TRUST ============ -->
+<section class="page" data-route="security">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Security &amp; Trust</b> · Health data, handled with care</span>
+    <h1>Your patients trust you. <span class="glow">You can trust Auriva.</span></h1>
+    <p class="lede">Health records are among the most sensitive data there is. We treat them that way — with strong protection, clear ownership and a transparent trail of every change.</p>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="split">
+        <div class="txt reveal">
+          <span class="ey">Our commitments</span>
+          <h2>Built to protect, by default.</h2>
+          <p class="lede">Security isn't a settings page you have to find. It's how Auriva is built from the ground up.</p>
+        </div>
+        <div class="seclist reveal" data-d="1">
+          <div class="secpt"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span><div><b>Encrypted in transit and at rest</b><p>Data is protected on the wire and in storage, so records stay private end to end.</p></div></div>
+          <div class="secpt"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg></span><div><b>You own your data</b><p>Provider and patient both. Export anytime, delete anytime — zero lock-in.</p></div></div>
+          <div class="secpt"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span><div><b>Tamper-evident audit trail</b><p>Every access and change is logged, so there's always a clear record of what happened.</p></div></div>
+          <div class="secpt"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div><b>Role-based access</b><p>Doctors, reception and patients each see only what they should — nothing more.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">For patients</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">Your health records are yours.</h2>
+      <p class="center-lede reveal">You decide what to share and with whom. Your history follows you between doctors only when you choose — and it's private the rest of the time.</p>
+      <div class="mstrip">
+        <div class="metric reveal"><div class="big">You</div><div class="cap">own every record</div></div>
+        <div class="metric reveal" data-d="1"><div class="big">Any&nbsp;time</div><div class="cap">export or delete</div></div>
+        <div class="metric reveal" data-d="2"><div class="big">Full</div><div class="cap">access log</div></div>
+        <div class="metric reveal" data-d="3"><div class="big">India</div><div class="cap">built &amp; hosted for</div></div>
+      </div>
+      <p class="reveal" style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:22px;max-width:60ch;margin-left:auto;margin-right:auto">Auriva is being built to align with India's data-protection expectations for healthcare. We'll publish detailed compliance documentation as the platform matures.</p>
+    </div>
+  </section>
+</section><!-- /page security -->
+
+<!-- ============ PAGE: ABOUT ============ -->
+<section class="page" data-route="about">
+  <div class="phero"><div class="wrap"><div class="phero-in wide reveal">
+    <span class="crumb"><b>About</b> · Why we're building Auriva</span>
+    <h1>Healthcare is fragmented. <span class="glow">We're here to connect it.</span></h1>
+    <p class="lede">A patient sees a doctor, gets a paper prescription, carries it to a pharmacy, walks a report to a lab, and files a claim by hand. Every step starts from scratch. Auriva exists to make care flow as one connected story — starting with the independent practitioner, growing to the whole network.</p>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">What we believe</span><span class="ln"></span></div>
+      <h2 class="center-head reveal">The principles behind the product.</h2>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><h3>Care comes first</h3><p>Every feature has to make care better or a practice calmer. If it doesn't, we don't build it.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M4 6h16M4 18h10"/></svg></span><h3>One platform, not many tools</h3><p>Grow from solo doctor to hospital on the same foundation. Never migrate, never re-buy.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><h3>Built for India</h3><p>UPI, WhatsApp, rupee billing and real Indian workflows — designed here, not translated later.</p></div>
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span><h3>Trust is the product</h3><p>People own their data. Every change is logged. Privacy is the default, not a setting.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><h3>Simple beats clever</h3><p>Every screen answers one question. Calm software helps busy clinics more than powerful software.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5l3 8M16.5 7.5l-3 8"/></svg></span><h3>Connected by design</h3><p>A prescription written once is understood everywhere — doctor, lab, pharmacy, insurer.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap" style="text-align:center">
+      <h2 class="center-head reveal">Start where you are. Grow without limits.</h2>
+      <p class="center-lede reveal">Auriva Solo Practice is live today. The connected healthcare network is what we're building next — on the same platform you'd start on now.</p>
+      <div style="margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap" class="reveal"><button class="btn btn-primary" data-go="provider">Start free<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn btn-line" data-go="careers">Join the team</button></div>
+    </div>
+  </section>
+</section><!-- /page about -->
+
+<!-- ============ PAGE: CONTACT ============ -->
+<section class="page" data-route="contact">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Contact</b> · We'd love to hear from you</span>
+    <h1>Talk to the team <span class="glow">behind Auriva.</span></h1>
+    <p class="lede">Questions about your practice, a demo, partnerships or support — reach out and a real person will get back to you.</p>
+  </div></div></div>
+
+  <section class="pad" style="padding-top:clamp(20px,2vw,32px)">
+    <div class="wrap">
+      <div class="contact-cols" style="display:grid;grid-template-columns:1.3fr .9fr;gap:clamp(24px,3.4vw,44px);align-items:start">
+        <form class="cform reveal" onsubmit="return false">
+          <div class="frow">
+            <div class="fld"><label for="c-name">Your name</label><input id="c-name" type="text" placeholder="Dr. Anjali Rao" autocomplete="name"></div>
+            <div class="fld"><label for="c-phone">Phone</label><input id="c-phone" type="tel" placeholder="+91 98••• •••••" autocomplete="tel"></div>
+          </div>
+          <div class="frow">
+            <div class="fld"><label for="c-email">Email</label><input id="c-email" type="email" placeholder="anjali@clinic.in" autocomplete="email"></div>
+            <div class="fld"><label for="c-topic">I'm reaching out about</label><select id="c-topic"><option>Starting my practice on Auriva</option><option>A product demo</option><option>Support</option><option>Partnerships</option><option>Something else</option></select></div>
+          </div>
+          <div class="fld"><label for="c-msg">Message</label><textarea id="c-msg" placeholder="Tell us a little about your practice…"></textarea></div>
+          <button class="btn btn-primary" type="submit" style="width:100%">Send message<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+          <p style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:12px">We usually reply within one working day.</p>
+        </form>
+        <div class="contact-side">
+          <div class="cway reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2z"/></svg></span><div><b>WhatsApp</b><p>Fastest way to reach us during the day.</p><a>Chat with us →</a></div></div>
+          <div class="cway reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><div><b>Email</b><p>For detailed questions and documents.</p><a>hello@auriva.com</a></div></div>
+          <div class="cway reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></span><div><b>Bengaluru</b><p>HSR Layout, Bengaluru, Karnataka — where Auriva is built.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section><!-- /page contact -->
+
+<!-- ============ PAGE: CAREERS ============ -->
+<section class="page" data-route="careers">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Careers</b> · Build the healthcare OS</span>
+    <h1>Help connect <span class="glow">Indian healthcare.</span></h1>
+    <p class="lede">We're a small team building a platform that thousands of clinics will run on. If you care about craft, healthcare and doing hard things simply, we'd love to talk.</p>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row center reveal"><span class="ln"></span><span class="ey">Why Auriva</span><span class="ln"></span></div>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5z"/></svg></span><h3>Work that matters</h3><p>Every release makes a real clinic's day calmer and a patient's care better.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><h3>High craft bar</h3><p>Small team, real ownership, and a standard of quality we hold each other to.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg></span><h3>Early and shaping</h3><p>Join early enough that the decisions you make define the platform for years.</p></div>
+      </div>
+
+      <div class="lbl-row reveal" style="margin-top:clamp(48px,6vw,80px)"><span class="ey">Open roles</span><span class="ln"></span></div>
+      <div class="rolelist">
+        <div class="role reveal"><div><div class="rt">Senior Product Engineer</div><div class="rm"><span>Full-stack</span><span>· Bengaluru / Remote</span><span>· Full-time</span></div></div><span class="rtag">Engineering</span><span class="rarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+        <div class="role reveal" data-d="1"><div><div class="rt">Product Designer</div><div class="rm"><span>Product &amp; brand</span><span>· Bengaluru / Remote</span><span>· Full-time</span></div></div><span class="rtag">Design</span><span class="rarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+        <div class="role reveal"><div><div class="rt">Clinical Success Lead</div><div class="rm"><span>Onboarding &amp; support</span><span>· Bengaluru</span><span>· Full-time</span></div></div><span class="rtag">Operations</span><span class="rarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+        <div class="role reveal" data-d="1"><div><div class="rt">Founding Growth</div><div class="rm"><span>Practice acquisition</span><span>· Bengaluru</span><span>· Full-time</span></div></div><span class="rtag">Growth</span><span class="rarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+      </div>
+      <p class="reveal" style="text-align:center;color:var(--muted);font-size:13.5px;margin-top:26px">Don't see your role? Tell us what you'd build — <a data-go="contact" style="color:var(--pine);font-weight:650">get in touch</a>.</p>
+    </div>
+  </section>
+</section><!-- /page careers -->
+
+<!-- ============ PAGE: RESOURCES / BLOG ============ -->
+<section class="page" data-route="resources">
+  <div class="phero"><div class="wrap"><div class="phero-in reveal">
+    <span class="crumb"><b>Resources</b> · Run a better practice</span>
+    <h1>Ideas, guides and stories <span class="glow">for modern clinics.</span></h1>
+    <p class="lede">Practical writing on running an efficient, profitable and caring practice in India — plus templates you can use today.</p>
+  </div></div></div>
+
+  <section class="pad">
+    <div class="wrap">
+      <div class="lbl-row reveal"><span class="ey">Latest</span><span class="ln"></span></div>
+      <div class="resgrid">
+        <div class="rescard reveal"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div><div class="rb"><div class="rk">Playbook</div><h3>Cut no-shows without hiring a receptionist</h3><p>How solo clinics use WhatsApp reminders and easy rescheduling to fill the calendar.</p><div class="rmeta">6 min read</div></div></div>
+        <div class="rescard reveal" data-d="1"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="rb"><div class="rk">Finance</div><h3>Getting paid faster with UPI at the counter</h3><p>Simple billing habits that shrink pending payments and clean up your day-end.</p><div class="rmeta">5 min read</div></div></div>
+        <div class="rescard reveal" data-d="2"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="rb"><div class="rk">Clinical</div><h3>Prescriptions your patients actually keep</h3><p>Digital Rx that's readable, shareable and always in the patient's pocket.</p><div class="rmeta">4 min read</div></div></div>
+        <div class="rescard reveal"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></div><div class="rb"><div class="rk">Growth</div><h3>Your public clinic profile, done right</h3><p>Turn online searches into booked appointments with a page that builds trust.</p><div class="rmeta">7 min read</div></div></div>
+        <div class="rescard reveal" data-d="1"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5"/><path d="M21 4v5h-5"/></svg></div><div class="rb"><div class="rk">Template</div><h3>Follow-up schedules for common conditions</h3><p>A starter set of recall rhythms you can adapt to your practice.</p><div class="rmeta">Template</div></div></div>
+        <div class="rescard reveal" data-d="2"><div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></div><div class="rb"><div class="rk">Story</div><h3>How a solo physio ran a full clinic on day one</h3><p>From paper diary to a connected practice in a single afternoon.</p><div class="rmeta">5 min read</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad tint">
+    <div class="wrap" style="text-align:center">
+      <h2 class="center-head reveal">Ready to run your practice on Auriva?</h2>
+      <div style="margin-top:26px" class="reveal"><button class="btn btn-primary" data-go="provider">Start free<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>
+  </section>
+</section><!-- /page resources -->
+
+<!-- ============ PAGE: HELP CENTER ============ -->
+<section class="page" data-route="help">
+  <div class="phero"><div class="wrap"><div class="phero-in wide reveal" style="text-align:center;margin:0 auto">
+    <span class="crumb" style="justify-content:center"><b>Help Center</b> · We've got you</span>
+    <h1 style="margin-left:auto;margin-right:auto">How can we <span class="glow">help you today?</span></h1>
+    <div class="helpsearch"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span><input type="search" placeholder="Search help articles…" aria-label="Search help articles"></div>
+  </div></div></div>
+
+  <section class="pad" style="padding-top:clamp(20px,2vw,32px)">
+    <div class="wrap">
+      <div class="lbl-row reveal"><span class="ey">Browse by topic</span><span class="ln"></span></div>
+      <div class="featgrid">
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span><h3>Getting started</h3><p>Set up your clinic, add services and take your first booking.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span><h3>Appointments &amp; queue</h3><p>Bookings, walk-ins, follow-ups and managing your day.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><h3>Billing &amp; payments</h3><p>Invoices, UPI collection and daily revenue.</p></div>
+        <div class="fcard2 reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><h3>Records &amp; prescriptions</h3><p>Notes, Rx templates and the clinical timeline.</p></div>
+        <div class="fcard2 reveal" data-d="1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><h3>Patients &amp; portal</h3><p>How patients book, get reminders and see their records.</p></div>
+        <div class="fcard2 reveal" data-d="2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span><h3>Account &amp; security</h3><p>Sign in, data export and keeping your account safe.</p></div>
+      </div>
+
+      <div class="lbl-row reveal" style="margin-top:clamp(48px,6vw,72px)"><span class="ey">Popular questions</span><span class="ln"></span></div>
+      <div class="qs" style="max-width:820px;margin-top:8px">
+        <details class="q reveal"><summary>How do I set up my clinic on Auriva? <span class="pls"></span></summary><div class="a">Create your account, add your services and hours, and share your booking page. Most practitioners are taking bookings within a couple of minutes.</div></details>
+        <details class="q reveal"><summary>Can patients book without an app? <span class="pls"></span></summary><div class="a">Yes. Patients book from your public profile link in any browser and get a WhatsApp confirmation — no download required.</div></details>
+        <details class="q reveal"><summary>How do walk-ins work with the queue? <span class="pls"></span></summary><div class="a">Add a walk-in and they join your live queue alongside booked patients, so you always know who's next.</div></details>
+        <details class="q reveal"><summary>How do I collect payment? <span class="pls"></span></summary><div class="a">Create a line-item invoice at the end of a visit and collect by UPI or cash. The receipt is instant and the record updates automatically.</div></details>
+        <details class="q reveal"><summary>Can I export my data? <span class="pls"></span></summary><div class="a">Anytime — your patients and records are yours, with zero lock-in. Reach out and we'll help you export.</div></details>
+      </div>
+      <p class="reveal" style="text-align:center;color:var(--muted);font-size:13.5px;margin-top:30px">Still stuck? <a data-go="contact" style="color:var(--pine);font-weight:650">Contact our team →</a></p>
+    </div>
+  </section>
+</section><!-- /page help -->
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fcol fbrand"><a class="logo" data-go="home" style="cursor:pointer"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>Auriva</a><p class="lede">The healthcare operating system. Connecting every patient and provider — one platform, growing with you.</p></div>
+      <div class="fcol"><h4>Products</h4><a data-go="provider">Solo Practice</a><a data-go="products">Multi-Doctor · Soon</a><a data-go="products">Hospital · Soon</a><a data-go="products">Labs · Pharmacy · Soon</a><a data-go="products">Insurance · Soon</a></div>
+      <div class="fcol"><h4>Solutions</h4><a data-go="solutions">Physiotherapists</a><a data-go="solutions">Dentists</a><a data-go="solutions">Dietitians</a><a data-go="solutions">Psychologists</a><a data-go="solutions">Dermatologists</a></div>
+      <div class="fcol"><h4>For Patients</h4><a data-go="patients">Find a doctor</a><a data-go="patients">Book an appointment</a><a data-go="patients">Your records</a><a data-go="patients">Family health</a></div>
+      <div class="fcol"><h4>Resources</h4><a data-go="resources">Blog</a><a data-go="help">Help Center</a><a data-go="resources">Guides</a><a data-go="resources">Templates</a></div>
+      <div class="fcol"><h4>Company</h4><a data-go="about">About</a><a data-go="security">Security</a><a data-go="careers">Careers</a><a data-go="contact">Contact</a></div>
+    </div>
+    <div class="fbot"><span>© 2026 Auriva. The healthcare operating system, built in India.</span><span>Your data, your care — always.</span></div>
+  </div>
+</footer>
+
+<div class="mcta"><button class="btn btn-line" style="flex:.9" data-go="patients">Find a doctor</button><button class="btn btn-primary" data-go="provider">Start free</button></div>
+
+<script>
+(function(){
+  document.body.classList.add("js");
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ===== ROUTER ===== */
+  var pages=[].slice.call(document.querySelectorAll(".page"));
+  var routes={};pages.forEach(function(p){routes[p.dataset.route]=p;});
+  var rlTrgs=[].slice.call(document.querySelectorAll(".trg.rl"));
+  var current=null;
+  function revealAll(p){[].slice.call(p.querySelectorAll(".reveal")).forEach(function(el){el.classList.add("in");});}
+  function setRoute(name,push){
+    if(!routes[name])name="home";
+    if(current===routes[name]){window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});return;}
+    pages.forEach(function(p){p.classList.remove("active");});
+    var p=routes[name];p.classList.add("active");current=p;
+    if(name!=="home")revealAll(p);
+    rlTrgs.forEach(function(t){t.classList.toggle("active",t.dataset.go===name||(name==="provider"&&t.dataset.go==="products"));});
+    if(push!==false){if(("#/"+name)!==location.hash)history.pushState(null,"",name==="home"?"#/":("#/"+name));}
+    window.scrollTo({top:0,behavior:"auto"});
+  }
+  function routeFromHash(){var h=location.hash.replace(/^#\/?/,"");return h||"home";}
+  document.addEventListener("click",function(e){
+    var t=e.target.closest?e.target.closest("[data-go]"):null;
+    if(!t)return;
+    e.preventDefault();
+    setRoute(t.getAttribute("data-go"));
+  });
+  window.addEventListener("popstate",function(){setRoute(routeFromHash(),false);});
+  setRoute(routeFromHash(),false);
+
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{rootMargin:"0px 0px -8% 0px",threshold:.12});
+  document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
+
+  var nav=document.getElementById("nav");
+  var onScroll=function(){nav.classList.toggle("stuck",window.scrollY>8);};
+  onScroll();window.addEventListener("scroll",onScroll,{passive:true});
+
+  var items=[].slice.call(document.querySelectorAll(".navitem"));
+  items.forEach(function(it){
+    var trg=it.querySelector(".trg"); if(!it.querySelector(".dd")){return;}
+    var over=false,to;
+    it.addEventListener("mouseenter",function(){clearTimeout(to);items.forEach(function(o){if(o!==it)o.classList.remove("open");});it.classList.add("open");over=true;});
+    it.addEventListener("mouseleave",function(){over=false;to=setTimeout(function(){if(!over)it.classList.remove("open");},120);});
+    trg.addEventListener("click",function(e){if(trg.hasAttribute("data-go")){items.forEach(function(o){o.classList.remove("open");});return;}e.stopPropagation();var open=it.classList.contains("open");items.forEach(function(o){o.classList.remove("open");});if(!open)it.classList.add("open");});
+  });
+  document.addEventListener("click",function(){items.forEach(function(o){o.classList.remove("open");});});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")items.forEach(function(o){o.classList.remove("open");});});
+
+  // provider timeline
+  var nodes=[].slice.call(document.querySelectorAll("#rail .rnode"));
+  var moments=[].slice.call(document.querySelectorAll(".moment"));
+  var setActive=function(i){nodes.forEach(function(n,k){n.classList.toggle("on",k===i);});};
+  var tio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)setActive(parseInt(e.target.dataset.i,10));});},{rootMargin:"-42% 0px -50% 0px",threshold:0});
+  moments.forEach(function(m){tio.observe(m);});
+  nodes.forEach(function(n){n.addEventListener("click",function(){var t=document.getElementById("m"+n.dataset.i);if(t)t.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});});});
+
+  // golden thread — animate through steps when in view
+  var thread=document.getElementById("thread"),steps=[].slice.call(document.querySelectorAll(".step")),fill=document.getElementById("threadfill"),played=false;
+  var playThread=function(){
+    if(played)return;played=true;
+    if(reduce){steps.forEach(function(s){s.classList.add("on");});fill.style.width="100%";return;}
+    steps.forEach(function(s,i){setTimeout(function(){s.classList.add("on");fill.style.width=(i/(steps.length-1)*100)+"%";},i*260+200);});
+  };
+  var thio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)playThread();});},{threshold:.35});
+  if(thread)thio.observe(thread);
+})();
+</script>

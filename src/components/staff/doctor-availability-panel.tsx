@@ -42,7 +42,7 @@ export default function DoctorAvailabilityPanel({ doctors }: { doctors: DoctorLo
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {doctor.in_consultation > 0 && (
-              <Badge className="gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+              <Badge className="gap-1 bg-success/10 text-success dark:text-success">
                 <Stethoscope className="size-3" />
                 In consult
               </Badge>

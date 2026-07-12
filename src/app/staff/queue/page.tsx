@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import QueueBoard from "@/components/staff/queue-board";
 
 export const metadata: Metadata = {
-  title: "Queue Board · Aegis Clinic OS",
+  title: "Queue Board",
   description: "Live patient queue for today's appointments.",
 };
 

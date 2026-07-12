@@ -9,6 +9,7 @@ import GlobalSearch from "@/components/staff/global-search";
 import DoctorFilter, { DoctorOption } from "@/components/staff/doctor-filter";
 import QueueColumn from "@/components/staff/queue-column";
 import WalkInModal from "@/components/staff/walkin-modal";
+import BookAppointmentDialog from "@/components/staff/book-appointment-dialog";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
 import { Appointment, AppointmentStatus, QUEUE_ORDER } from "@/shared/queue";
 
@@ -120,6 +121,7 @@ export default function QueueBoard() {
           >
             <RefreshCw className={refreshing ? "animate-spin" : undefined} />
           </Button>
+          {clinicId && <BookAppointmentDialog clinicId={clinicId} doctors={doctors} onBooked={load} />}
           {clinicId && <WalkInModal clinicId={clinicId} doctors={doctors} onRegistered={load} />}
         </div>
       </header>
@@ -164,6 +166,9 @@ export default function QueueBoard() {
         appointmentId={drawerId}
         open={drawerId !== null}
         onOpenChange={(open) => !open && setDrawerId(null)}
+        showFullHistoryLink
+        allowActions
+        onChanged={load}
       />
     </div>
   );

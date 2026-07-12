@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 export const QUEUE_INCLUDE = {
   patient: { select: { id: true, full_name: true, blood_group: true, user_id: true } },
   doctor: { select: { id: true, full_name: true, specialty: true, clinic_id: true, user_id: true } },
-  clinic: { select: { id: true, name: true, address: true } },
+  clinic: { select: { id: true, name: true, address: true, organization_id: true } },
 } satisfies Prisma.AppointmentInclude;
 
 export function startOfDay(date: Date): Date {

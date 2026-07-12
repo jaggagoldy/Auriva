@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { badRequest, ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
 import { parseDateOrNull } from '@/api/validation';
-import { canAccessReception } from '@/domain/authorization';
 import { getQueue } from '@/services/queue-service';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
   const dateParam = searchParams.get('date');
   const search = searchParams.get('search') ?? undefined;
 
-  const auth = await requireStaffContext(canAccessReception, requestedClinicId);
+  const auth = await requireStaffContext('reception', requestedClinicId);
   if (!auth.ok) return auth.response;
 
   let date: Date | undefined;
