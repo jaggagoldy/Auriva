@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { DiagnosticsSelector } from "@/components/clinic/diagnostics-selector";
+import { getTest } from "@/domain/diagnostics-catalog";
 
 // Phase 5 — Clinical consultation (matches design/mockups/auriva-clinical.html,
 // adapted to real data + the warm design tokens). This REPLACES the cramped
@@ -54,7 +56,6 @@ const FOLLOW_UP_OPTIONS = [
 ] as const;
 
 const COMPLAINT_SUGGESTIONS = ["Pain", "Swelling", "Fever", "Stiffness", "Fatigue"];
-const INVESTIGATION_SUGGESTIONS = ["CBC", "Blood sugar (fasting)", "X-ray", "Vitamin D", "Thyroid (TSH)"];
 // Generic starter templates — a real Medicine Library (with the owner's own
 // favourites) is a later batch; these just remove first-visit typing.
 const RX_TEMPLATES: { label: string; row: Omit<RxRow, "id"> }[] = [
@@ -104,8 +105,7 @@ export function ConsultationWorkbench({
   const [diagnoses, setDiagnoses] = React.useState<string[]>([]);
   const [dxInput, setDxInput] = React.useState("");
   const [rows, setRows] = React.useState<RxRow[]>([newRow()]);
-  const [investigations, setInvestigations] = React.useState<string[]>([]);
-  const [invInput, setInvInput] = React.useState("");
+  const [testCodes, setTestCodes] = React.useState<string[]>([]);
   const [followUpDays, setFollowUpDays] = React.useState<number | null>(null);
   const [advice, setAdvice] = React.useState("");
   const [treatmentId, setTreatmentId] = React.useState("");
@@ -132,12 +132,6 @@ export function ConsultationWorkbench({
     if (!v) return;
     setDiagnoses((prev) => (prev.some((d) => d.toLowerCase() === v.toLowerCase()) ? prev : [...prev, v]));
     setDxInput("");
-  }
-  function addInvestigation(value: string) {
-    const v = value.trim();
-    if (!v) return;
-    setInvestigations((prev) => (prev.some((i) => i.toLowerCase() === v.toLowerCase()) ? prev : [...prev, v]));
-    setInvInput("");
   }
   function updateRow(id: string, patch: Partial<RxRow>) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -186,7 +180,7 @@ export function ConsultationWorkbench({
       diagnosis: diagnoses.join(", ") || undefined,
       prescription_notes: advice.trim() || undefined,
       prescription_medicines_json: medicines.length ? JSON.stringify(medicines) : undefined,
-      investigations: investigations.length ? investigations : undefined,
+      test_codes: testCodes.length ? testCodes : undefined,
       follow_up_date: followUpDays != null ? isoDateInDays(followUpDays) : undefined,
       treatment_id: treatmentId || undefined,
     };
@@ -356,39 +350,8 @@ export function ConsultationWorkbench({
               </div>
             </Section>
 
-            <Section icon={<ClipboardList className="size-4" />} title="Investigations" hint="lab / imaging orders">
-              {investigations.length > 0 && (
-                <div className="mb-2.5 flex flex-wrap gap-2">
-                  {investigations.map((i) => (
-                    <Chip key={i} honey onRemove={() => setInvestigations((prev) => prev.filter((x) => x !== i))}>
-                      {i}
-                    </Chip>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  value={invInput}
-                  onChange={(e) => setInvInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addInvestigation(invInput);
-                    }
-                  }}
-                  placeholder="Order a test and press Enter"
-                />
-                <Button variant="outline" onClick={() => addInvestigation(invInput)}>
-                  Add
-                </Button>
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {INVESTIGATION_SUGGESTIONS.map((s) => (
-                  <SuggestChip key={s} onClick={() => addInvestigation(s)}>
-                    + {s}
-                  </SuggestChip>
-                ))}
-              </div>
+            <Section icon={<ClipboardList className="size-4" />} title="Investigations" hint="recommend tests — sent to the patient">
+              <DiagnosticsSelector selected={testCodes} onChange={setTestCodes} />
             </Section>
 
             <Section title="Follow-up &amp; advice">
@@ -454,7 +417,7 @@ export function ConsultationWorkbench({
           complaint={complaint}
           diagnoses={diagnoses}
           rx={filledRx}
-          investigations={investigations}
+          investigations={testCodes.map((c) => getTest(c)?.name ?? c)}
           advice={advice}
           followUpLabel={followUpLabel}
           fee={selectedService ? `₹${selectedService.price.toLocaleString()}` : "Consultation fee"}

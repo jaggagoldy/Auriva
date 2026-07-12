@@ -217,6 +217,7 @@ model Clinic {
   appointments   Appointment[]
   prescriptions  Prescription[]
   labOrders      LabOrder[]
+  testRecommendations TestRecommendation[]
   invoices       Invoice[]
   invitations    Invitation[]
   departments    Department[]
@@ -350,6 +351,7 @@ model StaffProfile {
   appointments  Appointment[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
+  testRecommendations TestRecommendation[]
   availability  DoctorAvailability[]
   timeBlocks    DoctorTimeBlock[]
   reviews       Review[]
@@ -468,6 +470,7 @@ model PatientProfile {
   appointments  Appointment[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
+  testRecommendations TestRecommendation[]
   invoices      Invoice[]
   reviews       Review[]
   favoriteDoctors PatientFavoriteDoctor[]
@@ -557,6 +560,7 @@ model Appointment {
   events         AppointmentEvent[]
   prescription   Prescription?
   labOrders      LabOrder[]
+  testRecommendations TestRecommendation[]
   invoice        Invoice?
   review         Review?
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
@@ -627,6 +631,33 @@ model Prescription {
 
 // APS-042: lab order — the MVP loop is ordered → resulted (or cancelled);
 // sample tracking and routing are post-MVP (WF-09/10 full shape).
+// P5 Diagnostics — a test a doctor RECOMMENDED during a consult. This is a
+// referral/recommendation record the PATIENT then acts on (books it wherever
+// they like, gets it done, uploads the report) — Auriva does not run the lab.
+// Status is patient-driven: pending → booked → completed → report_uploaded.
+model TestRecommendation {
+  id                String    @id @default(uuid())
+  clinic_id         String
+  patient_id        String
+  doctor_id         String
+  appointment_id    String?
+  test_code         String    // catalog code snapshot (src/domain/diagnostics-catalog.ts)
+  test_name         String    // name snapshot — stays stable if the catalog changes
+  category          String
+  prep_instructions String?   // patient-facing prep note, snapshotted from the catalog
+  status            String    @default("pending") // 'pending' | 'booked' | 'completed' | 'report_uploaded'
+  report_url        String?   // StorageService url once the patient uploads their report
+  recommended_at    DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor      StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+
+  @@map("Test_Recommendations")
+}
+
 model LabOrder {
   id                  String    @id @default(uuid())
   appointment_id      String?

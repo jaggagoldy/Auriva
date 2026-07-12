@@ -21,6 +21,7 @@ afterAll(async () => {
   await prisma.payment.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.invoice.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.prescription.deleteMany({ where: { clinic_id: { in: clinicIds } } });
+  await prisma.testRecommendation.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.labOrder.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.appointment.deleteMany({ where: { clinic_id: { in: clinicIds } } });
   await prisma.service.deleteMany({ where: { clinic_id: { in: clinicIds } } });
@@ -111,7 +112,7 @@ describe("solo visit flow", () => {
     expect(rx?.follow_up_date?.toISOString().slice(0, 10)).toBe("2026-07-20");
   });
 
-  it("turns investigations into a real LabOrder for the visit", async () => {
+  it("turns selected tests into patient recommendations (P5), snapshotting name + prep", async () => {
     const { owner, clinic, appointment, patient } = await setupVisit();
 
     await completeVisit({
@@ -119,22 +120,24 @@ describe("solo visit flow", () => {
       clinicId: clinic.id,
       actorUserId: owner.id,
       diagnosis: "R/O anemia",
-      investigations: ["CBC", "  ", "Vitamin D"], // blank test is dropped
+      testCodes: ["cbc", "unknown_code", "lipid"], // unknown code dropped
     });
 
-    const orders = await prisma.labOrder.findMany({ where: { appointment_id: appointment.id } });
-    expect(orders).toHaveLength(1);
-    expect(orders[0].patient_id).toBe(patient.id);
-    expect(orders[0].status).toBe("ordered");
-    expect(JSON.parse(orders[0].tests_json)).toEqual([{ name: "CBC" }, { name: "Vitamin D" }]);
-    expect(orders[0].clinical_note).toBe("R/O anemia");
+    const recs = await prisma.testRecommendation.findMany({ where: { appointment_id: appointment.id }, orderBy: { test_code: "asc" } });
+    expect(recs).toHaveLength(2);
+    expect(recs.map((r) => r.test_code)).toEqual(["cbc", "lipid"]);
+    expect(recs[0].patient_id).toBe(patient.id);
+    expect(recs[0].status).toBe("pending");
+    // prep is snapshotted from the catalog (lipid = fasting; cbc = none)
+    const lipid = recs.find((r) => r.test_code === "lipid")!;
+    expect(lipid.prep_instructions).toMatch(/fasting/i);
   });
 
-  it("creates no LabOrder when no investigations are ordered", async () => {
+  it("creates no recommendation when no tests are selected", async () => {
     const { owner, clinic, appointment } = await setupVisit();
     await completeVisit({ appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id, diagnosis: "Well" });
-    const orders = await prisma.labOrder.findMany({ where: { appointment_id: appointment.id } });
-    expect(orders).toHaveLength(0);
+    const recs = await prisma.testRecommendation.findMany({ where: { appointment_id: appointment.id } });
+    expect(recs).toHaveLength(0);
   });
 
   it("keeps the fee-based invoice when no treatment is chosen", async () => {
