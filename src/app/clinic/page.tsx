@@ -59,6 +59,7 @@ interface Service {
 interface Appt {
   id: string; scheduled_time: string; status: string; walk_in: boolean; notes: string | null;
   patient: { id: string; full_name: string } | null;
+  invoice?: { status: string; total: number } | null;
 }
 interface Today {
   scope?: Scope; appointments: Appt[]; total: number; completed: number; remaining: number;
@@ -86,6 +87,10 @@ export default function MyClinicWorkspace() {
   const [ov, setOv] = React.useState<Overview | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [visit, setVisit] = React.useState<Visit | null>(null);
+  // Bumped after a visit completes so Today re-fetches (the schedule sits under
+  // the consult overlay and would otherwise show the just-seen patient as still
+  // scheduled — the "booking not marked complete" bug).
+  const [todayKey, setTodayKey] = React.useState(0);
 
   const refreshOverview = React.useCallback(() => {
     return fetch("/api/clinic/overview", { cache: "no-store" })
@@ -189,7 +194,7 @@ export default function MyClinicWorkspace() {
             ) : view === "home" ? (
               <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
-              <TodayView bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+              <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
             ) : view === "lab" ? (
               <LabView />
             ) : view === "treatments" ? (
@@ -232,7 +237,7 @@ export default function MyClinicWorkspace() {
           clinicName={ov?.clinic.name ?? "My Clinic"}
           onClose={() => setVisit(null)}
           onAdvance={(v) => setVisit(v)}
-          onDone={() => { setVisit(null); setView("today"); refreshOverview(); }}
+          onDone={() => { setVisit(null); setView("today"); refreshOverview(); setTodayKey((k) => k + 1); }}
         />
       )}
     </div>
@@ -579,7 +584,11 @@ function TodayView({ bookingPath, onBooked, onStart }: { bookingPath: string | n
                           </div>
                         </div>
                         {done ? (
-                          <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">Seen</span>
+                          a.invoice?.status === "paid" ? (
+                            <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">Seen · Paid</span>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-honey-soft px-2 py-0.5 text-[11px] font-semibold text-honey-deep">Payment due</span>
+                          )
                         ) : cancelled ? (
                           <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground capitalize">{a.status.replace(/_/g, " ")}</span>
                         ) : (
