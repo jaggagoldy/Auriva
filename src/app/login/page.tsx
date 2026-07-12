@@ -32,6 +32,13 @@ function ageFromDob(dob: string | null): number | null {
   return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 }
 
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return phone;
+  const last2 = digits.slice(-2);
+  return `${phone.slice(0, phone.length - digits.length)}${digits.slice(0, -2).replace(/\d/g, '•')}${last2}`;
+}
+
 // APS-031 Part 3 — the four-role picker (Patient/Superadmin/Doctor/Staff) is
 // replaced by the approved three-path Entry Experience. The role a staff
 // member picked here was always UI-only (the server derives role from the
@@ -46,7 +53,7 @@ export default function UnifiedLoginGateway() {
   // Modern SaaS convention: "Sign in" lands directly on the login form.
   // The path chooser (Organization / Professional / Personal) belongs to the
   // Start Free / Get Started journey, not to returning-user sign-in.
-  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'onboarding'>('auth');
+  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'profile-found' | 'onboarding'>('auth');
   const [entryPath, setEntryPath] = useState<EntryPath | null>('professional');
   const [showForgotHelp, setShowForgotHelp] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -68,6 +75,17 @@ export default function UnifiedLoginGateway() {
 
   // AUTH-004 onboarding — held until the profile is completed, then persisted.
   const [pendingSession, setPendingSession] = useState<{ patientProfile: any; user: any } | null>(null);
+
+  // "We found your profile" — held when otp/verify reports this Account's
+  // first-ever confirmation of a PRE-EXISTING Healthcare Profile (a clinic
+  // registered them before they ever signed in themselves). The login is
+  // already complete server-side; this is a confirmation interstitial before
+  // finishLogin navigates on, matching design/mockups/auriva-auth.html's
+  // "PROFILE FOUND (account linking)" screen.
+  const [foundProfileData, setFoundProfileData] = useState<{
+    patientProfile: { onboarding_completed: boolean; full_name: string; gender: string | null; date_of_birth: string | null };
+    user: unknown;
+  } | null>(null);
   const [onboardName, setOnboardName] = useState('');
   const [onboardDob, setOnboardDob] = useState('');
   const [onboardGender, setOnboardGender] = useState('');
@@ -187,6 +205,12 @@ export default function UnifiedLoginGateway() {
         return;
       }
 
+      if (data.existing_profile_found) {
+        setFoundProfileData({ patientProfile: data.patientProfile, user: data.user });
+        setStep('profile-found');
+        return;
+      }
+
       finishLogin(data);
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Verification failed. Request a new code and try again.');
@@ -199,11 +223,38 @@ export default function UnifiedLoginGateway() {
     setLoading(true);
     try {
       const data = await submitOtpVerify(profileId);
+      if (data.existing_profile_found) {
+        setFoundProfileData({ patientProfile: data.patientProfile, user: data.user });
+        setStep('profile-found');
+        return;
+      }
       finishLogin(data);
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Could not sign in as that profile.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // "Yes, that's me — continue" — the login already succeeded server-side;
+  // this just proceeds past the confirmation interstitial.
+  const handleConfirmFoundProfile = () => {
+    if (!foundProfileData) return;
+    finishLogin(foundProfileData);
+  };
+
+  // "Not you? Use a different number" — this session cookie already belongs
+  // to the discovered account, so sign them back out before starting fresh.
+  const handleRejectFoundProfile = async () => {
+    setFoundProfileData(null);
+    setOtpCode('');
+    setPhoneNumber('');
+    setStep('auth');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // best-effort — a stray session cookie here is harmless (login is
+      // idempotent and re-verifying overwrites it), never block the UI on it.
     }
   };
 
@@ -737,6 +788,73 @@ export default function UnifiedLoginGateway() {
                       <Loader2 className="size-4 animate-spin text-muted-foreground" />
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 3c: "We found your profile" — first-ever confirmation of a
+              profile a clinic already registered (design/mockups/auriva-auth.html,
+              "PROFILE FOUND"). The server-side login already succeeded; this is
+              a confirmation moment, not another auth step. */}
+          {step === 'profile-found' && foundProfileData && (
+            <motion.div
+              key="profile-found-step"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Card className="overflow-hidden rounded-2xl shadow-sm">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <div className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-honey-soft px-2.5 py-1 text-xs font-semibold text-honey-deep">
+                    <Sparkles className="size-3" /> Welcome back
+                  </div>
+                  <CardTitle className="text-lg">We found your profile</CardTitle>
+                  <CardDescription>
+                    Good news — a clinic you visited already registered you. Nothing to fill in.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4 px-6 py-4">
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="flex items-center gap-3 border-b pb-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-honey-soft text-sm font-bold text-honey-deep">
+                        {foundProfileData.patientProfile.full_name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{foundProfileData.patientProfile.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{maskPhone(phoneNumber)}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10.5px] font-semibold text-success">
+                        Verified
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-3">
+                      <div>
+                        <p className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Gender</p>
+                        <p className="text-sm font-semibold">{foundProfileData.patientProfile.gender ?? 'Not set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Age</p>
+                        <p className="text-sm font-semibold">
+                          {ageFromDob(foundProfileData.patientProfile.date_of_birth) ?? 'Not set'}
+                          {ageFromDob(foundProfileData.patientProfile.date_of_birth) !== null ? ' yrs' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full" disabled={loading} onClick={handleConfirmFoundProfile}>
+                    Yes, that&apos;s me — continue <ArrowRight />
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={handleRejectFoundProfile}
+                    className="w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    Not you? Use a different number
+                  </button>
                 </CardContent>
               </Card>
             </motion.div>

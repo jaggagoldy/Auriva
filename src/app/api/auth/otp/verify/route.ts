@@ -5,6 +5,7 @@ import { resolveHealthcareProfile } from '@/services/identity-service';
 import {
   createHealthcareProfile,
   findOrCreateAccountForPhone,
+  hasExistingAccountProfileLink,
   linkAccountToProfile,
 } from '@/services/patient-service';
 import type { PatientProfile } from '@prisma/client';
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       }
 
       let targetProfile: PatientProfile;
+      let matchedExistingProfile: boolean; // false only for the brand-new-profile branch below
       if (multipleProfiles) {
         if (healthcare_profile_id) {
           const chosen = resolution.profiles.find((p) => p.id === healthcare_profile_id);
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
             return badRequest('That profile is not linked to this phone number.');
           }
           targetProfile = chosen;
+          matchedExistingProfile = true;
         } else {
           // More than one person on this number — return the picker. The code
           // was verified but deliberately NOT consumed (see above); the client
@@ -91,6 +94,7 @@ export async function POST(request: NextRequest) {
         }
       } else if (resolution.kind === 'exact' && resolution.profiles.length === 1) {
         targetProfile = resolution.profiles[0];
+        matchedExistingProfile = true;
       } else {
         // First-ever login on this number — create the Healthcare Profile now
         // (AUTH-004 onboarding still fills in the real name afterward).
@@ -99,9 +103,17 @@ export async function POST(request: NextRequest) {
           onboardingCompleted: false,
           verificationLevel: 'phone_verified',
         });
+        matchedExistingProfile = false;
       }
 
       const account = await findOrCreateAccountForPhone(formattedPhone);
+      // Read BEFORE linking — this is the "we found your profile" signal:
+      // true only the first time this Account confirms a PRE-EXISTING Profile
+      // (e.g. a clinic registered them and this is their first Auriva sign-in),
+      // false for an ordinary returning-patient login or a brand-new profile.
+      // Purely additive to the response; does not change any write behavior.
+      const isNewDiscovery =
+        matchedExistingProfile && !(await hasExistingAccountProfileLink(account.id, targetProfile.id));
       const linkedProfile = await linkAccountToProfile(account.id, targetProfile.id, { makePrimary: true });
 
       const { rawToken, expires_at } = await createSession(account.id, 'patient', linkedProfile.id);
@@ -118,6 +130,7 @@ export async function POST(request: NextRequest) {
 
       return ok({
         success: true,
+        existing_profile_found: isNewDiscovery,
         user: {
           id: account.id,
           phone_number: account.phone_number,
