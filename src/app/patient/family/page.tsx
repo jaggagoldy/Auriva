@@ -2,15 +2,14 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Users, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { usePatientSession } from "@/components/patient/patient-session";
 import { getInitials } from "@/shared/queue";
 
@@ -39,79 +38,76 @@ export default function PatientFamilyPage() {
   };
 
   return (
-    <main className="mx-auto max-w-[1240px] px-7 py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Family members</h1>
-        <AddFamilyMemberDialog trigger={<Button size="sm"><Plus className="size-3.5" />Add member</Button>} />
+    <div>
+      <div className="sticky top-0 z-20 bg-background/90 px-5 pt-5 pb-3 backdrop-blur">
+        <h1 className="font-heading text-[21px] font-bold">Family health</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">Manage appointments and records for the people you care for.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {linkedProfiles.map((profile) => {
-          const isActive = profile.id === patientProfile.id;
-          const age = ageFromDob(profile.date_of_birth);
-          return (
-            <Card key={profile.id} className={isActive ? "rounded-xl border-primary/30" : "rounded-xl"}>
-              <CardContent className="space-y-2.5">
-                <div className="flex items-start justify-between">
-                  <Avatar className="size-10">
-                    <AvatarFallback className="text-sm font-semibold">
-                      {getInitials(profile.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isActive ? (
-                    <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10.5px] font-semibold text-primary">
-                      <Check className="size-3" />
-                      Viewing
-                    </span>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={switchingId === profile.id}
-                      onClick={() => handleSwitch(profile.id)}
-                    >
-                      {switchingId === profile.id ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                      Switch
-                    </Button>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[13.5px] font-semibold">{profile.full_name}</p>
-                  <p className="text-[11.5px] text-muted-foreground">
-                    {age !== null ? `${age} yrs` : "Age not set"} · {profile.blood_group} · {profile.health_id}
-                  </p>
-                </div>
+      <div className="px-5 pt-1 pb-6">
+        <div className="space-y-2.5">
+          {linkedProfiles.map((profile) => {
+            const isActive = profile.id === patientProfile.id;
+            const age = ageFromDob(profile.date_of_birth);
+            const rel = profile.guardian_relation
+              ? `${profile.guardian_relation}${age !== null ? ` · ${age}` : ""}`
+              : age !== null
+                ? `${age} · ${profile.gender ?? ""}`.replace(/ · $/, "")
+                : profile.blood_group;
+            return (
+              <div key={profile.id} className="flex items-center gap-3 rounded-[15px] border bg-card p-3.5">
                 <span
-                  className={
-                    profile.guardian_relation
-                      ? "inline-flex w-fit items-center gap-1 rounded-md border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9.5px] font-bold tracking-wide text-info uppercase"
-                      : "inline-flex w-fit items-center gap-1 rounded-md border border-success/30 bg-success/10 px-1.5 py-0.5 text-[9.5px] font-bold tracking-wide text-success uppercase dark:border-success/30 dark:bg-success/10"
-                  }
+                  className={cn(
+                    "grid size-11 shrink-0 place-items-center rounded-[13px] font-heading text-[15px] font-bold",
+                    isActive ? "bg-honey-soft text-honey-deep" : "bg-accent text-accent-foreground"
+                  )}
                 >
-                  {profile.guardian_relation ? `${profile.guardian_relation}'s dependent` : "Owner"}
+                  {getInitials(profile.full_name)}
                 </span>
-              </CardContent>
-            </Card>
-          );
-        })}
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 truncate font-heading text-[15px] font-bold">
+                    {profile.full_name}
+                    {isActive && (
+                      <span className="rounded-full bg-honey-soft px-1.5 py-0.5 text-[9.5px] font-bold tracking-wide text-honey-deep uppercase">
+                        You
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-[12.5px] text-muted-foreground">{rel}</p>
+                </div>
+                {isActive ? (
+                  <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-honey-deep">
+                    <Check className="size-4" /> Viewing
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleSwitch(profile.id)}
+                    disabled={switchingId === profile.id}
+                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-[12px] border bg-card px-3.5 text-[13px] font-semibold transition hover:bg-muted disabled:opacity-60"
+                  >
+                    {switchingId === profile.id && <Loader2 className="size-3.5 animate-spin" />}
+                    Manage
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-        <Card className="flex items-center justify-center rounded-xl border-dashed py-8 text-center sm:col-span-1">
-          <CardContent className="flex flex-col items-center gap-2">
-            <Users className="size-7 text-muted-foreground/50" />
-            <p className="text-[12.5px] font-medium">Add someone you care for</p>
-            <p className="max-w-[200px] text-[11px] text-muted-foreground">
-              Manage appointments and records for family members from one account.
-            </p>
-            <AddFamilyMemberDialog trigger={<Button size="sm" variant="secondary"><Plus className="size-3.5" />Add member</Button>} />
-          </CardContent>
-        </Card>
+        <AddFamilyMemberDialog
+          trigger={
+            <button className="mt-3 flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] border bg-card font-heading text-[15px] font-semibold transition hover:bg-muted">
+              <Plus className="size-4" /> Add a family member
+            </button>
+          }
+        />
+
+        <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-honey-soft bg-honey-tint px-3.5 py-3 text-[12px] text-honey-deep">
+          <Users className="mt-0.5 size-4 shrink-0" />
+          <span>Each person&apos;s records are private. You manage them, they stay theirs.</span>
+        </div>
       </div>
-
-      <p className="mt-5 text-[11.5px] text-muted-foreground">
-        Every Healthcare Profile linked to your account shows here — click <span className="font-medium">Switch</span> to
-        view that person&apos;s appointments and records.
-      </p>
-    </main>
+    </div>
   );
 }
 
@@ -168,8 +164,8 @@ function AddFamilyMemberDialog({ trigger }: { trigger: React.ReactElement<{ chil
       });
       setOpen(false);
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || "Could not add family member");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add family member");
     } finally {
       setLoading(false);
     }

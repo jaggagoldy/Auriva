@@ -1,49 +1,19 @@
 "use client";
 
 import * as React from "react";
-import {
-  Pill,
-  FlaskConical,
-  Activity,
-  FileStack,
-  Receipt,
-  CalendarCheck2,
-  Droplet,
-  ShieldAlert,
-  HeartPulse,
-  Stethoscope,
-  Phone,
-  CreditCard,
-  Wallet,
-  Clock3,
-} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Pill, FlaskConical, Receipt, CalendarCheck2, ChevronRight, Stethoscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePatientSession } from "@/components/patient/patient-session";
-import HealthSummaryDialog from "@/components/patient/health-summary-dialog";
-import { Appointment, STATUS_META, formatDay, formatTime, parseMedicines } from "@/shared/queue";
+import { Appointment, formatDay, parseMedicines } from "@/shared/queue";
 
 const TABS = [
   { id: "timeline", label: "Timeline" },
-  { id: "prescriptions", label: "Prescriptions" },
-  { id: "reports", label: "Lab Reports" },
-  { id: "vitals", label: "Vitals" },
-  { id: "documents", label: "Documents" },
+  { id: "rx", label: "Rx" },
   { id: "bills", label: "Bills" },
+  { id: "reports", label: "Reports" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
-
-const COMING_SOON: Record<Extract<TabId, "vitals" | "documents">, { icon: React.ComponentType<{ className?: string }>; title: string; body: string }> = {
-  vitals: {
-    icon: Activity,
-    title: "Vitals tracking is coming soon",
-    body: "Log and trend your own blood pressure, sugar and weight readings over time.",
-  },
-  documents: {
-    icon: FileStack,
-    title: "Document uploads are coming soon",
-    body: "Store scans and external records here so they travel with the rest of your health record.",
-  },
-};
 
 interface InvoiceRow {
   id: string;
@@ -53,7 +23,6 @@ interface InvoiceRow {
   created_at: string;
   payments: { amount: number }[];
 }
-
 interface LabOrderRow {
   id: string;
   status: "ordered" | "resulted" | "cancelled";
@@ -74,15 +43,26 @@ function parseTests(json: string): { name: string }[] {
 }
 
 export default function PatientRecordsPage() {
+  return (
+    <React.Suspense fallback={<div className="p-5 text-sm text-muted-foreground">Loading…</div>}>
+      <RecordsInner />
+    </React.Suspense>
+  );
+}
+
+function RecordsInner() {
   const { patientProfile } = usePatientSession();
-  const [tab, setTab] = React.useState<TabId>("timeline");
+  const params = useSearchParams();
+  const initial = TABS.some((t) => t.id === params.get("tab")) ? (params.get("tab") as TabId) : "timeline";
+  const [tab, setTab] = React.useState<TabId>(initial);
+
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
   const [invoices, setInvoices] = React.useState<InvoiceRow[] | null>(null);
   const [labOrders, setLabOrders] = React.useState<LabOrderRow[] | null>(null);
 
   React.useEffect(() => {
     fetch(`/api/appointments?patient_id=${patientProfile.id}`, { cache: "no-store" })
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : []))
       .then(setAppointments)
       .catch(() => setAppointments([]));
     fetch(`/api/patients/${patientProfile.id}/invoices`, { cache: "no-store" })
@@ -98,383 +78,231 @@ export default function PatientRecordsPage() {
   const timeline = (appointments ?? [])
     .slice()
     .sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
-
-  const lastVisit = timeline.find((a) => a.status === "completed") ?? null;
-  const primaryDoctor = timeline[0]?.doctor.full_name ?? null;
-
-  // A visit counts as "a prescription" once the doctor recorded a diagnosis,
-  // notes, or at least one medicine — the same fields the Consult Workbench
-  // writes via Prescription (APS-043), already real, just not surfaced here
-  // until now.
   const prescriptions = timeline.filter(
     (a) => a.diagnosis?.trim() || a.prescription_notes?.trim() || parseMedicines(a.prescription_medicines_json).length > 0
   );
 
   return (
-    <main className="mx-auto max-w-[1240px] px-7 py-6">
-      <h1 className="mb-4 text-lg font-semibold">Health Records</h1>
-
-      {/* Health Summary (APS-010) — orientation before the timeline */}
-      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <SummaryTile icon={Droplet} label="Blood Group" value={patientProfile.blood_group} tone="text-destructive" />
-
-        <HealthSummaryDialog
-          trigger={
-            <button className="w-full">
-              <SummaryTile
-                icon={ShieldAlert}
-                label="Allergies"
-                value={patientProfile.allergies || undefined}
-                addLabel="+ Add allergies"
-              />
+    <div>
+      <div className="sticky top-0 z-20 bg-background/90 px-5 pt-5 pb-2 backdrop-blur">
+        <h1 className="font-heading text-[21px] font-bold">Your records</h1>
+        <div className="mt-3 flex gap-1.5 rounded-[13px] bg-secondary p-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "flex-1 rounded-[10px] py-2 font-heading text-[12.5px] font-semibold transition",
+                tab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              )}
+            >
+              {t.label}
             </button>
-          }
-        />
-
-        <HealthSummaryDialog
-          trigger={
-            <button className="w-full">
-              <SummaryTile
-                icon={HeartPulse}
-                label="Chronic Conditions"
-                value={patientProfile.chronic_conditions || undefined}
-                addLabel="+ Add condition"
-              />
-            </button>
-          }
-        />
-
-        <SummaryTile
-          icon={Stethoscope}
-          label="Primary Doctor"
-          value={primaryDoctor ?? undefined}
-          placeholder="Not yet seen"
-          tone="text-foreground"
-        />
-
-        <HealthSummaryDialog
-          trigger={
-            <button className="w-full">
-              <SummaryTile
-                icon={Phone}
-                label="Emergency Contact"
-                value={
-                  patientProfile.emergency_contact_name
-                    ? `${patientProfile.emergency_contact_name}${patientProfile.emergency_contact_phone ? ` · ${patientProfile.emergency_contact_phone}` : ""}`
-                    : undefined
-                }
-                addLabel="+ Add contact"
-              />
-            </button>
-          }
-        />
-
-        <SummaryTile icon={CreditCard} label="Insurance" value={undefined} placeholder="Coming soon" muted />
-        <SummaryTile icon={Wallet} label="Auriva Health ID" value={patientProfile.health_id} mono />
-        <SummaryTile
-          icon={Clock3}
-          label="Last Visit"
-          value={lastVisit ? formatDay(lastVisit.scheduled_time) : undefined}
-          placeholder="No visits yet"
-        />
+          ))}
+        </div>
       </div>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "shrink-0 border-b-2 px-1 pb-2.5 text-[13px] font-medium transition-colors",
-              tab === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-            style={{ marginRight: 22 }}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="px-5 pt-3 pb-6">
+        {tab === "timeline" && <TimelinePane appointments={appointments} timeline={timeline} />}
+        {tab === "rx" && <RxPane loading={appointments === null} prescriptions={prescriptions} />}
+        {tab === "bills" && <BillsPane invoices={invoices} />}
+        {tab === "reports" && <ReportsPane labOrders={labOrders} />}
       </div>
-
-      {tab === "timeline" ? (
-        appointments === null ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-muted/60" />
-            ))}
-          </div>
-        ) : timeline.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
-            <CalendarCheck2 className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">Nothing here yet</p>
-            <p className="text-xs text-muted-foreground">Your visit history will build up here over time.</p>
-          </div>
-        ) : (
-          <div className="relative max-w-2xl pl-6">
-            <div className="absolute top-1.5 bottom-1.5 left-[9px] w-px bg-border" />
-            <div className="flex flex-col gap-6">
-              {timeline.map((a) => {
-                const meta = STATUS_META[a.status];
-                return (
-                  <div key={a.id} className="relative">
-                    <span className={cn("absolute -left-6 top-1.5 size-3 rounded-full ring-4 ring-background", meta.dot)} />
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase">
-                      {formatDay(a.scheduled_time)} · {formatTime(a.scheduled_time)}
-                    </p>
-                    <p className="mt-0.5 text-[13.5px] font-semibold">
-                      {a.status === "completed"
-                        ? `Consultation — ${a.doctor.full_name}`
-                        : a.status === "cancelled"
-                          ? `Appointment cancelled — ${a.doctor.full_name}`
-                          : a.status === "no_show"
-                            ? `Missed appointment — ${a.doctor.full_name}`
-                            : `Appointment with ${a.doctor.full_name}`}
-                    </p>
-                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-                      {a.doctor.specialty || "General Practitioner"} · {a.clinic.name}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )
-      ) : tab === "prescriptions" ? (
-        appointments === null ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-24 animate-pulse rounded-xl bg-muted/60" />
-            ))}
-          </div>
-        ) : prescriptions.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
-            <Pill className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">No prescriptions yet</p>
-            <p className="text-xs text-muted-foreground">Signed prescriptions from your visits will appear here.</p>
-          </div>
-        ) : (
-          <div className="flex max-w-2xl flex-col gap-3">
-            {prescriptions.map((a) => {
-              const medicines = parseMedicines(a.prescription_medicines_json);
-              return (
-                <div key={a.id} className="rounded-xl border bg-card p-4 shadow-xs">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[13.5px] font-semibold">{a.diagnosis || "Consultation"}</p>
-                      <p className="mt-0.5 text-[12px] text-muted-foreground">
-                        {a.doctor.full_name} · {a.doctor.specialty || "General Practitioner"} ·{" "}
-                        {formatDay(a.scheduled_time)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {medicines.length > 0 && (
-                    <div className="mt-3 divide-y rounded-lg border">
-                      {medicines.map((m, i) => (
-                        <div key={i} className="grid grid-cols-4 gap-2 px-3 py-2 text-[12px]">
-                          <span className="col-span-2 font-medium">{m.name}</span>
-                          <span className="text-muted-foreground">{m.dosage}</span>
-                          <span className="text-muted-foreground">{m.frequency}</span>
-                          {m.duration && (
-                            <span className="col-span-4 mt-0.5 text-[11px] text-muted-foreground">{m.duration}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {a.prescription_notes && (
-                    <p className="mt-3 text-[12.5px] text-muted-foreground">{a.prescription_notes}</p>
-                  )}
-
-                  {a.follow_up_date && (
-                    <p className="mt-2 text-[11.5px] font-medium text-primary">
-                      Follow-up: {formatDay(a.follow_up_date)}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : tab === "reports" ? (
-        labOrders === null ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/60" />
-            ))}
-          </div>
-        ) : labOrders.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
-            <FlaskConical className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">No lab orders yet</p>
-            <p className="text-xs text-muted-foreground">Tests your doctor orders will appear here.</p>
-          </div>
-        ) : (
-          <div className="flex max-w-2xl flex-col gap-3">
-            {labOrders.map((order) => {
-              const tests = parseTests(order.tests_json);
-              return (
-                <div key={order.id} className="rounded-xl border bg-card p-4 shadow-xs">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[13.5px] font-semibold">{tests.map((t) => t.name).join(", ")}</p>
-                      <p className="mt-0.5 text-[12px] text-muted-foreground">
-                        {order.doctor.full_name} · Ordered {formatDay(order.ordered_at)}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
-                        order.status === "resulted"
-                          ? "bg-success/10 text-success dark:text-success"
-                          : order.status === "cancelled"
-                            ? "bg-destructive/10 text-destructive dark:text-destructive"
-                            : "bg-warning/10 text-warning dark:text-warning"
-                      )}
-                    >
-                      {order.status === "resulted" ? "Result ready" : order.status === "cancelled" ? "Cancelled" : "Awaiting result"}
-                    </span>
-                  </div>
-                  {order.status === "resulted" && order.result_values_json && (
-                    <div className="mt-3 divide-y rounded-lg border">
-                      {(() => {
-                        try {
-                          const values = JSON.parse(order.result_values_json) as {
-                            test: string;
-                            value: string;
-                            unit: string;
-                            reference: string;
-                          }[];
-                          return values.map((v, i) => (
-                            <div key={i} className="grid grid-cols-4 gap-2 px-3 py-2 text-[12px]">
-                              <span className="col-span-2 font-medium">{v.test}</span>
-                              <span>
-                                {v.value} {v.unit}
-                              </span>
-                              <span className="text-muted-foreground">Ref: {v.reference}</span>
-                            </div>
-                          ));
-                        } catch {
-                          return null;
-                        }
-                      })()}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : tab === "bills" ? (
-        invoices === null ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-muted/60" />
-            ))}
-          </div>
-        ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
-            <Receipt className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">No bills yet</p>
-            <p className="text-xs text-muted-foreground">Invoices from your visits will appear here.</p>
-          </div>
-        ) : (
-          <div className="flex max-w-2xl flex-col gap-2">
-            {invoices.map((inv) => {
-              const paid = inv.payments.reduce((sum, p) => sum + p.amount, 0);
-              const balance = inv.total - paid;
-              return (
-                <div key={inv.id} className="flex items-center justify-between rounded-xl border bg-card p-3.5 shadow-xs">
-                  <div>
-                    <p className="text-[13px] font-semibold">{inv.invoice_number}</p>
-                    <p className="text-[11.5px] text-muted-foreground">{formatDay(inv.created_at)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[13px] font-semibold tabular-nums">₹{inv.total.toLocaleString("en-IN")}</p>
-                    <p
-                      className={cn(
-                        "text-[11px] font-medium",
-                        inv.status === "paid" ? "text-success" : balance > 0 ? "text-warning" : "text-muted-foreground"
-                      )}
-                    >
-                      {inv.status === "paid" ? "Paid" : inv.status === "void" ? "Void" : `₹${balance.toLocaleString("en-IN")} due`}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : (
-        <ComingSoonPanel {...COMING_SOON[tab]} />
-      )}
-    </main>
-  );
-}
-
-function SummaryTile({
-  icon: Icon,
-  label,
-  value,
-  placeholder,
-  addLabel,
-  tone,
-  mono,
-  muted,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value?: string;
-  placeholder?: string;
-  addLabel?: string;
-  tone?: string;
-  mono?: boolean;
-  muted?: boolean;
-}) {
-  const empty = !value;
-  return (
-    <div
-      className={cn(
-        "h-full rounded-xl border bg-card p-3 text-left shadow-xs",
-        empty && addLabel && "border-dashed",
-        muted && "opacity-60"
-      )}
-    >
-      <div className="flex items-center gap-1.5">
-        <Icon className="size-3.5 text-muted-foreground" />
-        <span className="text-[9.5px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</span>
-      </div>
-      {empty ? (
-        <p className={cn("mt-1.5 text-[12px] font-semibold", addLabel ? "text-primary" : "text-muted-foreground")}>
-          {addLabel ?? placeholder}
-        </p>
-      ) : (
-        <p className={cn("mt-1.5 truncate text-[13px] font-semibold", tone, mono && "font-mono")}>{value}</p>
-      )}
     </div>
   );
 }
 
-function ComingSoonPanel({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
-}) {
+function Empty({ icon: Icon, title, sub }: { icon: React.ComponentType<{ className?: string }>; title: string; sub: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border py-16 text-center">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-accent">
-        <Icon className="size-6 text-accent-foreground" />
+    <div className="flex flex-col items-center gap-2 rounded-[16px] border border-dashed py-14 text-center">
+      <Icon className="size-8 text-muted-foreground/50" />
+      <p className="text-sm font-medium">{title}</p>
+      <p className="max-w-[16rem] text-xs text-muted-foreground">{sub}</p>
+    </div>
+  );
+}
+
+function Skeleton({ n, h }: { n: number; h: number }) {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} className="animate-pulse rounded-[15px] bg-muted/60" style={{ height: h }} />
+      ))}
+    </div>
+  );
+}
+
+function Row({ av, avTone, title, meta, right }: { av: React.ReactNode; avTone?: string; title: string; meta: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 rounded-[15px] border bg-card p-3.5">
+      <span className={cn("grid size-11 shrink-0 place-items-center rounded-[13px] font-heading text-[13px] font-bold", avTone ?? "bg-accent text-accent-foreground")}>
+        {av}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-heading text-[15px] font-bold">{title}</p>
+        <p className="truncate text-[12.5px] text-muted-foreground">{meta}</p>
       </div>
-      <div>
-        <p className="text-[15px] font-semibold">{title}</p>
-        <p className="mx-auto mt-1 max-w-sm text-[13px] text-muted-foreground">{body}</p>
-      </div>
+      {right ?? <ChevronRight className="size-5 shrink-0 text-muted-foreground/40" />}
+    </div>
+  );
+}
+
+function TimelinePane({ appointments, timeline }: { appointments: Appointment[] | null; timeline: Appointment[] }) {
+  if (appointments === null) return <Skeleton n={3} h={72} />;
+  if (timeline.length === 0)
+    return <Empty icon={CalendarCheck2} title="Nothing here yet" sub="Your visit history builds up here over time." />;
+  return (
+    <div className="space-y-2.5">
+      {timeline.map((a) => {
+        const day = new Date(a.scheduled_time).getDate().toString().padStart(2, "0");
+        const done = a.status === "completed";
+        const label =
+          a.status === "cancelled" ? "Appointment cancelled" : a.status === "no_show" ? "Missed appointment" : done ? "Consultation" : "Appointment";
+        return (
+          <Row
+            key={a.id}
+            av={day}
+            avTone={done ? "bg-honey-soft text-honey-deep" : "bg-accent text-accent-foreground"}
+            title={`${label} · ${a.doctor.full_name}`}
+            meta={`${formatDay(a.scheduled_time)} · ${a.doctor.specialty || "General practitioner"}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function RxPane({ loading, prescriptions }: { loading: boolean; prescriptions: Appointment[] }) {
+  if (loading) return <Skeleton n={2} h={96} />;
+  if (prescriptions.length === 0)
+    return <Empty icon={Pill} title="No prescriptions yet" sub="Signed prescriptions from your visits appear here." />;
+  return (
+    <div className="space-y-3">
+      {prescriptions.map((a) => {
+        const meds = parseMedicines(a.prescription_medicines_json);
+        return (
+          <div key={a.id} className="rounded-[15px] border bg-card p-4">
+            <div className="flex items-center gap-2">
+              <Stethoscope className="size-4 text-honey-deep" />
+              <p className="font-heading text-[15px] font-bold">{a.diagnosis || "Consultation"}</p>
+            </div>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {a.doctor.full_name} · {formatDay(a.scheduled_time)}
+            </p>
+            {meds.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {meds.map((m, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-[12px] bg-secondary/60 px-3 py-2">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-honey-soft text-honey-deep">
+                      <Pill className="size-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13.5px] font-semibold">{m.name}</p>
+                      <p className="truncate text-[11.5px] text-muted-foreground">
+                        {[m.dosage, m.frequency, m.duration].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {a.prescription_notes && <p className="mt-3 text-[12.5px] text-muted-foreground">{a.prescription_notes}</p>}
+            {a.follow_up_date && (
+              <p className="mt-2 text-[11.5px] font-semibold text-honey-deep">Follow-up: {formatDay(a.follow_up_date)}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BillsPane({ invoices }: { invoices: InvoiceRow[] | null }) {
+  if (invoices === null) return <Skeleton n={2} h={64} />;
+  if (invoices.length === 0) return <Empty icon={Receipt} title="No bills yet" sub="Invoices from your visits appear here." />;
+  return (
+    <div className="space-y-2.5">
+      {invoices.map((inv) => {
+        const paid = inv.payments.reduce((s, p) => s + p.amount, 0);
+        const balance = inv.total - paid;
+        const due = inv.status !== "paid" && inv.status !== "void" && balance > 0;
+        return (
+          <Row
+            key={inv.id}
+            av="₹"
+            avTone="bg-secondary text-foreground"
+            title={inv.invoice_number}
+            meta={formatDay(inv.created_at)}
+            right={
+              <div className="shrink-0 text-right">
+                <p className="font-heading text-[15px] font-bold tabular-nums">₹{inv.total.toLocaleString("en-IN")}</p>
+                <span
+                  className={cn(
+                    "text-[11px] font-bold",
+                    inv.status === "paid" ? "text-success" : due ? "text-destructive" : "text-muted-foreground"
+                  )}
+                >
+                  {inv.status === "paid" ? "Paid" : inv.status === "void" ? "Void" : due ? "Due" : "—"}
+                </span>
+              </div>
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ReportsPane({ labOrders }: { labOrders: LabOrderRow[] | null }) {
+  if (labOrders === null) return <Skeleton n={2} h={72} />;
+  if (labOrders.length === 0)
+    return <Empty icon={FlaskConical} title="No lab reports yet" sub="Tests your doctor orders appear here." />;
+  return (
+    <div className="space-y-2.5">
+      {labOrders.map((order) => {
+        const tests = parseTests(order.tests_json).map((t) => t.name).join(", ");
+        const resulted = order.status === "resulted";
+        return (
+          <div key={order.id} className="rounded-[15px] border bg-card p-3.5">
+            <div className="flex items-center gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-accent font-heading text-[12px] font-bold text-accent-foreground">
+                Lab
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-heading text-[15px] font-bold">{tests || "Lab test"}</p>
+                <p className="truncate text-[12.5px] text-muted-foreground">
+                  {order.doctor.full_name} · {formatDay(order.ordered_at)}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold",
+                  resulted ? "bg-success/15 text-success" : order.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-honey-soft text-honey-deep"
+                )}
+              >
+                {resulted ? "Ready" : order.status === "cancelled" ? "Cancelled" : "Awaiting"}
+              </span>
+            </div>
+            {resulted && order.result_values_json && (
+              <div className="mt-3 divide-y rounded-[12px] border">
+                {(() => {
+                  try {
+                    const values = JSON.parse(order.result_values_json) as { test: string; value: string; unit?: string; reference?: string }[];
+                    return values.map((v, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-[12.5px]">
+                        <span className="font-medium">{v.test}</span>
+                        <span className="tabular-nums">{[v.value, v.unit].filter(Boolean).join(" ")}</span>
+                      </div>
+                    ));
+                  } catch {
+                    return null;
+                  }
+                })()}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
