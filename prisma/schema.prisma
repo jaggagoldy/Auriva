@@ -245,6 +245,14 @@ model DoctorAvailability {
   start_time  String  // "09:00"
   end_time    String  // "17:00"
   is_active   Boolean @default(true)
+  // P2 (Doctor Calendar & Availability): a recurring within-day break (e.g.
+  // lunch 13:00–14:00) and an optional per-day booking cap. Both nullable and
+  // additive — a day with no break/cap behaves exactly as before. getBookableSlots
+  // removes slots overlapping the break and stops offering slots once the day's
+  // booked count reaches max_patients.
+  break_start String? // "13:00" — null = no break that day
+  break_end   String? // "14:00"
+  max_patients Int?   // null = uncapped
 
   doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
 
