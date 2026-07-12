@@ -36,6 +36,11 @@ interface PatientNotification {
   read_at: string | null;
 }
 
+// Fallback for a type the API sends that predates this client's enum (e.g. a
+// new notification type shipped server-first) — never let an unrecognized
+// string crash the whole patient layout over a bell icon.
+const DEFAULT_TYPE_META = { icon: Bell };
+
 const TYPE_META: Record<NotificationType, { icon: React.ComponentType<{ className?: string }> }> = {
   appointment_booked: { icon: CalendarCheck },
   appointment_rescheduled: { icon: CalendarClock },
@@ -115,7 +120,7 @@ export default function NotificationCenter() {
             <p className="text-sm text-muted-foreground">No notifications yet.</p>
           )}
           {notifications?.map((n, i) => {
-            const meta = TYPE_META[n.type];
+            const meta = TYPE_META[n.type] ?? DEFAULT_TYPE_META;
             const Icon = meta.icon;
             return (
               <div key={n.id}>

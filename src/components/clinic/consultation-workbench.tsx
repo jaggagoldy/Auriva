@@ -128,6 +128,15 @@ export function ConsultationWorkbench({
   function updateRow(id: string, patch: Partial<RxRow>) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
+  function removeRow(id: string) {
+    setRows((prev) => {
+      if (prev.length <= 1) {
+        toast.info("At least one medicine row is required.");
+        return prev;
+      }
+      return prev.filter((r) => r.id !== id);
+    });
+  }
   function appendComplaint(word: string) {
     setComplaint((prev) => (prev.trim() ? `${prev.replace(/\s+$/, "")}, ${word.toLowerCase()}` : word));
   }
@@ -281,9 +290,9 @@ export function ConsultationWorkbench({
               </div>
               <div className="space-y-2">
                 {rows.map((r) => (
-                  <div key={r.id} className="grid grid-cols-2 gap-2 sm:grid-cols-[1.6fr_1fr_1fr_1fr_32px] sm:items-center">
+                  <div key={r.id} className="grid grid-cols-3 gap-2 sm:grid-cols-[1.6fr_1fr_1fr_1fr_32px] sm:items-center">
                     <Input
-                      className="col-span-2 sm:col-span-1"
+                      className="col-span-3 sm:col-span-1"
                       value={r.medicine}
                       onChange={(e) => updateRow(r.id, { medicine: e.target.value })}
                       placeholder="Medicine"
@@ -292,15 +301,15 @@ export function ConsultationWorkbench({
                     <Input value={r.frequency} onChange={(e) => updateRow(r.id, { frequency: e.target.value })} placeholder="1-0-1" />
                     <Input value={r.duration} onChange={(e) => updateRow(r.id, { duration: e.target.value })} placeholder="5 days" />
                     <button
-                      onClick={() => setRows((prev) => (prev.length > 1 ? prev.filter((x) => x.id !== r.id) : prev))}
+                      onClick={() => removeRow(r.id)}
                       className="hidden size-8 place-items-center rounded-lg bg-secondary text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:grid"
                       aria-label="Remove medicine"
                     >
                       <Trash2 className="size-4" />
                     </button>
                     <button
-                      onClick={() => setRows((prev) => (prev.length > 1 ? prev.filter((x) => x.id !== r.id) : prev))}
-                      className="col-span-2 inline-flex items-center justify-center gap-1 rounded-lg bg-secondary py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:hidden"
+                      onClick={() => removeRow(r.id)}
+                      className="col-span-3 inline-flex items-center justify-center gap-1 rounded-lg bg-secondary py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:hidden"
                     >
                       <Trash2 className="size-3.5" /> Remove
                     </button>
