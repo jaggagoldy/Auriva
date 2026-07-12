@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { getCurrentSession } from "@/api/session";
 import { canAccessPatientWorkspace } from "@/domain/authorization";
 import { PatientSessionProvider, PatientProfileData } from "@/components/patient/patient-session";
-import PatientNav from "@/components/patient/patient-nav";
+import { PatientShell } from "@/components/patient/patient-shell";
 
 function serializeProfile(profile: {
   id: string;
@@ -76,10 +76,7 @@ export default async function PatientLayout({ children }: { children: React.Reac
       user={{ id: account.id, phone_number: account.phone_number, email: account.email }}
       linkedProfiles={linkedProfiles}
     >
-      <div className="flex min-h-dvh flex-col bg-background">
-        <PatientNav />
-        <div className="flex-1">{children}</div>
-      </div>
+      <PatientShell>{children}</PatientShell>
     </PatientSessionProvider>
   );
 }
