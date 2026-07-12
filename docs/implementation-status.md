@@ -70,7 +70,7 @@ Dev server: `http://localhost:3000` · Provider login `+15550299001 / password12
 |---|---|---|---|
 | 3 Provider Workspace | `/clinic`, `/doctor/*` | 🟡 | Real frozen UX, warm; + "Grow to multi-clinic" card added |
 | 4 Patient Experience | `/patient/*` | 🟡 | Real, warm; honey-forward polish pending |
-| 5 Clinical | `/doctor` consult | 🟡 | warm |
+| 5 Clinical | `/clinic` consult | ✅ | **Phase 5 built:** full consultation workbench (chief complaint, exam, diagnosis chips, structured Rx builder + templates, investigations, follow-up) matching `design/mockups/auriva-clinical.html` + signed printable visit summary. Rx persisted as structured data; **investigations → real LabOrder**; **Lab worklist** view in `/clinic` results them (`/api/clinic/lab`). Browser-verified 1280/390, 0 errors |
 | 6 Practice Ops | `/staff/*` | 🟡 | warm (multi-clinic) |
 | 6B Financial | `/staff/billing` | 🟡 | warm |
 | 7 Admin/Org | `/admin/*` | 🟡 | warm |
@@ -87,4 +87,4 @@ All marketing + auth routes browser-checked at **390px (mobile) and 1280px (desk
 
 ---
 
-_Last updated: 2026-07-12 — **PHASE 1 ✅ DONE + responsiveness verified** (390/1280, no overflow/errors). Home · Products · Solutions · Pricing · About · Security/Trust · header (mega-menu) · footer. Provider timeline + patient phone-mock rebuilt. Honey token added; auth `/start` + `/login` ✅. Prototype HTML mockups copied to `design/mockups/` (13 files). Next: Phase 2 auth-flow gaps, then Phase 5 clinical + Phase 3/4 pixel-match._
+_Last updated: 2026-07-12 — **PHASE 1 ✅** (responsiveness verified 390/1280) + **PHASE 5 clinical ✅** (consultation workbench + signed visit summary + structured Rx + investigations→LabOrder + `/clinic` Lab worklist; browser-verified) + auth **account-linking screen ✅** (`329a82e`). Prototype HTML mockups in `design/mockups/` (13 files). Working on branch `claude-code-work` (worktree `/Users/goldy/Desktop/healthcare-platform`); parallel branch `claude-web-work` (worktree `/Users/goldy/Desktop/Auriva-web`). Next: Phase 3/4 workspace pixel-match, then multi-clinic phases 6–11._
