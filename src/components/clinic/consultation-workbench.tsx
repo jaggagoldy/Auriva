@@ -147,10 +147,6 @@ export function ConsultationWorkbench({
   // examination + investigations become the encounter note; advice rides on
   // the prescription's notes line.
   function buildPayload() {
-    const historyParts: string[] = [];
-    if (exam.trim()) historyParts.push(exam.trim());
-    if (investigations.length) historyParts.push(`Investigations: ${investigations.join(", ")}`);
-
     const medicines = filledRx.map((r) => ({
       name: r.medicine.trim(),
       dosage: r.dosage.trim(),
@@ -162,10 +158,11 @@ export function ConsultationWorkbench({
       action: "complete" as const,
       appointment_id: appointmentId,
       chief_complaint: complaint.trim() || undefined,
-      notes: historyParts.join("\n") || undefined,
+      notes: exam.trim() || undefined,
       diagnosis: diagnoses.join(", ") || undefined,
       prescription_notes: advice.trim() || undefined,
       prescription_medicines_json: medicines.length ? JSON.stringify(medicines) : undefined,
+      investigations: investigations.length ? investigations : undefined,
       follow_up_date: followUpDays != null ? isoDateInDays(followUpDays) : undefined,
       treatment_id: treatmentId || undefined,
     };

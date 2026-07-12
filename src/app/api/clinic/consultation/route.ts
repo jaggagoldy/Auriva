@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
           prescriptionNotes: typeof body.prescription_notes === "string" ? body.prescription_notes : undefined,
           prescriptionMedicinesJson:
             typeof body.prescription_medicines_json === "string" ? body.prescription_medicines_json : undefined,
+          investigations: Array.isArray(body.investigations)
+            ? body.investigations.filter((t: unknown): t is string => typeof t === "string")
+            : undefined,
           treatmentId: typeof body.treatment_id === "string" ? body.treatment_id : null,
         });
         return ok({ success: true, ...result });

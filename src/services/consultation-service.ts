@@ -16,6 +16,7 @@ import {
   AppointmentNotFoundError,
 } from "@/services/appointment-service";
 import { setDraftInvoiceItems, recordPayment } from "@/services/billing-service";
+import { createLabOrder } from "@/services/lab-service";
 import type { InvoiceItem, PaymentMethod } from "@/domain/invoice-status";
 
 export class ConsultationInputError extends Error {}
@@ -55,6 +56,7 @@ export async function completeVisit(input: {
   followUpDate?: string | null;
   prescriptionNotes?: string | null;
   prescriptionMedicinesJson?: string | null;
+  investigations?: string[] | null;
   treatmentId?: string | null;
 }) {
   const appointment = await requireClinicAppointment(input.appointmentId, input.clinicId);
@@ -90,6 +92,21 @@ export async function completeVisit(input: {
       follow_up_date: input.followUpDate ?? undefined,
       prescription_notes: input.prescriptionNotes ?? undefined,
       prescription_medicines_json: input.prescriptionMedicinesJson ?? undefined,
+    });
+  }
+
+  // 2b) Investigations become a real LabOrder (worklist + patient results),
+  // not free text — the same "capture once, surfaces everywhere" completion
+  // as the prescription. One order carries every test from this visit.
+  const tests = (input.investigations ?? []).map((name) => ({ name: name.trim() })).filter((t) => t.name);
+  if (tests.length > 0) {
+    await createLabOrder({
+      clinicId: input.clinicId,
+      patientId: appointment.patient_id,
+      doctorId: appointment.doctor_id,
+      appointmentId: appointment.id,
+      tests,
+      clinicalNote: input.diagnosis ?? null,
     });
   }
 
