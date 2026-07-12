@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auriva · /clinic — Complete Flow & Scope Review</title>
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#EFE7DB;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC; --night:#0B4A41;
+    --honey:#E8A24C; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --ink:#241F1A; --body:#4E463C; --muted:#8C8477; --line:#ECE3D6; --line2:#E2D7C7;
+    --ok:#3F9D5A; --ok-tint:#E4F2E7; --rose:#C9584E; --rose-tint:#F7E0DC;
+    --fd:'SF Pro Rounded',ui-rounded,'Nunito',system-ui,sans-serif;
+    --fb:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+    --shadow:0 20px 44px -28px rgba(36,31,26,.4);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--sand2);color:var(--ink);font-family:var(--fb);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  a{color:var(--pine)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:var(--sand);padding:1.5px 6px;border-radius:6px;color:var(--pine-deep)}
+
+  /* header */
+  header.hero{background:linear-gradient(158deg,var(--night),#0A423A);color:#fff;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;right:-160px;top:-200px;background:radial-gradient(circle,rgba(232,162,76,.22),transparent 62%)}
+  .hero-in{position:relative;padding:52px 0 44px}
+  .brand{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:14px;color:var(--honey);letter-spacing:.02em}
+  .brand svg{width:22px;height:22px}
+  header.hero h1{font-size:clamp(28px,5vw,42px);margin-top:16px;line-height:1.08;max-width:16ch}
+  header.hero .sub{margin-top:12px;color:#CFE3DC;font-size:16px;max-width:60ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{font-size:12px;font-weight:650;border-radius:99px;padding:6px 12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16)}
+  .pill.on{background:var(--honey);color:#4A3413;border-color:transparent}
+
+  /* nav / toc */
+  nav.toc{position:sticky;top:0;z-index:10;background:rgba(251,248,244,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding:11px 20px}
+  nav.toc a{white-space:nowrap;font-size:13px;font-weight:650;color:var(--body);text-decoration:none;padding:6px 11px;border-radius:9px}
+  nav.toc a:hover{background:var(--sand)}
+
+  section{padding:44px 0 8px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pine)}
+  h2.sec{font-size:26px;margin-top:10px}
+  .lead{color:var(--body);margin-top:8px;max-width:70ch}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:720px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}}
+
+  /* nav-map cards */
+  .navcard{padding:18px}
+  .navcard .top{display:flex;align-items:center;gap:10px}
+  .navcard .ic{width:34px;height:34px;border-radius:10px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;flex:0 0 auto;font-weight:800}
+  .navcard h3{font-size:16px}
+  .navcard .q{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .navcard ul{margin:12px 0 0;padding-left:18px;font-size:13.5px;color:var(--body)}
+  .navcard ul li{margin:4px 0}
+
+  .status{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:3px 9px;margin-left:8px;vertical-align:middle}
+  .s-live{background:var(--ok-tint);color:var(--ok)}
+  .s-def{background:var(--honey-tint);color:var(--honey-deep)}
+  .s-out{background:var(--sand);color:var(--muted)}
+
+  /* flow steps */
+  .flow{counter-reset:step;display:grid;gap:12px;margin-top:18px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px 16px 60px;position:relative}
+  .step::before{counter-increment:step;content:counter(step);position:absolute;left:16px;top:16px;width:30px;height:30px;border-radius:9px;background:var(--night);color:var(--honey);display:grid;place-items:center;font-family:var(--fd);font-weight:800}
+  .step h4{font-size:15.5px}
+  .step p{font-size:13.5px;color:var(--body);margin-top:3px}
+  .step .st{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--pine);background:var(--pine-tint);border-radius:6px;padding:1px 7px}
+
+  /* anatomy split */
+  .anat{display:grid;gap:14px;margin-top:16px}
+  @media(min-width:720px){.anat{grid-template-columns:260px 1fr}}
+  .rail{background:var(--sand);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .rail h4,.mainc h4{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .rail ul,.mainc ul{margin:10px 0 0;padding-left:16px;font-size:13.5px;color:var(--body)}
+  .rail li,.mainc li{margin:5px 0}
+  .mainc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:14px}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface);min-width:560px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--sand);font-family:var(--fd);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--body)}
+  tr:last-child td{border-bottom:none}
+  td code{white-space:nowrap}
+
+  .note{display:flex;gap:11px;background:var(--honey-tint);border:1px solid var(--honey-soft);border-radius:12px;padding:14px 16px;font-size:13.5px;color:var(--honey-deep);margin-top:18px}
+  .note svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
+
+  .kv{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .kv span{font-size:12.5px;background:var(--sand);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-weight:600;color:var(--body)}
+
+  footer{padding:44px 0 60px;color:var(--muted);font-size:12.5px}
+  hr.div{border:none;border-top:1px solid var(--line);margin:0}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg>
+      Auriva — Healthcare Operating System
+    </div>
+    <h1>The Solo Clinic Workspace — <code style="background:rgba(255,255,255,.14);color:#fff">/clinic</code></h1>
+    <p class="sub">Complete flow &amp; scope review. Everything one practitioner needs to run a full day — from “Am I ready?” through consultation to payment — in a single all-in-one workspace. This document is the locked design + current functionality as built.</p>
+    <div class="meta">
+      <span class="pill on">Solo-first · one person runs everything</span>
+      <span class="pill">P1–P3 · P5–P6 locked</span>
+      <span class="pill">P4 billing deferred</span>
+      <span class="pill">Multi-clinic out of scope</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#map">Navigation map</a>
+    <a href="#screens">Screens</a>
+    <a href="#consult">Consultation journey</a>
+    <a href="#setup">Practice Setup</a>
+    <a href="#diagnostics">Diagnostics</a>
+    <a href="#templates">Templates</a>
+    <a href="#api">Backend contracts</a>
+    <a href="#scope">Scope &amp; status</a>
+    <a href="#test">Test it</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="eyebrow">What this is</div>
+    <h2 class="sec">One workspace, one person, one calm day</h2>
+    <p class="lead">A solo clinic has no separate front desk or doctor console — the single practitioner does everything from <code>/clinic</code>. Every screen answers exactly one question and always offers one obvious next action. The defining loop is <strong>Today → Consultation → Payment</strong>. Signs in with phone + password as a <code>super_admin</code> owner and lands here.</p>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="card navcard"><div class="top"><span class="ic">◎</span><div><h3>All-in-one</h3><div class="q">no role-switching</div></div></div><p style="font-size:13.5px;color:var(--body);margin-top:10px">Reception, doctor and billing capabilities are one account. <code>/doctor</code> &amp; <code>/staff</code> are dormant until multi-clinic.</p></div>
+      <div class="card navcard"><div class="top"><span class="ic">◷</span><div><h3>Action-first</h3><div class="q">next action, not menus</div></div></div><p style="font-size:13.5px;color:var(--body);margin-top:10px">The hero always shows the single most important thing to do next — see a patient, collect a payment, finish setup.</p></div>
+      <div class="card navcard"><div class="top"><span class="ic">✽</span><div><h3>Honest data</h3><div class="q">no fake UI</div></div></div><p style="font-size:13.5px;color:var(--body);margin-top:10px">Every number and record is real or an honest empty state. Vitals are captured live, never fabricated.</p></div>
+    </div>
+  </section>
+
+  <!-- NAV MAP -->
+  <section id="map">
+    <div class="eyebrow">Information architecture</div>
+    <h2 class="sec">Six tabs — each answers one question</h2>
+    <p class="lead">Left sidebar on desktop, bottom tab bar on mobile. A demo clinic shows a reset banner; a solo owner sees a warm honey/pine workspace.</p>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card navcard">
+        <div class="top"><span class="ic">🏠</span><div><h3>My Clinic <span class="status s-live">Live</span></h3><div class="q">“Am I ready?”</div></div></div>
+        <ul>
+          <li><strong>Clinic Ready</strong> progress ring + guided checklist (add first treatment, book first patient, record first payment, share booking page, complete profile).</li>
+          <li>Once 100%, flips to a patient goal (“See N patients”).</li>
+          <li><strong>Booking page is live</strong> — copy link, share via WhatsApp, preview.</li>
+        </ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">📅</span><div><h3>Today <span class="status s-live">Live</span></h3><div class="q">“What do I do next?”</div></div></div>
+        <ul>
+          <li><strong>Next patient</strong> hero + Start consultation.</li>
+          <li>Day summary: seen · remaining · follow-ups · ₹ collected · outstanding.</li>
+          <li><strong>Today / Upcoming / All</strong> filter over the schedule.</li>
+          <li><strong>Book a patient</strong> in-clinic dialog (new or returning).</li>
+          <li>Completed visits show <em>Payment due</em> → <em>Seen · Paid</em>.</li>
+        </ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">🗓️</span><div><h3>Calendar <span class="status s-live">Live</span></h3><div class="q">“When am I free?”</div></div></div>
+        <ul>
+          <li><strong>Day / Week / Month</strong> views of appointments + time blocks.</li>
+          <li>Status-coloured dots (upcoming · seen-unpaid · paid · cancelled).</li>
+          <li><strong>Block time</strong> — mark yourself unavailable in a click.</li>
+        </ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">🩺</span><div><h3>Treatments <span class="status s-live">Live</span></h3><div class="q">“What do I offer?”</div></div></div>
+        <ul>
+          <li>Your services / treatments — name, duration, price, active.</li>
+          <li>Drives the consultation fee and the invoice line.</li>
+        </ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">💵</span><div><h3>Payments <span class="status s-live">Live</span></h3><div class="q">“What have I collected?”</div></div></div>
+        <ul>
+          <li>Today’s recorded payments + totals (collected · outstanding).</li>
+          <li>Records money received — Auriva doesn’t process the money.</li>
+        </ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">⚙️</span><div><h3>Settings <span class="status s-live">Live</span></h3><div class="q">“How do I run my clinic?”</div></div></div>
+        <ul>
+          <li><strong>Practice Setup</strong> — full clinic + doctor profile (see below).</li>
+          <li>Online bookings toggle (“accepting” / “paused”).</li>
+          <li><strong>Availability</strong> — days, hours, breaks, slot length, buffer, max/day.</li>
+          <li><strong>Time off / Holidays.</strong> Growing-your-practice path.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONSULT JOURNEY -->
+  <section id="consult">
+    <div class="eyebrow">The defining loop</div>
+    <h2 class="sec">Consultation journey — arrival to paid</h2>
+    <p class="lead">Started from Today’s <em>Start consultation</em>. A full-screen documentation workbench, then a signed summary, then payment. The booking status advances at each step and is reflected everywhere.</p>
+
+    <div class="flow">
+      <div class="step"><h4>Booked <span class="st">status: scheduled</span></h4><p>Patient booked online, by phone-in, or via the in-clinic <em>Book a patient</em> dialog.</p></div>
+      <div class="step"><h4>Start consultation <span class="st">→ in_consultation</span></h4><p>Opens the full-width workbench with the patient’s real clinical context on the left.</p></div>
+      <div class="step"><h4>Document the visit</h4><p>Chief complaint, examination, diagnosis, prescription, recommended tests, follow-up, treatment &amp; fee.</p></div>
+      <div class="step"><h4>Review &amp; complete <span class="st">→ completed</span></h4><p>A signed, printable visit summary. Completing auto-drafts the invoice.</p></div>
+      <div class="step"><h4>Collect payment <span class="st">Payment due → Paid</span></h4><p>Record cash / UPI / card (or skip). Today flips the patient to <em>Seen · Paid</em>.</p></div>
+      <div class="step"><h4>Surfaces everywhere</h4><p>The completed visit + prescription + recommended tests appear on the patient’s portal timeline and Health Vault.</p></div>
+    </div>
+
+    <h3 style="margin-top:26px;font-size:18px">Workbench anatomy</h3>
+    <div class="anat">
+      <div class="rail">
+        <h4>Left clinical rail <span class="status s-live" style="margin-left:4px">real data</span></h4>
+        <ul>
+          <li><strong>Vitals</strong> — live capture (BP, pulse, temp, SpO₂); folded into the note. No fabricated readings.</li>
+          <li><strong>Allergies</strong> + chronic conditions</li>
+          <li><strong>Current medicines</strong> (from the last visit)</li>
+          <li><strong>Past visits</strong> (recent completed)</li>
+        </ul>
+      </div>
+      <div class="mainc">
+        <h4>Main documentation column</h4>
+        <ul>
+          <li><strong>Templates</strong> bar — apply a saved SOAP note (P6)</li>
+          <li><strong>Chief complaint</strong> + quick suggestion chips</li>
+          <li><strong>Examination &amp; notes</strong></li>
+          <li><strong>Diagnosis</strong> — chips</li>
+          <li><strong>Prescription</strong> builder — medicine · dosage · frequency · duration, with one-tap templates</li>
+          <li><strong>Investigations</strong> — structured diagnostics selector (P5), recommends tests to the patient</li>
+          <li><strong>Follow-up &amp; advice</strong> — review-in segments + advice</li>
+          <li><strong>Treatment &amp; fee</strong> — the visit charge</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <span><strong>Lifecycle, honestly.</strong> Booked → Checked-in (implicit for solo) → In consultation → Consultation completed → Payment pending → Paid → Visit completed. The Today schedule refreshes on completion so a just-seen patient never lingers as “scheduled”.</span>
+    </div>
+  </section>
+
+  <!-- PRACTICE SETUP -->
+  <section id="setup">
+    <div class="eyebrow">Settings → Practice Setup</div>
+    <h2 class="sec">The complete clinic &amp; doctor profile <span class="status s-live">Live</span></h2>
+    <p class="lead">One save covers the whole practice profile. Images upload through a <strong>StorageService abstraction</strong> — local disk today, swappable to S3/R2/Azure with zero UI change; the app only ever holds an opaque URL.</p>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card navcard">
+        <div class="top"><span class="ic">👤</span><h3>Your profile</h3></div>
+        <div class="kv"><span>Photo (upload)</span><span>Name</span><span>Specialty</span><span>Qualifications / education</span><span>Years of experience</span><span>Languages</span><span>Registration no.</span><span>Consultation fee</span><span>Follow-up fee</span><span>Bio</span></div>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">🏥</span><h3>Clinic profile</h3></div>
+        <div class="kv"><span>Logo</span><span>Cover image</span><span>Name</span><span>About</span><span>Address</span><span>Public phone</span><span>Reception contact</span><span>Email</span><span>Website</span></div>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">🕘</span><h3>Working &amp; media</h3></div>
+        <div class="kv"><span>Working days</span><span>Open / close</span><span>Facilities</span><span>Photo gallery</span><span>Documents / certificates</span><span>Social links</span></div>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">📆</span><h3>Availability (scheduling)</h3></div>
+        <div class="kv"><span>Working days</span><span>Working hours</span><span>Break times</span><span>Slot duration</span><span>Buffer time</span><span>Max patients / day</span><span>Holidays / time-off</span></div>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Patient booking consumes this — breaks, blocks, caps and slot length all shape the offered slots.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIAGNOSTICS -->
+  <section id="diagnostics">
+    <div class="eyebrow">P5 · replaces the removed Labs</div>
+    <h2 class="sec">Diagnostics — recommend, don’t manage <span class="status s-live">Live</span></h2>
+    <p class="lead">Auriva does not own or run labs. The doctor <strong>recommends</strong> tests; the patient acts on them. In the consult, “Investigations” is a structured selector; the tests land in the patient’s Health Vault.</p>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card navcard">
+        <div class="top"><span class="ic">🔬</span><h3>Doctor — selector</h3></div>
+        <ul><li>Search with acronyms (CBC, USG, MRI, HbA1c…)</li><li>6 categories: Pathology · Biochemistry · Endocrinology · Microbiology · Radiology · Cardiology</li><li>One-click packages: Fever · Metabolic · Antenatal · Thyroid</li><li>30-test catalog with prep notes</li></ul>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">🧾</span><h3>Patient — Health Vault</h3></div>
+        <ul><li>“Recommended by Dr X · date”</li><li>Preparation instructions (fasting / full bladder / no metal)</li><li>Status tracker: Pending → Booked → Completed → Report uploaded</li><li>Upload their own report</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEMPLATES -->
+  <section id="templates">
+    <div class="eyebrow">P6</div>
+    <h2 class="sec">Clinical templates <span class="status s-live">Live</span></h2>
+    <p class="lead">Reusable SOAP notes so doctors stop retyping. In the consult, a <strong>Templates</strong> bar applies a saved note; “Save current” turns the open visit into a template; “Manage” edits, favourites and deletes.</p>
+    <div class="kv"><span>Subjective → chief complaint</span><span>Objective → examination</span><span>Assessment → diagnosis</span><span>Plan · Advice · Exercises → advice</span><span>Follow-up (days)</span><span>Favourite ★</span></div>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Applying fills empty consult fields and appends to non-empty ones — nothing is lost. Stored per doctor within the clinic (share-across-clinic is a future flag).</p>
+  </section>
+
+  <!-- API -->
+  <section id="api">
+    <div class="eyebrow">For engineering</div>
+    <h2 class="sec">Backend contracts</h2>
+    <p class="lead">Every screen is wired to real, layered services. Solo-owner endpoints are reception-capable and clinic-scoped.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Area</th><th>Endpoint</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Home</td><td><code>GET /api/clinic/overview</code></td><td>Clinic Ready steps, %, booking path, goal.</td></tr>
+          <tr><td>Today</td><td><code>GET /api/clinic/today?scope=</code></td><td>Schedule (today/upcoming/all) + today summary + upcoming count.</td></tr>
+          <tr><td>Booking</td><td><code>POST /api/clinic/book</code></td><td>In-clinic booking; find-or-create patient, never gated by the online-pause.</td></tr>
+          <tr><td>Booking page</td><td><code>PATCH /api/clinic/booking-status</code> · <code>POST /api/clinic/booking-shared</code></td><td>Accepting-bookings switch; mark booking page shared.</td></tr>
+          <tr><td>Consultation</td><td><code>GET /api/clinic/consultation?appointment_id=</code><br><code>POST /api/clinic/consultation</code> (start · complete)</td><td>Left-rail clinical context; start/complete the visit (writes Rx, recommendations, drafts invoice).</td></tr>
+          <tr><td>Payment</td><td><code>POST /api/clinic/payment</code> · <code>GET /api/clinic/payments</code></td><td>Record a payment; today’s payments + totals.</td></tr>
+          <tr><td>Calendar</td><td><code>GET /api/clinic/schedule?start=&days=</code></td><td>Range schedule: appointments + doctor time blocks by day.</td></tr>
+          <tr><td>Availability</td><td><code>GET/PUT /api/doctors/[id]/availability</code><br><code>GET/POST/DELETE /api/doctors/[id]/time-blocks</code><br><code>GET /api/doctors/[id]/slots</code></td><td>Weekly grid (breaks/slot/buffer/cap); time-off blocks; bookable slots the patient consumes.</td></tr>
+          <tr><td>Practice Setup</td><td><code>GET/PATCH /api/clinic/profile</code> · <code>POST /api/clinic/uploads</code> · <code>GET /api/files/[key]</code></td><td>Whole clinic + doctor profile; media via StorageService.</td></tr>
+          <tr><td>Diagnostics</td><td><code>GET /api/patient/recommendations</code> · <code>PATCH …/[id]</code> · <code>POST /api/patient/uploads</code></td><td>Patient Health Vault: list, advance status, upload report.</td></tr>
+          <tr><td>Templates</td><td><code>GET/POST /api/clinic/templates</code> · <code>PATCH/DELETE …/[id]</code></td><td>Clinical template CRUD (favourite-first).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCOPE -->
+  <section id="scope">
+    <div class="eyebrow">The line</div>
+    <h2 class="sec">Scope &amp; status — what’s locked</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Capability</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Consultation workbench + booking lifecycle</td><td><span class="status s-live">Locked</span></td><td>Full-width, left clinical rail, signed summary, status through to paid.</td></tr>
+          <tr><td>Today · in-clinic booking · Today/Upcoming/All</td><td><span class="status s-live">Locked</span></td><td>—</td></tr>
+          <tr><td>Doctor calendar + availability + time-off</td><td><span class="status s-live">Locked</span></td><td>Day/Week/Month; booking consumes availability.</td></tr>
+          <tr><td>Practice Setup (profile + media, StorageService)</td><td><span class="status s-live">Locked</span></td><td>Local storage today; swappable to cloud.</td></tr>
+          <tr><td>Diagnostics recommend-tests + patient Health Vault</td><td><span class="status s-live">Locked</span></td><td>Recommendation only — not lab management.</td></tr>
+          <tr><td>Clinical templates (SOAP)</td><td><span class="status s-live">Locked</span></td><td>—</td></tr>
+          <tr><td>Multi-service billing (invoice line items)</td><td><span class="status s-def">Deferred</span></td><td>Single treatment fee today; groundwork in place.</td></tr>
+          <tr><td>Multi-clinic · hospital · front-desk · command-centre</td><td><span class="status s-out">Out of scope</span></td><td><code>/doctor</code>, <code>/staff</code>, <code>/admin</code> dormant until the multi-clinic UX is designed.</td></tr>
+          <tr><td>Laboratory management · insurance · enterprise</td><td><span class="status s-out">Out of scope</span></td><td>Explicitly not built.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <span><strong>Quality bar.</strong> Whole-project TypeScript clean · full test suite <strong>385/385</strong> · every screen browser-verified at 390px and 1280px with no horizontal overflow and no console errors.</span>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section id="test">
+    <div class="eyebrow">Try it</div>
+    <h2 class="sec">Review it live</h2>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card navcard">
+        <div class="top"><span class="ic">🩺</span><h3>Solo clinic</h3></div>
+        <p style="font-size:13.5px;color:var(--body);margin-top:8px"><code>http://localhost:3000/login</code></p>
+        <div class="kv"><span>Phone +15550300123</span><span>password123</span><span>→ /clinic</span></div>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Seeded with today + upcoming appointments to run the full loop.</p>
+      </div>
+      <div class="card navcard">
+        <div class="top"><span class="ic">📱</span><h3>Patient (the other side)</h3></div>
+        <p style="font-size:13.5px;color:var(--body);margin-top:8px"><code>http://localhost:3000/login?as=patient</code></p>
+        <div class="kv"><span>Phone +15550199999</span><span>OTP shown on screen</span></div>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Records → Tests shows the Health Vault fed by the consult.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="div" />
+  <footer>
+    Auriva · <code>/clinic</code> complete flow &amp; scope review · generated 2026-07-12 · branch <code>claude-code-work</code>.
+    Design source of truth: <code>design/mockups/</code>. Living tracker: <code>docs/implementation-status.md</code>.
+  </footer>
+</div>
+
+</body>
+</html>
