@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, HeartPulse, ShieldCheck, MonitorSmartphone, LogOut, Pencil } from "lucide-react";
+import { ChevronRight, ShieldCheck, MonitorSmartphone, LogOut, Pencil } from "lucide-react";
 import { usePatientSession } from "@/components/patient/patient-session";
 import HealthSummaryDialog from "@/components/patient/health-summary-dialog";
 import { getInitials } from "@/shared/queue";
@@ -80,7 +80,6 @@ export default function PatientYouPage() {
         <div className="divide-y rounded-[16px] border bg-card px-4">
           <SettingRow href="/patient/settings" icon={MonitorSmartphone} label="Account & devices" />
           <SettingRow href="/trust" icon={ShieldCheck} label="Privacy & data" />
-          <SettingRow href="/patient/care" icon={HeartPulse} label="Care & follow-ups" />
         </div>
 
         <button
