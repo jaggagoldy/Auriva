@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { DiagnosticsSelector } from "@/components/clinic/diagnostics-selector";
 import { getTest } from "@/domain/diagnostics-catalog";
+import { ConsultTemplates, type ClinicalTemplate } from "@/components/clinic/consult-templates";
 
 // Phase 5 — Clinical consultation (matches design/mockups/auriva-clinical.html,
 // adapted to real data + the warm design tokens). This REPLACES the cramped
@@ -149,6 +150,20 @@ export function ConsultationWorkbench({
     setComplaint((prev) => (prev.trim() ? `${prev.replace(/\s+$/, "")}, ${word.toLowerCase()}` : word));
   }
 
+  // P6: drop a saved template's SOAP note into the consult. Empty fields are
+  // filled; non-empty fields have the template appended so nothing is lost.
+  function applyTemplate(t: ClinicalTemplate) {
+    if (t.subjective) setComplaint((p) => (p.trim() ? `${p}\n${t.subjective}` : t.subjective!));
+    if (t.objective) setExam((p) => (p.trim() ? `${p}\n${t.objective}` : t.objective!));
+    if (t.assessment) {
+      const add = t.assessment.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+      setDiagnoses((prev) => Array.from(new Set([...prev, ...add])));
+    }
+    const adviceParts = [t.plan, t.advice, t.exercises ? `Exercises: ${t.exercises}` : ""].filter(Boolean);
+    if (adviceParts.length) setAdvice((p) => [p, ...adviceParts].filter(Boolean).join("\n"));
+    if (t.follow_up_days != null) setFollowUpDays(t.follow_up_days);
+  }
+
   // Map the structured UI onto the real backend fields. Medicines go to the
   // structured Prescription store (medicines_json) so they reach the printable
   // prescription and the patient timeline; chief complaint has its own column;
@@ -245,6 +260,11 @@ export function ConsultationWorkbench({
 
           {/* Main documentation column */}
           <div className="min-w-0 space-y-4">
+            <ConsultTemplates
+              current={{ subjective: complaint, objective: exam, assessment: diagnoses.join(", "), advice, follow_up_days: followUpDays }}
+              onApply={applyTemplate}
+            />
+
             <Section icon={<Stethoscope className="size-4" />} title="Chief complaint" hint="why they came in">
               <textarea
                 value={complaint}

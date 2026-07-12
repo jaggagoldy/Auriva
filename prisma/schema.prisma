@@ -218,6 +218,7 @@ model Clinic {
   prescriptions  Prescription[]
   labOrders      LabOrder[]
   testRecommendations TestRecommendation[]
+  clinicalTemplates ClinicalTemplate[]
   invoices       Invoice[]
   invitations    Invitation[]
   departments    Department[]
@@ -352,6 +353,7 @@ model StaffProfile {
   prescriptions Prescription[]
   labOrders     LabOrder[]
   testRecommendations TestRecommendation[]
+  clinicalTemplates ClinicalTemplate[]
   availability  DoctorAvailability[]
   timeBlocks    DoctorTimeBlock[]
   reviews       Review[]
@@ -656,6 +658,32 @@ model TestRecommendation {
   appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
 
   @@map("Test_Recommendations")
+}
+
+// P6 Clinical Templates — reusable consult notes a doctor drops into a visit
+// (SOAP + advice/exercises/follow-up). Owned by a doctor within a clinic;
+// clinic_id is present so "share across the clinic" is a future flag flip, not
+// a schema change.
+model ClinicalTemplate {
+  id             String   @id @default(uuid())
+  clinic_id      String
+  doctor_id      String
+  name           String
+  subjective     String?  // → chief complaint
+  objective      String?  // → examination & notes
+  assessment     String?  // → diagnosis (comma/line separated)
+  plan           String?  // → plan / advice
+  advice         String?
+  exercises      String?
+  follow_up_days Int?
+  is_favourite   Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  clinic Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@map("Clinical_Templates")
 }
 
 model LabOrder {
