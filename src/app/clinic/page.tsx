@@ -167,7 +167,7 @@ export default function MyClinicWorkspace() {
           {NAV.map((n) => (
             <button key={n.key} onClick={() => setView(n.key)}
               className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                view === n.key ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted")}>
+                view === n.key ? "bg-honey-soft text-honey-deep" : "text-foreground hover:bg-muted")}>
               {n.icon}
               <span className="flex-1">{n.label}
                 <span className="block text-[11px] font-normal text-muted-foreground">{n.q}</span>
@@ -214,7 +214,7 @@ export default function MyClinicWorkspace() {
             aria-current={view === n.key ? "page" : undefined}
             className={cn(
               "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
-              view === n.key ? "text-primary" : "text-muted-foreground"
+              view === n.key ? "text-honey-deep" : "text-muted-foreground"
             )}
           >
             {n.icon}
@@ -298,9 +298,9 @@ function PatientSearch() {
 function Ring({ percent }: { percent: number }) {
   return (
     <div className="grid size-20 shrink-0 place-items-center rounded-full"
-      style={{ background: `conic-gradient(var(--color-primary, #0d9488) ${percent}%, var(--color-border, #e2e8f0) 0)` }}>
-      <div className="grid place-items-center rounded-full bg-background" style={{ width: 60, height: 60 }}>
-        <span className="text-lg font-bold text-primary">{percent}%</span>
+      style={{ background: `conic-gradient(#E8A24C ${percent}%, rgba(255,255,255,.18) 0)` }}>
+      <div className="grid place-items-center rounded-full bg-[#0B4A41]" style={{ width: 60, height: 60 }}>
+        <span className="font-heading text-lg font-bold text-honey">{percent}%</span>
       </div>
     </div>
   );
@@ -327,34 +327,38 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
 
   return (
     <div className="space-y-4">
-      <Card className="p-5">
+      <Card className="relative overflow-hidden border-none bg-[#0B4A41] p-5 text-white">
+        <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 size-[220px] rounded-full" style={{ background: "radial-gradient(circle, rgba(232,162,76,.22), transparent 62%)" }} />
         {next ? (
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center gap-4">
             <Ring percent={ov.ready.percent} />
-            <div className="flex-1">
-              <h2 className="text-base font-semibold">Clinic Ready</h2>
-              <div className="mt-1 rounded-lg bg-primary/5 p-3">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next step</div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <span className="flex-1 text-sm font-medium">{next.label}</span>
-                  <Button size="sm" onClick={() => (next.key === "share" ? copyLink() : goto(STEP_TARGET[next.key]))}>Complete</Button>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold">Get your clinic ready</h2>
+              <div className="mt-2 rounded-[12px] bg-white/10 p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-honey">Next step</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="min-w-0 flex-1 text-sm font-medium">{next.label}</span>
+                  <button onClick={() => (next.key === "share" ? copyLink() : goto(STEP_TARGET[next.key]))}
+                    className="shrink-0 rounded-[10px] bg-white px-3 py-1.5 text-[13px] font-semibold text-[#083F37] transition hover:brightness-95">
+                    Complete
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="grid size-20 shrink-0 place-items-center rounded-full bg-primary/10"><Trophy className="size-8 text-primary" /></div>
-            <div className="flex-1">
-              <h2 className="text-base font-semibold">Your clinic is ready 🎉</h2>
+          <div className="relative flex items-center gap-4">
+            <div className="grid size-20 shrink-0 place-items-center rounded-full bg-honey/20"><Trophy className="size-8 text-honey" /></div>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold">Your clinic is ready 🎉</h2>
               {ov.ready.goal && (
-                <div className="mt-1 rounded-lg bg-primary/5 p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next goal</div>
+                <div className="mt-2 rounded-[12px] bg-white/10 p-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-honey">Next goal</div>
                   <div className="mt-0.5 text-sm font-medium">See {ov.ready.goal.target} patients</div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border">
-                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.round((ov.ready.goal.seen / ov.ready.goal.target) * 100))}%` }} />
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+                    <div className="h-full bg-honey" style={{ width: `${Math.min(100, Math.round((ov.ready.goal.seen / ov.ready.goal.target) * 100))}%` }} />
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{ov.ready.goal.seen} of {ov.ready.goal.target} seen</div>
+                  <div className="mt-1 text-xs text-white/70">{ov.ready.goal.seen} of {ov.ready.goal.target} seen</div>
                 </div>
               )}
             </div>
@@ -369,10 +373,10 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
           <div className="divide-y">
             {ov.ready.steps.map((s) => (
               <button key={s.key} onClick={() => (s.done ? undefined : s.key === "share" ? copyLink() : goto(STEP_TARGET[s.key]))}
-                className="flex w-full items-center gap-3 py-2.5 text-left">
-                {s.done ? <CheckCircle2 className="size-5 text-primary" /> : <Circle className="size-5 text-muted-foreground/40" />}
-                <span className={cn("flex-1 text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.label}</span>
-                {!s.done && <span className="text-xs font-medium text-primary">Do this →</span>}
+                className="flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:bg-muted/40">
+                {s.done ? <CheckCircle2 className="size-5 shrink-0 text-honey-deep" /> : <Circle className="size-5 shrink-0 text-muted-foreground/40" />}
+                <span className={cn("min-w-0 flex-1 text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.label}</span>
+                {!s.done && <span className="shrink-0 text-xs font-semibold text-honey-deep">Do this →</span>}
               </button>
             ))}
           </div>
@@ -380,7 +384,9 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
       )}
 
       <Card className="p-5">
-        <h3 className="mb-1 text-sm font-semibold">Your booking page is live</h3>
+        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+          <span className="inline-block size-2 rounded-full bg-success" /> Your booking page is live
+        </h3>
         <p className="mb-3 text-xs text-muted-foreground">Share it and patients book themselves.</p>
         <div className="mb-3 truncate rounded-lg border bg-muted/40 p-2.5 text-xs font-medium text-primary">{bookingUrl || "—"}</div>
         <div className="flex flex-wrap gap-2">
