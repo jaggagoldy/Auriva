@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Auriva · BRD-043 Team Management — Interactive Prototype</title>
+<title>Auriva · BRD-043 Team Management — Interactive Prototype v1.1</title>
 <style>
   :root{
     --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
@@ -25,6 +25,7 @@
   button{font-family:var(--fb);cursor:pointer}
   :focus-visible{outline:2.5px solid var(--honey-deep);outline-offset:2px;border-radius:8px}
   code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--sand);padding:1px 6px;border-radius:6px;color:var(--pine-deep)}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.01ms !important;transition-duration:.01ms !important} }
 
   /* ===== Prototype identification banner ===== */
   .protobar{position:sticky;top:0;z-index:100;min-height:var(--topbar);display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--night);color:#fff;font-size:12.5px;flex-wrap:wrap}
@@ -33,6 +34,7 @@
   .protobar .role-picker{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
   .protobar select{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9px;padding:6px 10px;font-size:12.5px;font-family:var(--fb);min-width:0;max-width:100%}
   .protobar select option{color:#111}
+  .protobar .tag{font-size:10.5px;font-weight:700;background:var(--honey);color:#4A3413;border-radius:99px;padding:3px 9px;letter-spacing:.02em;transition:.25s}
   @media (max-width:640px){
     .protobar{font-size:11.5px}
     .protobar-desc{display:none}
@@ -40,40 +42,40 @@
     .protobar select{flex:1;min-width:0}
     .protobar label[for="roleSel"]{display:none}
   }
-  .protobar .tag{font-size:10.5px;font-weight:700;background:var(--honey);color:#4A3413;border-radius:99px;padding:3px 9px;letter-spacing:.02em}
 
   /* ===== App shell ===== */
   .shell{display:flex;min-height:calc(100vh - var(--topbar))}
-  .side{width:230px;flex:0 0 auto;background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+  .side{width:238px;flex:0 0 auto;background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
   .side .brand{display:flex;align-items:center;gap:9px;padding:8px 8px 18px}
   .side .brand .mk{width:28px;height:28px;border-radius:9px;background:var(--pine);color:#fff;display:grid;place-items:center}
   .side .brand .mk svg{width:16px;height:16px}
   .side .brand b{font-family:var(--fd);font-size:15px}
   .side .clinicname{padding:0 8px 14px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:10px}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;border:none;background:none;text-align:left;font-size:13.5px;font-weight:600;color:var(--body);transition:.15s}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;border:none;background:none;text-align:left;font-size:13.5px;font-weight:600;color:var(--body);transition:background .15s,opacity .25s,max-height .25s;overflow:hidden}
   .nav-item svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
   .nav-item .q{display:block;font-size:10.5px;font-weight:500;color:var(--muted);margin-top:1px}
   .nav-item:hover{background:var(--sand)}
   .nav-item.on{background:var(--honey-soft);color:var(--honey-deep)}
   .nav-item.on svg{color:var(--honey-deep)}
-  .nav-item.hidden-role{display:none}
+  .nav-item.sub{padding-left:30px;font-size:13px}
+  .nav-group-label{padding:14px 12px 6px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);transition:opacity .2s}
   .nav-sep{height:1px;background:var(--line);margin:10px 4px}
   .seat-pill{margin-top:auto;padding:12px 10px;border-radius:13px;background:var(--pine-tint);font-size:11.5px}
   .seat-pill .bar{height:5px;border-radius:99px;background:var(--line-2);margin-top:7px;overflow:hidden}
-  .seat-pill .bar i{display:block;height:100%;background:var(--pine);border-radius:99px}
+  .seat-pill .bar i{display:block;height:100%;background:var(--pine);border-radius:99px;transition:width .3s}
 
   .main{flex:1;min-width:0;overflow-x:hidden}
   .topline{display:flex;align-items:center;gap:12px;padding:16px 26px;border-bottom:1px solid var(--line);background:rgba(251,248,244,.6)}
   .topline h1{font-size:19px}
   .topline .as{margin-left:auto;font-size:11.5px;color:var(--muted)}
-  .content{padding:24px 26px 60px;max-width:1080px}
+  .content{padding:24px 26px 60px;max-width:1100px}
 
   /* mobile bottom nav */
   .bottomnav{display:none}
   @media (max-width:820px){
     .side{display:none}
     .bottomnav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:90;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:none;background:none;font-size:10px;font-weight:650;color:var(--muted);border-radius:10px}
+    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:none;background:none;font-size:10px;font-weight:650;color:var(--muted);border-radius:10px;transition:.2s}
     .bn-item.on{color:var(--honey-deep)}
     .bn-item svg{width:20px;height:20px}
     .bn-item.hidden-role{display:none}
@@ -95,12 +97,12 @@
   .btn-ghost{background:none;color:var(--muted)}
   .btn-sm{height:33px;font-size:12.5px;padding:0 12px}
   .btn-danger{background:var(--rose-tint);color:var(--rose)}
-  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn:disabled{opacity:.5;cursor:not-allowed;filter:none;box-shadow:none}
 
   .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pine)}
   .pill{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px}
   .pill.active{background:var(--ok-tint);color:var(--ok)}
-  .pill.suspended{background:var(--warn-tint);color:var(--warn)}
+  .pill.suspended{background:var(--rose-tint);color:var(--rose)}
   .pill.archived{background:var(--sand);color:var(--muted)}
   .pill.pending{background:var(--honey-tint);color:var(--honey-deep)}
   .pill.expired{background:var(--rose-tint);color:var(--rose)}
@@ -111,6 +113,11 @@
   .field .hint{font-weight:400;color:var(--muted);font-size:11.5px}
   .field input, .field select{width:100%;height:42px;border-radius:11px;border:1.5px solid var(--line-2);background:var(--surface);padding:0 13px;font-size:14px;font-family:var(--fb);outline:none}
   .field input:focus, .field select:focus{border-color:var(--honey-deep)}
+  .fieldnote{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;margin-top:6px;min-height:15px}
+  .fieldnote.ok{color:var(--ok)}
+  .fieldnote.warn{color:var(--honey-deep)}
+  .fieldnote.err{color:var(--rose)}
+  .fieldnote svg{width:13px;height:13px}
   .radiorow{display:flex;gap:10px}
   .radiocard{flex:1;border:1.5px solid var(--line-2);border-radius:13px;padding:13px;cursor:pointer;transition:.15s}
   .radiocard.on{border-color:var(--honey-deep);background:var(--honey-tint)}
@@ -124,8 +131,9 @@
   @keyframes tin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 
   .view{display:none}
-  .view.on{display:block;animation:vin .3s ease}
-  @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .view.on{display:block;animation:vin .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes vin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .refade{animation:vin .3s ease}
 
   .skel{background:linear-gradient(90deg,var(--sand) 25%,var(--sand2) 37%,var(--sand) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
   @keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
@@ -135,13 +143,11 @@
   .simbtn{font-size:11.5px;font-weight:650;border:1px solid var(--line-2);background:var(--surface);border-radius:9px;padding:5px 10px;color:var(--body)}
   .simbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-  .openflag{display:flex;gap:10px;background:var(--warn-tint);border:1px solid #E9CFA0;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#7A5A1E;margin-top:14px}
+  .openflag{display:flex;gap:10px;background:var(--warn-tint);border:1px solid #E9CFA0;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#7A5A1E}
   .openflag svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
+  .blockflag{display:flex;gap:10px;background:var(--rose-tint);border:1px solid #E7B9AF;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#8C3B2E}
+  .blockflag svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
 
-  table.tbl{width:100%;border-collapse:collapse;font-size:13px}
-  table.tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:0 12px 8px;border-bottom:1px solid var(--line)}
-  table.tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
-  table.tbl tr:last-child td{border-bottom:none}
   .avatar{width:32px;height:32px;border-radius:10px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px;flex:0 0 auto}
   .rowflex{display:flex;align-items:center;gap:10px}
   .rowmenu{position:relative}
@@ -155,25 +161,65 @@
   .menu button svg{width:14px;height:14px}
   .menu hr{border:none;border-top:1px solid var(--line);margin:5px 2px}
 
+  /* Team member cards (mobile-first, replaces the old table) */
+  .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .mcard{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:14px;position:relative}
+  .mcard .top{display:flex;align-items:flex-start;gap:10px}
+  .mcard .avatar{width:38px;height:38px;font-size:13px;border-radius:11px}
+  .mcard .nm{font-family:var(--fd);font-weight:700;font-size:14px}
+  .mcard .rl{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .mcard .bottom{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .mcard .joined{font-size:11px;color:var(--muted)}
+  .mcard.dim .nm, .mcard.dim .avatar{color:var(--muted)}
+  .mcard.dim .avatar{background:var(--sand)}
+
   .stepbar{display:flex;align-items:center;gap:6px;margin-bottom:20px}
-  .stepbar .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+  .stepbar .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);transition:.25s}
   .stepbar .dot.on{background:var(--honey-deep);width:22px;border-radius:99px}
   .stepbar .rail{flex:1;height:1px;background:var(--line)}
 
-  .emptystate{text-align:center;padding:48px 20px}
-  .emptystate .ic{width:56px;height:56px;border-radius:16px;background:var(--sand);display:grid;place-items:center;margin:0 auto 16px;color:var(--muted)}
-  .emptystate .ic svg{width:26px;height:26px}
+  .emptystate{text-align:center;padding:44px 20px}
+  .emptystate .ic{width:64px;height:64px;border-radius:20px;background:linear-gradient(158deg,var(--honey-tint),var(--sand));display:grid;place-items:center;margin:0 auto 16px;color:var(--honey-deep);box-shadow:inset 0 0 0 1px var(--honey-soft)}
+  .emptystate .ic svg{width:28px;height:28px}
   .emptystate h3{font-size:15.5px}
   .emptystate p{font-size:13px;color:var(--muted);margin-top:6px;max-width:34ch;margin-inline:auto}
 
   .spechint{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:650;color:var(--muted);background:var(--sand);border-radius:99px;padding:3px 9px;margin-left:8px;vertical-align:middle}
 
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .stack{display:flex;flex-direction:column;gap:16px}
 
   .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
   .kpi .v{font-family:var(--fd);font-size:22px;font-weight:800}
   .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+
+  .sec-l{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:4px 0 10px}
+  .listrow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .listrow:last-child{border-bottom:none}
+  .listrow .nm{font-size:13.5px;font-weight:650}
+  .listrow .mt{font-size:11.5px;color:var(--muted)}
+  .listrow .rt{margin-left:auto;text-align:right;flex:0 0 auto}
+  .alertrow{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+  .alertrow:last-child{border-bottom:none}
+  .alertrow .dot{width:7px;height:7px;border-radius:50%;background:var(--honey);margin-top:5px;flex:0 0 auto}
+
+  /* Reconciliation dialog */
+  .reconrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .reconrow:last-child{border-bottom:none}
+  .reconrow .info{flex:1;min-width:0}
+  .reconrow .nm{font-size:13px;font-weight:650}
+  .reconrow .mt{font-size:11.5px;color:var(--muted)}
+  .reconrow select{width:170px;height:36px;border-radius:9px;border:1.5px solid var(--line-2);font-size:12.5px;padding:0 9px}
+  .reconrow select.needs{border-color:var(--rose)}
+  .reconrow .ok-check{width:20px;color:var(--ok);flex:0 0 auto;opacity:0;transition:.2s}
+  .reconrow.done .ok-check{opacity:1}
+
+  .plancard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative}
+  .plancard.current{border:2px solid var(--honey-deep)}
+  .plancard.disabled{opacity:.55}
+  .plancard.disabled *{cursor:default}
 </style>
 </head>
 <body>
@@ -182,14 +228,14 @@
 
 <!-- ===== PROTOTYPE BANNER (not part of the real product) ===== -->
 <div class="protobar">
-  <b>PROTOTYPE</b>
-  <span class="protobar-desc"><span class="sep">·</span><span>BRD-043 Team Management</span><span class="sep">·</span><span>Static · no backend</span><span class="sep">·</span><span>For Product Office review</span></span>
+  <b>PROTOTYPE v1.1</b>
+  <span class="protobar-desc"><span class="sep">·</span><span>BRD-043 Team Management</span><span class="sep">·</span><span>Static · no backend</span><span class="sep">·</span><span>Pre-freeze refinement round</span></span>
   <div class="role-picker">
-    <span class="tag" id="roleTag">Owner + Doctor</span>
+    <span class="tag" id="roleTag">Managing Doctor</span>
     <label for="roleSel" style="font-size:11.5px">Preview as</label>
     <select id="roleSel">
-      <option value="owner_doctor" selected>Owner + Doctor (Solo)</option>
-      <option value="owner">Owner (non-doctor)</option>
+      <option value="owner_doctor" selected>Managing Doctor (Solo)</option>
+      <option value="owner">Practice Owner</option>
       <option value="doctor">Doctor</option>
       <option value="receptionist">Receptionist</option>
     </select>
@@ -207,14 +253,13 @@
     <div class="nav-sep"></div>
 
     <button class="nav-item" data-view="onboarding" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span>Welcome<span class="q">Solo onboarding</span></span></button>
-    <button class="nav-item" data-view="dashboard" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg><span>Dashboard<span class="q">Adapts by role</span></span></button>
-    <button class="nav-item" data-view="team" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/></svg><span>Team<span class="q">Who works here</span></span></button>
-    <button class="nav-item" data-view="invite" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg><span>Invite<span class="q">Add a member</span></span></button>
-    <button class="nav-item" data-view="plan" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Plan<span class="q">Solo · Professional</span></span></button>
+    <button class="nav-item" data-view="dashboard" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg><span>Dashboard<span class="q" id="dashNavQ">Your clinic today</span></span></button>
 
-    <div class="nav-sep" data-roles="doctor,receptionist" style="display:none"></div>
-    <button class="nav-item hidden-role" data-view="dashboard-doctor-note" data-roles="doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><span>Schedule<span class="q">Your patients today</span></span></button>
-    <button class="nav-item hidden-role" data-view="dashboard-reception-note" data-roles="receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span>Front Desk<span class="q">Check-in · queue</span></span></button>
+    <!-- Settings group: Practice · Team · Plan — frozen IA grouping -->
+    <div class="nav-group-label" data-roles="owner,owner_doctor">Settings</div>
+    <button class="nav-item sub" data-view="practice" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M14 9h1M14 13h1"/></svg><span>Practice<span class="q">Profile, hours, media</span></span></button>
+    <button class="nav-item sub" data-view="team" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/></svg><span>Team<span class="q">Invite, suspend, archive</span></span></button>
+    <button class="nav-item sub" data-view="plan" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Plan<span class="q">Solo · Professional</span></span></button>
 
     <div class="seat-pill" data-roles="owner,owner_doctor" id="seatPillWrap">
       <div style="display:flex;justify-content:space-between"><b style="font-size:12px">Team seats</b><span id="seatCount">2 / 2</span></div>
@@ -226,8 +271,8 @@
   <nav class="bottomnav">
     <button class="bn-item on" data-view="cover" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Map</button>
     <button class="bn-item" data-view="dashboard" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Home</button>
+    <button class="bn-item hidden-role" data-view="practice" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>Practice</button>
     <button class="bn-item hidden-role" data-view="team" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Team</button>
-    <button class="bn-item hidden-role" data-view="invite" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>Invite</button>
     <button class="bn-item hidden-role" data-view="plan" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Plan</button>
   </nav>
 
@@ -235,51 +280,50 @@
   <main class="main">
     <div class="topline">
       <h1 id="pageTitle">Prototype Map</h1>
-      <span class="as">Viewing as: <b id="asLabel">Owner + Doctor</b></span>
+      <span class="as">Viewing as: <b id="asLabel">Managing Doctor</b></span>
     </div>
 
     <div class="content">
 
       <!-- ============================================================ -->
-      <!-- COVER / SCREEN INDEX (folds in the Phase-2 IA reference)      -->
+      <!-- COVER / SCREEN INDEX                                          -->
       <!-- ============================================================ -->
       <section class="view on" data-v="cover">
-        <div class="eyebrow">BRD-043 · Interactive Prototype</div>
+        <div class="eyebrow">BRD-043 · Interactive Prototype · v1.1 pre-freeze</div>
         <h2 style="font-size:22px;margin-top:6px">Team Management &amp; Solo→Professional — Screen Map</h2>
-        <p style="color:var(--body);margin-top:8px;max-width:64ch">Every screen below is real and clickable. Use <b>Preview as</b> (top-right) to see Adaptive Navigation change the sidebar live — Owner/Owner+Doctor see Team, Invite and Plan; Doctor and Receptionist do not. This is one product with one adaptive dashboard, not separate workspaces (BP-03).</p>
+        <p style="color:var(--body);margin-top:8px;max-width:64ch">Use <b>Preview as</b> (top-right) to see Adaptive Navigation — each role's Dashboard now answers a genuinely different question, not a shared screen with swapped labels. One product, one nav system, no workspace switching (BP-03).</p>
 
         <div class="grid2" style="margin-top:22px">
           <div class="card pad">
             <h3 style="font-size:14px">Role → Navigation matrix</h3>
             <div style="overflow-x:auto;margin-top:10px">
-            <table class="tbl" style="min-width:440px">
-              <thead><tr><th>Screen</th><th>Owner</th><th>Owner+Dr</th><th>Doctor</th><th>Reception</th></tr></thead>
+            <table style="min-width:460px;width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr style="text-align:left"><th style="padding:0 12px 8px;font-size:10.5px;text-transform:uppercase;color:var(--muted)">Screen</th><th style="padding:0 12px 8px;font-size:10.5px;text-transform:uppercase;color:var(--muted)">Owner</th><th style="padding:0 12px 8px;font-size:10.5px;text-transform:uppercase;color:var(--muted)">Managing Dr</th><th style="padding:0 12px 8px;font-size:10.5px;text-transform:uppercase;color:var(--muted)">Doctor</th><th style="padding:0 12px 8px;font-size:10.5px;text-transform:uppercase;color:var(--muted)">Reception</th></tr></thead>
               <tbody>
-                <tr><td>Dashboard (adaptive)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-                <tr><td>Team Management</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
-                <tr><td>Invite flow</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
-                <tr><td>Plan / Upgrade</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
-                <tr><td>Clinical documentation</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
-                <tr><td>Front desk / check-in</td><td style="color:var(--muted)">via Dashboard</td><td style="color:var(--muted)">via Dashboard</td><td>—</td><td>✓</td></tr>
+                <tr style="border-top:1px solid var(--line)"><td style="padding:9px 12px">Dashboard (different content per role)</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td></tr>
+                <tr style="border-top:1px solid var(--line)"><td style="padding:9px 12px">Settings → Practice / Team / Plan</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">—</td><td style="padding:9px 12px">—</td></tr>
+                <tr style="border-top:1px solid var(--line)"><td style="padding:9px 12px">Revenue / collections / subscription</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px" title="Hard exclusion, not de-emphasis"><b style="color:var(--rose)">never</b></td><td style="padding:9px 12px">operational only</td></tr>
+                <tr style="border-top:1px solid var(--line)"><td style="padding:9px 12px">Consultation queue</td><td style="padding:9px 12px">—</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">✓</td><td style="padding:9px 12px">—</td></tr>
+                <tr style="border-top:1px solid var(--line)"><td style="padding:9px 12px">Front desk / check-in</td><td style="padding:9px 12px">—</td><td style="padding:9px 12px">—</td><td style="padding:9px 12px">—</td><td style="padding:9px 12px">✓</td></tr>
               </tbody>
             </table>
             </div>
           </div>
           <div class="card pad">
             <h3 style="font-size:14px">Open items — not decided here</h3>
-            <div class="openflag" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>Doctor reassignment on archive</b> — what happens to a doctor's future appointments? See the Team screen's Archive dialog, which surfaces the question rather than guessing.</span></div>
-            <div class="openflag" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>Owner account recovery</b> — no policy yet. Not mocked; would need its own screen once decided.</span></div>
+            <div class="openflag" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>Owner account recovery</b> — no policy yet (lost password / changed phone). Not mocked; needs its own screen once decided.</span></div>
+            <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Doctor reassignment on archive is now <b>closed</b> — mandatory reassignment, see Team → Archive.</p>
           </div>
         </div>
 
         <h3 style="font-size:14px;margin-top:24px">All screens</h3>
         <div class="grid2" style="margin-top:10px">
-          <button class="card pad" style="text-align:left" onclick="setView('onboarding')"><b>Welcome / Solo onboarding</b><p style="font-size:12px;color:var(--muted);margin-top:4px">First login after Quick Setup — plan awareness, soft team nudge</p></button>
-          <button class="card pad" style="text-align:left" onclick="setView('dashboard')"><b>Dashboard (adaptive)</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Same URL, different content per role</p></button>
-          <button class="card pad" style="text-align:left" onclick="setView('team')"><b>Team Management</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Member list, status, suspend/archive</p></button>
-          <button class="card pad" style="text-align:left" onclick="setView('invite')"><b>Invitation flow</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Create → WhatsApp/Copy link → accept</p></button>
-          <button class="card pad" style="text-align:left" onclick="setView('plan')"><b>Plan &amp; Professional upgrade</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Solo vs Professional, request upgrade</p></button>
-          <button class="card pad" style="text-align:left" onclick="setView('adminplan')"><b>Auriva Internal Admin</b> <span class="spechint">reference only</span><p style="font-size:12px;color:var(--muted);margin-top:4px">Where the real plan toggle lives (ADR-004)</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('onboarding')"><b>Welcome / Solo onboarding</b><p style="font-size:12px;color:var(--muted);margin-top:4px">First login — plan awareness, soft team nudge</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('dashboard')"><b>Dashboard — role-driven</b><p style="font-size:12px;color:var(--muted);margin-top:4px">4 distinct layouts, each answering its own question</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('practice')"><b>Settings → Practice</b><p style="font-size:12px;color:var(--muted);margin-top:4px">References the already-shipped Practice Setup</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('team')"><b>Settings → Team</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Member cards, growth indicator, reconciliation-gated archive</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('invite')"><b>Invitation flow</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Live duplicate check → WhatsApp/Copy link → accept</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('plan')"><b>Settings → Plan</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Solo · Professional · Enterprise (coming soon)</p></button>
         </div>
       </section>
 
@@ -295,7 +339,7 @@
             <div><b style="font-family:var(--fd)">You're on the Solo plan — free forever</b><p style="font-size:12.5px;color:var(--muted);margin-top:2px">Everything one practitioner needs. No card, no trial clock.</p></div>
           </div>
           <div style="margin-top:16px;padding:14px;border-radius:12px;background:var(--sand)">
-            <p style="font-size:13px"><b>Solo includes:</b> you as Owner + Doctor, plus room for 1 more Doctor and 1 Receptionist as you grow — same account, no migration.</p>
+            <p style="font-size:13px"><b>Solo includes:</b> you as Managing Doctor, plus room for 1 more Doctor and 1 Receptionist as you grow — same account, no migration.</p>
           </div>
           <div style="display:flex;gap:10px;margin-top:16px">
             <button class="btn btn-honey" onclick="setView('dashboard')">Go to my clinic <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -305,48 +349,182 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- ADAPTIVE DASHBOARD                                            -->
+      <!-- ADAPTIVE DASHBOARD — 4 genuinely distinct role layouts        -->
       <!-- ============================================================ -->
       <section class="view" data-v="dashboard">
-        <div class="eyebrow" id="dashEyebrow">Owner + Doctor</div>
-        <h2 style="font-size:20px;margin-top:6px" id="dashHeading">Good morning, Dr. Rao</h2>
+        <div id="dashWrap">
 
-        <div class="grid2" style="margin-top:16px">
-          <div class="kpi"><div class="v">6</div><div class="l">Patients today</div></div>
-          <div class="kpi"><div class="v">₹4,200</div><div class="l">Collected today</div></div>
-        </div>
-
-        <!-- role-specific callouts -->
-        <div class="card pad" style="margin-top:16px" data-roles="owner,owner_doctor">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:36px;height:36px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span>
-            <div style="flex:1"><b style="font-family:var(--fd);font-size:13.5px">2 of 2 seats used</b><p style="font-size:12px;color:var(--muted)">Ready to grow? Upgrade to Professional for up to 5 doctors.</p></div>
-            <button class="btn btn-line btn-sm" onclick="setView('plan')">View plan</button>
+        <!-- MANAGING DOCTOR: richest — clinical + business, both hats -->
+        <div data-roles="owner_doctor">
+          <div class="eyebrow">Managing Doctor</div>
+          <h2 style="font-size:20px;margin-top:6px">How are my patients and my practice doing today?</h2>
+          <div class="kpirow" style="margin-top:16px">
+            <div class="kpi"><div class="v">3</div><div class="l">In my queue</div></div>
+            <div class="kpi"><div class="v">6</div><div class="l">Appointments today</div></div>
+            <div class="kpi"><div class="v">₹4,200</div><div class="l">Revenue today</div></div>
+            <div class="kpi"><div class="v">3 active</div><div class="l">Team status</div></div>
+          </div>
+          <div class="grid2" style="margin-top:16px">
+            <div class="stack">
+              <div class="card pad">
+                <div class="sec-l">My consultation queue</div>
+                <div class="listrow"><span class="avatar">SC</span><div><div class="nm">Sarah Connor</div><div class="mt">Waiting · 12 min</div></div><span class="rt"><span class="pill pending"><i></i>Waiting</span></span></div>
+                <div class="listrow"><span class="avatar">MW</span><div><div class="nm">Marcus Wright</div><div class="mt">10:30 · Follow-up</div></div></div>
+                <div class="listrow"><span class="avatar">JP</span><div><div class="nm">John Parker</div><div class="mt">11:15 · New patient</div></div></div>
+              </div>
+              <div class="card pad">
+                <div class="sec-l">Practice performance</div>
+                <div class="kpirow" style="grid-template-columns:1fr 1fr">
+                  <div><div style="font-family:var(--fd);font-size:17px;font-weight:800">₹28,400</div><div class="l">This week</div></div>
+                  <div><div style="font-family:var(--fd);font-size:17px;font-weight:800;color:var(--rose)">₹1,800</div><div class="l">Pending collections</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="card pad">
+                <div class="sec-l">Team overview</div>
+                <div class="listrow"><span class="avatar">VS</span><div><div class="nm">Dr. Vikram Shah</div><div class="mt">Doctor</div></div><span class="rt"><span class="pill active"><i></i>Active</span></span></div>
+                <div class="listrow"><span class="avatar">PS</span><div><div class="nm">Priya Sharma</div><div class="mt">Receptionist</div></div><span class="rt"><span class="pill suspended"><i></i>Suspended</span></span></div>
+                <button class="btn btn-line btn-sm" style="width:100%;margin-top:10px" onclick="setView('team')">Manage team</button>
+              </div>
+              <div class="card pad">
+                <div class="sec-l">Operational alerts</div>
+                <div class="alertrow"><span class="dot"></span><span>1 invitation expires in 18 hours</span></div>
+                <div class="alertrow"><span class="dot"></span><span>2 invoices pending collection</span></div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="card pad" style="margin-top:16px" data-roles="doctor">
-          <b style="font-family:var(--fd);font-size:13.5px">Your schedule only</b>
-          <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Team, billing and plan management aren't shown here — that's Owner territory (BP-04).</p>
-        </div>
-        <div class="card pad" style="margin-top:16px" data-roles="receptionist">
-          <b style="font-family:var(--fd);font-size:13.5px">Front desk queue</b>
-          <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Check-in, queue and payments — no clinical documentation entry point is shown to Reception.</p>
+        <!-- PRACTICE OWNER (non-doctor): business only, no clinical queue -->
+        <div data-roles="owner">
+          <div class="eyebrow">Practice Owner</div>
+          <h2 style="font-size:20px;margin-top:6px">How is my clinic performing today?</h2>
+          <div class="kpirow" style="margin-top:16px">
+            <div class="kpi"><div class="v">6</div><div class="l">Appointments today</div></div>
+            <div class="kpi"><div class="v">₹4,200</div><div class="l">Revenue today</div></div>
+            <div class="kpi"><div class="v">₹1,800</div><div class="l">Pending collections</div></div>
+            <div class="kpi"><div class="v">3 active</div><div class="l">Team status</div></div>
+          </div>
+          <div class="grid2" style="margin-top:16px">
+            <div class="card pad">
+              <div class="sec-l">Today's appointments — all doctors</div>
+              <div class="listrow"><span class="avatar">SC</span><div><div class="nm">Sarah Connor</div><div class="mt">9:45 · Dr. Vikram Shah</div></div></div>
+              <div class="listrow"><span class="avatar">MW</span><div><div class="nm">Marcus Wright</div><div class="mt">10:30 · Dr. Anjali Rao</div></div></div>
+              <div class="listrow"><span class="avatar">JP</span><div><div class="nm">John Parker</div><div class="mt">11:15 · Dr. Anjali Rao</div></div></div>
+            </div>
+            <div class="stack">
+              <div class="card pad">
+                <div class="sec-l">Team status</div>
+                <div class="listrow"><span class="avatar">VS</span><div><div class="nm">Dr. Vikram Shah</div><div class="mt">Doctor</div></div><span class="rt"><span class="pill active"><i></i>Active</span></span></div>
+                <div class="listrow"><span class="avatar">PS</span><div><div class="nm">Priya Sharma</div><div class="mt">Receptionist</div></div><span class="rt"><span class="pill suspended"><i></i>Suspended</span></span></div>
+                <button class="btn btn-line btn-sm" style="width:100%;margin-top:10px" onclick="setView('team')">Manage team</button>
+              </div>
+              <div class="card pad">
+                <div class="sec-l">Operational alerts</div>
+                <div class="alertrow"><span class="dot"></span><span>1 invitation expires in 18 hours</span></div>
+                <div class="alertrow"><span class="dot"></span><span>2 of 2 Solo seats used</span></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <p style="margin-top:18px;font-size:12px;color:var(--muted)">↑ This one screen is the "Doctor Workspace" / "Receptionist Workspace" / "Owner Workspace" from the brief — same URL, adaptive content, per BP-03. Switch <b>Preview as</b> above to see it change.</p>
+        <!-- DOCTOR: clinical only — financial content NEVER rendered -->
+        <div data-roles="doctor">
+          <div class="eyebrow">Doctor</div>
+          <h2 style="font-size:20px;margin-top:6px">Who is my next patient?</h2>
+          <div class="card pad" style="margin-top:16px;background:linear-gradient(158deg,var(--night),#0A423A);color:#fff;border:none">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--honey)">Next patient</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+              <span style="width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-family:var(--fd);font-weight:700">SC</span>
+              <div><div style="font-family:var(--fd);font-size:16px;font-weight:700">Sarah Connor</div><div style="font-size:12.5px;color:#CFE3DC">Waiting · 12 minutes</div></div>
+            </div>
+          </div>
+          <div class="grid2" style="margin-top:16px">
+            <div class="stack">
+              <div class="card pad">
+                <div class="sec-l">Today's appointments</div>
+                <div class="listrow"><span class="avatar">SC</span><div><div class="nm">Sarah Connor</div><div class="mt">Now · Follow-up</div></div></div>
+                <div class="listrow"><span class="avatar">MW</span><div><div class="nm">Marcus Wright</div><div class="mt">10:30 · New patient</div></div></div>
+                <div class="listrow"><span class="avatar">JP</span><div><div class="nm">John Parker</div><div class="mt">11:15 · Check-up</div></div></div>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="card pad">
+                <div class="sec-l">Follow-ups due</div>
+                <div class="listrow"><span class="avatar">TS</span><div><div class="nm">Tony Stark</div><div class="mt">Due in 2 days</div></div></div>
+              </div>
+              <div class="card pad">
+                <div class="sec-l">Recent consultations</div>
+                <div class="listrow"><span class="avatar">BR</span><div><div class="nm">Bruce Banner</div><div class="mt">Yesterday · Prescribed</div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="openflag" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Financial privacy: revenue, collections, subscription and team management are never rendered on a Doctor's dashboard — not hidden by CSS, simply not part of this role's screen.</span></div>
+        </div>
+
+        <!-- RECEPTIONIST: front desk operations only -->
+        <div data-roles="receptionist">
+          <div class="eyebrow">Receptionist</div>
+          <h2 style="font-size:20px;margin-top:6px">Who is waiting and what needs attention?</h2>
+          <div class="kpirow" style="margin-top:16px">
+            <div class="kpi"><div class="v">2</div><div class="l">Waiting now</div></div>
+            <div class="kpi"><div class="v">6</div><div class="l">Appointments today</div></div>
+            <div class="kpi"><div class="v">1</div><div class="l">Walk-in</div></div>
+          </div>
+          <div class="grid2" style="margin-top:16px">
+            <div class="card pad">
+              <div class="sec-l">Waiting queue</div>
+              <div class="listrow"><span class="avatar">SC</span><div><div class="nm">Sarah Connor</div><div class="mt">Checked in · 12 min</div></div><span class="rt"><span class="pill pending"><i></i>Waiting</span></span></div>
+              <div class="listrow"><span class="avatar">RK</span><div><div class="nm">Ravi Kapoor</div><div class="mt">Walk-in · 4 min</div></div><span class="rt"><span class="pill pending"><i></i>Waiting</span></span></div>
+            </div>
+            <div class="card pad">
+              <div class="sec-l">Pending payments to collect</div>
+              <div class="listrow"><span class="avatar">MW</span><div><div class="nm">Marcus Wright</div><div class="mt">Consultation · today</div></div><span class="rt">₹600</span></div>
+              <div class="listrow"><span class="avatar">JP</span><div><div class="nm">John Parker</div><div class="mt">Follow-up · today</div></div><span class="rt">₹400</span></div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+        <p style="margin-top:18px;font-size:12px;color:var(--muted)">↑ One Dashboard, four distinct answers — switch <b>Preview as</b> above.</p>
       </section>
 
       <!-- ============================================================ -->
-      <!-- TEAM MANAGEMENT                                               -->
+      <!-- SETTINGS → PRACTICE (references the already-shipped P3)      -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="practice">
+        <div class="eyebrow">Settings · Practice</div>
+        <h2 style="font-size:20px;margin-top:6px">Practice profile</h2>
+        <div style="padding:10px 14px;border-radius:12px;background:var(--pine-tint);color:var(--pine-deep);font-size:12px;margin-top:14px;max-width:640px">This already exists as real, shipped functionality (doctor photo, clinic logo/cover, hours, fees, address, gallery, documents). Not re-mocked here — shown as a placeholder card so the grouping is visible.</div>
+        <div class="card pad" style="margin-top:14px;max-width:640px">
+          <div class="rowflex">
+            <span class="avatar" style="width:48px;height:48px;border-radius:14px;background:var(--honey-soft);color:var(--honey-deep);font-size:15px">AR</span>
+            <div><b style="font-family:var(--fd)">SmileCare Dental</b><p style="font-size:12px;color:var(--muted)">Dr. Anjali Rao · Dentist · HSR Layout</p></div>
+            <button class="btn btn-line btn-sm" style="margin-left:auto">Edit</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SETTINGS → TEAM                                               -->
       <!-- ============================================================ -->
       <section class="view" data-v="team">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div><div class="eyebrow">Owner · Team</div><h2 style="font-size:20px;margin-top:4px">Your team</h2></div>
+          <div><div class="eyebrow">Settings · Team</div><h2 style="font-size:20px;margin-top:4px">Your team</h2></div>
           <button class="btn btn-honey" style="margin-left:auto" onclick="setView('invite')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Invite member</button>
         </div>
 
-        <div class="simbar">
+        <!-- Team growth indicator -->
+        <div class="card pad" style="margin-top:16px;max-width:520px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div style="font-size:11px;color:var(--muted);font-weight:650">Current plan</div><div style="font-family:var(--fd);font-weight:800;font-size:16px">Solo</div></div>
+            <div style="border-left:1px solid var(--line);padding-left:14px"><div style="font-size:11px;color:var(--muted);font-weight:650">Seats used</div><div style="font-family:var(--fd);font-weight:800;font-size:16px">2 / 2</div></div>
+            <button class="btn btn-line btn-sm" style="margin-left:auto" onclick="setView('plan')">Upgrade to Professional <span style="color:var(--muted);font-weight:500">· 5 doctors, 15 members</span></button>
+          </div>
+        </div>
+
+        <div class="simbar" style="margin-top:16px">
           <span class="lbl">Simulate</span>
           <button class="simbtn on" onclick="teamState('populated', this)">Populated</button>
           <button class="simbtn" onclick="teamState('empty', this)">Empty (Solo, just started)</button>
@@ -354,10 +532,10 @@
           <button class="simbtn" onclick="teamState('limit', this)">At seat limit</button>
         </div>
 
-        <div id="teamLoading" style="display:none" class="card pad">
-          <div class="skel" style="height:44px;margin-bottom:10px"></div>
-          <div class="skel" style="height:44px;margin-bottom:10px"></div>
-          <div class="skel" style="height:44px"></div>
+        <div id="teamLoading" style="display:none" class="mcards">
+          <div class="skel" style="height:96px"></div>
+          <div class="skel" style="height:96px"></div>
+          <div class="skel" style="height:96px"></div>
         </div>
 
         <div id="teamEmpty" style="display:none" class="card">
@@ -369,58 +547,50 @@
           </div>
         </div>
 
-        <div id="teamPopulated" class="card">
-          <div style="overflow-x:auto">
-          <table class="tbl" style="min-width:560px">
-            <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Joined</th><th></th></tr></thead>
-            <tbody>
-              <tr>
-                <td><div class="rowflex"><span class="avatar">AR</span><div><b>Dr. Anjali Rao</b><div style="font-size:11px;color:var(--muted)">Owner · you</div></div></div></td>
-                <td>Owner + Doctor</td>
-                <td><span class="pill active"><i></i>Active</span></td>
-                <td>—</td>
-                <td></td>
-              </tr>
-              <tr>
-                <td><div class="rowflex"><span class="avatar">VS</span><div><b>Dr. Vikram Shah</b><div style="font-size:11px;color:var(--muted)">Physiotherapist</div></div></div></td>
-                <td>Doctor</td>
-                <td><span class="pill active"><i></i>Active</span></td>
-                <td>4 Jul</td>
-                <td>
-                  <div class="rowmenu">
-                    <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
-                    <div class="menu">
-                      <button onclick="toast('Suspended Dr. Vikram Shah')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Suspend</button>
-                      <button onclick="openArchive('Dr. Vikram Shah')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>Archive</button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td><div class="rowflex"><span class="avatar">PS</span><div><b>Priya Sharma</b><div style="font-size:11px;color:var(--muted)">Receptionist</div></div></div></td>
-                <td>Receptionist</td>
-                <td><span class="pill suspended"><i></i>Suspended</span></td>
-                <td>29 Jun</td>
-                <td>
-                  <div class="rowmenu">
-                    <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
-                    <div class="menu">
-                      <button onclick="toast('Reactivated Priya Sharma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>Reactivate</button>
-                      <hr>
-                      <button class="danger" onclick="openArchive('Priya Sharma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/></svg>Archive</button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td><div class="rowflex"><span class="avatar" style="background:var(--sand);color:var(--muted)">RK</span><div><b style="color:var(--muted)">Dr. Ravi Kumar</b><div style="font-size:11px;color:var(--muted)">Archived · notes preserved</div></div></div></td>
-                <td>Doctor</td>
-                <td><span class="pill archived"><i></i>Archived</span></td>
-                <td>—</td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Member CARDS (mobile-first) — replaces the old table -->
+        <div id="teamPopulated" class="mcards">
+          <div class="mcard">
+            <div class="top">
+              <span class="avatar">AR</span>
+              <div><div class="nm">Dr. Anjali Rao</div><div class="rl">Managing Doctor · you</div></div>
+            </div>
+            <div class="bottom"><span class="pill active"><i></i>Active</span><span class="joined">—</span></div>
+          </div>
+          <div class="mcard">
+            <div class="top">
+              <span class="avatar">VS</span>
+              <div style="flex:1;min-width:0"><div class="nm">Dr. Vikram Shah</div><div class="rl">Doctor · Physiotherapist</div></div>
+              <div class="rowmenu">
+                <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
+                <div class="menu">
+                  <button onclick="toast('Suspended Dr. Vikram Shah')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Suspend</button>
+                  <button onclick="openArchive('vikram')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>Archive</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom"><span class="pill active"><i></i>Active</span><span class="joined">Joined 4 Jul</span></div>
+          </div>
+          <div class="mcard">
+            <div class="top">
+              <span class="avatar">PS</span>
+              <div style="flex:1;min-width:0"><div class="nm">Priya Sharma</div><div class="rl">Receptionist</div></div>
+              <div class="rowmenu">
+                <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
+                <div class="menu">
+                  <button onclick="toast('Reactivated Priya Sharma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>Reactivate</button>
+                  <hr>
+                  <button class="danger" onclick="openArchive('priya')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/></svg>Archive</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom"><span class="pill suspended"><i></i>Suspended</span><span class="joined">Joined 29 Jun</span></div>
+          </div>
+          <div class="mcard dim">
+            <div class="top">
+              <span class="avatar">RK</span>
+              <div><div class="nm">Dr. Ravi Kumar</div><div class="rl">Doctor · notes preserved</div></div>
+            </div>
+            <div class="bottom"><span class="pill archived"><i></i>Archived</span><span class="joined">—</span></div>
           </div>
         </div>
 
@@ -430,18 +600,46 @@
         </div>
       </section>
 
-      <!-- Archive confirm modal -->
+      <!-- Simple archive confirm (no clinical conflicts — e.g. Receptionist) -->
       <div id="archiveModal" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(36,31,26,.45);align-items:center;justify-content:center">
         <div class="card pad" style="max-width:420px;width:92%">
           <b style="font-family:var(--fd);font-size:15px">Archive <span id="archiveName">this member</span>?</b>
-          <p style="font-size:12.5px;color:var(--body);margin-top:8px">Their historical records stay intact permanently — this cannot remove past visits or notes.</p>
-          <div class="openflag" style="margin-top:12px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
-            <span><b>Open question — Product Office decision pending:</b> if this doctor has future scheduled appointments, should they (a) stay assigned for continuity, (b) require reassignment first, or (c) auto-cancel with a patient notice? This prototype does not decide it.</span>
-          </div>
+          <p style="font-size:12.5px;color:var(--body);margin-top:8px">Their historical records stay intact permanently — this cannot remove past visits or notes. This member has no future appointments, so nothing needs reassigning.</p>
           <div style="display:flex;gap:9px;margin-top:16px;justify-content:flex-end">
             <button class="btn btn-ghost" onclick="closeArchive()">Cancel</button>
-            <button class="btn btn-danger" onclick="closeArchive();toast('Archived (prototype only)')">Archive anyway</button>
+            <button class="btn btn-danger" onclick="closeArchive();toast('Archived (prototype only)')">Archive</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reconciliation-gated archive (doctor WITH future appointments) -->
+      <div id="reconcileModal" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(36,31,26,.45);align-items:center;justify-content:center">
+        <div class="card pad" style="max-width:480px;width:92%">
+          <div class="blockflag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+            <span><b>Dr. Vikram Shah cannot be archived yet</b> — 2 upcoming items must be reassigned first. Auto-cancelling or leaving them assigned to an archived doctor is not allowed.</span>
+          </div>
+          <div style="margin-top:14px">
+            <div class="reconrow" id="rr1">
+              <div class="info"><div class="nm">Marcus Wright</div><div class="mt">Appointment · Tomorrow, 10:30</div></div>
+              <svg class="ok-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>
+              <select id="rr1sel" class="needs" onchange="checkRecon()">
+                <option value="">Reassign to…</option>
+                <option value="ar">Dr. Anjali Rao</option>
+              </select>
+            </div>
+            <div class="reconrow" id="rr2">
+              <div class="info"><div class="nm">Diana Prince</div><div class="mt">Active consultation · in progress</div></div>
+              <svg class="ok-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>
+              <select id="rr2sel" class="needs" onchange="checkRecon()">
+                <option value="">Reassign to…</option>
+                <option value="ar">Dr. Anjali Rao</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:16px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="closeReconcile()">Cancel</button>
+            <button class="btn btn-danger" id="reconArchiveBtn" disabled onclick="finishReconcile()">Reassign all to archive</button>
           </div>
         </div>
       </div>
@@ -450,7 +648,7 @@
       <!-- INVITATION FLOW                                               -->
       <!-- ============================================================ -->
       <section class="view" data-v="invite">
-        <div class="eyebrow">Owner · Invite</div>
+        <div class="eyebrow">Settings · Team · Invite</div>
         <h2 style="font-size:20px;margin-top:6px">Add a team member</h2>
 
         <div class="stepbar" style="margin-top:16px;max-width:520px">
@@ -470,9 +668,12 @@
             </div>
           </div>
           <div class="field" id="specialtyField"><label>Specialty <span class="hint">shown for Doctor role</span></label><input placeholder="e.g. Dermatologist"></div>
-          <div class="field"><label>Mobile number <span class="hint">so they can be reached on WhatsApp</span></label><input id="invPhone" placeholder="e.g. 98450 12210"></div>
-          <div id="inviteFormErr" style="display:none;color:var(--rose);font-size:12px;margin-bottom:10px">⚠ Enter a name and a valid mobile number to continue.</div>
-          <button class="btn btn-honey" style="width:100%" onclick="generateInvite()"><span id="genLabel">Generate invite link</span></button>
+          <div class="field">
+            <label>Mobile number <span class="hint">so they can be reached on WhatsApp</span></label>
+            <input id="invPhone" placeholder="e.g. 98450 12210" oninput="checkPhoneLive()">
+            <div class="fieldnote" id="phoneNote"></div>
+          </div>
+          <button class="btn btn-honey" style="width:100%" id="genBtn" onclick="generateInvite()"><span id="genLabel">Generate invite link</span></button>
         </div>
 
         <!-- step 2: loading -->
@@ -496,17 +697,13 @@
           <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="resetInvite();setView('team')">Back to team</button>
         </div>
 
-        <!-- error state -->
-        <div id="inviteError" style="display:none;max-width:520px;margin-top:12px" class="openflag">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
-          <span>This person is already an active team member — duplicate invitations for an active member aren't allowed.</span>
-        </div>
-
         <div class="simbar" style="max-width:520px;margin-top:18px">
           <span class="lbl">Simulate</span>
-          <button class="simbtn" onclick="showInviteError()">Duplicate-member error</button>
-          <button class="simbtn" onclick="showExpiredAccept()">Preview: expired invite (acceptance side)</button>
-          <button class="simbtn" onclick="showValidAccept()">Preview: valid invite (acceptance side)</button>
+          <button class="simbtn" onclick="fillPhone('9876543210')">Type: available number</button>
+          <button class="simbtn" onclick="fillPhone('9811100002')">Type: already-active number</button>
+          <button class="simbtn" onclick="fillPhone('9811100099')">Type: pending-invite number</button>
+          <button class="simbtn" onclick="showExpiredAccept()">Preview: expired invite (acceptance)</button>
+          <button class="simbtn" onclick="showValidAccept()">Preview: valid invite (acceptance)</button>
         </div>
       </section>
 
@@ -531,56 +728,51 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- PLAN / PROFESSIONAL UPGRADE                                   -->
+      <!-- SETTINGS → PLAN                                               -->
       <!-- ============================================================ -->
       <section class="view" data-v="plan">
-        <div class="eyebrow">Owner · Plan</div>
+        <div class="eyebrow">Settings · Plan</div>
         <h2 style="font-size:20px;margin-top:6px">Your plan</h2>
 
-        <div class="grid2" style="margin-top:16px">
-          <div class="card pad" style="border:2px solid var(--honey-deep)">
+        <div class="grid2" style="margin-top:16px;grid-template-columns:1fr 1fr 1fr" id="planGrid">
+          <div class="plancard current">
             <div style="display:flex;justify-content:space-between;align-items:start">
               <div><b style="font-family:var(--fd);font-size:16px">Solo</b><p style="font-size:12px;color:var(--muted)">Current plan</p></div>
               <span class="pill active"><i></i>Active</span>
             </div>
-            <ul style="margin:14px 0 0;padding-left:18px;font-size:13px;color:var(--body)">
+            <ul style="margin:14px 0 0;padding-left:18px;font-size:12.5px;color:var(--body)">
               <li>1 Owner (may also be the Doctor)</li>
               <li>1 additional Doctor</li>
               <li>1 Receptionist</li>
               <li>Free forever</li>
             </ul>
           </div>
-          <div class="card pad">
+          <div class="plancard">
             <div><b style="font-family:var(--fd);font-size:16px">Professional</b><p style="font-size:12px;color:var(--muted)">Grow your team</p></div>
-            <ul style="margin:14px 0 0;padding-left:18px;font-size:13px;color:var(--body)">
+            <ul style="margin:14px 0 0;padding-left:18px;font-size:12.5px;color:var(--body)">
               <li>Up to 5 Doctors</li>
               <li>Up to 15 total team members</li>
               <li>Same clinic, same data — no migration</li>
             </ul>
             <button class="btn btn-honey" style="width:100%;margin-top:16px" onclick="requestUpgrade()"><span id="upgradeLabel">Request upgrade</span></button>
-            <p style="font-size:11px;color:var(--muted);margin-top:8px">Plan changes are applied by Auriva after your request (ADR-004) — this isn't a self-service payment yet.</p>
+          </div>
+          <div class="plancard disabled">
+            <div><b style="font-family:var(--fd);font-size:16px">Enterprise</b><p style="font-size:12px;color:var(--muted)">Coming soon</p></div>
+            <ul style="margin:14px 0 0;padding-left:18px;font-size:12.5px;color:var(--body)">
+              <li>Multi-clinic</li>
+              <li>Branches</li>
+              <li>Advanced roles</li>
+            </ul>
+            <button class="btn btn-line" style="width:100%;margin-top:16px" disabled>Not available yet</button>
           </div>
         </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:12px;max-width:640px">Plan changes are applied by Auriva after your request (ADR-004) — this isn't self-service payment yet. Enterprise is roadmap communication only — no functionality behind it.</p>
 
-        <div id="upgradeSuccess" style="display:none;margin-top:16px" class="card pad">
+        <div id="upgradeSuccess" style="display:none;margin-top:16px" class="card pad" style="max-width:640px">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="width:36px;height:36px;border-radius:11px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg></span>
             <div><b style="font-family:var(--fd);font-size:13.5px">Upgrade requested</b><p style="font-size:12px;color:var(--muted)">Auriva will confirm within 1 business day. Your team and data stay exactly as they are.</p></div>
           </div>
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- AURIVA-INTERNAL ADMIN (reference only, not clinic product)    -->
-      <!-- ============================================================ -->
-      <section class="view" data-v="adminplan">
-        <div style="padding:10px 14px;border-radius:12px;background:var(--ink);color:#fff;font-size:12px;margin-bottom:16px">This screen belongs to Auriva's own internal ops tool — it is <b>not part of the clinic-facing product</b>. Shown here only so the plan-toggle mechanism (ADR-004) is visible somewhere in this review.</div>
-        <div class="card pad" style="max-width:520px">
-          <b style="font-family:var(--fd);font-size:14px">SmileCare Dental — plan control</b>
-          <div class="field" style="margin-top:14px"><label>Plan tier</label>
-            <select><option>Solo</option><option selected>Professional (pending request)</option></select>
-          </div>
-          <button class="btn btn-pine">Apply change</button>
         </div>
       </section>
 
@@ -590,31 +782,24 @@
 
 <script>
 (function(){
-  var body = document.body;
-  var ROLE_LABEL = { owner_doctor:'Owner + Doctor', owner:'Owner', doctor:'Doctor', receptionist:'Receptionist' };
-  var DASH_TEXT = {
-    owner_doctor: { eyebrow:'Owner + Doctor', heading:'Good morning, Dr. Rao' },
-    owner:        { eyebrow:'Owner',          heading:'Good morning, Ravi' },
-    doctor:       { eyebrow:'Doctor',         heading:'Good morning, Dr. Shah' },
-    receptionist: { eyebrow:'Receptionist',   heading:'Good morning, Priya' }
-  };
+  var ROLE_LABEL = { owner_doctor:'Managing Doctor', owner:'Practice Owner', doctor:'Doctor', receptionist:'Receptionist' };
+  var DASH_Q = { owner_doctor:'Your clinic today', owner:'Your clinic today', doctor:"Who's next?", receptionist:'Front desk' };
+  var KNOWN_PHONES = { '9811100002':'active', '9811100099':'pending' };
 
   function applyRole(role){
     document.querySelectorAll('[data-roles]').forEach(function(el){
       var allowed = el.getAttribute('data-roles').split(',');
       var show = allowed.indexOf(role) !== -1;
-      if(el.classList.contains('nav-item') || el.classList.contains('bn-item')){
-        el.style.display = show ? '' : 'none';
-      } else {
-        el.style.display = show ? '' : 'none';
-      }
+      // Instant, reliable show/hide for nav — correctness here is mandatory.
+      el.style.display = show ? '' : 'none';
     });
     document.getElementById('roleTag').textContent = ROLE_LABEL[role];
     document.getElementById('asLabel').textContent = ROLE_LABEL[role];
-    var d = DASH_TEXT[role];
-    document.getElementById('dashEyebrow').textContent = d.eyebrow;
-    document.getElementById('dashHeading').textContent = d.heading;
-    // if current view just got hidden for this role, fall back to dashboard
+    document.getElementById('dashNavQ').textContent = DASH_Q[role];
+    // gentle re-fade on the dashboard content when role changes
+    var dw = document.getElementById('dashWrap');
+    dw.classList.remove('refade'); void dw.offsetWidth; dw.classList.add('refade');
+    // fall back to Dashboard if the current view just became unavailable for this role
     var current = document.querySelector('.view.on');
     if(current){
       var v = current.getAttribute('data-v');
@@ -629,7 +814,7 @@
   window.setView = function(v){
     document.querySelectorAll('.view').forEach(function(s){ s.classList.toggle('on', s.dataset.v===v); });
     document.querySelectorAll('.nav-item, .bn-item').forEach(function(b){ b.classList.toggle('on', b.dataset.view===v); });
-    var titles = { cover:'Prototype Map', onboarding:'Welcome', dashboard:'Dashboard', team:'Team', invite:'Invite a member', plan:'Plan', accept:'Join clinic', adminplan:'Internal admin' };
+    var titles = { cover:'Prototype Map', onboarding:'Welcome', dashboard:'Dashboard', practice:'Practice', team:'Team', invite:'Invite a member', plan:'Plan', accept:'Join clinic' };
     document.getElementById('pageTitle').textContent = titles[v] || v;
     window.scrollTo(0,0);
   };
@@ -645,19 +830,40 @@
     if(!e.target.closest('.rowmenu')) document.querySelectorAll('.menu.on').forEach(function(m){ m.classList.remove('on'); });
   });
 
-  window.openArchive = function(name){
-    document.getElementById('archiveName').textContent = name;
-    document.getElementById('archiveModal').style.display = 'flex';
+  // ---- Archive: simple (no conflicts) vs reconciliation-gated (has conflicts) ----
+  window.openArchive = function(who){
     document.querySelectorAll('.menu.on').forEach(function(m){ m.classList.remove('on'); });
+    if(who === 'vikram'){
+      document.getElementById('rr1sel').value=''; document.getElementById('rr2sel').value='';
+      document.getElementById('rr1').classList.remove('done'); document.getElementById('rr2').classList.remove('done');
+      document.getElementById('rr1sel').classList.add('needs'); document.getElementById('rr2sel').classList.add('needs');
+      document.getElementById('reconArchiveBtn').disabled = true;
+      document.getElementById('reconcileModal').style.display = 'flex';
+      return;
+    }
+    document.getElementById('archiveName').textContent = 'Priya Sharma';
+    document.getElementById('archiveModal').style.display = 'flex';
   };
   window.closeArchive = function(){ document.getElementById('archiveModal').style.display = 'none'; };
+  window.closeReconcile = function(){ document.getElementById('reconcileModal').style.display = 'none'; };
+  window.checkRecon = function(){
+    var r1 = document.getElementById('rr1sel'), r2 = document.getElementById('rr2sel');
+    document.getElementById('rr1').classList.toggle('done', !!r1.value);
+    document.getElementById('rr2').classList.toggle('done', !!r2.value);
+    r1.classList.toggle('needs', !r1.value); r2.classList.toggle('needs', !r2.value);
+    document.getElementById('reconArchiveBtn').disabled = !(r1.value && r2.value);
+  };
+  window.finishReconcile = function(){
+    closeReconcile();
+    toast('Reassigned 2 items · Dr. Vikram Shah archived (prototype only)');
+  };
 
   window.teamState = function(state, btn){
     document.querySelectorAll('.simbar .simbtn').forEach(function(b){ if(b.parentElement===btn.parentElement) b.classList.remove('on'); });
     btn.classList.add('on');
-    document.getElementById('teamLoading').style.display = state==='loading' ? 'block' : 'none';
+    document.getElementById('teamLoading').style.display = state==='loading' ? 'grid' : 'none';
     document.getElementById('teamEmpty').style.display = state==='empty' ? 'block' : 'none';
-    document.getElementById('teamPopulated').style.display = (state==='populated'||state==='limit') ? 'block' : 'none';
+    document.getElementById('teamPopulated').style.display = (state==='populated'||state==='limit') ? 'grid' : 'none';
     document.getElementById('teamLimitNote').style.display = state==='limit' ? 'flex' : 'none';
   };
 
@@ -667,11 +873,40 @@
     document.getElementById('specialtyField').style.display = role==='doctor' ? 'block' : 'none';
   };
 
+  // ---- Inline duplicate-phone validation, live while typing ----
+  window.checkPhoneLive = function(){
+    var raw = document.getElementById('invPhone').value.replace(/\D/g,'');
+    var note = document.getElementById('phoneNote');
+    var btn = document.getElementById('genBtn');
+    note.className = 'fieldnote';
+    if(raw.length < 7){ note.innerHTML=''; btn.disabled=false; return; }
+    var status = KNOWN_PHONES[raw];
+    if(status === 'active'){
+      note.classList.add('err');
+      note.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg> Already active — this person is already on your team';
+      btn.disabled = true;
+    } else if(status === 'pending'){
+      note.classList.add('warn');
+      note.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2 2"/></svg> Already invited — a pending invite exists for this number';
+      btn.disabled = true;
+    } else {
+      note.classList.add('ok');
+      note.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg> Available';
+      btn.disabled = false;
+    }
+  };
+  window.fillPhone = function(v){
+    document.getElementById('invPhone').value = v;
+    checkPhoneLive();
+  };
+
   window.generateInvite = function(){
     var name = document.getElementById('invName').value.trim();
-    var phone = document.getElementById('invPhone').value.trim();
-    document.getElementById('inviteFormErr').style.display = (!name || phone.replace(/\D/g,'').length<7) ? 'block' : 'none';
-    if(!name || phone.replace(/\D/g,'').length<7) return;
+    var phone = document.getElementById('invPhone').value.replace(/\D/g,'');
+    if(!name || phone.length<7 || KNOWN_PHONES[phone]){
+      if(!name) toast('Enter a name to continue', true);
+      return;
+    }
     document.getElementById('inviteStep1').style.display='none';
     document.getElementById('inviteStep2').style.display='block';
     document.getElementById('stepdot2').classList.add('on');
@@ -685,20 +920,16 @@
     document.getElementById('inviteStep1').style.display='block';
     document.getElementById('inviteStep2').style.display='none';
     document.getElementById('inviteStep3').style.display='none';
-    document.getElementById('inviteError').style.display='none';
     document.getElementById('stepdot2').classList.remove('on');
     document.getElementById('stepdot3').classList.remove('on');
     document.getElementById('invName').value=''; document.getElementById('invPhone').value='';
-  };
-  window.showInviteError = function(){
-    document.getElementById('inviteError').style.display='flex';
-    setTimeout(function(){ document.getElementById('inviteError').style.display='none'; }, 3200);
+    document.getElementById('phoneNote').innerHTML=''; document.getElementById('genBtn').disabled=false;
   };
   window.showExpiredAccept = function(){ setView('accept'); document.getElementById('acceptValid').style.display='none'; document.getElementById('acceptExpired').style.display='block'; };
   window.showValidAccept = function(){ setView('accept'); document.getElementById('acceptValid').style.display='block'; document.getElementById('acceptExpired').style.display='none'; };
 
   window.requestUpgrade = function(){
-    document.getElementById('upgradeLabel').innerHTML = 'Sending…';
+    document.getElementById('upgradeLabel').textContent = 'Sending…';
     setTimeout(function(){
       document.getElementById('upgradeSuccess').style.display='block';
       document.getElementById('upgradeLabel').textContent='Request upgrade';
@@ -710,7 +941,7 @@
     var t=document.createElement('div'); t.className='toast'+(isErr?' err':'');
     t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';
     tw.appendChild(t);
-    setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){t.remove();},300); }, 2200);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){t.remove();},300); }, 2400);
   };
 })();
 </script>
