@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auriva · BRD-043 Team Management — Interactive Prototype</title>
+<style>
+  :root{
+    --paper:#FBF8F4; --surface:#FFFFFF; --sand:#F4EEE6; --sand2:#F0E8DC;
+    --pine:#0E7466; --pine-deep:#083F37; --pine-tint:#E4EFEC;
+    --honey:#E8A24C; --honey-2:#E39433; --honey-soft:#F7E4C6; --honey-deep:#7A4E12; --honey-tint:#FBF0DF;
+    --rose:#C9584E; --rose-tint:#F7E0DC; --ok:#3F9D5A; --ok-tint:#E4F2E7; --warn:#C9954E; --warn-tint:#FBF0DC;
+    --ink:#241F1A; --body:#5E564C; --muted:#8C8477; --line:#ECE3D6; --line-2:#E2D7C7;
+    --night:#0B4A41;
+    --fd:'SF Pro Rounded', ui-rounded, 'Nunito', system-ui, sans-serif;
+    --fb:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);
+    --shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --topbar:52px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--sand2);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  :focus-visible{outline:2.5px solid var(--honey-deep);outline-offset:2px;border-radius:8px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--sand);padding:1px 6px;border-radius:6px;color:var(--pine-deep)}
+
+  /* ===== Prototype identification banner ===== */
+  .protobar{position:sticky;top:0;z-index:100;min-height:var(--topbar);display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--night);color:#fff;font-size:12.5px;flex-wrap:wrap}
+  .protobar b{color:var(--honey);font-family:var(--fd)}
+  .protobar .sep{opacity:.35}
+  .protobar .role-picker{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
+  .protobar select{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9px;padding:6px 10px;font-size:12.5px;font-family:var(--fb);min-width:0;max-width:100%}
+  .protobar select option{color:#111}
+  @media (max-width:640px){
+    .protobar{font-size:11.5px}
+    .protobar-desc{display:none}
+    .protobar .role-picker{margin-left:0;width:100%;justify-content:space-between}
+    .protobar select{flex:1;min-width:0}
+    .protobar label[for="roleSel"]{display:none}
+  }
+  .protobar .tag{font-size:10.5px;font-weight:700;background:var(--honey);color:#4A3413;border-radius:99px;padding:3px 9px;letter-spacing:.02em}
+
+  /* ===== App shell ===== */
+  .shell{display:flex;min-height:calc(100vh - var(--topbar))}
+  .side{width:230px;flex:0 0 auto;background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+  .side .brand{display:flex;align-items:center;gap:9px;padding:8px 8px 18px}
+  .side .brand .mk{width:28px;height:28px;border-radius:9px;background:var(--pine);color:#fff;display:grid;place-items:center}
+  .side .brand .mk svg{width:16px;height:16px}
+  .side .brand b{font-family:var(--fd);font-size:15px}
+  .side .clinicname{padding:0 8px 14px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:10px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;border:none;background:none;text-align:left;font-size:13.5px;font-weight:600;color:var(--body);transition:.15s}
+  .nav-item svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted)}
+  .nav-item .q{display:block;font-size:10.5px;font-weight:500;color:var(--muted);margin-top:1px}
+  .nav-item:hover{background:var(--sand)}
+  .nav-item.on{background:var(--honey-soft);color:var(--honey-deep)}
+  .nav-item.on svg{color:var(--honey-deep)}
+  .nav-item.hidden-role{display:none}
+  .nav-sep{height:1px;background:var(--line);margin:10px 4px}
+  .seat-pill{margin-top:auto;padding:12px 10px;border-radius:13px;background:var(--pine-tint);font-size:11.5px}
+  .seat-pill .bar{height:5px;border-radius:99px;background:var(--line-2);margin-top:7px;overflow:hidden}
+  .seat-pill .bar i{display:block;height:100%;background:var(--pine);border-radius:99px}
+
+  .main{flex:1;min-width:0;overflow-x:hidden}
+  .topline{display:flex;align-items:center;gap:12px;padding:16px 26px;border-bottom:1px solid var(--line);background:rgba(251,248,244,.6)}
+  .topline h1{font-size:19px}
+  .topline .as{margin-left:auto;font-size:11.5px;color:var(--muted)}
+  .content{padding:24px 26px 60px;max-width:1080px}
+
+  /* mobile bottom nav */
+  .bottomnav{display:none}
+  @media (max-width:820px){
+    .side{display:none}
+    .bottomnav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:90;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:none;background:none;font-size:10px;font-weight:650;color:var(--muted);border-radius:10px}
+    .bn-item.on{color:var(--honey-deep)}
+    .bn-item svg{width:20px;height:20px}
+    .bn-item.hidden-role{display:none}
+    .content{padding:18px 16px 90px}
+    .topline{padding:14px 16px}
+  }
+  @media (max-width:520px){ .topline .as{display:none} }
+
+  /* ===== shared UI atoms ===== */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .pad{padding:20px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 16px;border-radius:11px;border:none;font-family:var(--fd);font-weight:650;font-size:13.5px;transition:.15s}
+  .btn svg{width:16px;height:16px}
+  .btn-honey{background:var(--honey);color:#4A3413;box-shadow:0 10px 22px -12px rgba(232,162,76,.6)}
+  .btn-honey:hover{filter:brightness(1.05)}
+  .btn-pine{background:var(--pine);color:#fff}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn-line:hover{border-color:var(--honey-deep)}
+  .btn-ghost{background:none;color:var(--muted)}
+  .btn-sm{height:33px;font-size:12.5px;padding:0 12px}
+  .btn-danger{background:var(--rose-tint);color:var(--rose)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pine)}
+  .pill{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px}
+  .pill.active{background:var(--ok-tint);color:var(--ok)}
+  .pill.suspended{background:var(--warn-tint);color:var(--warn)}
+  .pill.archived{background:var(--sand);color:var(--muted)}
+  .pill.pending{background:var(--honey-tint);color:var(--honey-deep)}
+  .pill.expired{background:var(--rose-tint);color:var(--rose)}
+  .pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:650;margin-bottom:6px}
+  .field .hint{font-weight:400;color:var(--muted);font-size:11.5px}
+  .field input, .field select{width:100%;height:42px;border-radius:11px;border:1.5px solid var(--line-2);background:var(--surface);padding:0 13px;font-size:14px;font-family:var(--fb);outline:none}
+  .field input:focus, .field select:focus{border-color:var(--honey-deep)}
+  .radiorow{display:flex;gap:10px}
+  .radiocard{flex:1;border:1.5px solid var(--line-2);border-radius:13px;padding:13px;cursor:pointer;transition:.15s}
+  .radiocard.on{border-color:var(--honey-deep);background:var(--honey-tint)}
+  .radiocard .nm{font-family:var(--fd);font-weight:700;font-size:13.5px}
+  .radiocard .mt{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  .toastwrap{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:9px;background:var(--ink);color:#fff;border-radius:12px;box-shadow:var(--shadow);padding:11px 15px;font-size:13px;font-weight:600;animation:tin .25s}
+  .toast.err{background:var(--rose)}
+  .toast .ic svg{width:15px;height:15px}
+  @keyframes tin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+
+  .view{display:none}
+  .view.on{display:block;animation:vin .3s ease}
+  @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .skel{background:linear-gradient(90deg,var(--sand) 25%,var(--sand2) 37%,var(--sand) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
+  @keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+
+  .simbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;padding:10px 12px;border-radius:12px;background:var(--sand);border:1px dashed var(--line-2)}
+  .simbar .lbl{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;align-self:center;margin-right:2px}
+  .simbtn{font-size:11.5px;font-weight:650;border:1px solid var(--line-2);background:var(--surface);border-radius:9px;padding:5px 10px;color:var(--body)}
+  .simbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .openflag{display:flex;gap:10px;background:var(--warn-tint);border:1px solid #E9CFA0;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#7A5A1E;margin-top:14px}
+  .openflag svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
+
+  table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+  table.tbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:0 12px 8px;border-bottom:1px solid var(--line)}
+  table.tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.tbl tr:last-child td{border-bottom:none}
+  .avatar{width:32px;height:32px;border-radius:10px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px;flex:0 0 auto}
+  .rowflex{display:flex;align-items:center;gap:10px}
+  .rowmenu{position:relative}
+  .dots{width:30px;height:30px;border-radius:9px;border:none;background:none;color:var(--muted);display:grid;place-items:center}
+  .dots:hover{background:var(--sand)}
+  .menu{position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);min-width:170px;padding:6px;display:none;z-index:20}
+  .menu.on{display:block}
+  .menu button{display:flex;width:100%;align-items:center;gap:8px;padding:8px 10px;border:none;background:none;text-align:left;font-size:12.5px;font-weight:600;border-radius:9px;color:var(--ink)}
+  .menu button:hover{background:var(--sand)}
+  .menu button.danger{color:var(--rose)}
+  .menu button svg{width:14px;height:14px}
+  .menu hr{border:none;border-top:1px solid var(--line);margin:5px 2px}
+
+  .stepbar{display:flex;align-items:center;gap:6px;margin-bottom:20px}
+  .stepbar .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+  .stepbar .dot.on{background:var(--honey-deep);width:22px;border-radius:99px}
+  .stepbar .rail{flex:1;height:1px;background:var(--line)}
+
+  .emptystate{text-align:center;padding:48px 20px}
+  .emptystate .ic{width:56px;height:56px;border-radius:16px;background:var(--sand);display:grid;place-items:center;margin:0 auto 16px;color:var(--muted)}
+  .emptystate .ic svg{width:26px;height:26px}
+  .emptystate h3{font-size:15.5px}
+  .emptystate p{font-size:13px;color:var(--muted);margin-top:6px;max-width:34ch;margin-inline:auto}
+
+  .spechint{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:650;color:var(--muted);background:var(--sand);border-radius:99px;padding:3px 9px;margin-left:8px;vertical-align:middle}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .kpi .v{font-family:var(--fd);font-size:22px;font-weight:800}
+  .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<!-- ===== PROTOTYPE BANNER (not part of the real product) ===== -->
+<div class="protobar">
+  <b>PROTOTYPE</b>
+  <span class="protobar-desc"><span class="sep">·</span><span>BRD-043 Team Management</span><span class="sep">·</span><span>Static · no backend</span><span class="sep">·</span><span>For Product Office review</span></span>
+  <div class="role-picker">
+    <span class="tag" id="roleTag">Owner + Doctor</span>
+    <label for="roleSel" style="font-size:11.5px">Preview as</label>
+    <select id="roleSel">
+      <option value="owner_doctor" selected>Owner + Doctor (Solo)</option>
+      <option value="owner">Owner (non-doctor)</option>
+      <option value="doctor">Doctor</option>
+      <option value="receptionist">Receptionist</option>
+    </select>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- ===== SIDEBAR (adaptive — items hide per role) ===== -->
+  <aside class="side">
+    <div class="brand"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><b>Auriva</b></div>
+    <div class="clinicname">SmileCare Dental · Solo plan</div>
+
+    <button class="nav-item on" data-view="cover" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Prototype Map<span class="q">Screen index</span></span></button>
+
+    <div class="nav-sep"></div>
+
+    <button class="nav-item" data-view="onboarding" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span>Welcome<span class="q">Solo onboarding</span></span></button>
+    <button class="nav-item" data-view="dashboard" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg><span>Dashboard<span class="q">Adapts by role</span></span></button>
+    <button class="nav-item" data-view="team" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/></svg><span>Team<span class="q">Who works here</span></span></button>
+    <button class="nav-item" data-view="invite" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg><span>Invite<span class="q">Add a member</span></span></button>
+    <button class="nav-item" data-view="plan" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Plan<span class="q">Solo · Professional</span></span></button>
+
+    <div class="nav-sep" data-roles="doctor,receptionist" style="display:none"></div>
+    <button class="nav-item hidden-role" data-view="dashboard-doctor-note" data-roles="doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><span>Schedule<span class="q">Your patients today</span></span></button>
+    <button class="nav-item hidden-role" data-view="dashboard-reception-note" data-roles="receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span>Front Desk<span class="q">Check-in · queue</span></span></button>
+
+    <div class="seat-pill" data-roles="owner,owner_doctor" id="seatPillWrap">
+      <div style="display:flex;justify-content:space-between"><b style="font-size:12px">Team seats</b><span id="seatCount">2 / 2</span></div>
+      <div class="bar"><i style="width:100%"></i></div>
+    </div>
+  </aside>
+
+  <!-- ===== BOTTOM NAV (mobile) ===== -->
+  <nav class="bottomnav">
+    <button class="bn-item on" data-view="cover" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Map</button>
+    <button class="bn-item" data-view="dashboard" data-roles="owner,owner_doctor,doctor,receptionist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Home</button>
+    <button class="bn-item hidden-role" data-view="team" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Team</button>
+    <button class="bn-item hidden-role" data-view="invite" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>Invite</button>
+    <button class="bn-item hidden-role" data-view="plan" data-roles="owner,owner_doctor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Plan</button>
+  </nav>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+    <div class="topline">
+      <h1 id="pageTitle">Prototype Map</h1>
+      <span class="as">Viewing as: <b id="asLabel">Owner + Doctor</b></span>
+    </div>
+
+    <div class="content">
+
+      <!-- ============================================================ -->
+      <!-- COVER / SCREEN INDEX (folds in the Phase-2 IA reference)      -->
+      <!-- ============================================================ -->
+      <section class="view on" data-v="cover">
+        <div class="eyebrow">BRD-043 · Interactive Prototype</div>
+        <h2 style="font-size:22px;margin-top:6px">Team Management &amp; Solo→Professional — Screen Map</h2>
+        <p style="color:var(--body);margin-top:8px;max-width:64ch">Every screen below is real and clickable. Use <b>Preview as</b> (top-right) to see Adaptive Navigation change the sidebar live — Owner/Owner+Doctor see Team, Invite and Plan; Doctor and Receptionist do not. This is one product with one adaptive dashboard, not separate workspaces (BP-03).</p>
+
+        <div class="grid2" style="margin-top:22px">
+          <div class="card pad">
+            <h3 style="font-size:14px">Role → Navigation matrix</h3>
+            <div style="overflow-x:auto;margin-top:10px">
+            <table class="tbl" style="min-width:440px">
+              <thead><tr><th>Screen</th><th>Owner</th><th>Owner+Dr</th><th>Doctor</th><th>Reception</th></tr></thead>
+              <tbody>
+                <tr><td>Dashboard (adaptive)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><td>Team Management</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+                <tr><td>Invite flow</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+                <tr><td>Plan / Upgrade</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+                <tr><td>Clinical documentation</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+                <tr><td>Front desk / check-in</td><td style="color:var(--muted)">via Dashboard</td><td style="color:var(--muted)">via Dashboard</td><td>—</td><td>✓</td></tr>
+              </tbody>
+            </table>
+            </div>
+          </div>
+          <div class="card pad">
+            <h3 style="font-size:14px">Open items — not decided here</h3>
+            <div class="openflag" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>Doctor reassignment on archive</b> — what happens to a doctor's future appointments? See the Team screen's Archive dialog, which surfaces the question rather than guessing.</span></div>
+            <div class="openflag" style="margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>Owner account recovery</b> — no policy yet. Not mocked; would need its own screen once decided.</span></div>
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin-top:24px">All screens</h3>
+        <div class="grid2" style="margin-top:10px">
+          <button class="card pad" style="text-align:left" onclick="setView('onboarding')"><b>Welcome / Solo onboarding</b><p style="font-size:12px;color:var(--muted);margin-top:4px">First login after Quick Setup — plan awareness, soft team nudge</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('dashboard')"><b>Dashboard (adaptive)</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Same URL, different content per role</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('team')"><b>Team Management</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Member list, status, suspend/archive</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('invite')"><b>Invitation flow</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Create → WhatsApp/Copy link → accept</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('plan')"><b>Plan &amp; Professional upgrade</b><p style="font-size:12px;color:var(--muted);margin-top:4px">Solo vs Professional, request upgrade</p></button>
+          <button class="card pad" style="text-align:left" onclick="setView('adminplan')"><b>Auriva Internal Admin</b> <span class="spechint">reference only</span><p style="font-size:12px;color:var(--muted);margin-top:4px">Where the real plan toggle lives (ADR-004)</p></button>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- WELCOME / SOLO ONBOARDING                                     -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="onboarding">
+        <div class="eyebrow">First login</div>
+        <h2 style="font-size:20px;margin-top:6px">Welcome to Auriva, Dr. Rao 👋</h2>
+        <div class="card pad" style="margin-top:16px;max-width:640px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:44px;height:44px;border-radius:13px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg></span>
+            <div><b style="font-family:var(--fd)">You're on the Solo plan — free forever</b><p style="font-size:12.5px;color:var(--muted);margin-top:2px">Everything one practitioner needs. No card, no trial clock.</p></div>
+          </div>
+          <div style="margin-top:16px;padding:14px;border-radius:12px;background:var(--sand)">
+            <p style="font-size:13px"><b>Solo includes:</b> you as Owner + Doctor, plus room for 1 more Doctor and 1 Receptionist as you grow — same account, no migration.</p>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-honey" onclick="setView('dashboard')">Go to my clinic <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            <button class="btn btn-line" onclick="setView('team')">Invite my team <span class="spechint">optional</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ADAPTIVE DASHBOARD                                            -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="dashboard">
+        <div class="eyebrow" id="dashEyebrow">Owner + Doctor</div>
+        <h2 style="font-size:20px;margin-top:6px" id="dashHeading">Good morning, Dr. Rao</h2>
+
+        <div class="grid2" style="margin-top:16px">
+          <div class="kpi"><div class="v">6</div><div class="l">Patients today</div></div>
+          <div class="kpi"><div class="v">₹4,200</div><div class="l">Collected today</div></div>
+        </div>
+
+        <!-- role-specific callouts -->
+        <div class="card pad" style="margin-top:16px" data-roles="owner,owner_doctor">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:36px;height:36px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span>
+            <div style="flex:1"><b style="font-family:var(--fd);font-size:13.5px">2 of 2 seats used</b><p style="font-size:12px;color:var(--muted)">Ready to grow? Upgrade to Professional for up to 5 doctors.</p></div>
+            <button class="btn btn-line btn-sm" onclick="setView('plan')">View plan</button>
+          </div>
+        </div>
+
+        <div class="card pad" style="margin-top:16px" data-roles="doctor">
+          <b style="font-family:var(--fd);font-size:13.5px">Your schedule only</b>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Team, billing and plan management aren't shown here — that's Owner territory (BP-04).</p>
+        </div>
+        <div class="card pad" style="margin-top:16px" data-roles="receptionist">
+          <b style="font-family:var(--fd);font-size:13.5px">Front desk queue</b>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Check-in, queue and payments — no clinical documentation entry point is shown to Reception.</p>
+        </div>
+
+        <p style="margin-top:18px;font-size:12px;color:var(--muted)">↑ This one screen is the "Doctor Workspace" / "Receptionist Workspace" / "Owner Workspace" from the brief — same URL, adaptive content, per BP-03. Switch <b>Preview as</b> above to see it change.</p>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TEAM MANAGEMENT                                               -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="team">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div><div class="eyebrow">Owner · Team</div><h2 style="font-size:20px;margin-top:4px">Your team</h2></div>
+          <button class="btn btn-honey" style="margin-left:auto" onclick="setView('invite')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Invite member</button>
+        </div>
+
+        <div class="simbar">
+          <span class="lbl">Simulate</span>
+          <button class="simbtn on" onclick="teamState('populated', this)">Populated</button>
+          <button class="simbtn" onclick="teamState('empty', this)">Empty (Solo, just started)</button>
+          <button class="simbtn" onclick="teamState('loading', this)">Loading</button>
+          <button class="simbtn" onclick="teamState('limit', this)">At seat limit</button>
+        </div>
+
+        <div id="teamLoading" style="display:none" class="card pad">
+          <div class="skel" style="height:44px;margin-bottom:10px"></div>
+          <div class="skel" style="height:44px;margin-bottom:10px"></div>
+          <div class="skel" style="height:44px"></div>
+        </div>
+
+        <div id="teamEmpty" style="display:none" class="card">
+          <div class="emptystate">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span>
+            <h3>It's just you right now</h3>
+            <p>Invite a doctor or receptionist when you're ready — your Solo plan already includes room for both.</p>
+            <button class="btn btn-honey" style="margin-top:14px" onclick="setView('invite')">Invite your first member</button>
+          </div>
+        </div>
+
+        <div id="teamPopulated" class="card">
+          <div style="overflow-x:auto">
+          <table class="tbl" style="min-width:560px">
+            <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="rowflex"><span class="avatar">AR</span><div><b>Dr. Anjali Rao</b><div style="font-size:11px;color:var(--muted)">Owner · you</div></div></div></td>
+                <td>Owner + Doctor</td>
+                <td><span class="pill active"><i></i>Active</span></td>
+                <td>—</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td><div class="rowflex"><span class="avatar">VS</span><div><b>Dr. Vikram Shah</b><div style="font-size:11px;color:var(--muted)">Physiotherapist</div></div></div></td>
+                <td>Doctor</td>
+                <td><span class="pill active"><i></i>Active</span></td>
+                <td>4 Jul</td>
+                <td>
+                  <div class="rowmenu">
+                    <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
+                    <div class="menu">
+                      <button onclick="toast('Suspended Dr. Vikram Shah')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Suspend</button>
+                      <button onclick="openArchive('Dr. Vikram Shah')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>Archive</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="rowflex"><span class="avatar">PS</span><div><b>Priya Sharma</b><div style="font-size:11px;color:var(--muted)">Receptionist</div></div></div></td>
+                <td>Receptionist</td>
+                <td><span class="pill suspended"><i></i>Suspended</span></td>
+                <td>29 Jun</td>
+                <td>
+                  <div class="rowmenu">
+                    <button class="dots" onclick="toggleMenu(this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></button>
+                    <div class="menu">
+                      <button onclick="toast('Reactivated Priya Sharma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>Reactivate</button>
+                      <hr>
+                      <button class="danger" onclick="openArchive('Priya Sharma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/></svg>Archive</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="rowflex"><span class="avatar" style="background:var(--sand);color:var(--muted)">RK</span><div><b style="color:var(--muted)">Dr. Ravi Kumar</b><div style="font-size:11px;color:var(--muted)">Archived · notes preserved</div></div></div></td>
+                <td>Doctor</td>
+                <td><span class="pill archived"><i></i>Archived</span></td>
+                <td>—</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="teamLimitNote" style="display:none" class="openflag" style="margin-top:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
+          <span>You're at your Solo plan limit (2 of 2 seats). <a href="#" onclick="setView('plan');return false" style="color:var(--pine-deep);font-weight:700">Upgrade to Professional</a> for up to 5 doctors and 15 total members.</span>
+        </div>
+      </section>
+
+      <!-- Archive confirm modal -->
+      <div id="archiveModal" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(36,31,26,.45);align-items:center;justify-content:center">
+        <div class="card pad" style="max-width:420px;width:92%">
+          <b style="font-family:var(--fd);font-size:15px">Archive <span id="archiveName">this member</span>?</b>
+          <p style="font-size:12.5px;color:var(--body);margin-top:8px">Their historical records stay intact permanently — this cannot remove past visits or notes.</p>
+          <div class="openflag" style="margin-top:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
+            <span><b>Open question — Product Office decision pending:</b> if this doctor has future scheduled appointments, should they (a) stay assigned for continuity, (b) require reassignment first, or (c) auto-cancel with a patient notice? This prototype does not decide it.</span>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:16px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="closeArchive()">Cancel</button>
+            <button class="btn btn-danger" onclick="closeArchive();toast('Archived (prototype only)')">Archive anyway</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- INVITATION FLOW                                               -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="invite">
+        <div class="eyebrow">Owner · Invite</div>
+        <h2 style="font-size:20px;margin-top:6px">Add a team member</h2>
+
+        <div class="stepbar" style="margin-top:16px;max-width:520px">
+          <span class="dot on" id="stepdot1"></span><span class="rail"></span>
+          <span class="dot" id="stepdot2"></span><span class="rail"></span>
+          <span class="dot" id="stepdot3"></span>
+        </div>
+
+        <!-- step 1: form -->
+        <div id="inviteStep1" class="card pad" style="max-width:520px">
+          <div class="field"><label>Full name</label><input id="invName" placeholder="e.g. Dr. Meera Iyer"></div>
+          <div class="field">
+            <label>Role</label>
+            <div class="radiorow">
+              <div class="radiocard on" id="roleCardDoctor" onclick="pickInviteRole('doctor')"><div class="nm">Doctor</div><div class="mt">Clinical care</div></div>
+              <div class="radiocard" id="roleCardReception" onclick="pickInviteRole('receptionist')"><div class="nm">Receptionist</div><div class="mt">Front desk</div></div>
+            </div>
+          </div>
+          <div class="field" id="specialtyField"><label>Specialty <span class="hint">shown for Doctor role</span></label><input placeholder="e.g. Dermatologist"></div>
+          <div class="field"><label>Mobile number <span class="hint">so they can be reached on WhatsApp</span></label><input id="invPhone" placeholder="e.g. 98450 12210"></div>
+          <div id="inviteFormErr" style="display:none;color:var(--rose);font-size:12px;margin-bottom:10px">⚠ Enter a name and a valid mobile number to continue.</div>
+          <button class="btn btn-honey" style="width:100%" onclick="generateInvite()"><span id="genLabel">Generate invite link</span></button>
+        </div>
+
+        <!-- step 2: loading -->
+        <div id="inviteStep2" class="card pad" style="max-width:520px;display:none;text-align:center;padding:40px 20px">
+          <div class="skel" style="width:56px;height:56px;border-radius:16px;margin:0 auto 16px"></div>
+          <p style="font-size:13px;color:var(--muted)">Generating a secure invite link…</p>
+        </div>
+
+        <!-- step 3: link + share (ADR-003: WhatsApp + copy link, no email/SMS) -->
+        <div id="inviteStep3" class="card pad" style="max-width:520px;display:none">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:40px;height:40px;border-radius:12px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg></span>
+            <div><b style="font-family:var(--fd)">Invite ready</b><p style="font-size:12px;color:var(--muted)">Link expires in 72 hours</p></div>
+          </div>
+          <div style="margin-top:14px;padding:11px 13px;border-radius:11px;background:var(--sand);font-size:12px;font-family:ui-monospace,monospace;color:var(--pine-deep);word-break:break-all">auriva.app/join/8f2a9c14e7b3</div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-pine" style="flex:1" onclick="toast('Opening WhatsApp…')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> Share on WhatsApp</button>
+            <button class="btn btn-line" style="flex:1" onclick="toast('Link copied')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy link</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:12px">No email or SMS is sent automatically (ADR-003) — you share the link yourself, like Google Meet or Calendly.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="resetInvite();setView('team')">Back to team</button>
+        </div>
+
+        <!-- error state -->
+        <div id="inviteError" style="display:none;max-width:520px;margin-top:12px" class="openflag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+          <span>This person is already an active team member — duplicate invitations for an active member aren't allowed.</span>
+        </div>
+
+        <div class="simbar" style="max-width:520px;margin-top:18px">
+          <span class="lbl">Simulate</span>
+          <button class="simbtn" onclick="showInviteError()">Duplicate-member error</button>
+          <button class="simbtn" onclick="showExpiredAccept()">Preview: expired invite (acceptance side)</button>
+          <button class="simbtn" onclick="showValidAccept()">Preview: valid invite (acceptance side)</button>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- INVITATION ACCEPTANCE (the invited person's view)             -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="accept">
+        <div style="max-width:420px;margin:20px auto">
+          <div class="card pad" id="acceptValid">
+            <div class="eyebrow">You're invited</div>
+            <h2 style="font-size:19px;margin-top:6px">Join SmileCare Dental</h2>
+            <p style="font-size:13px;color:var(--body);margin-top:6px">Dr. Anjali Rao invited you as a <b>Doctor</b>.</p>
+            <div class="field" style="margin-top:16px"><label>Create a password</label><input type="password" placeholder="At least 8 characters"></div>
+            <button class="btn btn-honey" style="width:100%">Join clinic</button>
+          </div>
+          <div class="card pad" id="acceptExpired" style="display:none;text-align:center">
+            <span class="ic" style="margin:0 auto 14px;width:52px;height:52px;border-radius:15px;background:var(--rose-tint);color:var(--rose);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2 2"/></svg></span>
+            <h3 style="font-size:15px">This invite has expired</h3>
+            <p style="font-size:12.5px;color:var(--muted);margin-top:6px">Invites are valid for 72 hours. Ask the clinic owner to resend one.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- PLAN / PROFESSIONAL UPGRADE                                   -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="plan">
+        <div class="eyebrow">Owner · Plan</div>
+        <h2 style="font-size:20px;margin-top:6px">Your plan</h2>
+
+        <div class="grid2" style="margin-top:16px">
+          <div class="card pad" style="border:2px solid var(--honey-deep)">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div><b style="font-family:var(--fd);font-size:16px">Solo</b><p style="font-size:12px;color:var(--muted)">Current plan</p></div>
+              <span class="pill active"><i></i>Active</span>
+            </div>
+            <ul style="margin:14px 0 0;padding-left:18px;font-size:13px;color:var(--body)">
+              <li>1 Owner (may also be the Doctor)</li>
+              <li>1 additional Doctor</li>
+              <li>1 Receptionist</li>
+              <li>Free forever</li>
+            </ul>
+          </div>
+          <div class="card pad">
+            <div><b style="font-family:var(--fd);font-size:16px">Professional</b><p style="font-size:12px;color:var(--muted)">Grow your team</p></div>
+            <ul style="margin:14px 0 0;padding-left:18px;font-size:13px;color:var(--body)">
+              <li>Up to 5 Doctors</li>
+              <li>Up to 15 total team members</li>
+              <li>Same clinic, same data — no migration</li>
+            </ul>
+            <button class="btn btn-honey" style="width:100%;margin-top:16px" onclick="requestUpgrade()"><span id="upgradeLabel">Request upgrade</span></button>
+            <p style="font-size:11px;color:var(--muted);margin-top:8px">Plan changes are applied by Auriva after your request (ADR-004) — this isn't a self-service payment yet.</p>
+          </div>
+        </div>
+
+        <div id="upgradeSuccess" style="display:none;margin-top:16px" class="card pad">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:36px;height:36px;border-radius:11px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg></span>
+            <div><b style="font-family:var(--fd);font-size:13.5px">Upgrade requested</b><p style="font-size:12px;color:var(--muted)">Auriva will confirm within 1 business day. Your team and data stay exactly as they are.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- AURIVA-INTERNAL ADMIN (reference only, not clinic product)    -->
+      <!-- ============================================================ -->
+      <section class="view" data-v="adminplan">
+        <div style="padding:10px 14px;border-radius:12px;background:var(--ink);color:#fff;font-size:12px;margin-bottom:16px">This screen belongs to Auriva's own internal ops tool — it is <b>not part of the clinic-facing product</b>. Shown here only so the plan-toggle mechanism (ADR-004) is visible somewhere in this review.</div>
+        <div class="card pad" style="max-width:520px">
+          <b style="font-family:var(--fd);font-size:14px">SmileCare Dental — plan control</b>
+          <div class="field" style="margin-top:14px"><label>Plan tier</label>
+            <select><option>Solo</option><option selected>Professional (pending request)</option></select>
+          </div>
+          <button class="btn btn-pine">Apply change</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var body = document.body;
+  var ROLE_LABEL = { owner_doctor:'Owner + Doctor', owner:'Owner', doctor:'Doctor', receptionist:'Receptionist' };
+  var DASH_TEXT = {
+    owner_doctor: { eyebrow:'Owner + Doctor', heading:'Good morning, Dr. Rao' },
+    owner:        { eyebrow:'Owner',          heading:'Good morning, Ravi' },
+    doctor:       { eyebrow:'Doctor',         heading:'Good morning, Dr. Shah' },
+    receptionist: { eyebrow:'Receptionist',   heading:'Good morning, Priya' }
+  };
+
+  function applyRole(role){
+    document.querySelectorAll('[data-roles]').forEach(function(el){
+      var allowed = el.getAttribute('data-roles').split(',');
+      var show = allowed.indexOf(role) !== -1;
+      if(el.classList.contains('nav-item') || el.classList.contains('bn-item')){
+        el.style.display = show ? '' : 'none';
+      } else {
+        el.style.display = show ? '' : 'none';
+      }
+    });
+    document.getElementById('roleTag').textContent = ROLE_LABEL[role];
+    document.getElementById('asLabel').textContent = ROLE_LABEL[role];
+    var d = DASH_TEXT[role];
+    document.getElementById('dashEyebrow').textContent = d.eyebrow;
+    document.getElementById('dashHeading').textContent = d.heading;
+    // if current view just got hidden for this role, fall back to dashboard
+    var current = document.querySelector('.view.on');
+    if(current){
+      var v = current.getAttribute('data-v');
+      var navBtn = document.querySelector('.nav-item[data-view="'+v+'"], .bn-item[data-view="'+v+'"]');
+      if(navBtn && navBtn.style.display === 'none'){ setView('dashboard'); }
+    }
+  }
+
+  document.getElementById('roleSel').addEventListener('change', function(e){ applyRole(e.target.value); });
+  applyRole('owner_doctor');
+
+  window.setView = function(v){
+    document.querySelectorAll('.view').forEach(function(s){ s.classList.toggle('on', s.dataset.v===v); });
+    document.querySelectorAll('.nav-item, .bn-item').forEach(function(b){ b.classList.toggle('on', b.dataset.view===v); });
+    var titles = { cover:'Prototype Map', onboarding:'Welcome', dashboard:'Dashboard', team:'Team', invite:'Invite a member', plan:'Plan', accept:'Join clinic', adminplan:'Internal admin' };
+    document.getElementById('pageTitle').textContent = titles[v] || v;
+    window.scrollTo(0,0);
+  };
+  document.querySelectorAll('.nav-item, .bn-item').forEach(function(b){
+    b.addEventListener('click', function(){ setView(b.dataset.view); });
+  });
+
+  window.toggleMenu = function(btn){
+    document.querySelectorAll('.menu.on').forEach(function(m){ if(m!==btn.nextElementSibling) m.classList.remove('on'); });
+    btn.nextElementSibling.classList.toggle('on');
+  };
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.rowmenu')) document.querySelectorAll('.menu.on').forEach(function(m){ m.classList.remove('on'); });
+  });
+
+  window.openArchive = function(name){
+    document.getElementById('archiveName').textContent = name;
+    document.getElementById('archiveModal').style.display = 'flex';
+    document.querySelectorAll('.menu.on').forEach(function(m){ m.classList.remove('on'); });
+  };
+  window.closeArchive = function(){ document.getElementById('archiveModal').style.display = 'none'; };
+
+  window.teamState = function(state, btn){
+    document.querySelectorAll('.simbar .simbtn').forEach(function(b){ if(b.parentElement===btn.parentElement) b.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('teamLoading').style.display = state==='loading' ? 'block' : 'none';
+    document.getElementById('teamEmpty').style.display = state==='empty' ? 'block' : 'none';
+    document.getElementById('teamPopulated').style.display = (state==='populated'||state==='limit') ? 'block' : 'none';
+    document.getElementById('teamLimitNote').style.display = state==='limit' ? 'flex' : 'none';
+  };
+
+  window.pickInviteRole = function(role){
+    document.getElementById('roleCardDoctor').classList.toggle('on', role==='doctor');
+    document.getElementById('roleCardReception').classList.toggle('on', role==='receptionist');
+    document.getElementById('specialtyField').style.display = role==='doctor' ? 'block' : 'none';
+  };
+
+  window.generateInvite = function(){
+    var name = document.getElementById('invName').value.trim();
+    var phone = document.getElementById('invPhone').value.trim();
+    document.getElementById('inviteFormErr').style.display = (!name || phone.replace(/\D/g,'').length<7) ? 'block' : 'none';
+    if(!name || phone.replace(/\D/g,'').length<7) return;
+    document.getElementById('inviteStep1').style.display='none';
+    document.getElementById('inviteStep2').style.display='block';
+    document.getElementById('stepdot2').classList.add('on');
+    setTimeout(function(){
+      document.getElementById('inviteStep2').style.display='none';
+      document.getElementById('inviteStep3').style.display='block';
+      document.getElementById('stepdot3').classList.add('on');
+    }, 900);
+  };
+  window.resetInvite = function(){
+    document.getElementById('inviteStep1').style.display='block';
+    document.getElementById('inviteStep2').style.display='none';
+    document.getElementById('inviteStep3').style.display='none';
+    document.getElementById('inviteError').style.display='none';
+    document.getElementById('stepdot2').classList.remove('on');
+    document.getElementById('stepdot3').classList.remove('on');
+    document.getElementById('invName').value=''; document.getElementById('invPhone').value='';
+  };
+  window.showInviteError = function(){
+    document.getElementById('inviteError').style.display='flex';
+    setTimeout(function(){ document.getElementById('inviteError').style.display='none'; }, 3200);
+  };
+  window.showExpiredAccept = function(){ setView('accept'); document.getElementById('acceptValid').style.display='none'; document.getElementById('acceptExpired').style.display='block'; };
+  window.showValidAccept = function(){ setView('accept'); document.getElementById('acceptValid').style.display='block'; document.getElementById('acceptExpired').style.display='none'; };
+
+  window.requestUpgrade = function(){
+    document.getElementById('upgradeLabel').innerHTML = 'Sending…';
+    setTimeout(function(){
+      document.getElementById('upgradeSuccess').style.display='block';
+      document.getElementById('upgradeLabel').textContent='Request upgrade';
+    }, 800);
+  };
+
+  var tw = document.getElementById('toasts');
+  window.toast = function(msg, isErr){
+    var t=document.createElement('div'); t.className='toast'+(isErr?' err':'');
+    t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';
+    tw.appendChild(t);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){t.remove();},300); }, 2200);
+  };
+})();
+</script>
+</body>
+</html>
