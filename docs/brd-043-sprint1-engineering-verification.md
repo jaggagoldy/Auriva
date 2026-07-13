@@ -1,6 +1,6 @@
-# Sprint 1 — Founder Verification Guide
+# Sprint 1 — Engineering Verification Guide
 
-Companion to the [Sprint 1 Completion Report](./brd-043-sprint1-completion-report.md). Sprint 1 shipped **no UI** by design — it's schema and platform hardening (see [EEP-043 §14](./eep-043-engineering-execution-plan.md)). So unlike Sprints 2–5's guides, this one can't say "click here, expect that." Every check below is a request against the running app using its existing API — reproducible by anyone with the dev server running and a terminal (or a tool like Postman), no code-reading required.
+Companion to the [Sprint 1 Completion Report](./brd-043-sprint1-completion-report.md). Sprint 1 shipped **no UI** by design — it's schema and platform hardening (see [EEP-043 §14](./eep-043-engineering-execution-plan.md)). This is the technical version of the verification steps, for engineers/QA: curl, Prisma Studio, SQL, and session cookies. For a non-technical, browser-only walkthrough, see the companion [Product Office Verification Guide](./brd-043-sprint1-product-office-verification.md).
 
 Assumes the local dev environment from [[auriva-solo-first-build-focus]]: `npm run dev`, seeded Postgres, a logged-in owner session cookie (sign in at `/login` with `+15550300123` / `password123`, then copy the `auriva_staff_session` cookie from your browser's dev tools — Application → Cookies — for use in the `curl` commands below).
 
@@ -39,17 +39,37 @@ curl -s -X POST http://localhost:3000/api/invitations/<the-token>/accept \
 
 **Expected:** a `409` response with the message "This invitation has expired." — not a success, not a generic error. Reload the row in Prisma Studio: its `status` should now read `expired`.
 
+A non-technical reviewer can observe a related, simpler signal of this same behavior in a browser — see the Product Office Verification Guide's US-102 section (visiting an already-expired `/join/[token]` link shows an "expired" error page).
+
 ---
 
 ## 3. US-103 — Rate limiting on invite create + accept
 
 **Check:** repeated rapid invitation attempts get throttled; a single legitimate one does not.
 
+### Exact rate-limit configuration
+
+Two endpoints, each with two independent limits (whichever is hit first wins), mirroring the existing quick-setup route's two-dimension (identity + IP) pattern:
+
+**Invitation CREATE** (`POST /api/organizations/[id]/invitations`):
+- 20 requests per 60 minutes, per organization
+- 30 requests per 60 minutes, per IP
+
+**Invitation ACCEPT** (`POST /api/invitations/[token]/accept`):
+- 5 requests per 60 minutes, per invitation token
+- 10 requests per 60 minutes, per IP
+
+The counters are in-memory (reset on process restart) — a known limitation shared with the existing rate limiter, documented in `src/lib/rate-limit.ts`.
+
+### Reproduction
+
 Run the create-invitation `curl` command from step 2 twenty-one times in a row (a quick shell loop: `for i in $(seq 1 21); do curl ...; done`, varying the email each time so it's not rejected as a duplicate).
 
 **Expected:** the first 20 succeed (`201`); the 21st returns `429` with a `Retry-After` header and the message "Too many invitations sent. Please try again later."
 
 A single invitation sent on its own, without the loop, always succeeds normally — the limit only engages under rapid repetition.
+
+The same pattern applies to the accept endpoint at its own (lower) thresholds (5 per token / 10 per IP, per 60 minutes) — a loop of 6+ accept attempts against the same token should trip the token-scoped limit first.
 
 ---
 
@@ -70,9 +90,24 @@ curl -s -X POST http://localhost:3000/api/clinic/book \
 
 **Expected:** a `409` response — **not** a successful booking. Before this sprint, this request would have silently booked the patient onto whichever doctor happened to come back first from the database — sometimes not even a doctor at all, possibly a receptionist's own profile.
 
-**Check B — everything else keeps working normally for a solo clinic:** repeat the exact same request against a clinic that still has only one doctor.
+**Check A2 — disambiguation via `doctor_id`:** repeat the same request, this time including the optional `doctor_id` field with one of the two doctors' `Staff_Profiles` IDs:
+
+```bash
+curl -s -X POST http://localhost:3000/api/clinic/book \
+  -H "Content-Type: application/json" \
+  -b "auriva_staff_session=<receptionist-session-cookie>" \
+  -d '{"patient_name":"Test Patient","patient_phone":"9999999999","scheduled_time":"2026-07-20T10:00:00.000Z","doctor_id":"<staff-profile-id>"}'
+```
+
+**Expected:** a `201` success, booked onto the specified doctor. This confirms the new optional field (dormant for every existing Sprint-1 caller, since none send it) correctly resolves ambiguity when supplied.
+
+**Check B — everything else keeps working normally for a solo clinic:** repeat the exact same request (without `doctor_id`) against a clinic that still has only one doctor.
 
 **Expected:** a `201` success — booking behavior for every existing solo clinic (the entire install base today) is completely unchanged.
+
+**Check C — read-path degrade:** call `/api/clinic/overview` or `/api/clinic/schedule` for the now-ambiguous clinic.
+
+**Expected:** a `200` response with no doctor selected (degrades safely to "no doctor," not a 500, not a guess) — logged as a `warn`, not surfaced to the UI yet (tracked as Technical Debt #1 in the completion report).
 
 ---
 

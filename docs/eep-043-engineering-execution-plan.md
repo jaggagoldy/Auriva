@@ -10,6 +10,8 @@
 - Approved HTML prototype `design/mockups/brd-043-team-management.html` v1.1 — **the design contract**: React must reproduce it faithfully; any layout/workflow/nav/interaction deviation requires Product Office approval before implementation, not after
 - [Governance Addendum](./brd-043-governance-addendum.md) — feature flags, migration validation protocol, ADR-005 (no API versioning), performance budget, observability plan
 
+**Engineering Decision Record / Governance Amendment (2026-07-13):** the [Governance Addendum](./brd-043-governance-addendum.md) is formally recorded as an official, permanent amendment to this plan, adopted 2026-07-13 — not an informal note. Its protocols (migration validation, feature flags, ADR-005, performance budget, observability) carry the same binding weight as the sections below and remain in force for every subsequent sprint of this initiative.
+
 ---
 
 ## 1. Objectives
