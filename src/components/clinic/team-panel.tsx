@@ -351,7 +351,7 @@ export function TeamPanel({
                 <div className="truncate text-sm font-medium">{inv.full_name}</div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-600">
-                    <Clock className="size-3" /> Pending
+                    <Clock className="size-3" /> Invitation sent
                   </span>
                   <span className="capitalize">{inv.role}</span>
                   {inv.phone ? <span>· {inv.phone}</span> : null}

@@ -13,6 +13,7 @@ import {
   acceptInvitation,
   getInvitationByToken,
   checkInvitePhone,
+  revokeInvitation,
   ClinicNameConflictError,
   OnboardingInputError,
   InvitationExpiredError,
@@ -455,6 +456,69 @@ describe("createInvitation — phone-first, seat cap & duplicate guard (Sprint 2
       phone: "+15550311053", fullName: "Now Fits", role: "receptionist",
     });
     expect(invite.id).toBeTruthy();
+  });
+
+  // Product Office send-back (Sprint 2 review): archived members — like
+  // suspended ones — must NOT consume a seat.
+  it("archived members don't consume a seat", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    await addActiveMember(organization.id, clinic.id, "doctor", "+15550311060");
+    const rec = await addActiveMember(organization.id, clinic.id, "receptionist", "+15550311061");
+
+    // Archive the receptionist → their seat frees (proves 'archived' is
+    // excluded, not just 'suspended').
+    await prisma.staffProfile.updateMany({
+      where: { user_id: rec.id },
+      data: { membership_status: "archived" },
+    });
+
+    const invite = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311062", fullName: "Replacement", role: "receptionist",
+    });
+    expect(invite.id).toBeTruthy();
+  });
+
+  // Product Office send-back: an EXPIRED prior invite must not block
+  // re-inviting the same number.
+  it("re-inviting a phone whose prior invite expired succeeds", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const first = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311070", fullName: "Try Again", role: "receptionist",
+    });
+    // Simulate the lazy-expiry sweep having already marked it expired.
+    await prisma.invitation.update({
+      where: { id: first.id },
+      data: { status: "expired", expires_at: new Date(Date.now() - 60 * 60 * 1000) },
+    });
+
+    const second = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311070", fullName: "Try Again", role: "receptionist",
+    });
+    expect(second.id).toBeTruthy();
+    expect(second.status).toBe("pending");
+  });
+
+  // Product Office send-back: revoke → immediately re-invite the same number.
+  it("revoking then re-inviting the same phone succeeds", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const first = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311080", fullName: "Changed Mind", role: "doctor",
+    });
+    await revokeInvitation(first.id, organization.id);
+
+    const second = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311080", fullName: "Changed Mind", role: "doctor",
+    });
+    expect(second.id).toBeTruthy();
+    expect(second.status).toBe("pending");
   });
 });
 
