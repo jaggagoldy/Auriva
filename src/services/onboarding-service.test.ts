@@ -9,8 +9,12 @@ import {
   createClinic,
   setStaffActive,
   setStaffCapabilities,
+  createInvitation,
+  acceptInvitation,
+  getInvitationByToken,
   ClinicNameConflictError,
   OnboardingInputError,
+  InvitationExpiredError,
 } from "@/services/onboarding-service";
 
 const createdOrgIds: string[] = [];
@@ -159,5 +163,118 @@ describe("setStaffCapabilities", () => {
         capabilities: ["admin_portal"],
       })
     ).rejects.toThrow(OnboardingInputError);
+  });
+});
+
+// BRD-043 US-102 (Sprint 1): 72h invitation expiry, server-enforced.
+describe("createInvitation / acceptInvitation — expiry (US-102)", () => {
+  const createdUserIdsForExpiry: string[] = [];
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { id: { in: createdUserIdsForExpiry } } });
+  });
+
+  it("sets expires_at ~72h out at creation", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+
+    const before = Date.now();
+    const invitation = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email: `invitee-${Date.now()}@test.local`,
+      fullName: "New Doctor",
+      role: "doctor",
+    });
+    const expectedMs = before + 72 * 60 * 60 * 1000;
+    expect(invitation.expires_at).not.toBeNull();
+    expect(Math.abs(invitation.expires_at!.getTime() - expectedMs)).toBeLessThan(5000);
+  });
+
+  it("rejects acceptance of an invitation past its 72h window, server-side", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+
+    const invitation = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email: `expired-${Date.now()}@test.local`,
+      fullName: "Late Invitee",
+      role: "receptionist",
+    });
+    // Simulate a backdated invite — created and expired 1 hour ago.
+    await prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { expires_at: new Date(Date.now() - 60 * 60 * 1000) },
+    });
+
+    await expect(acceptInvitation({ token: invitation.token, password: "password123" })).rejects.toThrow(
+      InvitationExpiredError
+    );
+
+    const reloaded = await prisma.invitation.findUnique({ where: { id: invitation.id } });
+    expect(reloaded?.status).toBe("expired");
+  });
+
+  it("also rejects reading an expired invitation via the public token lookup", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+
+    const invitation = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email: `expired-read-${Date.now()}@test.local`,
+      fullName: "Late Reader",
+      role: "receptionist",
+    });
+    await prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { expires_at: new Date(Date.now() - 60 * 60 * 1000) },
+    });
+
+    await expect(getInvitationByToken(invitation.token)).rejects.toThrow(InvitationExpiredError);
+  });
+
+  it("resending an invite (supersede) resets the 72h window on the new token", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const email = `resend-${Date.now()}@test.local`;
+
+    const first = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email,
+      fullName: "Resent Invitee",
+      role: "receptionist",
+    });
+    const second = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email,
+      fullName: "Resent Invitee",
+      role: "receptionist",
+    });
+
+    const reloadedFirst = await prisma.invitation.findUnique({ where: { id: first.id } });
+    expect(reloadedFirst?.status).toBe("revoked");
+    expect(second.token).not.toBe(first.token);
+    expect(second.expires_at!.getTime()).toBeGreaterThan(Date.now() + 71 * 60 * 60 * 1000);
+  });
+
+  it("accepts a still-pending, unexpired invitation normally", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+
+    const invitation = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      email: `live-${Date.now()}@test.local`,
+      fullName: "Live Invitee",
+      role: "receptionist",
+    });
+
+    const { user } = await acceptInvitation({ token: invitation.token, password: "password123" });
+    createdUserIdsForExpiry.push(user.id);
+    expect(user.email).toBe(invitation.email);
   });
 });

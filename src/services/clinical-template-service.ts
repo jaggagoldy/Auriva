@@ -5,15 +5,19 @@
 
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { resolveClinicDoctor as resolveDoctorShared } from "@/services/doctor-resolution";
 
 export class ClinicalTemplateError extends Error {}
 
-export async function resolveClinicDoctor(clinicId: string, ownerUserId: string) {
-  return (
-    (await prisma.staffProfile.findFirst({ where: { user_id: ownerUserId, clinic_id: clinicId } })) ??
-    (await prisma.staffProfile.findFirst({ where: { clinic_id: clinicId } }))
-  );
-}
+// BRD-043 US-104 (P0): clinical content (SOAP templates) is the most
+// sensitive of the 5 call sites this fix touches — ambiguity is NOT caught
+// here (unlike the read-only overview/schedule paths). A receptionist or a
+// doctor-among-several hitting this route with no explicit doctor gets a
+// clear AmbiguousDoctorError (mapped to 409 by mapDomainError), never
+// another doctor's clinical notes. Re-exported under the old name so the
+// two existing route call sites (src/app/api/clinic/templates*) are
+// unchanged.
+export const resolveClinicDoctor = resolveDoctorShared;
 
 export function listTemplates(clinicId: string, doctorId: string) {
   return prisma.clinicalTemplate.findMany({

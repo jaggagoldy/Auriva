@@ -119,3 +119,4 @@ Per the governing instruction: **this Engineering Planning phase ends only once 
 8. [Product Verification Guide](./brd-043-product-verification-guide.md)
 9. Release Roadmap — this document
 10. [Screen Specifications](./brd-043-screen-specifications.md) (from the UX Freeze phase, referenced throughout as the design contract)
+11. [Governance Addendum](./brd-043-governance-addendum.md) (feature flags, migration validation protocol, API versioning ADR-005, performance budget, observability plan — closed 2026-07-13 per the Engineering Director's pre-Sprint-1 review)

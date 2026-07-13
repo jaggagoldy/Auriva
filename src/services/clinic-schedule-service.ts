@@ -5,6 +5,8 @@
 // any window. Available-slot overlay + quick-block layer on top of this.
 
 import prisma from "@/lib/prisma";
+import { AmbiguousDoctorError, resolveClinicDoctor } from "@/services/doctor-resolution";
+import { logger } from "@/api/logger";
 
 export class ScheduleInputError extends Error {}
 
@@ -53,9 +55,17 @@ export async function getClinicSchedule(
   const rangeEnd = new Date(rangeStart);
   rangeEnd.setDate(rangeEnd.getDate() + dayCount);
 
-  const doctor =
-    (await prisma.staffProfile.findFirst({ where: { user_id: ownerUserId, clinic_id: clinicId } })) ??
-    (await prisma.staffProfile.findFirst({ where: { clinic_id: clinicId } }));
+  // BRD-043 US-104 (P0): never silently substitute a wrong doctor's time
+  // blocks. Ambiguity degrades to "no doctor blocks shown" (same as the
+  // pre-existing "no doctor at all" branch below), not a guess.
+  let doctor;
+  try {
+    doctor = await resolveClinicDoctor(clinicId, ownerUserId);
+  } catch (error) {
+    if (!(error instanceof AmbiguousDoctorError)) throw error;
+    logger.warn("clinic_schedule.ambiguous_doctor", { clinicId });
+    doctor = null;
+  }
 
   const [appts, blocks] = await Promise.all([
     prisma.appointment.findMany({

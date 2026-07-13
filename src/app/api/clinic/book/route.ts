@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
-import prisma from "@/lib/prisma";
 import { bookPublicAppointment } from "@/services/booking-service";
+import { resolveClinicDoctor } from "@/services/doctor-resolution";
 
 // In-clinic booking: the solo owner books a patient (new or returning) from
 // inside /clinic — no public link, no new tab. Reception-capable, scoped to
@@ -23,11 +23,15 @@ export async function POST(request: NextRequest) {
     if (patientPhone.replace(/\D/g, "").length < 7) return badRequest("A valid phone number is required.");
     if (!scheduledTime) return badRequest("Pick a date and time.");
 
-    // The clinic's bookable doctor — the owner's own profile, else any doctor
-    // of the clinic (mirrors getClinicOverview's resolution).
-    const doctor =
-      (await prisma.staffProfile.findFirst({ where: { user_id: auth.session.userId, clinic_id: auth.clinicId } })) ??
-      (await prisma.staffProfile.findFirst({ where: { clinic_id: auth.clinicId } }));
+    // BRD-043 US-104 (P0): the clinic's bookable doctor — the caller's own
+    // profile, else the clinic's one unambiguous doctor, else an explicit
+    // doctor_id (additive, optional — no UI sends it yet in Sprint 1).
+    // AmbiguousDoctorError is NOT caught here: booking a patient onto an
+    // arbitrarily-guessed doctor is exactly the misattribution this fix
+    // exists to prevent, so a multi-doctor clinic gets a clear 409 asking
+    // which doctor, never a silent wrong booking.
+    const explicitDoctorId = typeof body.doctor_id === "string" ? body.doctor_id : undefined;
+    const doctor = await resolveClinicDoctor(auth.clinicId, auth.session.userId, explicitDoctorId);
     if (!doctor) return badRequest("Add your clinic profile before booking a patient.");
 
     const result = await bookPublicAppointment({

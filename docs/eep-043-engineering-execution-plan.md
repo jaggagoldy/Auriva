@@ -8,6 +8,7 @@
 - Technical Feasibility Report — architecture assessment, ADR groundwork
 - Final Product Office review — dashboard philosophy, archive rule, role naming, badge colors, IA grouping
 - Approved HTML prototype `design/mockups/brd-043-team-management.html` v1.1 — **the design contract**: React must reproduce it faithfully; any layout/workflow/nav/interaction deviation requires Product Office approval before implementation, not after
+- [Governance Addendum](./brd-043-governance-addendum.md) — feature flags, migration validation protocol, ADR-005 (no API versioning), performance budget, observability plan
 
 ---
 

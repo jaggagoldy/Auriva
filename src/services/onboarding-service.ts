@@ -12,6 +12,12 @@ import { hashPassword } from "@/lib/password";
 import { isOrgArchetype, memberRoleFromSpecialty, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
 import { type Capability } from "@/domain/authorization";
 import { publishEvent } from "@/lib/events";
+import { logger } from "@/api/logger";
+
+// BRD-043 US-102 (Sprint 1): the invitation acceptance window. See
+// docs/brd-043-governance-addendum.md §2 for the migration/backfill this
+// pairs with.
+const INVITATION_EXPIRY_MS = 72 * 60 * 60 * 1000;
 
 // Batch 2 (Adaptive Workspace): the capabilities an owner may GRANT to a staff
 // member through staff management. Deliberately excludes `admin_portal` (that
@@ -23,6 +29,10 @@ export const GRANTABLE_CAPABILITIES: Capability[] = ["reception", "doctor_worksp
 export class EmailInUseError extends Error {}
 export class InvitationNotFoundError extends Error {}
 export class InvitationNotPendingError extends Error {}
+// BRD-043 US-102 (Sprint 1): distinct from InvitationNotPendingError (that
+// one covers already-accepted/revoked) — this is specifically the 72h
+// window lapsing on an otherwise-still-pending row.
+export class InvitationExpiredError extends Error {}
 export class OnboardingInputError extends Error {}
 // DATA-2/3: distinct from OnboardingInputError's 400-shaped cases — a
 // duplicate clinic name within the same organization is a 409-shaped
@@ -236,6 +246,9 @@ export async function createInvitation(input: {
       role: input.role,
       specialty: input.role === "doctor" ? (input.specialty?.trim() || null) : null,
       token: randomBytes(24).toString("hex"),
+      // US-102: resending (the supersede-then-create above) always starts a
+      // fresh 72h window — there is no separate "renew" code path.
+      expires_at: new Date(Date.now() + INVITATION_EXPIRY_MS),
     },
   });
 
@@ -247,8 +260,26 @@ export async function createInvitation(input: {
     actorId: input.actorUserId,
     payload: { invitationId: invitation.id, email: invitation.email, role: invitation.role },
   });
+  logger.info("invite.created", { organizationId: input.organizationId, invitationId: invitation.id, role: invitation.role });
 
   return invitation;
+}
+
+/**
+ * Lazy expiry check (US-102) — no scheduled job; a stale pending invitation
+ * is only ever discovered the next time it's read or an accept is attempted.
+ * Marks the row 'expired' the first time this is detected (idempotent —
+ * status is 'pending' at most once) so listPendingInvitations stops showing
+ * it without needing its own filter, and throws so the caller can't proceed.
+ * A null `expires_at` (rows that predate this field with no backfilled
+ * value) is treated as "no expiry enforced," never as expired.
+ */
+async function assertInvitationLive(invitation: { id: string; status: string; expires_at: Date | null }) {
+  if (invitation.status !== "pending") return;
+  if (!invitation.expires_at || invitation.expires_at.getTime() > Date.now()) return;
+  await prisma.invitation.update({ where: { id: invitation.id }, data: { status: "expired" } });
+  logger.warn("invite.expired", { invitationId: invitation.id });
+  throw new InvitationExpiredError("This invitation has expired.");
 }
 
 export function listPendingInvitations(organizationId: string) {
@@ -276,6 +307,7 @@ export async function getInvitationByToken(token: string) {
     include: { organization: { select: { id: true, name: true, address: true } } },
   });
   if (!invitation) throw new InvitationNotFoundError("This invitation link is invalid.");
+  await assertInvitationLive(invitation);
   return invitation;
 }
 
@@ -291,6 +323,9 @@ export async function acceptInvitation(input: { token: string; password: string 
 
   const invitation = await prisma.invitation.findUnique({ where: { token: input.token } });
   if (!invitation) throw new InvitationNotFoundError("This invitation link is invalid.");
+  // US-102: server-checked regardless of what the acceptance page showed
+  // when it was first opened — throws InvitationExpiredError if lapsed.
+  await assertInvitationLive(invitation);
   if (invitation.status !== "pending") {
     throw new InvitationNotPendingError("This invitation has already been used or revoked.");
   }
@@ -345,6 +380,9 @@ export async function acceptInvitation(input: { token: string; password: string 
     });
 
     return { user, invitation: accepted };
+  }).then((result) => {
+    logger.info("invite.accepted", { organizationId: invitation.organization_id, invitationId: invitation.id, role: invitation.role });
+    return result;
   });
 }
 

@@ -83,6 +83,13 @@ model Organization {
   // volatile content for organizations where this is true and never touches a
   // real customer org. Default false = every real org is untouched/unchanged.
   is_demo       Boolean  @default(false)
+  // BRD-043 US-501 (Sprint 1): 'solo' | 'professional' | 'enterprise'.
+  // Every pre-existing org backfills to 'solo' — no behavior change until
+  // FEATURE_PROFESSIONAL_PLAN is on (Sprint 5) and seat enforcement
+  // (US-503, Sprint 2) starts reading it. Seat ceilings themselves are NOT
+  // stored per-org (no custom permissions per BRD-043's frozen scope) —
+  // they are plan-wide constants, see src/domain/subscription.ts.
+  plan          String   @default("solo")
   owner_user_id String
   created_at    DateTime @default(now())
 
@@ -337,6 +344,15 @@ model StaffProfile {
   follow_up_fee       Int?      // falls back to consultation_fee when null (a follow-up visit costs less, typically)
   department_id       String?
   is_active           Boolean   @default(true) // deactivated staff can't log in (enforced at the User level too) or appear in active rosters
+  // BRD-043 US-101 (Sprint 1): the Team Management lifecycle state —
+  // 'active' | 'suspended' | 'archived' — distinct from is_active on
+  // purpose (Product Office decision: do not overload the existing login
+  // gate). Every pre-existing row backfills to 'active'. Suspend/Reactivate/
+  // Archive (Sprint 4) are the only writers of this field until then; no
+  // other Sprint 1 code branches on its value except doctor-resolution's
+  // "active doctor" filter (src/services/doctor-resolution.ts), which reads
+  // it in addition to is_active as forward-compatible scaffolding.
+  membership_status   String    @default("active")
   // Batch 2 (Adaptive Workspace): capabilities GRANTED beyond this profile's
   // base-role defaults, as a JSON string array of capability keys (see
   // src/domain/authorization.ts WORKSPACE_CAPABILITIES). Null = role defaults
@@ -597,9 +613,17 @@ model Invitation {
   role            String    // 'doctor' | 'receptionist'
   specialty       String?
   token           String    @unique
-  status          String    @default("pending") // 'pending' | 'accepted' | 'revoked'
+  status          String    @default("pending") // 'pending' | 'accepted' | 'revoked' | 'expired'
   created_at      DateTime  @default(now())
   accepted_at     DateTime?
+  // BRD-043 US-102 (Sprint 1): 72h invitation window, set at creation
+  // (created_at + 72h). Checked lazily on read/accept, not event-driven (no
+  // scheduled-job infra exists or is needed — see EEP-043 §9). Migration
+  // backfills existing 'pending' rows to created_at + 72h (most already in
+  // the past — closing a real gap where old invitations had no expiry at
+  // all); 'accepted'/'revoked' rows stay null since expiry is meaningless
+  // once resolved. See docs/brd-043-governance-addendum.md §2.
+  expires_at      DateTime?
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   clinic       Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)

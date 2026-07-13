@@ -4,6 +4,8 @@
 
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { AmbiguousDoctorError, resolveClinicDoctor } from "@/services/doctor-resolution";
+import { logger } from "@/api/logger";
 
 export class PracticeProfileError extends Error {}
 
@@ -35,17 +37,25 @@ function intOrNull(v: unknown): number | null {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-async function resolveDoctor(clinicId: string, ownerUserId: string) {
-  return (
-    (await prisma.staffProfile.findFirst({ where: { user_id: ownerUserId, clinic_id: clinicId } })) ??
-    (await prisma.staffProfile.findFirst({ where: { clinic_id: clinicId } }))
-  );
+// BRD-043 US-104 (P0): a read tolerates ambiguity (degrades to "no doctor
+// fields yet", same as the pre-existing "no doctor at all" case) — a write
+// must not, since there'd be no correct answer for which of 2+ doctors'
+// rows to overwrite. Read and write call resolveClinicDoctor directly with
+// different handling instead of sharing one soft-fallback helper.
+async function resolveDoctorForRead(clinicId: string, ownerUserId: string) {
+  try {
+    return await resolveClinicDoctor(clinicId, ownerUserId);
+  } catch (error) {
+    if (!(error instanceof AmbiguousDoctorError)) throw error;
+    logger.warn("practice_profile.ambiguous_doctor_read", { clinicId });
+    return null;
+  }
 }
 
 export async function getPracticeProfile(clinicId: string, ownerUserId: string) {
   const [clinic, doctor] = await Promise.all([
     prisma.clinic.findUnique({ where: { id: clinicId } }),
-    resolveDoctor(clinicId, ownerUserId),
+    resolveDoctorForRead(clinicId, ownerUserId),
   ]);
   if (!clinic) throw new PracticeProfileError("Clinic not found.");
 
@@ -120,7 +130,10 @@ export async function updatePracticeProfile(clinicId: string, ownerUserId: strin
 
   const d = patch.doctor ?? {};
   if (Object.keys(d).length > 0) {
-    const doctor = await resolveDoctor(clinicId, ownerUserId);
+    // Ambiguity is NOT caught here — a write must not guess which of 2+
+    // doctors' profiles to overwrite (US-104). AmbiguousDoctorError
+    // propagates and is mapped to a 409 by mapDomainError.
+    const doctor = await resolveClinicDoctor(clinicId, ownerUserId);
     if (!doctor) throw new PracticeProfileError("No clinic profile to update.");
     const docData: Prisma.StaffProfileUpdateInput = {};
     const docStrings = ["specialty", "bio", "qualifications", "languages", "registration_number", "photo_url"] as const;

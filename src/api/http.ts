@@ -45,10 +45,12 @@ import {
 import {
   ClinicNameConflictError,
   EmailInUseError,
+  InvitationExpiredError,
   InvitationNotFoundError,
   InvitationNotPendingError,
   OnboardingInputError,
 } from "@/services/onboarding-service";
+import { AmbiguousDoctorError } from "@/services/doctor-resolution";
 import { ClinicInputError } from "@/services/clinic-service";
 import {
   DepartmentInputError,
@@ -229,8 +231,18 @@ export function mapDomainError(error: unknown): NextResponse | null {
   ) {
     return conflict(error.message);
   }
+  // BRD-043 US-102 (Sprint 1): 72h invitation window, enforced server-side
+  // regardless of what the acceptance page showed when it was opened.
+  if (error instanceof InvitationExpiredError) {
+    return conflict(error.message);
+  }
   if (error instanceof OnboardingInputError) {
     return badRequest(error.message);
+  }
+  // BRD-043 US-104 (P0, Sprint 1): a clinic has 2+ active doctors and the
+  // caller didn't say which one — refusing to guess is a 409, not a 500.
+  if (error instanceof AmbiguousDoctorError) {
+    return conflict(error.message);
   }
   // Sprint 3 (OPS-001): organization/clinic/department/availability config.
   if (error instanceof DepartmentNotFoundError) {

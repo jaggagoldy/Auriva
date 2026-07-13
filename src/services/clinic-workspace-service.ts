@@ -7,6 +7,8 @@
 
 import prisma from "@/lib/prisma";
 import { billingDaySummary } from "@/services/billing-service";
+import { AmbiguousDoctorError, resolveClinicDoctor } from "@/services/doctor-resolution";
+import { logger } from "@/api/logger";
 
 export interface ReadyStep {
   key: string;
@@ -49,11 +51,20 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
   if (!clinic) return null;
 
   // The solo owner's own doctor profile (their bookable identity + profile
-  // fields). Fall back to any doctor of the clinic so the booking link still
-  // resolves if the owner isn't the practitioner.
-  const ownerProfile =
-    (await prisma.staffProfile.findFirst({ where: { user_id: ownerUserId, clinic_id: clinicId } })) ??
-    (await prisma.staffProfile.findFirst({ where: { clinic_id: clinicId } }));
+  // fields), or the clinic's one unambiguous doctor if the owner isn't the
+  // practitioner. BRD-043 US-104 (P0): a clinic with 2+ doctors and no
+  // caller-owned profile has no correct guess here — degrade to "no default
+  // booking identity yet" (null) rather than silently picking one; Sprint 3's
+  // Adaptive Dashboard is where an Owner explicitly sees all doctors instead
+  // of this single-identity shortcut.
+  let ownerProfile;
+  try {
+    ownerProfile = await resolveClinicDoctor(clinicId, ownerUserId);
+  } catch (error) {
+    if (!(error instanceof AmbiguousDoctorError)) throw error;
+    logger.warn("clinic_overview.ambiguous_doctor", { clinicId });
+    ownerProfile = null;
+  }
 
   const [activeTreatments, appointmentCount, paymentCount] = await Promise.all([
     prisma.service.count({ where: { clinic_id: clinicId, is_active: true } }),
