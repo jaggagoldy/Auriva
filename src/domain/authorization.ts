@@ -149,8 +149,14 @@ export function defaultWorkspacePathForRole(role: string): string | null {
   // solo workspace (/clinic) — the daily driver, matching the /start onboarding
   // which also ends at /clinic. The org Command Center (/admin) stays reachable
   // by URL for multi-clinic; revisit role→landing when multi-clinic ships.
+  //
+  // BRD-043 Sprint 3 ("one product", adaptive dashboard): invited Doctors and
+  // Receptionists now land in the SAME adaptive /clinic surface — no separate
+  // per-role workspace, no switching. The legacy multi-clinic /doctor and
+  // /staff route trees remain reachable by URL (not removed) but are no longer
+  // the default landing for a solo/professional clinic's team.
   if (isSuperAdmin(role)) return "/clinic";
-  if (isDoctor(role)) return "/doctor";
-  if (isReceptionist(role)) return "/staff/dashboard";
+  if (isDoctor(role)) return "/clinic";
+  if (isReceptionist(role)) return "/clinic";
   return null;
 }

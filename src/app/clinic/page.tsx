@@ -37,6 +37,7 @@ import { PracticeSetup } from "@/components/clinic/practice-setup";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 import { TeamPanel } from "@/components/clinic/team-panel";
+import { DashboardView } from "@/components/clinic/dashboard-view";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
@@ -93,6 +94,13 @@ export default function MyClinicWorkspace() {
   const [ov, setOv] = React.useState<Overview | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [visit, setVisit] = React.useState<Visit | null>(null);
+  // BRD-043 Sprint 3: the caller's dashboard role drives the adaptive nav.
+  // Fetched from the role-shaped /api/clinic/dashboard (works for every staff
+  // role, unlike /api/clinic/overview which is reception-scoped). `null` while
+  // loading. clinicName comes from here too, so a plain Doctor (who has no
+  // owner-overview) still gets a titled shell.
+  const [role, setRole] = React.useState<string | null>(null);
+  const [clinicName, setClinicName] = React.useState<string>("My Clinic");
   // Bumped after a visit completes so Today re-fetches (the schedule sits under
   // the consult overlay and would otherwise show the just-seen patient as still
   // scheduled — the "booking not marked complete" bug).
@@ -106,10 +114,21 @@ export default function MyClinicWorkspace() {
 
   React.useEffect(() => {
     let cancelled = false;
-    fetch("/api/clinic/overview", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) setOv(d); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    // Dashboard first (works for every staff role) → gives role + clinic name.
+    // Overview is supplementary owner/reception data (booking path, readiness)
+    // and is reception-scoped, so we only fetch it for roles that can read it —
+    // a plain Doctor would 403, so we skip it for them entirely (no stray
+    // console error).
+    (async () => {
+      const dash = await fetch("/api/clinic/dashboard", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+      if (cancelled) return;
+      if (dash) { setRole(dash.role); setClinicName(dash.clinic_name); }
+      if (dash && dash.role !== "doctor") {
+        const overview = await fetch("/api/clinic/overview", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+        if (!cancelled && overview) setOv(overview);
+      }
+      if (!cancelled) setLoading(false);
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -140,14 +159,29 @@ export default function MyClinicWorkspace() {
     } else toast.error("Couldn't update booking status.");
   }
 
-  const NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
-    { key: "home", label: "My Clinic", q: "Am I ready?", icon: <Home className="size-4" /> },
+  // BRD-043 Sprint 3 — adaptive navigation. One /clinic surface; the nav
+  // items adapt to the caller's role (no per-role routes, no workspace
+  // switching). Owner/Managing-Doctor get the full set; a Receptionist gets
+  // the front-desk subset; a Doctor gets their clinical dashboard (the richer
+  // per-view clinical tools remain future scope). "home" is the adaptive
+  // Dashboard for every role.
+  const ALL_NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
+    { key: "home", label: "Dashboard", q: "What needs me today?", icon: <Home className="size-4" /> },
     { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
     { key: "calendar", label: "Calendar", q: "When am I free?", icon: <CalendarRange className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
     { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
   ];
+  const NAV_BY_ROLE: Record<string, View[]> = {
+    managing_doctor: ["home", "today", "calendar", "treatments", "payments", "settings"],
+    practice_owner: ["home", "today", "calendar", "treatments", "payments", "settings"],
+    receptionist: ["home", "today", "payments"],
+    doctor: ["home"],
+  };
+  const allowed = NAV_BY_ROLE[role ?? ""] ?? ["home"];
+  const NAV = ALL_NAV.filter((n) => allowed.includes(n.key));
+  const isOwnerRole = role === "managing_doctor" || role === "practice_owner";
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -173,7 +207,7 @@ export default function MyClinicWorkspace() {
         <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r bg-background p-3 sm:flex">
           <div className="flex items-center gap-2 px-2 py-3">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground"><Activity className="size-4" /></div>
-            <div className="text-sm font-semibold leading-tight">{ov?.clinic.name ?? "My Clinic"}</div>
+            <div className="text-sm font-semibold leading-tight">{ov?.clinic.name ?? clinicName}</div>
           </div>
           {NAV.map((n) => (
             <button key={n.key} onClick={() => setView(n.key)}
@@ -183,7 +217,7 @@ export default function MyClinicWorkspace() {
               <span className="flex-1">{n.label}
                 <span className="block text-[11px] font-normal text-muted-foreground">{n.q}</span>
               </span>
-              {n.key === "home" && ov && (
+              {n.key === "home" && isOwnerRole && ov && ov.ready.percent < 100 && (
                 <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">{ov.ready.percent}%</span>
               )}
             </button>
@@ -191,14 +225,24 @@ export default function MyClinicWorkspace() {
         </aside>
 
         <main className="min-w-0 flex-1 pb-16 sm:pb-0">
-          <Header ov={ov} onToggle={toggleAccepting} />
+          <Header ov={ov} onToggle={toggleAccepting} showControls={isOwnerRole || role === "receptionist"} />
           <div className="p-5">
-            {loading ? (
+            {loading || !role ? (
               <div className="flex justify-center py-24 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+            ) : view === "home" ? (
+              // Adaptive dashboard is the home for EVERY role (self-fetches its
+              // role-shaped payload). For an owner whose clinic isn't fully set
+              // up yet, the existing Clinic-Ready onboarding checklist stacks
+              // above it — preserving the frozen solo "first successful day"
+              // flow without hiding the operational dashboard.
+              <div className="space-y-5">
+                {isOwnerRole && ov && ov.ready.percent < 100 && (
+                  <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
+                )}
+                <DashboardView goto={(v) => setView(v as View)} />
+              </div>
             ) : !ov ? (
               <Card className="p-8 text-center text-sm text-muted-foreground">Couldn&apos;t load your clinic.</Card>
-            ) : view === "home" ? (
-              <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
               <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
             ) : view === "calendar" ? (
@@ -230,7 +274,7 @@ export default function MyClinicWorkspace() {
           >
             {n.icon}
             {n.label}
-            {n.key === "home" && ov && ov.ready.percent < 100 && (
+            {n.key === "home" && isOwnerRole && ov && ov.ready.percent < 100 && (
               <span className="absolute top-1 right-[calc(50%-16px)] size-2 rounded-full bg-primary" />
             )}
           </button>
@@ -250,8 +294,14 @@ export default function MyClinicWorkspace() {
   );
 }
 
-function Header({ ov, onToggle }: { ov: Overview | null; onToggle: () => void }) {
+function Header({ ov, onToggle, showControls }: { ov: Overview | null; onToggle: () => void; showControls: boolean }) {
   const accepting = ov?.clinic.accepting_bookings ?? true;
+  // BRD-043 Sprint 3: the patient search + booking toggle are front-desk/owner
+  // controls. A plain Doctor's header shows neither (their APIs are
+  // reception-gated) — just a clean bar.
+  if (!showControls) {
+    return <header className="flex items-center gap-3 border-b bg-background px-5 py-3.5" />;
+  }
   return (
     <header className="flex items-center gap-3 border-b bg-background px-5 py-3">
       <div className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"><PatientSearch /></div>
