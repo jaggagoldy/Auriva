@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,12 +38,16 @@ import { AvailabilitySettings } from "@/components/clinic/availability-settings"
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 import { TeamPanel } from "@/components/clinic/team-panel";
 import { DashboardView } from "@/components/clinic/dashboard-view";
+import { PlanScreen } from "@/components/clinic/plan-screen";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
 // one obvious next action.
 
-type View = "home" | "today" | "calendar" | "treatments" | "payments" | "settings";
+// BRD-043 Sprint 5 (US-601): the flat "settings" view is replaced by a
+// Settings GROUP — Practice / Team / Plan.
+type View = "home" | "today" | "calendar" | "treatments" | "payments" | "practice" | "team" | "plan";
+const SETTINGS_VIEWS: View[] = ["practice", "team", "plan"];
 type Save = "idle" | "saving" | "saved";
 type Method = "cash" | "upi" | "card";
 
@@ -80,7 +84,7 @@ interface Visit {
 }
 
 const STEP_TARGET: Record<string, View> = {
-  treatment: "treatments", patient: "today", payment: "today", share: "home", profile: "settings",
+  treatment: "treatments", patient: "today", payment: "today", share: "home", profile: "practice",
 };
 
 function SaveBadge({ state }: { state: Save }) {
@@ -171,17 +175,27 @@ export default function MyClinicWorkspace() {
     { key: "calendar", label: "Calendar", q: "When am I free?", icon: <CalendarRange className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
-    { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
+  ];
+  // BRD-043 US-601: the Settings group (Practice/Team/Plan). Server-driven
+  // role scoping — a Doctor/Receptionist's role simply has none of these in
+  // their allowed set, so the whole group is OMITTED from their rendered DOM
+  // (not merely hidden), the same philosophy as the dashboard payload.
+  const SETTINGS_NAV: { key: View; label: string }[] = [
+    { key: "practice", label: "Practice" },
+    { key: "team", label: "Team" },
+    { key: "plan", label: "Plan" },
   ];
   const NAV_BY_ROLE: Record<string, View[]> = {
-    managing_doctor: ["home", "today", "calendar", "treatments", "payments", "settings"],
-    practice_owner: ["home", "today", "calendar", "treatments", "payments", "settings"],
+    managing_doctor: ["home", "today", "calendar", "treatments", "payments", "practice", "team", "plan"],
+    practice_owner: ["home", "today", "calendar", "treatments", "payments", "practice", "team", "plan"],
     receptionist: ["home", "today", "payments"],
     doctor: ["home"],
   };
   const allowed = NAV_BY_ROLE[role ?? ""] ?? ["home"];
   const NAV = ALL_NAV.filter((n) => allowed.includes(n.key));
+  const settingsNav = SETTINGS_NAV.filter((n) => allowed.includes(n.key));
   const isOwnerRole = role === "managing_doctor" || role === "practice_owner";
+  const inSettings = SETTINGS_VIEWS.includes(view);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -222,6 +236,21 @@ export default function MyClinicWorkspace() {
               )}
             </button>
           ))}
+          {/* US-601: Settings group — only rendered for roles that have it. */}
+          {settingsNav.length > 0 && (
+            <>
+              <div className="mt-3 flex items-center gap-2 px-2.5 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <SettingsIcon className="size-3.5" /> Settings
+              </div>
+              {settingsNav.map((n) => (
+                <button key={n.key} onClick={() => setView(n.key)}
+                  className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 pl-8 text-left text-sm font-medium transition-colors",
+                    view === n.key ? "bg-honey-soft text-honey-deep" : "text-foreground hover:bg-muted")}>
+                  {n.label}
+                </button>
+              ))}
+            </>
+          )}
         </aside>
 
         <main className="min-w-0 flex-1 pb-16 sm:pb-0">
@@ -251,16 +280,37 @@ export default function MyClinicWorkspace() {
               <TreatmentsView onChanged={refreshOverview} />
             ) : view === "payments" ? (
               <PaymentsView />
-            ) : (
-              <SettingsView ov={ov} onChanged={refreshOverview} onToggle={toggleAccepting} />
-            )}
+            ) : inSettings ? (
+              // US-601: Practice / Team / Plan under one Settings group, with a
+              // secondary tab bar (mobile-first — the sidebar shows the group on
+              // desktop, this keeps it switchable on small screens).
+              <div className="space-y-4">
+                <div className="flex gap-1 rounded-lg border bg-background p-1 sm:hidden">
+                  {settingsNav.map((n) => (
+                    <button key={n.key} onClick={() => setView(n.key)}
+                      className={cn("flex-1 rounded-md px-3 py-1.5 text-sm font-medium",
+                        view === n.key ? "bg-honey-soft text-honey-deep" : "text-muted-foreground")}>
+                      {n.label}
+                    </button>
+                  ))}
+                </div>
+                {view === "practice" ? (
+                  <PracticeView ov={ov} onChanged={refreshOverview} onToggle={toggleAccepting} />
+                ) : view === "team" ? (
+                  <TeamPanel organizationId={ov.organizationId} clinicId={ov.clinic.id} clinicName={ov.clinic.name} />
+                ) : (
+                  <PlanScreen />
+                )}
+              </div>
+            ) : null}
           </div>
         </main>
       </div>
 
       {/* B6 (Founder MVP Audit F1): /clinic had no navigation fallback below
-          `sm` — the sidebar above is sm:flex only. Same NAV/setView the
-          sidebar uses, just rendered as a fixed bottom bar on mobile. */}
+          `sm` — the sidebar above is sm:flex only. On mobile the Settings
+          group collapses to a single entry (→ Practice); the Practice/Team/
+          Plan tab bar inside the settings views handles the rest (US-601). */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background sm:hidden">
         {NAV.map((n) => (
           <button
@@ -279,6 +329,19 @@ export default function MyClinicWorkspace() {
             )}
           </button>
         ))}
+        {settingsNav.length > 0 && (
+          <button
+            onClick={() => setView("practice")}
+            aria-current={inSettings ? "page" : undefined}
+            className={cn(
+              "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
+              inSettings ? "text-honey-deep" : "text-muted-foreground"
+            )}
+          >
+            <SettingsIcon className="size-4" />
+            Settings
+          </button>
+        )}
       </nav>
 
       {visit && (
@@ -980,7 +1043,11 @@ function TreatmentsView({ onChanged }: { onChanged: () => void }) {
   );
 }
 
-function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
+// BRD-043 US-601: the "Practice" tab of the Settings group — clinic + doctor
+// profile, online-bookings toggle, availability, time off. Team and Plan are
+// now their own tabs (TeamPanel / PlanScreen), and the old "grow to
+// multi-clinic → contact sales" card is superseded by the Plan screen.
+function PracticeView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
   return (
     <div className="space-y-4">
       {/* P3 Practice Setup — the complete clinic + doctor profile module */}
@@ -997,40 +1064,9 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
         </div>
       </Card>
 
-      {/* BRD-043 Sprint 2 — Team: invite a doctor/receptionist directly
-          (phone-first, WhatsApp/copy-link share). Sprint 5 regroups Settings
-          into Practice/Team/Plan; for now it slots into the existing list. */}
-      <TeamPanel
-        organizationId={ov.organizationId}
-        clinicId={ov.clinic.id}
-        clinicName={ov.clinic.name}
-      />
-
       <AvailabilitySettings doctorId={ov.doctorId} clinicId={ov.clinic.id} />
 
       <TimeOffSettings doctorId={ov.doctorId} />
-
-      {/* Scale path — a solo owner can see and act on growing to multi-clinic.
-          Multi-doctor is the next edition (Coming soon); the request routes to a
-          real contact flow, on the same account — never a migration. */}
-      <Card className="space-y-3 border-primary/25 bg-primary/[0.03] p-5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary" />
-          <h2 className="text-base font-semibold">Growing your practice?</h2>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Right now you run everything yourself — that&apos;s Auriva Solo, free forever. When you add a
-          second doctor or a front desk, Auriva grows into the <strong>multi-clinic edition</strong> on this
-          same account. Same patients, same history — you never migrate.
-        </p>
-        <a
-          href="/contact-sales?from=solo-upgrade"
-          className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2")}
-        >
-          Talk to us about multi-clinic
-          <ExternalLink className="size-4" />
-        </a>
-      </Card>
     </div>
   );
 }
