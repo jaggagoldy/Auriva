@@ -53,6 +53,12 @@ import {
   OnboardingInputError,
 } from "@/services/onboarding-service";
 import { AmbiguousDoctorError } from "@/services/doctor-resolution";
+import {
+  InvalidReassignmentError,
+  MemberNotFoundError,
+  OwnerProtectedError,
+  ReconciliationRequiredError,
+} from "@/services/membership-service";
 import { ClinicInputError } from "@/services/clinic-service";
 import {
   DepartmentInputError,
@@ -250,6 +256,25 @@ export function mapDomainError(error: unknown): NextResponse | null {
   // caller didn't say which one — refusing to guess is a 409, not a 500.
   if (error instanceof AmbiguousDoctorError) {
     return conflict(error.message);
+  }
+  // BRD-043 Sprint 4: membership lifecycle.
+  if (error instanceof OwnerProtectedError) {
+    return forbidden(error.message);
+  }
+  if (error instanceof MemberNotFoundError) {
+    return notFound(error.message);
+  }
+  if (error instanceof InvalidReassignmentError) {
+    return badRequest(error.message);
+  }
+  // Archive blocked until every conflict is reassigned — 409 carrying the
+  // conflict list so the UI can render the reconciliation dialog even if the
+  // POST was reached without a prior conflict-check.
+  if (error instanceof ReconciliationRequiredError) {
+    return NextResponse.json(
+      { error: "Conflict", message: error.message, conflicts: error.conflicts },
+      { status: 409 }
+    );
   }
   // Sprint 3 (OPS-001): organization/clinic/department/availability config.
   if (error instanceof DepartmentNotFoundError) {

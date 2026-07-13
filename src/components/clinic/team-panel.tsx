@@ -28,6 +28,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { TeamRoster } from "@/components/clinic/team-roster";
 
 type InviteRole = "doctor" | "receptionist";
 type PhoneState = "idle" | "checking" | "available" | "invited" | "active";
@@ -318,17 +319,24 @@ export function TeamPanel({
     );
   }
 
-  // ---- list (default) ----
+  // ---- list (default): the full Team roster (Sprint 4) + pending invites ----
   return (
-    <Card className="space-y-4 p-5">
+    <div className="space-y-4">
+      {/* BRD-043 Sprint 4 — member cards, growth indicator, suspend/archive. */}
+      <TeamRoster
+        onInvite={() => setStep("form")}
+        onUpgrade={() => toast.info("Plan upgrade opens in the Plan screen (coming in the next update).")}
+      />
+
+      <Card className="space-y-4 p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">Team</h2>
+          <h2 className="text-base font-semibold">Pending invitations</h2>
           <p className="text-xs text-muted-foreground">
-            Invite a doctor or receptionist — your plan already includes room for both.
+            Invites that haven&apos;t been accepted yet.
           </p>
         </div>
-        <Button size="sm" onClick={() => setStep("form")}>
+        <Button size="sm" variant="outline" onClick={() => setStep("form")}>
           <UserPlus className="size-4" /> Invite member
         </Button>
       </div>
@@ -380,7 +388,8 @@ export function TeamPanel({
           ))}
         </ul>
       )}
-    </Card>
+      </Card>
+    </div>
   );
 }
 

@@ -218,6 +218,13 @@ export async function requireStaffContext(
     if (!staffProfile) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
     }
+    // BRD-043 Sprint 4: a suspended or archived member is denied at the
+    // request boundary regardless of a still-live session — defense-in-depth
+    // alongside session revocation + the is_active login gate. The Owner
+    // (super_admin) never reaches this branch and can't be suspended.
+    if (staffProfile.membership_status !== "active") {
+      return { ok: false, response: forbidden("This account is not active. Contact your practice owner.") };
+    }
     const capabilities = effectiveCapabilities(session.role, staffProfile.capabilities);
     if (!isStaffAuthorized(authorize, session.role, capabilities)) {
       return { ok: false, response: forbidden("Your role cannot access this resource.") };
