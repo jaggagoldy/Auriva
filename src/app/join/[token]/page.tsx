@@ -16,7 +16,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { defaultWorkspacePathForRole } from "@/domain/authorization";
 
 interface InvitationView {
-  email: string;
+  email: string | null;
+  phone: string | null;
   full_name: string;
   role: string;
   specialty: string | null;
@@ -117,7 +118,11 @@ export default function JoinPage() {
                 <span className="font-medium capitalize">{invitation.role}</span>
                 {invitation.specialty ? ` · ${invitation.specialty}` : ""}
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">{invitation.email}</p>
+              {invitation.phone || invitation.email ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {invitation.phone ?? invitation.email}
+                </p>
+              ) : null}
             </div>
 
             <form onSubmit={submit} className="mt-5 space-y-4">

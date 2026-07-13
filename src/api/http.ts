@@ -44,10 +44,12 @@ import {
 } from "@/services/lab-service";
 import {
   ClinicNameConflictError,
+  DuplicateActiveMemberError,
   EmailInUseError,
   InvitationExpiredError,
   InvitationNotFoundError,
   InvitationNotPendingError,
+  SeatLimitReachedError,
   OnboardingInputError,
 } from "@/services/onboarding-service";
 import { AmbiguousDoctorError } from "@/services/doctor-resolution";
@@ -227,7 +229,12 @@ export function mapDomainError(error: unknown): NextResponse | null {
   if (
     error instanceof EmailInUseError ||
     error instanceof InvitationNotPendingError ||
-    error instanceof ClinicNameConflictError
+    error instanceof ClinicNameConflictError ||
+    // BRD-043 Sprint 2: re-inviting an already-active member (US-205) and
+    // exceeding the plan's seat ceiling (US-503) are both 409 conflicts —
+    // the request is well-formed but conflicts with current team state.
+    error instanceof DuplicateActiveMemberError ||
+    error instanceof SeatLimitReachedError
   ) {
     return conflict(error.message);
   }

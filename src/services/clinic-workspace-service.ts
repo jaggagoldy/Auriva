@@ -45,7 +45,9 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
       accepting_bookings: true,
       booking_shared_at: true,
       // Batch 6: surfaces the Demo Mode banner + one-click Reset in /clinic.
-      organization: { select: { is_demo: true } },
+      // BRD-043 Sprint 2: organization id is also needed for the Team/invite
+      // flow (invitations are org-scoped: /api/organizations/[id]/...).
+      organization: { select: { id: true, is_demo: true, plan: true } },
     },
   });
   if (!clinic) return null;
@@ -107,6 +109,9 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
       accepting_bookings: clinic.accepting_bookings,
       is_demo: clinic.organization.is_demo,
     },
+    // BRD-043 Sprint 2: org id + plan for the Team/invite flow.
+    organizationId: clinic.organization.id,
+    plan: clinic.organization.plan,
     doctorId: ownerProfile?.id ?? null,
     bookingPath: ownerProfile ? `/book/${ownerProfile.id}` : null,
     ready: { steps, completed, total: steps.length, percent, nextStep, goal },

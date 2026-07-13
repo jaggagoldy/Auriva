@@ -608,7 +608,18 @@ model Invitation {
   // than one clinic. Backfilled to organization_id for pre-existing rows
   // (valid, since organization_id === clinic_id before Sprint 3).
   clinic_id       String
-  email           String
+  // BRD-043 US-201/US-202 (Sprint 2): invitations are now phone-first
+  // (WhatsApp/copy-link delivery per ADR-003 — the design contract invite
+  // form captures a mobile number, not an email). `phone` is the identity a
+  // phone-based invite is keyed on and the number the accepted account's
+  // User.phone_number is created with. `email` is widened to nullable: it
+  // stays populated for the legacy email-based /admin invite path (still
+  // live, multi-clinic, out of this initiative's scope but not broken), and
+  // is null for the new solo phone-based invites. Exactly one of phone/email
+  // is set per row (enforced in the service, not the schema — the two paths
+  // coexist).
+  email           String?
+  phone           String?
   full_name       String
   role            String    // 'doctor' | 'receptionist'
   specialty       String?

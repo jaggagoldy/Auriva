@@ -36,6 +36,7 @@ import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
 import { PracticeSetup } from "@/components/clinic/practice-setup";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
+import { TeamPanel } from "@/components/clinic/team-panel";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
@@ -48,6 +49,8 @@ type Method = "cash" | "upi" | "card";
 interface ReadyStep { key: string; label: string; done: boolean; }
 interface Overview {
   clinic: { id: string; name: string; phone: string | null; accepting_bookings: boolean; is_demo: boolean };
+  organizationId: string;
+  plan: string;
   doctorId: string | null;
   bookingPath: string | null;
   ready: {
@@ -943,6 +946,15 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
           <Button variant={ov.clinic.accepting_bookings ? "outline" : "default"} onClick={onToggle}>{ov.clinic.accepting_bookings ? "Pause" : "Resume"}</Button>
         </div>
       </Card>
+
+      {/* BRD-043 Sprint 2 — Team: invite a doctor/receptionist directly
+          (phone-first, WhatsApp/copy-link share). Sprint 5 regroups Settings
+          into Practice/Team/Plan; for now it slots into the existing list. */}
+      <TeamPanel
+        organizationId={ov.organizationId}
+        clinicId={ov.clinic.id}
+        clinicName={ov.clinic.name}
+      />
 
       <AvailabilitySettings doctorId={ov.doctorId} clinicId={ov.clinic.id} />
 

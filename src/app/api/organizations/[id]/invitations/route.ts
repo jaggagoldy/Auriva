@@ -52,7 +52,11 @@ export async function POST(
     const invitation = await createInvitation({
       organizationId: auth.organizationId,
       clinicId: body.clinic_id,
-      email: body.email,
+      // BRD-043 US-201 (Sprint 2): phone-first (solo /clinic invite form);
+      // email stays supported for the legacy /admin path. createInvitation
+      // requires at least one of the two.
+      email: body.email ?? null,
+      phone: body.phone ?? null,
       fullName: body.full_name,
       role: body.role,
       specialty: body.specialty ?? null,

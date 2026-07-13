@@ -12,10 +12,14 @@ import {
   createInvitation,
   acceptInvitation,
   getInvitationByToken,
+  checkInvitePhone,
   ClinicNameConflictError,
   OnboardingInputError,
   InvitationExpiredError,
+  DuplicateActiveMemberError,
+  SeatLimitReachedError,
 } from "@/services/onboarding-service";
+import { hashPassword } from "@/lib/password";
 
 const createdOrgIds: string[] = [];
 
@@ -276,5 +280,219 @@ describe("createInvitation / acceptInvitation — expiry (US-102)", () => {
     const { user } = await acceptInvitation({ token: invitation.token, password: "password123" });
     createdUserIdsForExpiry.push(user.id);
     expect(user.email).toBe(invitation.email);
+  });
+});
+
+// BRD-043 Sprint 2: phone-first invites, seat cap (US-503), duplicate-active
+// rejection (US-205), and the inline phone-check (US-202).
+describe("createInvitation — phone-first, seat cap & duplicate guard (Sprint 2)", () => {
+  const userIds: string[] = [];
+
+  afterAll(async () => {
+    await prisma.staffProfile.deleteMany({ where: { user_id: { in: userIds } } });
+    await prisma.organizationMember.deleteMany({ where: { user_id: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  });
+
+  /** Create a real active member (User + StaffProfile + OrganizationMember) at a clinic. */
+  async function addActiveMember(
+    organizationId: string,
+    clinicId: string,
+    role: "doctor" | "receptionist",
+    phone: string
+  ) {
+    const user = await prisma.user.create({
+      data: { role, phone_number: phone, password_hash: await hashPassword("password123") },
+    });
+    userIds.push(user.id);
+    await prisma.staffProfile.create({
+      data: {
+        user_id: user.id,
+        clinic_id: clinicId,
+        full_name: `Member ${phone}`,
+        specialty: role === "doctor" ? "General Practitioner" : null,
+      },
+    });
+    await prisma.organizationMember.create({
+      data: { organization_id: organizationId, user_id: user.id, role },
+    });
+    return user;
+  }
+
+  it("creates a phone-based invite (no email) with a 72h expiry", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+
+    const invite = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      phone: "+15550311001",
+      fullName: "Dr. Phone Invite",
+      role: "doctor",
+      specialty: "Dermatologist",
+    });
+    expect(invite.phone).toBe("+15550311001");
+    expect(invite.email).toBeNull();
+    expect(invite.expires_at).not.toBeNull();
+  });
+
+  it("rejects re-inviting an already-active member (US-205)", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    await addActiveMember(organization.id, clinic.id, "doctor", "+15550311010");
+
+    await expect(
+      createInvitation({
+        organizationId: organization.id,
+        clinicId: clinic.id,
+        phone: "+15550311010",
+        fullName: "Same Person",
+        role: "doctor",
+      })
+    ).rejects.toThrow(DuplicateActiveMemberError);
+  });
+
+  it("enforces the Solo seat cap: 1 doctor + 1 receptionist, then rejects a 3rd (US-503)", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    // Solo (default plan). Owner is free. Add the 1 doctor + 1 receptionist seats.
+    await addActiveMember(organization.id, clinic.id, "doctor", "+15550311020");
+    await addActiveMember(organization.id, clinic.id, "receptionist", "+15550311021");
+
+    // Both seats now full → any further invite is rejected.
+    await expect(
+      createInvitation({
+        organizationId: organization.id,
+        clinicId: clinic.id,
+        phone: "+15550311022",
+        fullName: "Third Wheel",
+        role: "receptionist",
+      })
+    ).rejects.toThrow(SeatLimitReachedError);
+  });
+
+  it("accepting a phone-based invite creates a User whose login identity is that phone (US-204)", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const invite = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      phone: "+15550311015",
+      fullName: "Accept Me",
+      role: "receptionist",
+    });
+
+    const { user } = await acceptInvitation({ token: invite.token, password: "password123" });
+    userIds.push(user.id);
+    expect(user.phone_number).toBe("+15550311015");
+    expect(user.email).toBeNull();
+  });
+
+  it("one-under the cap still succeeds", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    await addActiveMember(organization.id, clinic.id, "doctor", "+15550311030");
+
+    // 1 doctor used, 0 receptionists — a receptionist invite fits.
+    const invite = await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      phone: "+15550311031",
+      fullName: "Front Desk",
+      role: "receptionist",
+    });
+    expect(invite.id).toBeTruthy();
+  });
+
+  it("a pending invite consumes a seat (cannot out-invite the cap)", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    await addActiveMember(organization.id, clinic.id, "doctor", "+15550311040");
+
+    // First receptionist invite (pending) takes the last Solo seat.
+    await createInvitation({
+      organizationId: organization.id,
+      clinicId: clinic.id,
+      phone: "+15550311041",
+      fullName: "Pending One",
+      role: "receptionist",
+    });
+    // A second receptionist invite must now be rejected — the pending one counts.
+    await expect(
+      createInvitation({
+        organizationId: organization.id,
+        clinicId: clinic.id,
+        phone: "+15550311042",
+        fullName: "Pending Two",
+        role: "receptionist",
+      })
+    ).rejects.toThrow(SeatLimitReachedError);
+  });
+
+  it("suspending a member frees their seat", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const doc = await addActiveMember(organization.id, clinic.id, "doctor", "+15550311050");
+    const rec = await addActiveMember(organization.id, clinic.id, "receptionist", "+15550311051");
+    void doc;
+
+    // At 2/2 — blocked.
+    await expect(
+      createInvitation({
+        organizationId: organization.id, clinicId: clinic.id,
+        phone: "+15550311052", fullName: "Blocked", role: "receptionist",
+      })
+    ).rejects.toThrow(SeatLimitReachedError);
+
+    // Suspend the receptionist → their seat frees.
+    await prisma.staffProfile.updateMany({
+      where: { user_id: rec.id },
+      data: { membership_status: "suspended" },
+    });
+
+    const invite = await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550311053", fullName: "Now Fits", role: "receptionist",
+    });
+    expect(invite.id).toBeTruthy();
+  });
+});
+
+describe("checkInvitePhone — inline validation states (US-202)", () => {
+  const userIds: string[] = [];
+
+  afterAll(async () => {
+    await prisma.staffProfile.deleteMany({ where: { user_id: { in: userIds } } });
+    await prisma.organizationMember.deleteMany({ where: { user_id: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  });
+
+  it("returns 'available' for an unknown number", async () => {
+    const { organization } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    expect((await checkInvitePhone(organization.id, "+15550312001")).status).toBe("available");
+  });
+
+  it("returns 'active' for an existing active member's number", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    const user = await prisma.user.create({
+      data: { role: "doctor", phone_number: "+15550312010", password_hash: await hashPassword("password123") },
+    });
+    userIds.push(user.id);
+    await prisma.staffProfile.create({ data: { user_id: user.id, clinic_id: clinic.id, full_name: "Active Doc" } });
+    await prisma.organizationMember.create({ data: { organization_id: organization.id, user_id: user.id, role: "doctor" } });
+
+    expect((await checkInvitePhone(organization.id, "+15550312010")).status).toBe("active");
+  });
+
+  it("returns 'invited' when a pending invite exists for the number", async () => {
+    const { organization, clinic } = await createTestOrganization();
+    createdOrgIds.push(organization.id);
+    await createInvitation({
+      organizationId: organization.id, clinicId: clinic.id,
+      phone: "+15550312020", fullName: "Pending Person", role: "receptionist",
+    });
+    expect((await checkInvitePhone(organization.id, "+15550312020")).status).toBe("invited");
   });
 });
