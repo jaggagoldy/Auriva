@@ -5,6 +5,7 @@ import { createSession, setSessionCookie } from '@/api/session';
 import { verifyPassword } from '@/lib/password';
 import { isPatient } from '@/domain/authorization';
 import { checkRateLimit, clientIp } from '@/lib/rate-limit';
+import { normalizePhone } from '@/lib/phone';
 import { logger, withRequestId } from '@/api/logger';
 import { recordAudit, resolveOrganizationIdForStaffUser } from '@/lib/audit';
 
@@ -24,10 +25,13 @@ export async function POST(request: NextRequest) {
       const { email, phone, password } = await request.json();
 
       const usingEmail = Boolean(email);
+      // Phone identifiers are normalized to E.164 (India default +91), so a
+      // staff member can sign in with their bare 10-digit mobile — the same
+      // value the account is stored under.
       const identifier = usingEmail
         ? String(email).trim().toLowerCase()
         : phone
-          ? String(phone).trim()
+          ? normalizePhone(String(phone))
           : '';
 
       if (!identifier || !password) {

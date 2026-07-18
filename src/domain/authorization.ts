@@ -385,26 +385,11 @@ export function canAdministerOrganization(role: string): boolean {
 // Routing
 // ---------------------------------------------------------------------------
 
-/**
- * Where each role lands after a B2B login (the map previously inlined in
- * src/app/login/page.tsx). Returns null for roles with no B2B workspace.
- */
-export function defaultWorkspacePathForRole(role: string): string | null {
-  // Solo-first (2026-07-12): an independent-clinic owner lands in their own
-  // solo workspace (/clinic) — the daily driver, matching the /start onboarding
-  // which also ends at /clinic. The org Command Center (/admin) stays reachable
-  // by URL for multi-clinic; revisit role→landing when multi-clinic ships.
-  //
-  // BRD-043 Sprint 3 ("one product", adaptive dashboard): invited Doctors and
-  // Receptionists now land in the SAME adaptive /clinic surface — no separate
-  // per-role workspace, no switching. The legacy multi-clinic /doctor and
-  // /staff route trees remain reachable by URL (not removed) but are no longer
-  // the default landing for a solo/professional clinic's team.
-  if (isSuperAdmin(role)) return "/clinic";
-  if (isDoctor(role)) return "/clinic";
-  if (isReceptionist(role)) return "/clinic";
-  return null;
-}
+// F1 (Batch F · Technical Hardening): the legacy `defaultWorkspacePathForRole`
+// ("everyone → /clinic") was retired here. Both entry points — login and
+// invite-accept — now route through /workspace → resolveLanding →
+// resolveSurfacePath (below), the single capability-driven resolver. There is
+// no second, role-name-based landing map anymore.
 
 /**
  * APS-045 §6 — the capability-driven Surface resolver. Maps an active

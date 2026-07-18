@@ -13,7 +13,9 @@ import { generateHealthIdCandidate } from "../src/domain/health-id";
 
 const prisma = new PrismaClient();
 const DEV_PASSWORD = "password123";
-const DEMO_PREFIX = "+91987650"; // every demo account's phone starts here
+// Every demo account's phone is a valid E.164 Indian mobile: "+91987650" + a
+// 4-digit sequence = "+91" followed by exactly 10 digits (e.g. +919876500001).
+const DEMO_PREFIX = "+91987650";
 
 const used = new Set<string>();
 function healthId(): string {
@@ -35,7 +37,7 @@ async function main() {
 
   // --- Owner (legal owner + super_admin). Runs the practice; not a clinician. ---
   const owner = await prisma.user.create({
-    data: { role: "super_admin", phone_number: `${DEMO_PREFIX}001`, email: "rajesh.sharma@sunrisehealth.in", password_hash },
+    data: { role: "super_admin", phone_number: `${DEMO_PREFIX}0001`, email: "rajesh.sharma@sunrisehealth.in", password_hash },
   });
 
   const org = await prisma.organization.create({
@@ -43,7 +45,7 @@ async function main() {
       name: "Sunrise Health Network",
       address: "Lane 5, Koregaon Park, Pune, Maharashtra 411001",
       contact_email: "care@sunrisehealth.in",
-      contact_phone: `${DEMO_PREFIX}001`,
+      contact_phone: `${DEMO_PREFIX}0001`,
       timezone: "Asia/Kolkata",
       archetype: "multi_specialty",
       plan: "professional",
@@ -94,12 +96,12 @@ async function main() {
     return { user, profile };
   }
 
-  const manager = await staff("002", "practice_manager", "Priya Nair", "priya.nair@sunrisehealth.in", null);
-  const drAnanya = await staff("003", "doctor", "Dr. Ananya Iyer", "ananya.iyer@sunrisehealth.in", "Cardiologist");
-  const drVikram = await staff("004", "doctor", "Dr. Vikram Reddy", "vikram.reddy@sunrisehealth.in", "General Physician");
-  const reception = await staff("005", "receptionist", "Sunita Deshpande", "sunita.d@sunrisehealth.in", null);
-  await staff("006", "nurse", "Kavita Joshi", "kavita.joshi@sunrisehealth.in", null);
-  await staff("007", "technician", "Ramesh Gupta", "ramesh.gupta@sunrisehealth.in", null);
+  const manager = await staff("0002", "practice_manager", "Priya Nair", "priya.nair@sunrisehealth.in", null);
+  const drAnanya = await staff("0003", "doctor", "Dr. Ananya Iyer", "ananya.iyer@sunrisehealth.in", "Cardiologist");
+  const drVikram = await staff("0004", "doctor", "Dr. Vikram Reddy", "vikram.reddy@sunrisehealth.in", "General Physician");
+  const reception = await staff("0005", "receptionist", "Sunita Deshpande", "sunita.d@sunrisehealth.in", null);
+  await staff("0006", "nurse", "Kavita Joshi", "kavita.joshi@sunrisehealth.in", null);
+  await staff("0007", "technician", "Ramesh Gupta", "ramesh.gupta@sunrisehealth.in", null);
 
   // Weekly availability for the two doctors (Mon–Sat).
   await prisma.doctorAvailability.createMany({
@@ -131,10 +133,10 @@ async function main() {
     return profile;
   }
 
-  const amit = await patient("101", "Amit Patel", "1985-08-21", "Male", "B-Positive");
-  const sneha = await patient("102", "Sneha Kulkarni", "1993-02-11", "Female", "O-Positive");
-  const farooq = await patient("103", "Mohammed Farooq", "1978-12-03", "Male", "A-Positive");
-  const lakshmi = await patient("104", "Lakshmi Menon", "2001-05-19", "Female", "AB-Positive");
+  const amit = await patient("0101", "Amit Patel", "1985-08-21", "Male", "B-Positive");
+  const sneha = await patient("0102", "Sneha Kulkarni", "1993-02-11", "Female", "O-Positive");
+  const farooq = await patient("0103", "Mohammed Farooq", "1978-12-03", "Male", "A-Positive");
+  const lakshmi = await patient("0104", "Lakshmi Menon", "2001-05-19", "Female", "AB-Positive");
 
   // --- Today's live queue across both doctors + one completed visit with a paid invoice. ---
   await prisma.appointment.create({
@@ -196,9 +198,16 @@ async function main() {
   });
 
   console.log("\n✅ India demo seeded — Sunrise Health Network, Pune");
-  console.log("   Staff password: password123 · Patient login: OTP (dev echo)");
-  console.log("   Owner +91987650001 · Manager 002 · Dr Ananya 003 · Dr Vikram 004 · Reception 005 · Nurse 006 · Technician 007");
-  console.log(`   Reception login example: ${reception.user.phone_number}`);
+  console.log("   Staff sign in at /login with phone + password123 (enter the 10-digit number; +91 is assumed).");
+  console.log("   Owner        9876500001  → /admin");
+  console.log("   Manager      9876500002  → /admin");
+  console.log("   Dr Ananya    9876500003  → /doctor");
+  console.log("   Dr Vikram    9876500004  → /doctor");
+  console.log("   Receptionist 9876500005  → /staff");
+  console.log("   Nurse        9876500006  → /doctor");
+  console.log("   Technician   9876500007  → /staff");
+  console.log("   Patients (OTP, dev echo): 9876500101 Amit · 0102 Sneha · 0103 Farooq · 0104 Lakshmi → /patient");
+  console.log(`   (stored E.164 example: ${reception.user.phone_number})`);
 }
 
 main()

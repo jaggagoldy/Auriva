@@ -13,6 +13,7 @@ import { checkRateLimit, clientIp } from '@/lib/rate-limit';
 import { logger, withRequestId } from '@/api/logger';
 import { recordAudit, resolveOrganizationIdForPatientProfile } from '@/lib/audit';
 import { verifyOtpChallenge } from '@/services/otp-service';
+import { normalizePhone } from '@/lib/phone';
 
 function minimalProfile(profile: PatientProfile) {
   return {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
       if (!phone_number || !code) {
         return badRequest('phone_number and code are required.');
       }
-      const formattedPhone = phone_number.trim();
+      const formattedPhone = normalizePhone(phone_number);
 
       // SEC-5: verify remains the highest-value rate-limit target — this is
       // the brute-force surface for the OTP secret. Batch 1 added a real

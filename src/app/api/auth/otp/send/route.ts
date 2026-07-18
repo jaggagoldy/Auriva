@@ -5,6 +5,7 @@ import { logger, withRequestId } from '@/api/logger';
 import { issueOtpChallenge } from '@/services/otp-service';
 import { shouldEchoOtp } from '@/lib/config';
 import { sendOtpSms } from '@/lib/sms';
+import { normalizePhone } from '@/lib/phone';
 
 // APS-029/010 Sprint 1: send no longer creates a Healthcare Profile. Identity
 // resolution (who this phone number belongs to — possibly more than one
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
         return badRequest('phone_number is required.');
       }
 
-      const formattedPhone = phone_number.trim();
+      const formattedPhone = normalizePhone(phone_number);
 
       // SEC-5: limits SMS-bombing a phone number and scripted mass-send abuse.
       const rateLimit = checkRateLimit([
