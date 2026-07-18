@@ -154,6 +154,186 @@ export function hasCapability(capability: Capability, capabilities: Capability[]
 }
 
 // ---------------------------------------------------------------------------
+// Permissions — the action-level RBAC model (C2, FROZEN 2026-07-18)
+//
+// WORKSPACE_CAPABILITIES above decide which SURFACE a member opens; permissions
+// decide which ACTIONS they may take once there — the finer grain the frozen C2
+// matrix requires. Two roles can share a surface yet differ in authority:
+//   - Practice Manager shares the Owner cockpit but may VIEW clinical records,
+//     never EDIT them, and can never touch the plan or grant ownership.
+//   - Nurse works the clinical surface but may write vitals, never a diagnosis.
+// So permissions key off the ROLE, not the coarse surface capability.
+//
+// Batch D1 (this milestone): the taxonomy + `permissionsForRole` +
+// `effectivePermissions` + `can` are defined and unit-tested against the frozen
+// matrix, but NOT yet wired into endpoints. Role activation (capability bundles
+// + surface resolution for practice_manager / nurse / technician) is D2; the
+// dormant roles therefore still resolve to no surface until then.
+//
+// Guiding principle #7 ("visibility should exceed authority"): where a role
+// touches a domain at all, it far more often gets `view` than a write verb.
+// ---------------------------------------------------------------------------
+
+/** Every action-level permission the frozen C2 matrix distinguishes. */
+export const PERMISSIONS = [
+  // Front desk
+  "appointments:manage", // queue, check-in, walk-in, status, reorder
+  "appointments:view",
+  "patients:manage", // register + edit demographic/contact records
+  "patients:view",
+  // Clinical — a business concept distinct from Patient Management (C2 amend #2)
+  "clinical_records:view", // read consultation history & notes
+  "clinical_records:edit", // amend the clinical record (clinicians only)
+  "consultation:write", // notes, diagnosis, prescription
+  "vitals:write", // vitals, allergies, chief complaint, preparation notes
+  "diagnostics:view",
+  "diagnostics:order",
+  "diagnostics:results:write", // enter test/lab results (technician)
+  // Money
+  "billing:manage",
+  "payments:collect", // doctor: not a default — granted per clinic policy (amend #4)
+  // Scheduling
+  "schedule:view",
+  "schedule:own", // manage one's own availability
+  "schedule:manage", // manage any clinician's schedule
+  // Intelligence
+  "reports:own", // one's own operational figures (amend #3)
+  "reports:org", // organization-wide analytics / command center
+  // Team & ownership
+  "team:manage", // invite, provision, suspend, archive, resend (amend #5)
+  "team:assign_owner", // grant/revoke ownership — owner-only, never delegated
+  // Practice
+  "plan:manage", // subscription — owner-only (legal owner)
+  "settings:manage",
+  "practice_profile:own",
+  "audit:view",
+] as const;
+
+export type Permission = (typeof PERMISSIONS)[number];
+
+const OWNER_PERMISSIONS: Permission[] = [...PERMISSIONS];
+
+// Role → default permissions, transcribed VERBATIM from the frozen C2 matrix.
+// Solo-first extensions (e.g. a doctor who also collects payments) ride on the
+// capability GRANT mechanism below — they are not baked into a base role.
+const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  // Owner — full authority, incl. the two never-delegated powers.
+  super_admin: OWNER_PERMISSIONS,
+
+  // Practice Manager — full operations; NO clinical write; NO plan; NO owner grant.
+  practice_manager: [
+    "appointments:manage",
+    "appointments:view",
+    "patients:manage",
+    "patients:view",
+    "clinical_records:view", // view only (amend #1)
+    "diagnostics:view",
+    "billing:manage",
+    "payments:collect",
+    "schedule:view",
+    "schedule:manage",
+    "reports:own",
+    "reports:org",
+    "team:manage", // suspend/archive/resend — but NOT team:assign_owner (amend #5)
+    "settings:manage",
+    "practice_profile:own",
+    "audit:view",
+  ],
+
+  // Doctor — clinical authority + own schedule/reports. Payments/billing come
+  // only via a grant (amend #4), never as a base default.
+  doctor: [
+    "appointments:view",
+    "patients:view",
+    "clinical_records:view",
+    "clinical_records:edit",
+    "consultation:write",
+    "vitals:write",
+    "diagnostics:view",
+    "diagnostics:order",
+    "schedule:view",
+    "schedule:own",
+    "reports:own", // own reports, not org analytics (amend #3)
+    "practice_profile:own",
+  ],
+
+  // Receptionist — front desk + money; explicitly NO clinical (amend #2 hard line).
+  receptionist: [
+    "appointments:manage",
+    "appointments:view",
+    "patients:manage",
+    "patients:view",
+    "billing:manage",
+    "payments:collect",
+    "schedule:view",
+  ],
+
+  // Nurse — clinical assist: vitals/allergies/chief-complaint/prep only.
+  // NO diagnosis, prescriptions, or treatment plans (amend #2 expanded).
+  nurse: [
+    "appointments:view",
+    "patients:view",
+    "clinical_records:view",
+    "vitals:write",
+    "diagnostics:view",
+    "schedule:view",
+  ],
+
+  // Technician — diagnostics results entry only. No diagnosis.
+  technician: ["patients:view", "diagnostics:view", "diagnostics:results:write"],
+
+  // Patient — holds no staff permission in this matrix.
+  patient: [],
+};
+
+// A granted surface capability confers the front-desk action set — this is the
+// solo/configurable case (amend #4): a doctor granted `reception` may collect
+// payments and run billing, without changing their base clinical role. Only the
+// reception grant crosses roles this way today; other surfaces add nothing a
+// base role doesn't already carry.
+const CAPABILITY_PERMISSIONS: Partial<Record<Capability, Permission[]>> = {
+  reception: [
+    "appointments:manage",
+    "appointments:view",
+    "patients:manage",
+    "patients:view",
+    "billing:manage",
+    "payments:collect",
+    "schedule:view",
+  ],
+};
+
+/** The permissions a base role holds by default — the frozen C2 matrix, verbatim. */
+export function permissionsForRole(role: string): Permission[] {
+  return ROLE_PERMISSIONS[role] ?? [];
+}
+
+/**
+ * Role defaults ∪ permissions conferred by GRANTED capabilities — the account's
+ * effective authority. Mirrors `effectiveCapabilities`: an ungranted account
+ * gets exactly its role defaults, so behaviour is unchanged until a grant is
+ * added. This is how a solo owner-doctor (or a doctor a clinic lets collect
+ * payments) gains front-desk authority without a role change.
+ */
+export function effectivePermissions(role: string, grantedRaw?: string | null): Permission[] {
+  const set = new Set<Permission>(permissionsForRole(role));
+  for (const cap of parseCapabilities(grantedRaw)) {
+    for (const p of CAPABILITY_PERMISSIONS[cap] ?? []) set.add(p);
+  }
+  return [...set];
+}
+
+/** True when the role (plus any granted capabilities) carries the permission. */
+export function can(permission: Permission, role: string, grantedRaw?: string | null): boolean {
+  return effectivePermissions(role, grantedRaw).includes(permission);
+}
+
+/** True when the permission set contains the permission. */
+export function hasPermission(permission: Permission, permissions: Permission[]): boolean {
+  return permissions.includes(permission);
+}
+
+// ---------------------------------------------------------------------------
 // Routing
 // ---------------------------------------------------------------------------
 
