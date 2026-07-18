@@ -540,6 +540,129 @@ export async function acceptInvitation(input: { token: string; password: string 
   });
 }
 
+export interface ProvisionResult {
+  user: { id: string; phone_number: string; role: string; full_name: string };
+  /** The one-time temporary password — returned ONCE for the owner to relay. */
+  temporaryPassword: string;
+}
+
+/**
+ * Managed provisioning (APS-044 §9 / ERA-001 C5): an Organization creates a
+ * staff account DIRECTLY, rather than sending an invite link. The account is
+ * created with a TEMPORARY password + must_change_password=true; the owner
+ * relays the temp password out-of-band (no SMS — ADR-003). On first sign-in the
+ * member is forced to set their own (Milestone A1: credential-service +
+ * requireStaffContext gate). Same seat (US-503) + identity guards as
+ * createInvitation, in one transaction; the event is published after commit.
+ *
+ * A provisioned member is immediately ACTIVE (no accept step), so
+ * membership_status defaults to "active" and they count toward the seat cap at
+ * once — computed inside the transaction so concurrent provisions can't both
+ * slip past the ceiling.
+ */
+export async function provisionStaff(input: {
+  organizationId: string;
+  clinicId: string;
+  fullName: string;
+  phone: string;
+  role: string;
+  specialty?: string | null;
+  actorUserId?: string | null;
+}): Promise<ProvisionResult> {
+  const fullName = input.fullName?.trim();
+  const phone = input.phone?.trim();
+
+  if (!fullName || fullName.length < 2) {
+    throw new OnboardingInputError("A full name is required.");
+  }
+  if (!isInviteRole(input.role)) {
+    throw new OnboardingInputError("Role must be doctor or receptionist.");
+  }
+  const role: InviteRole = input.role;
+  if (!phone || phoneDigits(phone).length < 7) {
+    throw new OnboardingInputError("A valid mobile number is required.");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: input.organizationId },
+    select: { owner_user_id: true, plan: true },
+  });
+  if (!organization) throw new OnboardingInputError("Organization not found.");
+
+  const clinic = await prisma.clinic.findFirst({
+    where: { id: input.clinicId, organization_id: input.organizationId },
+  });
+  if (!clinic) throw new OnboardingInputError("That clinic does not belong to this organization.");
+
+  // The provisioned mobile IS the login identity — it must be free (same
+  // phone-uniqueness invariant login/quick-setup/accept-invitation rely on).
+  if (await prisma.user.findFirst({ where: { phone_number: phone } })) {
+    throw new DuplicateActiveMemberError("An account with this mobile number already exists.");
+  }
+
+  // A readable one-time temporary password (>= the 8-char staff floor) the
+  // owner relays; replaced on first sign-in.
+  const temporaryPassword = randomBytes(9).toString("base64url"); // ~12 chars
+  const password_hash = await hashPassword(temporaryPassword);
+
+  const user = await prisma.$transaction(async (tx) => {
+    const usage = await seatUsage(tx, input.clinicId, organization.owner_user_id);
+    const decision = checkSeatAvailability(organization.plan, role, usage);
+    if (!decision.allowed) {
+      logger.warn("seat.limit_exceeded", {
+        organizationId: input.organizationId,
+        currentPlan: organization.plan,
+        seatCount: usage.doctors + usage.receptionists,
+      });
+      throw new SeatLimitReachedError(decision.reason ?? "Your plan's team limit has been reached.");
+    }
+
+    const created = await tx.user.create({
+      data: {
+        role,
+        phone_number: phone,
+        password_hash,
+        must_change_password: true,
+      },
+    });
+    await tx.staffProfile.create({
+      data: {
+        user_id: created.id,
+        clinic_id: input.clinicId,
+        full_name: fullName,
+        specialty: role === "doctor" ? input.specialty?.trim() || null : null,
+      },
+    });
+    await tx.organizationMember.create({
+      data: { organization_id: input.organizationId, user_id: created.id, role },
+    });
+    await tx.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        actor_user_id: input.actorUserId ?? null,
+        action: "staff_provisioned",
+        detail: `${fullName} (${role}) provisioned`,
+      },
+    });
+    return created;
+  });
+
+  await publishEvent({
+    eventType: "staff.provisioned",
+    organizationId: input.organizationId,
+    entityId: user.id,
+    correlationId: user.id,
+    actorId: input.actorUserId,
+    payload: { userId: user.id, role },
+  });
+  logger.info("staff.provisioned", { organizationId: input.organizationId, userId: user.id, role });
+
+  return {
+    user: { id: user.id, phone_number: user.phone_number, role: user.role, full_name: fullName },
+    temporaryPassword,
+  };
+}
+
 /**
  * Activates/deactivates a staff member (Sprint 3 — was a literal
  * non-functional placeholder toast before this). Sets both the User-level
