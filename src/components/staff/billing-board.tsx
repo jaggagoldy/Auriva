@@ -8,6 +8,7 @@ import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { IndianRupee, Loader2, Plus, Printer, ReceiptText } from "lucide-react";
+import { EmptyState } from "@/components/ui/states";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -172,13 +173,12 @@ export default function BillingBoard() {
               ))}
             </div>
           ) : invoices.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <ReceiptText className="size-10 text-muted-foreground/50" />
-              <p className="text-sm font-medium">No invoices here yet</p>
-              <p className="text-xs text-muted-foreground">
-                Complete a consultation and its invoice drafts itself.
-              </p>
-            </div>
+            <EmptyState
+              icon={ReceiptText}
+              title="No invoices here yet"
+              description="Complete a consultation and its invoice drafts itself."
+              className="border-0 py-14"
+            />
           ) : (
             <Table>
               <TableHeader>

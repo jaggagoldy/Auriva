@@ -8,16 +8,17 @@
 // rounded-xl card, the size-12 muted icon chip, text-sm/font-medium heading,
 // text-xs muted description) so adoption is a clean swap, not a redesign.
 
-import { AlertTriangle, Inbox, Loader2, RefreshCw, ShieldAlert, type LucideIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Inbox, Loader2, RefreshCw, ShieldAlert, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Tone = "neutral" | "danger" | "muted";
+type Tone = "neutral" | "danger" | "muted" | "success";
 
 const CHIP: Record<Tone, string> = {
   neutral: "border bg-muted/50 text-muted-foreground",
   danger: "bg-rose-500/10 text-rose-600",
   muted: "bg-amber-500/10 text-amber-600",
+  success: "bg-success/10 text-success",
 };
 
 function StateShell({
@@ -120,6 +121,31 @@ export function PermissionState({
   className?: string;
 }) {
   return <StateShell icon={icon} tone="muted" title={title} description={description} className={className} />;
+}
+
+/**
+ * A completed action worth a full-page moment rather than a fleeting toast —
+ * "Clinic created", "Team invited", "Payment collected" — ideally paired with
+ * the next recommended action. Toasts still cover the small, incidental successes.
+ */
+export function SuccessState({
+  icon = CheckCircle2,
+  title,
+  description,
+  action,
+  className,
+}: {
+  icon?: LucideIcon;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <StateShell icon={icon} tone="success" title={title} description={description} className={className}>
+      {action}
+    </StateShell>
+  );
 }
 
 /** A consistent centred spinner for the loading moment (content-shaped loading uses <Skeleton/>). */

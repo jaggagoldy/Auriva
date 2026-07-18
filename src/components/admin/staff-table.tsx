@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/states";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,12 +93,13 @@ export default function StaffTable({
           ))
         ) : staff.length === 0 && invites.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} className="py-12 text-center">
-              <UserX className="mx-auto size-8 text-muted-foreground/50" />
-              <p className="mt-2 text-sm font-medium">No staff yet</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Invite doctors and receptionists to this workspace.
-              </p>
+            <TableCell colSpan={5} className="py-12">
+              <EmptyState
+                icon={UserX}
+                title="No staff yet"
+                description="Invite doctors and receptionists to this workspace."
+                className="border-0 py-0"
+              />
             </TableCell>
           </TableRow>
         ) : (

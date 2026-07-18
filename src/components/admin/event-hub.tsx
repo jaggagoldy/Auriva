@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/states";
 import {
   Select,
   SelectContent,
@@ -298,17 +299,12 @@ export default function EventHub() {
                   ))}
                 </div>
               ) : events.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-xl border bg-muted/50">
-                    <Webhook className="size-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">No events yet</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Booking, cancelling or completing a visit will publish events here.
-                    </p>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={Webhook}
+                  title="No events yet"
+                  description="Booking, cancelling or completing a visit will publish events here."
+                  className="border-0 py-20"
+                />
               ) : (
                 <div className="divide-y">
                   {events.map((event) => {

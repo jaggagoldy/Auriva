@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { Inbox, Loader2, RefreshCw } from "lucide-react";
+import { EmptyState, ErrorState } from "@/components/ui/states";
 import { Button } from "@/components/ui/button";
 
 import GlobalSearch from "@/components/staff/global-search";
@@ -127,20 +128,17 @@ export default function QueueBoard() {
       </header>
 
       {error && appointments === null ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">{error}</p>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw />
-            Try again
-          </Button>
+        <div className="flex flex-1 items-center justify-center">
+          <ErrorState title={error} description="" onRetry={handleRefresh} className="border-0" />
         </div>
       ) : appointments !== null && appointments.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2">
-          <Inbox className="size-8 text-muted-foreground/50" />
-          <p className="text-sm font-medium">The queue is empty</p>
-          <p className="text-xs text-muted-foreground">
-            No appointments match the current filters for today.
-          </p>
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={Inbox}
+            title="The queue is empty"
+            description="No appointments match the current filters for today."
+            className="border-0"
+          />
         </div>
       ) : appointments === null ? (
         <div className="flex flex-1 items-center justify-center">

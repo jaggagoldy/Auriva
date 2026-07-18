@@ -7,7 +7,8 @@
 // PATCH for department assignment.
 
 import * as React from "react";
-import { Loader2, Network, Plus, RefreshCw, UserPlus, X } from "lucide-react";
+import { Loader2, Network, Plus, UserPlus, X } from "lucide-react";
+import { EmptyState, ErrorState } from "@/components/ui/states";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -179,12 +180,13 @@ export default function Departments() {
         </header>
 
         {error ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3">
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <Button variant="outline" size="sm" onClick={() => load().catch(() => setError("Could not load departments."))}>
-              <RefreshCw />
-              Try again
-            </Button>
+          <div className="flex flex-1 items-center justify-center">
+            <ErrorState
+              title={error}
+              description=""
+              onRetry={() => load().catch(() => setError("Could not load departments."))}
+              className="border-0"
+            />
           </div>
         ) : (
           <main className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -195,21 +197,18 @@ export default function Departments() {
                 ))}
               </div>
             ) : departments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-20 text-center">
-                <div className="flex size-12 items-center justify-center rounded-xl border bg-muted/50">
-                  <Network className="size-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">No departments yet</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Group your doctors and staff into departments like Cardiology or Pediatrics.
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => setCreateOpen(true)}>
-                  <Plus />
-                  Create your first department
-                </Button>
-              </div>
+              <EmptyState
+                icon={Network}
+                title="No departments yet"
+                description="Group your doctors and staff into departments like Cardiology or Pediatrics."
+                className="py-20"
+                action={
+                  <Button size="sm" onClick={() => setCreateOpen(true)}>
+                    <Plus />
+                    Create your first department
+                  </Button>
+                }
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {departments.map((dept) => (

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { FlaskConical, Info, Check, Loader2, Upload, FileText, CalendarCheck } from "lucide-react";
+import { EmptyState } from "@/components/ui/states";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -43,11 +44,12 @@ export function HealthVault() {
   if (!recs) return <div className="flex justify-center py-12 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
   if (recs.length === 0)
     return (
-      <div className="flex flex-col items-center gap-2 rounded-[16px] border border-dashed py-14 text-center">
-        <FlaskConical className="size-8 text-muted-foreground/50" />
-        <p className="text-sm font-medium">No recommended tests</p>
-        <p className="max-w-[16rem] text-xs text-muted-foreground">Tests your doctor recommends appear here with prep steps.</p>
-      </div>
+      <EmptyState
+        icon={FlaskConical}
+        title="No recommended tests"
+        description="Tests your doctor recommends appear here with prep steps."
+        className="rounded-[16px] py-14"
+      />
     );
 
   // Group by recommendation batch (date + doctor).
