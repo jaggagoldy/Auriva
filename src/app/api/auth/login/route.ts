@@ -77,7 +77,16 @@ export async function POST(request: NextRequest) {
         return forbidden('This account has been deactivated. Contact your administrator.');
       }
 
-      const { rawToken, expires_at } = await createSession(user.id, user.role);
+      // Batch A · A3: open the session into the caller's workspace. A staff
+      // member has exactly one membership today (their StaffProfile) — the
+      // Workspace Selector chooses among several after Batch B. Owners with no
+      // staff profile carry no active membership.
+      const { rawToken, expires_at } = await createSession(
+        user.id,
+        user.role,
+        null,
+        user.staffProfile?.id ?? null
+      );
       await setSessionCookie(rawToken, expires_at);
 
       const organizationId = await resolveOrganizationIdForStaffUser(user.id, user.role);

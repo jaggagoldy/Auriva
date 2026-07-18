@@ -36,7 +36,12 @@ function hashToken(rawToken: string): string {
 export async function createSession(
   userId: string,
   role: string,
-  activeHealthcareProfileId?: string | null
+  activeHealthcareProfileId?: string | null,
+  // Batch A · A3: which membership (workspace) a staff session opens into. Set
+  // at login to the caller's membership (their StaffProfile) — exactly one
+  // today; the Workspace Selector picks among several after Batch B. Null for
+  // patients and for owners with no staff profile.
+  activeMembershipId?: string | null
 ) {
   const rawToken = randomBytes(32).toString("hex");
   const expires_at = new Date(Date.now() + SESSION_TTL_MS);
@@ -48,6 +53,7 @@ export async function createSession(
       token_hash: hashToken(rawToken),
       expires_at,
       active_healthcare_profile_id: activeHealthcareProfileId ?? null,
+      active_membership_id: activeMembershipId ?? null,
     },
   });
 
@@ -103,6 +109,7 @@ interface ActiveSession {
   userId: string;
   role: string;
   activeHealthcareProfileId: string | null;
+  activeMembershipId: string | null;
 }
 
 /** For Server Components (layouts/pages) guarding a route — no Request object available there. */
@@ -125,6 +132,7 @@ async function readSession(): Promise<ActiveSession | null> {
     userId: session.user_id,
     role: session.role,
     activeHealthcareProfileId: session.active_healthcare_profile_id,
+    activeMembershipId: session.active_membership_id,
   };
 }
 
@@ -162,6 +170,20 @@ export async function setActiveHealthcareProfile(sessionId: string, profileId: s
   await prisma.session.update({
     where: { id: sessionId },
     data: { active_healthcare_profile_id: profileId },
+  });
+}
+
+/**
+ * Batch A · A3: changes which membership (workspace) a staff session is acting
+ * in — the staff twin of setActiveHealthcareProfile. Callers must have already
+ * verified the account actually holds `membershipId` (see
+ * workspace-service.switchWorkspace, which resolves it scoped to the caller);
+ * this never trusts a client-supplied membership id on its own.
+ */
+export async function setActiveMembership(sessionId: string, membershipId: string) {
+  await prisma.session.update({
+    where: { id: sessionId },
+    data: { active_membership_id: membershipId },
   });
 }
 
