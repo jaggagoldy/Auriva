@@ -41,6 +41,9 @@ export function findStaffProfiles(filters: StaffSearchFilters) {
           id: true,
           email: true,
           phone_number: true,
+          // D4: the account role, the fallback when a profile has no membership
+          // row for this org (the specialty heuristic is retired).
+          role: true,
           // APS-040: membership rows are the role source of truth; the
           // caller picks the row matching the profile's clinic.
           memberships: { select: { organization_id: true, role: true } },

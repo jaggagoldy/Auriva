@@ -10,7 +10,7 @@ import { randomBytes } from "crypto";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
-import { isOrgArchetype, memberRoleFromSpecialty, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
+import { isOrgArchetype, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
 import { type Capability } from "@/domain/authorization";
 import { checkSeatAvailability, type SeatUsage } from "@/domain/subscription";
 import { publishEvent } from "@/lib/events";
@@ -513,9 +513,9 @@ export async function acceptInvitation(input: { token: string; password: string 
       data: {
         organization_id: invitation.organization_id,
         user_id: user.id,
-        // Trust the invite's role; keep it consistent with the heuristic for
-        // doctors (specialty ⇒ doctor) as a defensive default.
-        role: role === "doctor" ? "doctor" : memberRoleFromSpecialty(invitation.specialty),
+        // D4: the invite already carries an explicit role — store it directly,
+        // no specialty inference.
+        role,
       },
     });
 

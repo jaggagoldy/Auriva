@@ -4,7 +4,7 @@
 // Organization_Members, joined to Staff_Profiles for display info.
 
 import type { Organization as PrismaOrganization, OrganizationMember as PrismaMember, StaffProfile } from "@prisma/client";
-import { Organization, OrganizationMember, isOrgArchetype, memberRoleFromSpecialty } from "@/domain/organization";
+import { Organization, OrganizationMember, isOrgArchetype, asOrganizationRole } from "@/domain/organization";
 import {
   findOrganization,
   listOrganizationsOwnedBy,
@@ -35,9 +35,7 @@ function memberFromRow(row: MemberRow, ownerDisplayName: string): OrganizationMe
       organizationId: row.organization_id,
       userId: row.user_id,
       profileId: row.staffProfile.id,
-      role: row.role === "owner" || row.role === "doctor" || row.role === "receptionist"
-        ? row.role
-        : memberRoleFromSpecialty(row.staffProfile.specialty),
+      role: asOrganizationRole(row.role),
       displayName: row.staffProfile.full_name,
       specialty: row.staffProfile.specialty,
       clinicId: row.staffProfile.clinic_id,

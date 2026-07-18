@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { memberRoleFromSpecialty } from "@/domain/organization";
 import {
   AppointmentNotFoundError,
   InvalidTransitionError,
@@ -95,6 +94,7 @@ export async function getDashboardSummary(clinicId: string) {
       specialty: true,
       user: {
         select: {
+          role: true,
           memberships: {
             where: { organization_id: clinic?.organization_id },
             select: { role: true },
@@ -103,12 +103,10 @@ export async function getDashboardSummary(clinicId: string) {
       },
     },
   });
-  // APS-040: the membership row is the role source of truth; the specialty
-  // heuristic remains only for profiles that predate the backfill.
+  // D4: the member's explicit role is the source of truth — the org-membership
+  // role, falling back to their account role. No specialty inference.
   const doctors = staff.filter(
-    (member) =>
-      (member.user.memberships[0]?.role ??
-        memberRoleFromSpecialty(member.specialty)) === "doctor"
+    (member) => (member.user.memberships[0]?.role ?? member.user.role) === "doctor"
   );
 
   const doctorLoad = doctors.map((doctor) => {

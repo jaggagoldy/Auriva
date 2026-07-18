@@ -174,6 +174,77 @@ export function reactivateMember(input: { organizationId: string; staffProfileId
   return transitionStatus(input.organizationId, input.staffProfileId, input.actorUserId, "active");
 }
 
+export class InvalidRoleError extends Error {}
+
+// Batch D · D4: the staff roles a member can be reassigned to. "owner" is
+// deliberately absent — operational/legal ownership is granted through the
+// ownership service (promote / transfer), never by editing a role here.
+const ASSIGNABLE_ROLES = ["doctor", "receptionist", "practice_manager", "nurse", "technician"] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+/**
+ * Batch D · D4 — the Team Management role-assignment operation. Sets a member's
+ * role on BOTH the account (Users.role) and the org membership
+ * (Organization_Members.role) atomically, so their capabilities, surface, and
+ * permissions (the frozen C2 model) all follow from one write. The legal owner's
+ * role is protected — ownership moves only through the ownership service. Clears
+ * a stale specialty when a member leaves the doctor role, so the clinician
+ * signal (specialty != null) stays truthful. Idempotent.
+ */
+export async function assignMemberRole(input: {
+  organizationId: string;
+  staffProfileId: string;
+  actorUserId: string;
+  newRole: string;
+  specialty?: string | null;
+}) {
+  const { profile, isOwner } = await loadMember(input.organizationId, input.staffProfileId);
+  if (isOwner) {
+    throw new OwnerProtectedError("The practice owner's role cannot be reassigned — transfer ownership instead.");
+  }
+  if (!(ASSIGNABLE_ROLES as readonly string[]).includes(input.newRole)) {
+    throw new InvalidRoleError(`Unknown role "${input.newRole}".`);
+  }
+  const newRole = input.newRole as AssignableRole;
+
+  const user = await prisma.user.findUnique({ where: { id: profile.user_id }, select: { role: true } });
+  if (user?.role === newRole) {
+    return profile; // idempotent — already this role
+  }
+
+  const nextSpecialty =
+    newRole === "doctor" ? input.specialty?.trim() || profile.specialty || null : null;
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: profile.user_id }, data: { role: newRole } }),
+    prisma.organizationMember.updateMany({
+      where: { organization_id: input.organizationId, user_id: profile.user_id },
+      data: { role: newRole },
+    }),
+    prisma.staffProfile.update({ where: { id: profile.id }, data: { specialty: nextSpecialty } }),
+    prisma.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        actor_user_id: input.actorUserId,
+        action: "member_role_assigned",
+        detail: `${profile.full_name} → ${newRole}`,
+      },
+    }),
+  ]);
+
+  await publishEvent({
+    eventType: "staff.role_assigned",
+    organizationId: input.organizationId,
+    entityId: profile.id,
+    correlationId: `role-${profile.id}-${newRole}`,
+    actorId: input.actorUserId,
+    payload: { staffProfileId: profile.id, role: newRole },
+  });
+  logger.info("member.role_assigned", { organizationId: input.organizationId, staffProfileId: profile.id, newRole });
+
+  return prisma.staffProfile.findUniqueOrThrow({ where: { id: profile.id } });
+}
+
 /**
  * US-404/405: archive a member. If they have conflicts (future appointments /
  * active consultation), EVERY conflict must be covered by `reassignments`

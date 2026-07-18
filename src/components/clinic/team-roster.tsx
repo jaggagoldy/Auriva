@@ -47,6 +47,19 @@ function initials(name: string) {
   const parts = name.replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+/i, "").trim().split(/\s+/);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
 }
+
+// D4: the human labels for the six roles + the ones a member can be reassigned
+// to (ownership is granted separately, never via a role change).
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: "Owner",
+  owner: "Owner",
+  doctor: "Doctor",
+  receptionist: "Receptionist",
+  practice_manager: "Practice Manager",
+  nurse: "Nurse",
+  technician: "Technician",
+};
+const ASSIGNABLE_ROLES = ["doctor", "receptionist", "practice_manager", "nurse", "technician"] as const;
 const pillClass = (s: Member["status"]) =>
   s === "active"
     ? "bg-primary/10 text-primary"
@@ -84,6 +97,23 @@ export function TeamRoster({ onInvite, onUpgrade }: { onInvite: () => void; onUp
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update member");
+    }
+  }
+
+  async function changeRole(m: Member, role: string) {
+    setMenuFor(null);
+    if (role === m.role) return;
+    try {
+      const res = await fetch(`/api/clinic/team/${m.staff_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message ?? "Could not change role");
+      toast.success(`${m.name} is now ${ROLE_LABEL[role] ?? role}`);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not change role");
     }
   }
 
@@ -170,7 +200,7 @@ export function TeamRoster({ onInvite, onUpgrade }: { onInvite: () => void; onUp
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold uppercase">{initials(m.name)}</span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{m.name}</div>
-                  <div className="truncate text-xs text-muted-foreground">{m.role}{m.is_owner ? " · you" : ""}</div>
+                  <div className="truncate text-xs text-muted-foreground">{ROLE_LABEL[m.role] ?? m.role}{m.is_owner ? " · you" : ""}</div>
                 </div>
                 {/* The Owner's row has no lifecycle menu (frozen BR). */}
                 {!m.is_owner && m.status !== "archived" && (
@@ -185,7 +215,24 @@ export function TeamRoster({ onInvite, onUpgrade }: { onInvite: () => void; onUp
                     {menuFor === m.staff_id && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuFor(null)} />
-                        <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-lg border bg-background shadow-md">
+                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-lg border bg-background shadow-md">
+                          {/* D4: role assignment — one write updates the account
+                              role, membership, capabilities, surface & permissions. */}
+                          <div className="border-b px-3 py-2">
+                            <label className="mb-1 block text-[11px] font-semibold text-muted-foreground">Role</label>
+                            <select
+                              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                              value={(ASSIGNABLE_ROLES as readonly string[]).includes(m.role) ? m.role : ""}
+                              onChange={(e) => changeRole(m, e.target.value)}
+                            >
+                              {!(ASSIGNABLE_ROLES as readonly string[]).includes(m.role) && (
+                                <option value="" disabled>Select a role…</option>
+                              )}
+                              {ASSIGNABLE_ROLES.map((r) => (
+                                <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+                              ))}
+                            </select>
+                          </div>
                           {m.status === "active" ? (
                             <button className="block w-full px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => setStatus(m, "suspended")}>Suspend</button>
                           ) : (

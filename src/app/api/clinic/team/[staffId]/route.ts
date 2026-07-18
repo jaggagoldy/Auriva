@@ -3,12 +3,15 @@ import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
 import { canAdministerOrganization } from "@/domain/authorization";
 import prisma from "@/lib/prisma";
-import { reactivateMember, suspendMember } from "@/services/membership-service";
+import { assignMemberRole, reactivateMember, suspendMember } from "@/services/membership-service";
 
-// BRD-043 US-402 (Sprint 4): suspend / reactivate a team member. Owner /
-// Managing Doctor only. Clinic-scoped. Idempotent (repeating a transition
-// is a clean no-op — see membership-service). The Owner's own row is
-// rejected server-side, not merely hidden in the UI.
+// BRD-043 US-402 (Sprint 4) + D4 role assignment: update a team member. Owner /
+// Practice Manager only (canAdministerOrganization / team:manage). Clinic-scoped,
+// idempotent. Two operations on one endpoint:
+//   { role: <staff role> }          → D4 role assignment (Users.role +
+//                                       Organization_Members.role in one write)
+//   { membership_status: active|suspended } → suspend / reactivate
+// The Owner's own row is rejected server-side for both, not merely hidden.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ staffId: string }> }
@@ -19,10 +22,6 @@ export async function PATCH(
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));
-    const status = body.membership_status;
-    if (status !== "active" && status !== "suspended") {
-      return badRequest("membership_status must be 'active' or 'suspended'. Archiving uses the archive endpoint.");
-    }
 
     // Ensure the target belongs to the caller's clinic (defense in depth —
     // the service re-checks org ownership too).
@@ -31,6 +30,23 @@ export async function PATCH(
       select: { organization_id: true },
     });
     const organizationId = clinic?.organization_id ?? "";
+
+    // D4: role assignment.
+    if (typeof body.role === "string") {
+      const updated = await assignMemberRole({
+        organizationId,
+        staffProfileId: staffId,
+        actorUserId: auth.session.userId,
+        newRole: body.role,
+        specialty: body.specialty ?? null,
+      });
+      return ok({ staff_id: updated.id, role: body.role });
+    }
+
+    const status = body.membership_status;
+    if (status !== "active" && status !== "suspended") {
+      return badRequest("Provide a role, or membership_status 'active'|'suspended'. Archiving uses the archive endpoint.");
+    }
 
     const result =
       status === "suspended"

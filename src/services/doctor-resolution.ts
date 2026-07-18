@@ -14,16 +14,16 @@
 // clinic with 2+ staff (already reachable today — the existing invite flow
 // has no seat limit yet, see US-503) could misattribute real data.
 //
-// "Is this StaffProfile a doctor" is answered by `specialty != null`, NOT
-// User.role — this is the codebase's own established signal (see
-// src/domain/organization.ts's memberRoleFromSpecialty, which every
-// creation path already keys off: quick-setup, demo seeding, and
-// accept-invitation all set `specialty` for doctors and leave it null for
-// receptionists). User.role is NOT usable here: the "Managing Doctor"
-// persona (a Practice Owner who is also the clinic's practitioner — the
-// single most common real installation today) has User.role = "super_admin",
-// never "doctor" — an earlier version of this fix filtered on User.role and
-// broke every solo owner-doctor clinic (caught by demo-service.test.ts).
+// "Is this StaffProfile a doctor" is answered here by `specialty != null`, NOT
+// User.role. This is a different question from D4's role model: the creation
+// paths (quick-setup, demo seeding, accept-invitation) all set `specialty` for
+// doctors and leave it null otherwise, so it reliably identifies the CLINICIAN
+// profile to attribute booking/clinical data to. User.role is NOT usable here:
+// the "Managing Doctor" persona (a Practice Owner who is also the clinic's
+// practitioner — the single most common real installation today) has
+// User.role = "super_admin", never "doctor" — an earlier version of this fix
+// filtered on User.role and broke every solo owner-doctor clinic (caught by
+// demo-service.test.ts).
 //
 // Resolution order:
 //   1. An explicit doctorId, if the caller named one — validated as an

@@ -55,6 +55,7 @@ import {
 import { AmbiguousDoctorError } from "@/services/doctor-resolution";
 import {
   InvalidReassignmentError,
+  InvalidRoleError,
   MemberNotFoundError,
   OwnerProtectedError,
   ReconciliationRequiredError,
@@ -265,7 +266,11 @@ export function mapDomainError(error: unknown): NextResponse | null {
   if (error instanceof MemberNotFoundError) {
     return notFound(error.message);
   }
-  if (error instanceof InvalidReassignmentError || error instanceof PlanInputError) {
+  if (
+    error instanceof InvalidReassignmentError ||
+    error instanceof InvalidRoleError ||
+    error instanceof PlanInputError
+  ) {
     return badRequest(error.message);
   }
   // Archive blocked until every conflict is reassigned — 409 carrying the
