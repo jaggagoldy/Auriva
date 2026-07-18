@@ -16,7 +16,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { defaultWorkspacePathForRole } from '@/domain/authorization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -321,12 +320,11 @@ export default function UnifiedLoginGateway() {
         profile: data.staffProfile
       }));
 
-      // Redirect based on the server-confirmed role (map centralized in
-      // src/domain/authorization)
-      const workspacePath = defaultWorkspacePathForRole(data.user.role);
-      if (workspacePath) {
-        router.push(workspacePath);
-      }
+      // APS-045 §7: route through the workspace landing hub. It resolves WHICH
+      // workspace (auto-open the only one, remember-last, or the Selector for a
+      // real choice) and the SURFACE each opens into (resolveSurface) — the
+      // login screen no longer hard-codes the landing path.
+      router.push('/workspace');
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Failed to authenticate');
     } finally {

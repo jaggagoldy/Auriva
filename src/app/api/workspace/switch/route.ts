@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { badRequest, forbidden, ok, serverError, unauthorized } from "@/api/http";
 import { getCurrentSession } from "@/api/session";
-import { switchWorkspace, WorkspaceAccessError } from "@/services/workspace-service";
+import { switchWorkspace, getWorkspaceSurface, WorkspaceAccessError } from "@/services/workspace-service";
 
 // Batch A · A3: switch the session's active workspace (membership). The service
 // resolves the membership scoped to the caller, so a membership the caller
@@ -23,7 +23,14 @@ export async function POST(request: NextRequest) {
         userId: session.userId,
         membershipId: membership_id,
       });
-      return ok({ success: true, workspace });
+      // The screen comes from resolveSurface, scoped to the newly-active
+      // membership — the client navigates there (no re-auth, session preserved).
+      const { surfacePath } = await getWorkspaceSurface({
+        userId: session.userId,
+        role: session.role,
+        activeMembershipId: workspace.membershipId,
+      });
+      return ok({ success: true, workspace, surfacePath });
     } catch (error) {
       if (error instanceof WorkspaceAccessError) return forbidden(error.message);
       throw error;

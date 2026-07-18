@@ -165,3 +165,51 @@ export async function getWorkspaceSurface(session: {
     clinicId: membership.clinicId,
   };
 }
+
+export type Landing =
+  | { mode: "direct"; surfacePath: string | null; activeMembershipId: string | null }
+  | { mode: "selector"; workspaces: WorkspaceSummary[] };
+
+/**
+ * APS-045 §7 — where a staff session lands after authentication. The Selector
+ * chooses WHICH workspace, never which screen: the screen always comes from
+ * resolveSurface. Decision tree:
+ *   - no staff membership (owner via ownership)  → direct → cockpit
+ *   - exactly one membership                     → direct → its surface (auto-open, no selector)
+ *   - several, last workspace still valid        → direct → remembered workspace's surface
+ *   - several, nothing remembered (or stale)     → selector
+ */
+export async function resolveLanding(session: {
+  userId: string;
+  role: string;
+  activeMembershipId: string | null;
+}): Promise<Landing> {
+  const workspaces = await listWorkspacesForUser(session.userId);
+
+  if (workspaces.length === 0) {
+    const surface = await getWorkspaceSurface(session);
+    return { mode: "direct", surfacePath: surface.surfacePath, activeMembershipId: null };
+  }
+
+  if (workspaces.length === 1) {
+    const only = workspaces[0].membershipId;
+    const surface = await getWorkspaceSurface({ ...session, activeMembershipId: only });
+    return { mode: "direct", surfacePath: surface.surfacePath, activeMembershipId: only };
+  }
+
+  // Several: reuse the remembered workspace when it is STILL VALID (still one of
+  // the caller's current memberships), else present the Selector.
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { last_workspace_id: true },
+  });
+  const remembered =
+    user?.last_workspace_id && workspaces.some((w) => w.membershipId === user.last_workspace_id)
+      ? user.last_workspace_id
+      : null;
+  if (remembered) {
+    const surface = await getWorkspaceSurface({ ...session, activeMembershipId: remembered });
+    return { mode: "direct", surfacePath: surface.surfacePath, activeMembershipId: remembered };
+  }
+  return { mode: "selector", workspaces };
+}
