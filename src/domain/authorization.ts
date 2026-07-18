@@ -49,6 +49,21 @@ export function isSuperAdmin(role: string): boolean {
   return role === "super_admin";
 }
 
+// Batch D · D2: the three roles activated from the dormant union. Predicates
+// stay here so every role comparison remains centralized (no `role === "..."`
+// literals outside this module).
+export function isPracticeManager(role: string): boolean {
+  return role === "practice_manager";
+}
+
+export function isNurse(role: string): boolean {
+  return role === "nurse";
+}
+
+export function isTechnician(role: string): boolean {
+  return role === "technician";
+}
+
 // ---------------------------------------------------------------------------
 // Capabilities (Sprint 1 rules, verbatim)
 // ---------------------------------------------------------------------------
@@ -110,15 +125,33 @@ export const WORKSPACE_CAPABILITIES = [
   "doctor_workspace", // clinical: consultation, prescriptions, schedule
   "admin_portal", // organization owner portal
   "patient_workspace", // patient portal (never granted to staff; here for completeness)
+  // Batch D · D2: the Technician's workflow container. Deliberately NARROWER
+  // than `reception` — it opens the /staff surface for diagnostics work WITHOUT
+  // conferring the reception-gated actions (billing, booking, consultation), so
+  // activating the Technician role can never over-grant front-desk authority.
+  "diagnostics", // diagnostics/results worklist on the /staff surface
 ] as const;
 
 export type Capability = (typeof WORKSPACE_CAPABILITIES)[number];
 
-/** The capabilities each base role holds by default — today's rules, verbatim. */
+/**
+ * The capabilities each base role holds by default.
+ *
+ * Batch D · D2 activates the three roles onto their FROZEN surfaces (C2):
+ * Practice Manager → /admin (admin_portal), Nurse → /doctor (doctor_workspace,
+ * alongside the Doctor — surfaces are workflow containers, not per-role apps),
+ * Technician → /staff (the narrow `diagnostics` capability, never `reception`).
+ * These grant SURFACE ACCESS; which ACTIONS each may take inside is governed by
+ * the C2 permission model (`permissionsForRole`), so no role is over-granted by
+ * sharing a surface.
+ */
 export function defaultCapabilitiesForRole(role: string): Capability[] {
   if (isSuperAdmin(role)) return ["reception", "doctor_workspace", "admin_portal"];
+  if (isPracticeManager(role)) return ["admin_portal"];
   if (isDoctor(role)) return ["doctor_workspace"];
+  if (isNurse(role)) return ["doctor_workspace"];
   if (isReceptionist(role)) return ["reception"];
+  if (isTechnician(role)) return ["diagnostics"];
   if (isPatient(role)) return ["patient_workspace"];
   return [];
 }
@@ -367,15 +400,16 @@ export function defaultWorkspacePathForRole(role: string): string | null {
  *
  *   - solo (single-member clinic AND the full capability set) → consolidated /clinic
  *   - admin_portal            → Owner / Practice-Manager cockpit  /admin
- *   - doctor_workspace        → Doctor workspace                  /doctor
- *   - reception               → Reception workspace               /staff
+ *   - doctor_workspace        → Doctor / Nurse clinical workspace  /doctor
+ *   - reception | diagnostics → Reception / Technician workspace   /staff
  *   - none of the above       → null (no staff surface)
  *
  * Pure — the "grow into a team" transition falls out for free: a solo
  * owner-doctor resolves to /clinic while their clinic has one member, and to the
- * cockpit the moment a second joins (isSoloClinic flips). Nurse/Technician/
- * Practice-Manager surfaces follow once their capability bundles are frozen
- * (ERA-001 C2, Batch D); the four live roles resolve today.
+ * cockpit the moment a second joins (isSoloClinic flips). Batch D · D2 completes
+ * the mapping for all six roles: surfaces are workflow CONTAINERS (a Nurse joins
+ * the Doctor on /doctor, a Technician the Reception surface on /staff), with the
+ * C2 permission model — not the surface — deciding what each may do there.
  */
 export function resolveSurfacePath(
   capabilities: Capability[],
@@ -387,6 +421,6 @@ export function resolveSurfacePath(
   }
   if (has("admin_portal")) return "/admin";
   if (has("doctor_workspace")) return "/doctor";
-  if (has("reception")) return "/staff";
+  if (has("reception") || has("diagnostics")) return "/staff";
   return null;
 }
