@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
-import { canAccessAdminPortal } from "@/domain/authorization";
+import { canAdministerOrganization } from "@/domain/authorization";
 import prisma from "@/lib/prisma";
 import { archiveMember, getArchiveConflicts, reassignmentTargets } from "@/services/membership-service";
 
@@ -33,7 +33,7 @@ export async function GET(
 ) {
   try {
     const { staffId } = await params;
-    const auth = await requireStaffContext(canAccessAdminPortal);
+    const auth = await requireStaffContext(canAdministerOrganization);
     if (!auth.ok) return auth.response;
     const member = await resolveMemberClinic(staffId, auth.clinicId);
     if (!member) return ok({ conflicts: [], targets: [] });
@@ -54,7 +54,7 @@ export async function POST(
 ) {
   try {
     const { staffId } = await params;
-    const auth = await requireStaffContext(canAccessAdminPortal);
+    const auth = await requireStaffContext(canAdministerOrganization);
     if (!auth.ok) return auth.response;
     const member = await resolveMemberClinic(staffId, auth.clinicId);
     if (!member) return serverError("Team member not found in this clinic", new Error("not found"));

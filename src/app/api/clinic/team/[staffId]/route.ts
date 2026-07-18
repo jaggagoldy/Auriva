@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
-import { canAccessAdminPortal } from "@/domain/authorization";
+import { canAdministerOrganization } from "@/domain/authorization";
 import prisma from "@/lib/prisma";
 import { reactivateMember, suspendMember } from "@/services/membership-service";
 
@@ -15,7 +15,7 @@ export async function PATCH(
 ) {
   try {
     const { staffId } = await params;
-    const auth = await requireStaffContext(canAccessAdminPortal);
+    const auth = await requireStaffContext(canAdministerOrganization);
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));

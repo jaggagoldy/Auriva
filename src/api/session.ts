@@ -17,6 +17,7 @@ import {
   isPatient,
   isDoctor,
   canAccessReception,
+  canAccessAdminPortal,
   effectiveCapabilities,
   type Capability,
 } from "@/domain/authorization";
@@ -380,16 +381,25 @@ export async function requireAppointmentAccess(requested: {
 }
 
 type OrganizationAuthResult =
-  | { ok: true; session: ActiveSession; organizationId: string }
+  | { ok: true; session: ActiveSession; organizationId: string; isLegalOwner: boolean }
   | { ok: false; response: NextResponse };
 
 /**
  * Sprint 3 (OPS-001): the organization-level counterpart to
- * requireStaffContext — resolves which Organization the caller may operate
- * on (owner-only today, mirroring canAccessAdminPortal), instead of which
- * Clinic. Use this for org-wide operations (invitations, org settings,
- * departments, org-wide command center); keep using requireStaffContext,
- * unchanged, for anything clinic-scoped (reception, billing, queue).
+ * requireStaffContext — resolves which Organization the caller may operate on,
+ * instead of which Clinic. Use this for org-wide operations (invitations, org
+ * settings, departments, org-wide command center); keep using
+ * requireStaffContext, unchanged, for anything clinic-scoped.
+ *
+ * Batch D · D3 (Ownership & Operational Authority): resolution is now
+ * authority-aware. The LEGAL-owner path (Organization.owner_user_id) is tried
+ * first and is unchanged, so the owner behaves exactly as before and the result
+ * carries `isLegalOwner: true`. Failing that, an OPERATIONAL member (a Practice
+ * Manager, or an operational owner) resolves the org they belong to via their
+ * active membership — scoped to their own user id, so they can never resolve an
+ * org they don't belong to (APS-044 §13a) — with `isLegalOwner: false`. Callers
+ * that must be the legal owner (plan, ownership transfer, deletion) assert
+ * `isLegalOwner` or use requireLegalOwnerContext.
  */
 export async function requireOrganizationContext(
   authorize: (role: string) => boolean,
@@ -403,24 +413,52 @@ export async function requireOrganizationContext(
     return { ok: false, response: forbidden("Your role cannot access this resource.") };
   }
 
-  if (requestedOrganizationId) {
-    const organization = await prisma.organization.findFirst({
-      where: { id: requestedOrganizationId, owner_user_id: session.userId },
-    });
-    if (!organization) {
-      return { ok: false, response: forbidden("You do not have access to this organization.") };
-    }
-    return { ok: true, session, organizationId: organization.id };
-  }
-
-  const firstOrganization = await prisma.organization.findFirst({
-    where: { owner_user_id: session.userId },
+  // 1) Legal-owner path (unchanged): an org this caller owns via owner_user_id.
+  const owned = await prisma.organization.findFirst({
+    where: requestedOrganizationId
+      ? { id: requestedOrganizationId, owner_user_id: session.userId }
+      : { owner_user_id: session.userId },
     orderBy: { name: "asc" },
   });
-  if (!firstOrganization) {
-    return { ok: false, response: forbidden("No organization is associated with this account.") };
+  if (owned) {
+    return { ok: true, session, organizationId: owned.id, isLegalOwner: true };
   }
-  return { ok: true, session, organizationId: firstOrganization.id };
+
+  // 2) Operational path (D3): resolve via the caller's own active membership
+  //    (StaffProfile → clinic → organization). Scoped by user_id, so the org is
+  //    always one they actually belong to; a requested id must match it.
+  const profile = await prisma.staffProfile.findFirst({
+    where: {
+      user_id: session.userId,
+      membership_status: "active",
+      ...(requestedOrganizationId ? { clinic: { organization_id: requestedOrganizationId } } : {}),
+    },
+    select: { clinic: { select: { organization_id: true } } },
+    orderBy: { id: "asc" },
+  });
+  if (profile) {
+    return { ok: true, session, organizationId: profile.clinic.organization_id, isLegalOwner: false };
+  }
+
+  return { ok: false, response: forbidden("No organization is associated with this account.") };
+}
+
+/**
+ * Batch D · D3: the LEGAL-owner-only counterpart — for the never-delegated
+ * actions (plan/subscription, ownership transfer, organization deletion). The
+ * caller must be the single legal owner (Organization.owner_user_id) of the
+ * resolved org; an operational owner or Practice Manager is refused even though
+ * they administer everything else.
+ */
+export async function requireLegalOwnerContext(
+  requestedOrganizationId?: string | null
+): Promise<OrganizationAuthResult> {
+  const auth = await requireOrganizationContext(canAccessAdminPortal, requestedOrganizationId);
+  if (!auth.ok) return auth;
+  if (!auth.isLegalOwner) {
+    return { ok: false, response: forbidden("Only the practice owner can perform this action.") };
+  }
+  return auth;
 }
 
 type PlatformAdminAuthResult =

@@ -1,6 +1,6 @@
 import { ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { listClinicsWithStaff } from '@/repositories/clinic-repository';
 
 // GET /api/clinics — the branches of the caller's own organization. Sprint 3
@@ -8,7 +8,7 @@ import { listClinicsWithStaff } from '@/repositories/clinic-repository';
 // all, returning every clinic on the platform (see docs — audit finding).
 export async function GET() {
   try {
-    const auth = await requireOrganizationContext(canAccessAdminPortal);
+    const auth = await requireOrganizationContext(canAdministerOrganization);
     if (!auth.ok) return auth.response;
 
     const clinics = await listClinicsWithStaff(auth.organizationId);

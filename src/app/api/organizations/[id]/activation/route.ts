@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { getActivationStatus } from '@/services/onboarding-service';
 
 // GET — the Organization Activated checklist (APS-030 Step 8): real,
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     return ok(await getActivationStatus(auth.organizationId));

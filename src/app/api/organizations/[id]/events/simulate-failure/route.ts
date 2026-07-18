@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { ok, serverError } from "@/api/http";
 import { requireOrganizationContext } from "@/api/session";
-import { canAccessAdminPortal } from "@/domain/authorization";
+import { canAdministerOrganization } from "@/domain/authorization";
 import { simulateFailure } from "@/services/event-log-service";
 
 /**
@@ -15,7 +15,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const event = await simulateFailure(auth.organizationId, auth.session.userId);

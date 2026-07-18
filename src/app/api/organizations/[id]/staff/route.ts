@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { badRequest, mapDomainError, ok, serverError, tooManyRequests } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { provisionStaff } from '@/services/onboarding-service';
 import { checkRateLimit, clientIp } from '@/lib/rate-limit';
 
@@ -16,7 +16,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     // Provisioning creates a real credentialed account — throttle by org and by

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { getOrganizationCommandCenterSnapshot } from '@/services/command-center-service';
 
 // Live operational snapshot for the owner's Command Center (APS-045, Sprint
@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     return ok(await getOrganizationCommandCenterSnapshot(auth.organizationId));

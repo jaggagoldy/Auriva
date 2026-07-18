@@ -366,6 +366,21 @@ export function hasPermission(permission: Permission, permissions: Permission[])
   return permissions.includes(permission);
 }
 
+/**
+ * Batch D · D3: OPERATIONAL organization authority — may run the practice
+ * (team, settings, reports, scheduling). Deliberately expressed through the
+ * permission model rather than a role-name check, so it stays honest to the
+ * frozen C2 matrix: it admits the Owner and the Practice Manager, and no one
+ * else. The LEGAL-owner actions (plan/subscription, ownership transfer, org
+ * deletion) are NOT gated by this — they are gated by legal ownership
+ * (Organization.owner_user_id), a data fact resolved per request, never by role.
+ * This is the separation the ownership model freezes: many may operate the
+ * practice; exactly one owns it.
+ */
+export function canAdministerOrganization(role: string): boolean {
+  return can("settings:manage", role);
+}
+
 // ---------------------------------------------------------------------------
 // Routing
 // ---------------------------------------------------------------------------

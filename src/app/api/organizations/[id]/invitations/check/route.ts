@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { checkInvitePhone } from '@/services/onboarding-service';
 
 // BRD-043 US-202 (Sprint 2): the inline, live duplicate-phone check behind
@@ -16,7 +16,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const phone = request.nextUrl.searchParams.get('phone') ?? '';

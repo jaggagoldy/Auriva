@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireOrganizationContext } from "@/api/session";
-import { canAccessAdminPortal } from "@/domain/authorization";
+import { canAdministerOrganization } from "@/domain/authorization";
 import { listEvents, replayEvent } from "@/services/event-log-service";
 
 // Developer Event Hub (Epic C: Shared Event Platform). Org-scoped like every
@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
@@ -42,7 +42,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));

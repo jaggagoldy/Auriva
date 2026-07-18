@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { badRequest, mapDomainError, ok, serverError, tooManyRequests } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { createInvitation, listPendingInvitations } from '@/services/onboarding-service';
 import { checkRateLimit, clientIp } from '@/lib/rate-limit';
 
@@ -15,7 +15,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     return ok(await listPendingInvitations(auth.organizationId));
@@ -30,7 +30,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     // BRD-043 US-103 (Sprint 1): an invite token is a bearer credential to

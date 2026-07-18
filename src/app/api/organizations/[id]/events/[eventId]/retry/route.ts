@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireOrganizationContext } from "@/api/session";
-import { canAccessAdminPortal } from "@/domain/authorization";
+import { canAdministerOrganization } from "@/domain/authorization";
 import { retryHandler } from "@/services/event-log-service";
 
 /** POST { handler_name }: manually retry one handler, skipping its backoff delay. */
@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     const { id, eventId } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));
