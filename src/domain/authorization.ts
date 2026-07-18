@@ -177,3 +177,36 @@ export function defaultWorkspacePathForRole(role: string): string | null {
   if (isReceptionist(role)) return "/clinic";
   return null;
 }
+
+/**
+ * APS-045 §6 — the capability-driven Surface resolver. Maps an active
+ * membership's EFFECTIVE capabilities (+ whether its clinic is single-member) to
+ * the surface it opens into. This is the principled replacement for the
+ * "everyone → /clinic" default above; it is wired into login/switch in a later
+ * Batch C milestone (the default is kept until then).
+ *
+ *   - solo (single-member clinic AND the full capability set) → consolidated /clinic
+ *   - admin_portal            → Owner / Practice-Manager cockpit  /admin
+ *   - doctor_workspace        → Doctor workspace                  /doctor
+ *   - reception               → Reception workspace               /staff
+ *   - none of the above       → null (no staff surface)
+ *
+ * Pure — the "grow into a team" transition falls out for free: a solo
+ * owner-doctor resolves to /clinic while their clinic has one member, and to the
+ * cockpit the moment a second joins (isSoloClinic flips). Nurse/Technician/
+ * Practice-Manager surfaces follow once their capability bundles are frozen
+ * (ERA-001 C2, Batch D); the four live roles resolve today.
+ */
+export function resolveSurfacePath(
+  capabilities: Capability[],
+  isSoloClinic: boolean
+): string | null {
+  const has = (c: Capability) => capabilities.includes(c);
+  if (isSoloClinic && has("reception") && has("doctor_workspace") && has("admin_portal")) {
+    return "/clinic";
+  }
+  if (has("admin_portal")) return "/admin";
+  if (has("doctor_workspace")) return "/doctor";
+  if (has("reception")) return "/staff";
+  return null;
+}

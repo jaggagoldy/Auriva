@@ -9,6 +9,7 @@
 // reachable through any account.
 
 import prisma from "@/lib/prisma";
+import { effectiveCapabilities, resolveSurfacePath } from "@/domain/authorization";
 
 export class WorkspaceAccessError extends Error {}
 
@@ -129,5 +130,38 @@ export async function resolveActiveMembership(
     capabilitiesRaw: profile.capabilities,
     membershipStatus: profile.membership_status,
     mustChangePassword: profile.user.must_change_password,
+  };
+}
+
+export interface WorkspaceSurface {
+  surfacePath: string | null;
+  clinicId: string | null;
+}
+
+/**
+ * APS-045 §6 — resolve the SURFACE a staff session opens into. Composes the
+ * active membership (seam) with its effective capabilities and whether its
+ * clinic is single-member (the "solo" signal), then applies resolveSurfacePath.
+ * A caller with no staff membership (an owner operating purely via ownership)
+ * resolves from their role's default capabilities alone — never "solo
+ * consolidated", which requires an owner-doctor membership in a one-person clinic.
+ */
+export async function getWorkspaceSurface(session: {
+  userId: string;
+  role: string;
+  activeMembershipId: string | null;
+}): Promise<WorkspaceSurface> {
+  const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+  if (!membership) {
+    const caps = effectiveCapabilities(session.role, null);
+    return { surfacePath: resolveSurfacePath(caps, false), clinicId: null };
+  }
+  const caps = effectiveCapabilities(session.role, membership.capabilitiesRaw);
+  const activeMembers = await prisma.staffProfile.count({
+    where: { clinic_id: membership.clinicId, membership_status: "active" },
+  });
+  return {
+    surfacePath: resolveSurfacePath(caps, activeMembers === 1),
+    clinicId: membership.clinicId,
   };
 }
