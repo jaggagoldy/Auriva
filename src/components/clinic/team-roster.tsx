@@ -15,6 +15,7 @@ import { Loader2, MoreVertical, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
 
 interface Member {
@@ -187,11 +188,11 @@ export function TeamRoster({ onInvite, onUpgrade }: { onInvite: () => void; onUp
 
       {/* Member cards (US-401) */}
       {team.members.length <= 1 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center">
-          <Users className="mx-auto size-5 text-muted-foreground" />
-          <p className="mt-2 text-sm font-medium">It&apos;s just you right now</p>
-          <p className="text-xs text-muted-foreground">Invite a doctor or receptionist — your plan includes room for both.</p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="It's just you right now"
+          description="Invite a doctor or receptionist — your plan includes room for both."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {team.members.map((m) => (
