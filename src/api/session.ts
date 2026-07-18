@@ -212,9 +212,20 @@ export async function requireStaffContext(
   if (!isSuperAdmin(session.role)) {
     const staffProfile = await prisma.staffProfile.findUnique({
       where: { user_id: session.userId },
+      include: { user: { select: { must_change_password: true } } },
     });
     if (!staffProfile) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
+    }
+    // Batch A (APS-044 §9): a provisioned account must set its own password
+    // before any workspace is usable — enforced here at the request boundary,
+    // not only in the UI (UXS-043 Package 1). Joined onto the profile load, so
+    // no extra query. The change-password endpoint uses the raw session, not
+    // this guard, so the member can still clear the flag. The Owner
+    // (super_admin) never reaches this branch and self-registers their own
+    // password, so it can never carry this flag.
+    if (staffProfile.user.must_change_password) {
+      return { ok: false, response: forbidden("Set a new password to continue.") };
     }
     // BRD-043 Sprint 4: a suspended or archived member is denied at the
     // request boundary regardless of a still-live session — defense-in-depth

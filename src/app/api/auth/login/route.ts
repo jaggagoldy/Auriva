@@ -96,6 +96,11 @@ export async function POST(request: NextRequest) {
           phone_number: user.phone_number,
           email: user.email,
           role: user.role,
+          // Batch A (APS-044 §9): a provisioned account signs in with a
+          // temporary password and must set its own before any workspace is
+          // usable — the client routes to the Mandatory Password Change screen
+          // (UXS-043 Package 1). Server-enforced too, in requireStaffContext.
+          must_change_password: user.must_change_password,
         },
         staffProfile: user.staffProfile,
       });
