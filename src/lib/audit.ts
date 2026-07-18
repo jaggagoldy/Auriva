@@ -65,7 +65,10 @@ export async function resolveOrganizationIdForStaffUser(
     });
     return organization?.id ?? null;
   }
-  const staffProfile = await prisma.staffProfile.findUnique({
+  // Batch B: a person may hold several memberships (one per clinic). This
+  // resolves the org for an audit tag at login, before any workspace is chosen,
+  // so any of their memberships' org is acceptable — findFirst, not findUnique.
+  const staffProfile = await prisma.staffProfile.findFirst({
     where: { user_id: userId },
     select: { clinic: { select: { organization_id: true } } },
   });

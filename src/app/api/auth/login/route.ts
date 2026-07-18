@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
       const user = await prisma.user.findFirst({
         where: usingEmail ? { email: identifier } : { phone_number: identifier },
-        include: { staffProfile: true },
+        include: { staffProfiles: true },
       });
 
       // One message for "no such user", "patient account" and "wrong password"
@@ -77,15 +77,16 @@ export async function POST(request: NextRequest) {
         return forbidden('This account has been deactivated. Contact your administrator.');
       }
 
-      // Batch A · A3: open the session into the caller's workspace. A staff
-      // member has exactly one membership today (their StaffProfile) — the
-      // Workspace Selector chooses among several after Batch B. Owners with no
-      // staff profile carry no active membership.
+      // Batch B: open the session into the caller's workspace. Exactly one
+      // membership auto-opens into it; with several, none is set and the
+      // Workspace Selector picks (UXS-043 Package 1). Owners with no staff
+      // profile carry no active membership.
+      const memberships = user.staffProfiles;
       const { rawToken, expires_at } = await createSession(
         user.id,
         user.role,
         null,
-        user.staffProfile?.id ?? null
+        memberships.length === 1 ? memberships[0].id : null
       );
       await setSessionCookie(rawToken, expires_at);
 
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
           // (UXS-043 Package 1). Server-enforced too, in requireStaffContext.
           must_change_password: user.must_change_password,
         },
-        staffProfile: user.staffProfile,
+        staffProfile: memberships[0] ?? null,
       });
     } catch (error) {
       return serverError('Error logging in B2B user', error);

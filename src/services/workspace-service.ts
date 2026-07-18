@@ -84,3 +84,50 @@ export async function switchWorkspace(input: {
 
   return toSummary(profile);
 }
+
+/**
+ * The membership a staff request is acting under — the resolution seam.
+ *
+ * Backed by StaffProfile TODAY (SAD-043 §9.3), but every caller depends on this
+ * shape, NOT on StaffProfile, so the backing store can evolve (e.g. a dedicated
+ * Membership entity) without touching request-boundary code. Keep this the only
+ * place the "membership = StaffProfile" assumption lives.
+ */
+export interface ResolvedMembership {
+  membershipId: string;
+  userId: string;
+  clinicId: string;
+  capabilitiesRaw: string | null;
+  membershipStatus: string;
+  mustChangePassword: boolean;
+}
+
+/**
+ * Resolve the membership a staff session is acting under. Prefers the session's
+ * active_membership_id — scoped to the caller (`id` AND `user_id`), so it can
+ * never resolve a membership the caller doesn't hold (the isolation guarantee,
+ * APS-044 §13a). Falls back to the caller's single active membership when unset
+ * (backward-compat + single-clinic today). Status is returned, not filtered, in
+ * the active case so the caller can surface a precise "not active" message.
+ */
+export async function resolveActiveMembership(
+  userId: string,
+  activeMembershipId: string | null
+): Promise<ResolvedMembership | null> {
+  const profile = await prisma.staffProfile.findFirst({
+    where: activeMembershipId
+      ? { id: activeMembershipId, user_id: userId }
+      : { user_id: userId, membership_status: "active" },
+    include: { user: { select: { must_change_password: true } } },
+    orderBy: { id: "asc" }, // deterministic pick for the single-membership fallback
+  });
+  if (!profile) return null;
+  return {
+    membershipId: profile.id,
+    userId: profile.user_id,
+    clinicId: profile.clinic_id,
+    capabilitiesRaw: profile.capabilities,
+    membershipStatus: profile.membership_status,
+    mustChangePassword: profile.user.must_change_password,
+  };
+}

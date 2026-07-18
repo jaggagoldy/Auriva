@@ -25,7 +25,7 @@ export default async function StaffLayout({
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    include: { staffProfile: true },
+    include: { staffProfiles: true },
   });
   if (!user) {
     redirect("/login");
@@ -33,7 +33,7 @@ export default async function StaffLayout({
 
   return (
     <StaffShell
-      displayName={user.staffProfile?.full_name ?? user.email ?? "Staff"}
+      displayName={user.staffProfiles[0]?.full_name ?? user.email ?? "Staff"}
       role={session.role}
       capabilities={capabilities}
     >

@@ -45,7 +45,7 @@ model User {
   // Relations
   clinics      Clinic[]        @relation("ClinicSuperAdmin")
   ownedOrganizations Organization[] @relation("OrganizationOwner")
-  staffProfile StaffProfile?
+  staffProfiles StaffProfile[]
   patientProfile PatientProfile?
   sessions     Session[]
   memberships  OrganizationMember[]
@@ -342,7 +342,12 @@ model AuditLog {
 
 model StaffProfile {
   id           String        @id @default(uuid())
-  user_id      String        @unique
+  // Batch B (APS-044 P6 / SAD-043 §9.3): relaxed 1:1 → 1:N so one identity can
+  // hold a membership per clinic. Was @unique; now indexed. A 2nd profile for an
+  // existing user is not created by any code path yet (provision/accept both mint
+  // a new user), so the single-profile invariant still holds and re-adding the
+  // unique is a safe rollback until the "join another clinic" capability ships.
+  user_id      String
   clinic_id    String
   specialty    String?       // e.g., 'Cardiologist'
   full_name    String        // Added for UI display (Lead Dev decision)
@@ -392,6 +397,7 @@ model StaffProfile {
   reviews       Review[]
   favoritedBy   PatientFavoriteDoctor[]
 
+  @@index([user_id])
   @@map("Staff_Profiles")
 }
 

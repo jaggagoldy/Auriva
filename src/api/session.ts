@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { forbidden, unauthorized } from "@/api/http";
+import { resolveActiveMembership } from "@/services/workspace-service";
 import {
   isSuperAdmin,
   isPatient,
@@ -232,35 +233,35 @@ export async function requireStaffContext(
   // profile also carries their capability grants (Batch 2), so it is loaded
   // before the authorization decision.
   if (!isSuperAdmin(session.role)) {
-    const staffProfile = await prisma.staffProfile.findUnique({
-      where: { user_id: session.userId },
-      include: { user: { select: { must_change_password: true } } },
-    });
-    if (!staffProfile) {
+    // Batch B: resolve the membership this session is acting under — via the
+    // session's active_membership_id (scoped to the caller, so it can never
+    // resolve a membership they don't hold), falling back to their single
+    // active membership. This is what scopes a clinic-bound staff member to the
+    // CLINIC OF THEIR ACTIVE WORKSPACE once a person can hold several (APS-044
+    // §13a). StaffProfile is today's backing store (SAD-043 §9.3) — this code
+    // depends on the ResolvedMembership shape, not on it.
+    const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+    if (!membership) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
     }
     // Batch A (APS-044 §9): a provisioned account must set its own password
-    // before any workspace is usable — enforced here at the request boundary,
-    // not only in the UI (UXS-043 Package 1). Joined onto the profile load, so
-    // no extra query. The change-password endpoint uses the raw session, not
-    // this guard, so the member can still clear the flag. The Owner
-    // (super_admin) never reaches this branch and self-registers their own
-    // password, so it can never carry this flag.
-    if (staffProfile.user.must_change_password) {
+    // before any workspace is usable — enforced at the request boundary, not
+    // only in the UI. The change-password endpoint uses the raw session, not
+    // this guard, so the member can still clear the flag.
+    if (membership.mustChangePassword) {
       return { ok: false, response: forbidden("Set a new password to continue.") };
     }
-    // BRD-043 Sprint 4: a suspended or archived member is denied at the
-    // request boundary regardless of a still-live session — defense-in-depth
-    // alongside session revocation + the is_active login gate. The Owner
-    // (super_admin) never reaches this branch and can't be suspended.
-    if (staffProfile.membership_status !== "active") {
+    // BRD-043 Sprint 4: a suspended or archived membership is denied here
+    // regardless of a still-live session — and, per §13a, this is PER-MEMBERSHIP
+    // (suspended in one clinic never affects another).
+    if (membership.membershipStatus !== "active") {
       return { ok: false, response: forbidden("This account is not active. Contact your practice owner.") };
     }
-    const capabilities = effectiveCapabilities(session.role, staffProfile.capabilities);
+    const capabilities = effectiveCapabilities(session.role, membership.capabilitiesRaw);
     if (!isStaffAuthorized(authorize, session.role, capabilities)) {
       return { ok: false, response: forbidden("Your role cannot access this resource.") };
     }
-    return { ok: true, session, clinicId: staffProfile.clinic_id, capabilities };
+    return { ok: true, session, clinicId: membership.clinicId, capabilities };
   }
 
   // super_admin: holds every default capability; must operate within a clinic
@@ -297,16 +298,15 @@ export async function requireStaffContext(
  * unauthenticated or profile-less non-owner account.
  */
 export async function getEffectiveCapabilitiesForSession(
-  session: Pick<ActiveSession, "userId" | "role">
+  session: Pick<ActiveSession, "userId" | "role" | "activeMembershipId">
 ): Promise<Capability[]> {
   if (isSuperAdmin(session.role)) {
     return effectiveCapabilities(session.role, null);
   }
-  const staffProfile = await prisma.staffProfile.findUnique({
-    where: { user_id: session.userId },
-    select: { capabilities: true },
-  });
-  return effectiveCapabilities(session.role, staffProfile?.capabilities ?? null);
+  // Batch B: capabilities come from the ACTIVE membership (via the seam), so a
+  // multi-clinic member's grants track the workspace they're in.
+  const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+  return effectiveCapabilities(session.role, membership?.capabilitiesRaw ?? null);
 }
 
 type AppointmentScope =
@@ -356,16 +356,16 @@ export async function requireAppointmentAccess(requested: {
   }
 
   if (isDoctor(session.role)) {
-    const staffProfile = await prisma.staffProfile.findUnique({
-      where: { user_id: session.userId },
-    });
-    if (!staffProfile) {
+    // Batch B: a doctor's "own appointments" are scoped to the membership they
+    // are acting under (the active workspace), resolved via the seam.
+    const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+    if (!membership) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
     }
-    if (requested.doctorId && requested.doctorId !== staffProfile.id) {
+    if (requested.doctorId && requested.doctorId !== membership.membershipId) {
       return { ok: false, response: forbidden("You may only access your own appointments.") };
     }
-    return { ok: true, session, scope: { kind: "doctor", doctorId: staffProfile.id } };
+    return { ok: true, session, scope: { kind: "doctor", doctorId: membership.membershipId } };
   }
 
   if (canAccessReception(session.role)) {

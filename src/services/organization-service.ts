@@ -91,18 +91,21 @@ export async function updateOrganization(
 
 export async function getOrganizationMembers(organizationId: string): Promise<OrganizationMember[]> {
   const [org, members] = await Promise.all([
-    prisma.organization.findUnique({ where: { id: organizationId }, include: { owner: { include: { staffProfile: true } } } }),
+    prisma.organization.findUnique({ where: { id: organizationId }, include: { owner: { include: { staffProfiles: true } } } }),
     prisma.organizationMember.findMany({
       where: { organization_id: organizationId },
-      include: { user: { include: { staffProfile: true } } },
+      include: { user: { include: { staffProfiles: true } } },
     }),
   ]);
   if (!org) return [];
 
+  // Batch B: a person may hold several memberships; the display shape here uses
+  // one (the first) per member — refined per-clinic when the org roster becomes
+  // multi-membership-aware.
   return members.map((m) =>
     memberFromRow(
-      { ...m, staffProfile: m.user.staffProfile ?? null },
-      org.owner.staffProfile?.full_name ?? "Organization Owner"
+      { ...m, staffProfile: m.user.staffProfiles[0] ?? null },
+      org.owner.staffProfiles[0]?.full_name ?? "Organization Owner"
     )
   );
 }
@@ -120,7 +123,7 @@ export async function getMembership(
 ): Promise<OrganizationMember | null> {
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    include: { owner: { include: { staffProfile: true } } },
+    include: { owner: { include: { staffProfiles: true } } },
   });
   if (!org) return null;
 
@@ -132,9 +135,9 @@ export async function getMembership(
         user_id: userId,
         role: "owner",
         created_at: org.created_at,
-        staffProfile: org.owner.staffProfile,
+        staffProfile: org.owner.staffProfiles[0] ?? null,
       },
-      org.owner.staffProfile?.full_name ?? "Organization Owner"
+      org.owner.staffProfiles[0]?.full_name ?? "Organization Owner"
     );
   }
 
@@ -143,6 +146,8 @@ export async function getMembership(
   });
   if (!member) return null;
 
-  const profile = await prisma.staffProfile.findUnique({ where: { user_id: userId } });
+  // Batch B: a person may hold several memberships; this display-name lookup
+  // for a single org member is satisfied by any of them — findFirst.
+  const profile = await prisma.staffProfile.findFirst({ where: { user_id: userId } });
   return memberFromRow({ ...member, staffProfile: profile }, "Organization Owner");
 }

@@ -43,7 +43,7 @@ describe("provisionStaff — creates an active account with a temporary password
     expect(user?.must_change_password).toBe(true);
     expect(await verifyPassword(result.temporaryPassword, user?.password_hash)).toBe(true);
 
-    const profile = await prisma.staffProfile.findUnique({ where: { user_id: result.user.id } });
+    const profile = await prisma.staffProfile.findFirst({ where: { user_id: result.user.id } });
     expect(profile?.clinic_id).toBe(clinic.id);
     expect(profile?.membership_status).toBe("active");
     expect(profile?.specialty).toBeNull();
@@ -66,7 +66,7 @@ describe("provisionStaff — creates an active account with a temporary password
       specialty: "Dermatologist",
       actorUserId: owner.id,
     });
-    const profile = await prisma.staffProfile.findUnique({ where: { user_id: result.user.id } });
+    const profile = await prisma.staffProfile.findFirst({ where: { user_id: result.user.id } });
     expect(profile?.specialty).toBe("Dermatologist");
   });
 });

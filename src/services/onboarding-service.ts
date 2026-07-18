@@ -262,11 +262,11 @@ export async function checkInvitePhone(
     where: { phone_number: trimmed },
     include: {
       memberships: { where: { organization_id: organizationId } },
-      staffProfile: { select: { membership_status: true } },
+      staffProfiles: { select: { membership_status: true } },
     },
   });
   if (existingUser && existingUser.memberships.length > 0) {
-    const sp = existingUser.staffProfile;
+    const sp = existingUser.staffProfiles[0];
     if (!sp || sp.membership_status === "active") return { status: "active" };
   }
 
@@ -342,11 +342,11 @@ export async function createInvitation(input: {
     where: phone ? { phone_number: phone } : { email: email! },
     include: {
       memberships: { where: { organization_id: input.organizationId } },
-      staffProfile: { select: { membership_status: true } },
+      staffProfiles: { select: { membership_status: true } },
     },
   });
   if (existingUser && existingUser.memberships.length > 0) {
-    const sp = existingUser.staffProfile;
+    const sp = existingUser.staffProfiles[0];
     if (!sp || sp.membership_status === "active") {
       throw new DuplicateActiveMemberError("This person is already an active member of your team.");
     }
