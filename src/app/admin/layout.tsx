@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentSession } from "@/api/session";
 import { canAccessAdminPortal } from "@/domain/authorization";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 import CommandPalette from "@/components/admin/command-palette";
 
 // Sprint 3: /admin previously had no server-side guard at all (unlike
@@ -14,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session || !canAccessAdminPortal(session.role)) {
     redirect("/login");
   }
+  await requirePasswordChanged(session.userId);
   return (
     <>
       {children}

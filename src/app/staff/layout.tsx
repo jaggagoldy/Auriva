@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getCurrentSession, getEffectiveCapabilitiesForSession } from "@/api/session";
 import { hasCapability } from "@/domain/authorization";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 import StaffShell from "@/components/staff/staff-shell";
 
 export default async function StaffLayout({
@@ -14,6 +15,7 @@ export default async function StaffLayout({
   if (!session) {
     redirect("/login");
   }
+  await requirePasswordChanged(session.userId);
 
   // Batch 2: the front desk is reachable by anyone with the `reception`
   // capability — a receptionist, an owner, or a solo practitioner (a doctor

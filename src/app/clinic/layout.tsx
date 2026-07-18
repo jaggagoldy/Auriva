@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentSession, getEffectiveCapabilitiesForSession } from "@/api/session";
 import { hasCapability } from "@/domain/authorization";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 
 // Milestone 1 Batch 4: the "My Clinic" workspace is the solo owner's home.
 //
@@ -14,6 +15,7 @@ import { hasCapability } from "@/domain/authorization";
 export default async function ClinicLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
   if (!session) redirect("/login");
+  await requirePasswordChanged(session.userId);
 
   const capabilities = await getEffectiveCapabilitiesForSession(session);
   const isClinicStaff =

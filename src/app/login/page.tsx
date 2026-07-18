@@ -320,11 +320,10 @@ export default function UnifiedLoginGateway() {
         profile: data.staffProfile
       }));
 
-      // APS-045 §7: route through the workspace landing hub. It resolves WHICH
-      // workspace (auto-open the only one, remember-last, or the Selector for a
-      // real choice) and the SURFACE each opens into (resolveSurface) — the
-      // login screen no longer hard-codes the landing path.
-      router.push('/workspace');
+      // A provisioned account (temporary password) must set its own first
+      // (UXS-043 Package 1). Otherwise route through the workspace landing hub,
+      // which resolves WHICH workspace and the SURFACE it opens into (APS-045 §7).
+      router.push(data.user.must_change_password ? '/change-password' : '/workspace');
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Failed to authenticate');
     } finally {

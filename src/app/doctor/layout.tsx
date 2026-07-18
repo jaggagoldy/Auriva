@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getCurrentSession } from "@/api/session";
 import { effectiveCapabilities, hasCapability } from "@/domain/authorization";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 import DoctorShell from "@/components/doctor/doctor-shell";
 
 export default async function DoctorLayout({
@@ -14,6 +15,7 @@ export default async function DoctorLayout({
   if (!session) {
     redirect("/login");
   }
+  await requirePasswordChanged(session.userId);
 
   // Batch B: resolve the doctor's ACTIVE membership (workspace) — the session's
   // active_membership_id, scoped to the caller, else their single active

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/api/session";
 import { isPatient } from "@/domain/authorization";
 import { resolveLanding, switchWorkspace } from "@/services/workspace-service";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 
 // APS-045 §7 — the post-login landing hub. Resolves WHICH workspace (the
@@ -13,6 +14,8 @@ export default async function WorkspaceHubPage() {
   if (!session) redirect("/login");
   // Patients never route through here — they live in the patient world.
   if (isPatient(session.role)) redirect("/patient");
+  // A provisioned account must set its own password before any workspace opens.
+  await requirePasswordChanged(session.userId);
 
   const landing = await resolveLanding(session);
 
