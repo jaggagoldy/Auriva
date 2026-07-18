@@ -23,8 +23,6 @@ import {
 export const SESSION_COOKIE_NAME = "auriva_staff_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours — a work shift
 
-export type StaffRole = "receptionist" | "super_admin";
-
 function hashToken(rawToken: string): string {
   return createHash("sha256").update(rawToken).digest("hex");
 }

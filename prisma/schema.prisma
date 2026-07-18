@@ -34,6 +34,14 @@ model User {
   // set from any customer-facing signup/invite flow.
   is_platform_admin Boolean    @default(false)
 
+  // Phase 0 (APS-046 §4) — DORMANT additive columns for APS-044/SAD-043 §9.
+  // Nothing reads these yet; they are wired in Batch A (managed provisioning
+  // + "remember last workspace"). Nullable/defaulted → every existing row is
+  // unchanged and behaviour is identical until the feature flag turns on.
+  must_change_password Boolean  @default(false) // forces a password reset on first login (managed provisioning)
+  password_set_at      DateTime?                // temp-password rotation / audit
+  last_workspace_id    String?                  // "remember last workspace" (APS-045 §10)
+
   // Relations
   clinics      Clinic[]        @relation("ClinicSuperAdmin")
   ownedOrganizations Organization[] @relation("OrganizationOwner")
@@ -119,6 +127,9 @@ model OrganizationMember {
   user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, user_id])
+  // Phase 0 (APS-046 §4): the Workspace Selector lists "my memberships" by
+  // user_id; the composite unique above can't serve a user_id-only lookup.
+  @@index([user_id])
   @@map("Organization_Members")
 }
 
@@ -140,6 +151,12 @@ model Session {
   // Account_Profile_Links server-side, never trusted from the client. Null
   // for staff/doctor/admin sessions (not patient-scoped).
   active_healthcare_profile_id String?
+
+  // Phase 0 (APS-046 §4) — DORMANT. The staff twin of
+  // active_healthcare_profile_id: which membership (workspace) a staff session
+  // is currently acting in. Nothing reads it yet; wired in Batch A, and it
+  // becomes the cross-tenant scoping key in Batch B (SAD-043 §6).
+  active_membership_id String?
 
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 

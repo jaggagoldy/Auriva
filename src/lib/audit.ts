@@ -18,6 +18,7 @@
 
 import prisma from "@/lib/prisma";
 import { logger } from "@/api/logger";
+import { isSuperAdmin } from "@/domain/authorization";
 
 export async function recordAudit(input: {
   organizationId: string | null | undefined;
@@ -56,7 +57,7 @@ export async function resolveOrganizationIdForStaffUser(
   userId: string,
   role: string
 ): Promise<string | null> {
-  if (role === "super_admin") {
+  if (isSuperAdmin(role)) {
     const organization = await prisma.organization.findFirst({
       where: { owner_user_id: userId },
       orderBy: { name: "asc" },

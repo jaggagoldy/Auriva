@@ -9,8 +9,25 @@
 //
 // Pure TypeScript — safe to import from client and server code.
 
-/** The values stored in Users.role today. */
-export type UserRole = "patient" | "super_admin" | "doctor" | "receptionist";
+/**
+ * The role strings stored in Users.role / OrganizationMember.role.
+ *
+ * Phase 0 (APS-046 §4): the union is expanded to the six professional roles
+ * ahead of Batch D — this is DORMANT. No account is assigned
+ * `practice_manager` / `nurse` / `technician` yet, and their capability
+ * bundles are intentionally NOT defined here: they belong to the RBAC
+ * decision (ERA-001 C2) to be frozen before Batch D. `defaultCapabilitiesForRole`
+ * is therefore unchanged in this phase. `super_admin` remains the stored value
+ * for the Owner ("Owner" is a display label only — APS-044 §11).
+ */
+export type UserRole =
+  | "patient"
+  | "super_admin"
+  | "doctor"
+  | "receptionist"
+  | "practice_manager"
+  | "nurse"
+  | "technician";
 
 // ---------------------------------------------------------------------------
 // Identity predicates
