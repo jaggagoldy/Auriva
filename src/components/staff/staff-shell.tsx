@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   CalendarDays,
+  ChevronDown,
   FlaskConical,
   LayoutDashboard,
   ListChecks,
@@ -49,18 +50,15 @@ export default function StaffShell({ displayName, role, capabilities, children }
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <Toaster position="bottom-right" />
-      <aside className="flex w-[248px] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+
+      {/* PKG-1 rail */}
+      <aside className="flex w-[228px] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-4">
           <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Activity className="size-4" />
           </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">Auriva</div>
-            <div className="text-[11px] text-muted-foreground">Reception</div>
-          </div>
+          <div className="text-sm font-semibold">Auriva</div>
         </div>
-
-        <WorkspaceSwitcher capabilities={capabilities} current="reception" />
 
         <nav className="flex-1 space-y-0.5 p-3">
           <NavItem
@@ -102,32 +100,40 @@ export default function StaffShell({ displayName, role, capabilities, children }
           />
         </nav>
 
-        <div className="flex items-center gap-1.5 border-t p-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
-              {getInitials(displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-sm font-medium">{displayName}</div>
-            <div className="truncate text-[11px] text-muted-foreground capitalize">
-              {role.replace("_", " ")}
-            </div>
-          </div>
-          <WhatsNew />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Log out"
-            disabled={loggingOut}
-            onClick={handleLogout}
-          >
-            <LogOut />
-          </Button>
-        </div>
+        {/* Solo-only surface switch */}
+        <WorkspaceSwitcher capabilities={capabilities} current="reception" />
       </aside>
 
-      <div className="min-w-0 flex-1 overflow-y-auto">{children}</div>
+      {/* PKG-1 main: top bar (clinic switcher + avatar) over the content */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4">
+          <Link
+            href="/workspace"
+            className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors hover:bg-muted"
+          >
+            <span className="grid size-6 place-items-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+              R
+            </span>
+            <span className="font-medium">Front desk</span>
+            <span className="capitalize text-muted-foreground">· {role.replace("_", " ")}</span>
+            <ChevronDown className="size-4 text-muted-foreground" />
+          </Link>
+
+          <div className="ml-auto flex items-center gap-2">
+            <WhatsNew />
+            <Avatar className="size-8" title={displayName}>
+              <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" size="icon-sm" aria-label="Log out" disabled={loggingOut} onClick={handleLogout}>
+              <LogOut />
+            </Button>
+          </div>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      </div>
     </div>
   );
 }
