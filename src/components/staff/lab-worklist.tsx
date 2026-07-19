@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/states";
 import {
   Table,
   TableBody,
@@ -128,15 +129,12 @@ export default function LabWorklist() {
               ))}
             </div>
           ) : orders.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <FlaskConical className="size-10 text-muted-foreground/50" />
-              <p className="text-sm font-medium">
-                {filter === "ordered" ? "All caught up — no pending orders" : "Nothing here yet"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Doctors order tests from the consult workbench.
-              </p>
-            </div>
+            <EmptyState
+              icon={FlaskConical}
+              title={filter === "ordered" ? "All caught up — no pending orders" : "Nothing here yet"}
+              description="Doctors order tests from the consult workbench; they'll appear here to fulfil."
+              className="border-0 py-14"
+            />
           ) : (
             <Table>
               <TableHeader>

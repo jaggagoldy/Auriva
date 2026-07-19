@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Building2,
-  ChevronRight,
   MapPin,
   Plus,
   RefreshCw,
@@ -246,21 +245,25 @@ export default function AdminWorkspace() {
           </div>
         </header>
 
-        <div className="flex h-10 shrink-0 items-center gap-1.5 border-b bg-muted/30 px-6 text-sm">
-          <span className="text-muted-foreground">Organization Workspace</span>
-          <ChevronRight className="size-3.5 text-muted-foreground/60" />
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-muted/30 px-6 text-sm">
+          {/* UXS-043 F2 — the canonical workspace switcher chip, same shape as
+              Doctor/Reception (`[mark] Clinic · Role ▾`); here it drives the
+              owner's branch switch (behaviour unchanged, presentation only). */}
           <Select
             value={clinicId}
             onValueChange={(value) => handleClinicChange(value as string)}
           >
             <SelectTrigger
-              className="h-7 w-auto gap-1.5 border-none bg-transparent px-2 font-medium shadow-none hover:bg-muted"
-              aria-label="Branch"
+              className="h-auto w-auto gap-2 rounded-lg border bg-card px-2.5 py-1.5 font-normal shadow-none hover:bg-muted"
+              aria-label="Clinic workspace"
             >
               <SelectValue>
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Building2 className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{clinic?.name ?? "Select branch"}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+                    {(clinic?.name ?? "S").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="truncate font-medium">{clinic?.name ?? "Select clinic"}</span>
+                  <span className="text-muted-foreground">· Owner</span>
                 </span>
               </SelectValue>
             </SelectTrigger>
