@@ -28,9 +28,18 @@ function healthId(): string {
 async function main() {
   const password_hash = await hashPassword(DEV_PASSWORD);
 
-  // Idempotency: remove any prior run. Deleting the demo users cascades their
-  // profiles, memberships, org (owner relation), clinic, and appointments.
+  // Idempotency: remove any prior run.
+  // NOTE: PatientProfile.user_id is onDelete:SetNull, so deleting the demo
+  // *users* would orphan their healthcare profiles (and their phone Contacts),
+  // and login resolves a phone → profiles via Contact.value — so every reseed
+  // used to accumulate duplicate "Amit Patel" profiles on the same number.
+  // Delete the demo patient profiles explicitly (by their demo phone contact);
+  // PatientProfile cascades to its contacts, links, appointments and invoices.
   console.log("Cleaning previous India demo…");
+  await prisma.patientProfile.deleteMany({
+    where: { contacts: { some: { value: { startsWith: DEMO_PREFIX } } } },
+  });
+  // Then the demo users (staff, owner) — cascades org, clinic, staff, memberships.
   await prisma.user.deleteMany({ where: { phone_number: { startsWith: DEMO_PREFIX } } });
 
   console.log("Seeding Sunrise Health Network (Pune)…");
@@ -272,6 +281,40 @@ async function main() {
   });
   await prisma.payment.create({
     data: { invoice_id: invoice.id, clinic_id: clinic.id, amount: 900, method: "upi", received_by_user_id: reception.user.id },
+  });
+
+  // A past completed visit for Amit (the primary patient-app demo account) with a
+  // real prescription + paid invoice — so his Records timeline, "For you today"
+  // medicine, and payment history all populate (PKG-5 Home).
+  const amitPast = await prisma.appointment.create({
+    data: {
+      patient_id: amit.id, doctor_id: drAnanya.profile.id, clinic_id: clinic.id,
+      scheduled_time: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), status: "completed",
+      checked_in_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      started_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000 + 6 * 60 * 1000),
+      completed_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000 + 22 * 60 * 1000),
+      chief_complaint: "Routine diabetes & BP review",
+      diagnosis: "Type 2 diabetes · Hypertension",
+      prescription_notes: "Continue current regimen. Recheck in 3 months.",
+      prescription_medicines_json: JSON.stringify([
+        { id: "m1", name: "Metformin", dosage: "500mg", frequency: "1-0-1", duration: "90 days" },
+        { id: "m2", name: "Amlodipine", dosage: "5mg", frequency: "1-0-0", duration: "90 days" },
+      ]),
+      follow_up_date: new Date(Date.now() + 76 * 24 * 60 * 60 * 1000),
+    },
+  });
+  const amitInvoice = await prisma.invoice.create({
+    data: {
+      clinic_id: clinic.id, patient_id: amit.id, appointment_id: amitPast.id,
+      invoice_number: "SUN-0003", status: "paid", total: 600,
+      paid_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+      items_json: JSON.stringify([
+        { description: "Consultation — Cardiologist", qty: 1, unit_price: 600, amount: 600 },
+      ]),
+    },
+  });
+  await prisma.payment.create({
+    data: { invoice_id: amitInvoice.id, clinic_id: clinic.id, amount: 600, method: "upi", received_by_user_id: reception.user.id },
   });
 
   await prisma.auditLog.createMany({

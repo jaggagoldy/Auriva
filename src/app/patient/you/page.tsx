@@ -3,21 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ShieldCheck, MonitorSmartphone, LogOut, Pencil } from "lucide-react";
+import { ChevronRight, ShieldCheck, MonitorSmartphone, LogOut, User, CreditCard, Bell, Shield } from "lucide-react";
 import { usePatientSession } from "@/components/patient/patient-session";
-import HealthSummaryDialog from "@/components/patient/health-summary-dialog";
 import { getInitials } from "@/shared/queue";
-
-function ageFrom(dob: string | null): string {
-  if (!dob) return "—";
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return "—";
-  const now = new Date();
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
-  return `${age} yrs`;
-}
 
 export default function PatientYouPage() {
   const { patientProfile, user } = usePatientSession();
@@ -29,13 +17,6 @@ export default function PatientYouPage() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   }
-
-  const health = [
-    { k: "Blood group", v: patientProfile.blood_group || "—" },
-    { k: "Age", v: ageFrom(patientProfile.date_of_birth) },
-    { k: "Allergies", v: patientProfile.allergies || "None" },
-    { k: "Conditions", v: patientProfile.chronic_conditions || "None" },
-  ];
 
   return (
     <div>
@@ -51,28 +32,19 @@ export default function PatientYouPage() {
           </span>
           <div className="min-w-0">
             <p className="truncate font-heading text-[17px] font-bold">{patientProfile.full_name}</p>
-            <p className="truncate text-[12.5px] text-muted-foreground">{user.phone_number || user.email || patientProfile.health_id}</p>
+            <p className="truncate text-[12.5px] text-muted-foreground">
+              {[patientProfile.health_id, user.phone_number || user.email].filter(Boolean).join(" · ")}
+            </p>
           </div>
         </div>
 
-        {/* Health summary */}
-        <div className="mt-6 mb-3 flex items-center justify-between px-1">
-          <p className="text-[12px] font-bold tracking-[0.06em] text-muted-foreground uppercase">Health summary</p>
-          <HealthSummaryDialog
-            trigger={
-              <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-honey-deep">
-                <Pencil className="size-3.5" /> Edit
-              </button>
-            }
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {health.map((h) => (
-            <div key={h.k} className="rounded-[14px] border bg-card p-3.5">
-              <p className="text-[10.5px] font-bold tracking-[0.05em] text-muted-foreground uppercase">{h.k}</p>
-              <p className="mt-1 font-heading text-[16px] font-bold break-words">{h.v}</p>
-            </div>
-          ))}
+        {/* PKG-5 Account — the mockup's identity/account rows */}
+        <p className="mt-6 mb-3 px-1 text-[12px] font-bold tracking-[0.06em] text-muted-foreground uppercase">Account</p>
+        <div className="divide-y rounded-[16px] border bg-card px-4">
+          <SettingRow href="/patient/profile" icon={User} label="Personal details" sub="Name, DOB, blood group" />
+          <SettingRow icon={Shield} label="Insurance" sub="Not added yet" soon />
+          <SettingRow href="/patient/records?tab=bills" icon={CreditCard} label="Payments" sub="Bills & receipts" />
+          <SettingRow href="/patient/settings" icon={Bell} label="Notifications" sub="Reminders & results" />
         </div>
 
         {/* Settings */}
@@ -98,18 +70,39 @@ function SettingRow({
   href,
   icon: Icon,
   label,
+  sub,
+  soon,
 }: {
-  href: string;
+  href?: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  sub?: string;
+  soon?: boolean;
 }) {
-  return (
-    <Link href={href} className="flex items-center gap-3 py-4">
+  const inner = (
+    <>
       <span className="grid size-9 shrink-0 place-items-center rounded-[11px] bg-secondary text-muted-foreground">
         <Icon className="size-[18px]" />
       </span>
-      <span className="flex-1 font-heading text-[14.5px] font-semibold">{label}</span>
-      <ChevronRight className="size-[18px] shrink-0 text-muted-foreground/40" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-heading text-[14.5px] font-semibold">{label}</span>
+        {sub && <span className="block truncate text-[11.5px] text-muted-foreground">{sub}</span>}
+      </span>
+      {soon ? (
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Soon
+        </span>
+      ) : (
+        <ChevronRight className="size-[18px] shrink-0 text-muted-foreground/40" />
+      )}
+    </>
+  );
+  if (soon || !href) {
+    return <div className="flex items-center gap-3 py-4">{inner}</div>;
+  }
+  return (
+    <Link href={href} className="flex items-center gap-3 py-4">
+      {inner}
     </Link>
   );
 }
