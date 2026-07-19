@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  CalendarDays,
   FlaskConical,
   LayoutDashboard,
   ListChecks,
@@ -73,6 +74,13 @@ export default function StaffShell({ displayName, role, capabilities, children }
             label="Queue Board"
             href="/staff/queue"
             active={pathname === "/staff/queue"}
+          />
+          {/* PKG-4: reception calendar (reuses ClinicCalendar) */}
+          <NavItem
+            icon={CalendarDays}
+            label="Calendar"
+            href="/staff/calendar"
+            active={pathname === "/staff/calendar"}
           />
           <NavItem
             icon={UserPlus}

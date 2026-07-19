@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Inbox, Loader2, RefreshCw } from "lucide-react";
+import { Clock, Inbox, Loader2, RefreshCw, Users } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { Button } from "@/components/ui/button";
 
@@ -106,11 +106,44 @@ export default function QueueBoard() {
     return map;
   }, [appointments]);
 
+  // PKG-4 operational awareness strip (V1) — existing data only. Informational,
+  // not a warning: queue size, longest current wait, and any doctor running
+  // behind. No notify action, no capacity thresholds (deferred, Product Office).
+  const awareness = React.useMemo(() => {
+    const waitingList = (appointments ?? []).filter(
+      (a) => a.status === "waiting" || a.status === "doctor_ready"
+    );
+    const now = Date.now();
+    const longestWait = waitingList.reduce((max, a) => {
+      const since = a.checked_in_at ? new Date(a.checked_in_at).getTime() : new Date(a.scheduled_time).getTime();
+      const mins = Math.floor((now - since) / 60000);
+      return mins > max ? mins : max;
+    }, 0);
+    const behindByDoctor = new Map<string, number>();
+    for (const a of waitingList) {
+      const late = Math.floor((now - new Date(a.scheduled_time).getTime()) / 60000);
+      if (late > 0 && a.doctor_id) {
+        behindByDoctor.set(a.doctor_id, Math.max(behindByDoctor.get(a.doctor_id) ?? 0, late));
+      }
+    }
+    const doctorDelays = [...behindByDoctor.entries()]
+      .map(([id, m]) => ({ name: doctors.find((d) => d.id === id)?.full_name ?? "A doctor", minutes: Math.round(m / 5) * 5 }))
+      .filter((d) => d.minutes >= 5)
+      .sort((a, b) => b.minutes - a.minutes)
+      .slice(0, 2);
+    return { waiting: waitingList.length, longestWait, doctorDelays };
+  }, [appointments, doctors]);
+
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-6">
-        <h1 className="text-sm font-semibold">Queue Board</h1>
-        <div className="ml-auto flex items-center gap-2">
+      {/* PKG-4 Board: "Today's flow" hero — front-desk framing + guidance */}
+      <header className="flex shrink-0 flex-wrap items-start justify-between gap-3 border-b px-6 py-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Front desk · live</div>
+          <h1 className="text-lg font-bold tracking-tight">Today&apos;s flow</h1>
+          <p className="text-xs text-muted-foreground">Check people in, move the queue, keep the room moving.</p>
+        </div>
+        <div className="flex items-center gap-2">
           <GlobalSearch value={search} onChange={setSearch} className="w-64" />
           <DoctorFilter doctors={doctors} value={doctorId} onChange={setDoctorId} />
           <Button
@@ -126,6 +159,28 @@ export default function QueueBoard() {
           {clinicId && <WalkInModal clinicId={clinicId} doctors={doctors} onRegistered={load} />}
         </div>
       </header>
+
+      {/* PKG-4 operational awareness strip — calm, glanceable, existing data only */}
+      {appointments !== null && awareness.waiting > 0 && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b bg-muted/30 px-6 py-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            {awareness.waiting} patient{awareness.waiting === 1 ? "" : "s"} waiting
+          </span>
+          {awareness.longestWait > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" />
+              Longest current wait: {awareness.longestWait} minute{awareness.longestWait === 1 ? "" : "s"}
+            </span>
+          )}
+          {awareness.doctorDelays.map((d) => (
+            <span key={d.name} className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" />
+              {d.name} is approximately {d.minutes} minutes behind schedule
+            </span>
+          ))}
+        </div>
+      )}
 
       {error && appointments === null ? (
         <div className="flex flex-1 items-center justify-center">

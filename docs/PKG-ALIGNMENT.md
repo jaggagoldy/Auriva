@@ -54,6 +54,20 @@ Invite-card wired → `/admin` (Team → Invite Member). Grow Transition deferre
 - **Already aligned (verified):** patients-total metric; 3-column Workbench (queue-sidebar · consult-workbench · context-panel); Patients 4-column table (Visits + Last Dx present); Practice subnav; Schedule tabs.
 - **C (deferred by PO):** Patients Favourites/High-Risk/Follow-up-Due facets; Schedule "Requests" tab.
 - **Workbench experience validation (Rule #4):** consultation-first 3-column layout preserved — queue rail (context) · consult (primary) · context panel; primary actions obvious; minimal distraction. ✅
-## PKG-4 — Reception · ⬜ not started (largest known gap)
+## PKG-4 — Reception · status: **🔒 FROZEN** (Product Office, 2026-07-19)
+
+| Screen | Route | Header | Nav | Info Hier. | Sections | Copy | Interactions | Empty | Loading | Error | Success | Responsive | A11y | Approved |
+|---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Board ("Today's flow") | `/staff` | ✅ hero eyebrow+h1+sub | ✅ | ✅ hero→awareness→queue→actions | ✅ + **awareness strip** | ✅ calm wording | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Desk ("Collect & close") | `/staff/billing` | ✅ Cash desk framing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ skeletons | ✅ | — | ✅ | ✅ | 🔒 |
+| Walk-in modal | `/staff` | ✅ | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| Checkout modal | `/staff/billing` | ✅ | — | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| Calendar ("Clinic calendar") | `/staff/calendar` | ✅ Front desk framing | ✅ nav entry | ✅ | ✅ reused ClinicCalendar (read-only) | ✅ | ✅ book via existing flow | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+
+### PKG-4 change log
+- **A (implemented):** Board → "Today's flow" hero (eyebrow "Front desk · live" + h1 + sub); Desk → "Collect & close" (eyebrow "Cash desk").
+- **B/C (approved, existing-data only):** operational **awareness strip** V1 — patients waiting · longest current wait · doctor(s) approximately N min behind (rounded). Calm, informational; **no** notify/capacity/thresholds (deferred, PO).
+- **Verified aligned:** Walk-in + Checkout modals present; queue columns per status (hierarchy).
+- **B (implemented, PO-approved):** reception Calendar — new `/staff/calendar` route reusing `ClinicCalendar` (all doctors, `readOnly` hides the doctor-only "Block time" editing) + a "Calendar" nav entry. No new scheduling engine; books via the existing flow.
 ## PKG-5 — Patient · ⬜ not started (highest existing alignment)
 ## PKG-6 — Resilience · ⬜ not started (note: LoadingState=spinner must become skeletons)

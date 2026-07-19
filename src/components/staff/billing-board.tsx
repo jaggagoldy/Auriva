@@ -126,9 +126,11 @@ export default function BillingBoard() {
     <div className="mx-auto max-w-6xl space-y-4 p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+          {/* PKG-4 Desk framing */}
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Cash desk</div>
+          <h1 className="text-xl font-semibold tracking-tight">Collect &amp; close</h1>
           <p className="text-sm text-muted-foreground">
-            Invoices draft automatically when a consultation completes.
+            Visits finished with the doctor, waiting to be billed &mdash; invoices draft themselves on completion.
           </p>
         </div>
       </div>

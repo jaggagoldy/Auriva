@@ -60,7 +60,10 @@ function fmtTime(iso: string): string {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const VIEWS: CalView[] = ["day", "week", "month"];
 
-export function ClinicCalendar({ doctorId }: { doctorId: string | null }) {
+// PKG-4: `readOnly` hides the doctor-only "Block time" editing so Reception can
+// reuse the same calendar for viewing days + free slots + booking, without the
+// owner/doctor availability controls. Defaults false (unchanged for /clinic).
+export function ClinicCalendar({ doctorId, readOnly = false }: { doctorId: string | null; readOnly?: boolean }) {
   const [view, setView] = React.useState<CalView>("week");
   const [anchor, setAnchor] = React.useState<string | null>(null);
   const [days, setDays] = React.useState<SDay[] | null>(null);
@@ -128,7 +131,9 @@ export function ClinicCalendar({ doctorId }: { doctorId: string | null }) {
               </button>
             ))}
           </div>
-          <Button size="sm" variant="outline" onClick={() => setBlockOpen(true)}><Ban className="size-4" /> Block time</Button>
+          {!readOnly && (
+            <Button size="sm" variant="outline" onClick={() => setBlockOpen(true)}><Ban className="size-4" /> Block time</Button>
+          )}
         </div>
       </div>
 
