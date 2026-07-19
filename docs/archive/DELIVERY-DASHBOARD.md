@@ -17,7 +17,7 @@ Last updated: 2026-07-18 · Phase 0 + Batch A + Batch B + **Batch C ✅** done; 
 |---|---|
 | **Overall Product Completion** | **~92%** |
 | Feature completion | ✅ **~100%** for the planned Professional Edition scope (no more feature additions) |
-| Current phase | **Batch F — Release Candidate Readiness**; now in **F3A PKG Alignment** (baseline = PKG-1→6, `PRODUCT_BASELINE.md`) |
+| Current phase | **Batch F — Release Candidate Readiness**; **F3A ✅ · F3B-1 ✅ · F3B-2 (Release docs) ready** → F4 next |
 | Current batch | Batch A–E ✅ · **Batch F** — F1 ✅ · F2 ✅ · **F3A PKG Alignment: F3A COMPLETE (PKG-1..6 🔒) · F3B next** · F3B · F4 |
 | Engineering health | 🟢 Strong — 522 tests green, tsc + `next build` clean |
 | UX readiness | 🟢 100% — UXS-043 Packages 1–6 frozen + consistency-audited |
