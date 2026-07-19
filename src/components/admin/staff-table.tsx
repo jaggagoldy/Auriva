@@ -38,10 +38,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Doctor, formatDay, getInitials } from "@/shared/queue";
 import { PendingInvite, ROLE_META, roleOf } from "@/shared/workspace";
+import type { DoctorActivity } from "./workspace";
 
 interface StaffTableProps {
   staff: Doctor[] | null;
   invites: PendingInvite[];
+  /** PKG-2: per-doctor "today" activity, keyed by staff profile id. */
+  activity: Record<string, DoctorActivity>;
   /** Sprint 3: needed to call the org-scoped staff-management API. */
   organizationId: string | null;
   onRevokeInvite: (id: string) => void;
@@ -57,6 +60,7 @@ async function copyToClipboard(value: string, label: string) {
 export default function StaffTable({
   staff,
   invites,
+  activity,
   organizationId,
   onRevokeInvite,
   onStaffChanged,
@@ -67,7 +71,7 @@ export default function StaffTable({
         <TableRow className="hover:bg-transparent">
           <TableHead className="pl-4">Staff Member</TableHead>
           <TableHead>Role</TableHead>
-          <TableHead>Specialty</TableHead>
+          <TableHead>Today</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="w-12 pr-4" />
         </TableRow>
@@ -115,6 +119,7 @@ export default function StaffTable({
               <StaffRow
                 key={member.id}
                 member={member}
+                activity={activity[member.id]}
                 organizationId={organizationId}
                 onStaffChanged={onStaffChanged}
               />
@@ -133,14 +138,17 @@ function RoleBadge({ role }: { role: keyof typeof ROLE_META }) {
 
 function StaffRow({
   member,
+  activity,
   organizationId,
   onStaffChanged,
 }: {
   member: Doctor;
+  activity?: DoctorActivity;
   organizationId: string | null;
   onStaffChanged: () => void;
 }) {
   const role = roleOf(member);
+  const isDoctor = role === "doctor";
   const [busy, setBusy] = React.useState(false);
   // Sprint 3: is_active comes from the staff-management API; treat a legacy
   // payload without the field as active (the pre-Sprint-3 default).
@@ -190,9 +198,38 @@ function StaffRow({
       </TableCell>
       <TableCell>
         <RoleBadge role={role} />
+        {member.specialty && (
+          <div className="mt-0.5 text-[11px] text-muted-foreground">{member.specialty}</div>
+        )}
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {member.specialty ?? "—"}
+      {/* PKG-2: what this member is doing today */}
+      <TableCell>
+        {isDoctor && activity && activity.total > 0 ? (
+          <div className="min-w-[130px]">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="tabular-nums">
+                {activity.seen} of {activity.total} seen
+              </span>
+              {activity.inConsult ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10.5px] font-semibold text-primary">
+                  In consult
+                </span>
+              ) : (
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10.5px] font-semibold text-success">
+                  Available
+                </span>
+              )}
+            </div>
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary/70"
+                style={{ width: `${Math.round((activity.seen / activity.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        )}
       </TableCell>
       <TableCell>
         {active ? (

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Building2,
-  CalendarDays,
   ChevronRight,
   MapPin,
   Plus,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,17 +60,31 @@ async function fetchWorkspaceData(clinicId: string, organizationId: string) {
   const invites: PendingInvite[] = inviteRes.ok
     ? (await inviteRes.json()).map(pendingInviteFromApi)
     : [];
-  return {
-    staff,
-    invites,
-    todayCount: appointments.filter((a) => isToday(a.scheduled_time)).length,
-  };
+
+  // PKG-2: what each doctor is doing today — seen / booked + "in consult",
+  // from the appointments already loaded (owner's live team view).
+  const today = appointments.filter((a) => isToday(a.scheduled_time));
+  const activity: Record<string, DoctorActivity> = {};
+  for (const a of today) {
+    const d = (activity[a.doctor_id] ??= { seen: 0, total: 0, inConsult: false });
+    d.total += 1;
+    if (a.status === "completed") d.seen += 1;
+    if (a.status === "in_consultation") d.inConsult = true;
+  }
+  return { staff, invites, todayCount: today.length, activity };
+}
+
+export interface DoctorActivity {
+  seen: number;
+  total: number;
+  inConsult: boolean;
 }
 
 export default function AdminWorkspace() {
   const [clinics, setClinics] = React.useState<ClinicSummary[] | null>(null);
   const [clinicId, setClinicId] = React.useState<string | null>(null);
   const [staff, setStaff] = React.useState<Doctor[] | null>(null);
+  const [activity, setActivity] = React.useState<Record<string, DoctorActivity>>({});
   const [todayCount, setTodayCount] = React.useState<number | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [invites, setInvites] = React.useState<PendingInvite[]>([]);
@@ -113,6 +128,7 @@ export default function AdminWorkspace() {
     (data: Awaited<ReturnType<typeof fetchWorkspaceData>>) => {
       setStaff(data.staff);
       setInvites(data.invites);
+      setActivity(data.activity);
       setTodayCount(data.todayCount);
       setError(null);
     },
@@ -199,10 +215,6 @@ export default function AdminWorkspace() {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <CalendarDays className="size-3.5" />
-              <span>{formatDay(new Date())}</span>
-            </div>
             <WhatsNew />
             <ActivityBell organizationId={organizationId} />
             <Button
@@ -214,6 +226,23 @@ export default function AdminWorkspace() {
             >
               <RefreshCw />
             </Button>
+            {/* PKG-2 top bar: Invite staff + profile avatar */}
+            {clinicId && organizationId && (
+              <InviteStaffDialog
+                clinicName={clinic?.name ?? "this clinic"}
+                organizationId={organizationId}
+                clinics={(clinics ?? []).map((c) => ({ id: c.id, name: c.name }))}
+                defaultClinicId={clinicId}
+                onInvited={handleInvited}
+              />
+            )}
+            <Link href="/admin/settings" aria-label="Profile & settings">
+              <Avatar className="size-8">
+                <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
+                  AR
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
         </header>
 
@@ -349,6 +378,7 @@ export default function AdminWorkspace() {
               <StaffTable
                 staff={staff}
                 invites={invites}
+                activity={activity}
                 organizationId={organizationId}
                 onRevokeInvite={handleRevokeInvite}
                 onStaffChanged={handleRefresh}
