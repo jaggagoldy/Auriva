@@ -154,7 +154,8 @@ export default function UnifiedLoginGateway() {
         description: 'See the verification panel for your code.'
       });
     } catch (err) {
-      toast.error(errorMessage(err) ?? 'Something went wrong');
+      // PKG-6: plain, actionable fallback — never a bare "Something went wrong".
+      toast.error(errorMessage(err) ?? "Couldn't send the code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -288,7 +289,8 @@ export default function UnifiedLoginGateway() {
       toast.success(`Welcome to Auriva, ${updatedProfile.full_name}!`);
       router.push('/patient');
     } catch (err) {
-      toast.error(errorMessage(err) ?? 'Something went wrong');
+      // PKG-6: plain, actionable fallback.
+      toast.error(errorMessage(err) ?? "Couldn't save your profile. Please try again.");
     } finally {
       setLoading(false);
     }
