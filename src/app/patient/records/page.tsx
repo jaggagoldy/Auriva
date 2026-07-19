@@ -132,7 +132,7 @@ function Row({ av, avTone, title, meta, right }: { av: React.ReactNode; avTone?:
 function TimelinePane({ appointments, timeline }: { appointments: Appointment[] | null; timeline: Appointment[] }) {
   if (appointments === null) return <Skeleton n={3} h={72} />;
   if (timeline.length === 0)
-    return <Empty icon={CalendarCheck2} title="Nothing here yet" sub="Your visit history builds up here over time." />;
+    return <Empty icon={CalendarCheck2} title="Your first visit will appear here" sub="Every visit and report lands here, newest first — nothing to do yet." />;
   return (
     <div className="space-y-2.5">
       {timeline.map((a) => {

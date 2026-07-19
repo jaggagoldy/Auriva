@@ -177,8 +177,8 @@ export default function BillingBoard() {
           ) : invoices.length === 0 ? (
             <EmptyState
               icon={ReceiptText}
-              title="No invoices here yet"
-              description="Complete a consultation and its invoice drafts itself."
+              title="Nothing to collect right now"
+              description="You're all caught up. A visit's invoice drafts itself the moment the consultation is completed."
               className="border-0 py-14"
             />
           ) : (

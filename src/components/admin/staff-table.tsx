@@ -100,8 +100,8 @@ export default function StaffTable({
             <TableCell colSpan={5} className="py-12">
               <EmptyState
                 icon={UserX}
-                title="No staff yet"
-                description="Invite doctors and receptionists to this workspace."
+                title="No team yet — invite your first member"
+                description="Add the doctors and receptionists who run this clinic. Use “Invite staff” above to send the first invitation."
                 className="border-0 py-0"
               />
             </TableCell>

@@ -283,9 +283,14 @@ export default function QueueBoard() {
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={Inbox}
-            title="The queue is empty"
-            description="No appointments match the current filters for today."
+            title="Waiting room is clear"
+            description="You're all caught up — no one is waiting. Register a walk-in when the next patient arrives."
             className="border-0"
+            action={
+              clinicId ? (
+                <WalkInModal clinicId={clinicId} doctors={doctors} onRegistered={load} />
+              ) : undefined
+            }
           />
         </div>
       ) : appointments === null ? (

@@ -117,7 +117,17 @@ export default function DoctorToday() {
               ))}
             </div>
           ) : waiting.length === 0 ? (
-            <EmptyState icon={Inbox} title="No one waiting" description="Patients appear here as reception checks them in." className="border-0" />
+            <EmptyState
+              icon={Inbox}
+              title="No one waiting"
+              description="You're all caught up. Patients appear here as reception checks them in."
+              className="border-0"
+              action={
+                <Button variant="outline" size="sm" onClick={() => router.push("/doctor/schedule")}>
+                  Open schedule
+                </Button>
+              }
+            />
           ) : (
             <>
               <div className="divide-y">

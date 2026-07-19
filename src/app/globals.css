@@ -155,4 +155,18 @@
   html {
     @apply font-sans;
   }
+
+  /* PKG-6 §10 / §10a Motion Principles — honour the OS "reduce motion" setting
+     platform-wide: no shimmer, slide, or transition; state changes are instant.
+     The only place motion remains is where it carries meaning and is opt-in. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
