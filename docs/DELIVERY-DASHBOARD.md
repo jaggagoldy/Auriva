@@ -18,7 +18,7 @@ Last updated: 2026-07-18 · Phase 0 + Batch A + Batch B + **Batch C ✅** done; 
 | **Overall Product Completion** | **~92%** |
 | Feature completion | ✅ **~100%** for the planned Professional Edition scope (no more feature additions) |
 | Current phase | **Batch F — Release Candidate Readiness**; now in **F3A PKG Alignment** (baseline = PKG-1→6, `PRODUCT_BASELINE.md`) |
-| Current batch | Batch A–E ✅ · **Batch F** — F1 ✅ · F2 ✅ · **F3A PKG Alignment: PKG-1 🔒 · PKG-2 🔒 · PKG-3 🔒 · PKG-4 🔒 · PKG-5 (Patient) next** · F3B · F4 |
+| Current batch | Batch A–E ✅ · **Batch F** — F1 ✅ · F2 ✅ · **F3A PKG Alignment: PKG-1..5 🔒 · PKG-6 (Resilience) next** · F3B · F4 |
 | Engineering health | 🟢 Strong — 522 tests green, tsc + `next build` clean |
 | UX readiness | 🟢 100% — UXS-043 Packages 1–6 frozen + consistency-audited |
 | Product readiness | 🟢 100% — Product Office frozen (APS-044/045/046, SAD-043) |
@@ -46,7 +46,7 @@ Last updated: 2026-07-18 · Phase 0 + Batch A + Batch B + **Batch C ✅** done; 
 | 🎉 **Auriva Professional Edition** | Identity · Workspace · RBAC · Ownership · Team Management | ✅ **FEATURE COMPLETE** | 100 | No |
 | **Batch E** | **Experience Polish & Consistency** — components (E1) + adoption (E2) + feedback vocabulary + India demo seed + UX audit (E3) | ✅ Complete | 100 | No |
 | **Batch F** | **Release Candidate Readiness** — F1 ✅ · F2 ✅ · **F3A PKG Alignment** (PKG-1→6, one at a time) · F3B Production Readiness · F4 RC & Go-Live | 🟡 In progress | 45 | No |
-| **F3A — PKG Alignment** | Faithfully align each surface to its frozen PKG-1→6 spec — complete→review→freeze per package. Baseline: `PRODUCT_BASELINE.md` | 🟡 **PKG-1 🔒 · PKG-2 🔒 · PKG-3 🔒 · PKG-4 🔒 · PKG-5 next** | 33 | **Yes (per PKG)** |
+| **F3A — PKG Alignment** | Faithfully align each surface to its frozen PKG-1→6 spec — complete→review→freeze per package. Baseline: `PRODUCT_BASELINE.md` | 🟡 **PKG-1..5 🔒 · PKG-6 next** | 33 | **Yes (per PKG)** |
 | 🎉 **Demo Environment** | India-centric seed (Sunrise Health Network, Pune) — all 6 roles, UPI invoice | ✅ Ready | 100 | No |
 | QA / Regression | Full suite + isolation CI gate | 🟡 Ongoing | 60 | No |
 | Release Candidate | Flag flip → pilot | ⏳ Pending | 0 | No |

@@ -64,6 +64,10 @@ function RecordsInner() {
     <div>
       <div className="sticky top-0 z-20 bg-background/90 px-5 pt-5 pb-2 backdrop-blur">
         <h1 className="font-heading text-[21px] font-bold">Your records</h1>
+        {/* PKG-5: warm reassurance */}
+        <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+          You&apos;re all caught up &mdash; every visit and report, in one place.
+        </p>
         <div className="mt-3 flex gap-1.5 rounded-[13px] bg-secondary p-1">
           {TABS.map((t) => (
             <button

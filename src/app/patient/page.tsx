@@ -132,9 +132,9 @@ export default function PatientHomePage() {
           </div>
         )}
 
-        {/* Quick access */}
+        {/* PKG-5: Quick actions */}
         <p className="mt-6 mb-3 px-1 text-[12px] font-bold tracking-[0.06em] text-muted-foreground uppercase">
-          Quick access
+          Quick actions
         </p>
         <div className="grid grid-cols-2 gap-3">
           <Tile href="/patient/records?tab=rx" tone="honey" icon={Pill} name="Prescriptions" meta="Your medicines" />

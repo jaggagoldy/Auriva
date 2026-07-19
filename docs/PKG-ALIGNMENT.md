@@ -69,5 +69,18 @@ Invite-card wired → `/admin` (Team → Invite Member). Grow Transition deferre
 - **B/C (approved, existing-data only):** operational **awareness strip** V1 — patients waiting · longest current wait · doctor(s) approximately N min behind (rounded). Calm, informational; **no** notify/capacity/thresholds (deferred, PO).
 - **Verified aligned:** Walk-in + Checkout modals present; queue columns per status (hierarchy).
 - **B (implemented, PO-approved):** reception Calendar — new `/staff/calendar` route reusing `ClinicCalendar` (all doctors, `readOnly` hides the doctor-only "Block time" editing) + a "Calendar" nav entry. No new scheduling engine; books via the existing flow.
-## PKG-5 — Patient · ⬜ not started (highest existing alignment)
+## PKG-5 — Patient · status: **🔒 FROZEN** (Product Office, 2026-07-19)
+
+| Screen | Route | Header | Nav | Info Hier. | Sections | Copy | Interactions | Empty | Loading | Error | Success | Responsive | A11y | Approved |
+|---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Home | `/patient` | ✅ Hello + hero | ✅ bottom nav | ✅ next visit → quick actions | ✅ | ✅ "Quick actions" | ✅ | ✅ | ✅ | ✅ | — | ✅ mobile-first | ✅ | 🔒 |
+| Book | `/patient/book` | ✅ | ✅ | ✅ | ✅ search + care team | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Records | `/patient/records` | ✅ + reassurance | ✅ | ✅ | ✅ timeline | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Family | `/patient/family` | ✅ | ✅ | ✅ | ✅ profiles + add | ✅ | ✅ switch profile | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| You | `/patient/you` | ✅ | ✅ | ✅ | ✅ account rows | ✅ | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+
+### PKG-5 change log
+- **Verified aligned:** bottom nav (Home/Book/Records/Family/You — exact PKG-5), mobile-first hero ("Your next visit"), quick-action tiles, Book search + care team, Records timeline, Family profiles + switch, You account rows.
+- **A (implemented):** Home section label "Quick access" → **"Quick actions"** (PKG wording); Records warm reassurance line added.
+- **No Category C.**
 ## PKG-6 — Resilience · ⬜ not started (note: LoadingState=spinner must become skeletons)
