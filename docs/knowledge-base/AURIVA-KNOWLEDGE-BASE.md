@@ -1,7 +1,8 @@
 # Auriva Healthcare Operating System — Complete Knowledge Base
 
-> Single-file bundle of all 21 Knowledge Base sections, in order. Give this file to an AI product advisor (e.g. ChatGPT) so it can act as Product Office / CPO / UX Director / Solution Architect for Auriva without reading the codebase.
+> Single-file bundle of all Knowledge Base sections (00–26), in order. Give this file to an AI product advisor (e.g. ChatGPT) so it can act as Product Office / CPO / UX Director / Solution Architect for Auriva without reading the codebase.
 > Inferred/speculative claims are tagged inline as [INFERRED] / [INFERENCE] / [SPECULATIVE].
+> Companion (separate): ../AURIVA-PRODUCT-BIBLE.md — the DNA/philosophy document.
 
 
 
@@ -74,6 +75,23 @@ This knowledge base sits **alongside** that chain — it restates and expands it
 | 18 | [Deferred Features](./18-deferred-features.md) | The complete Category-C deferred register |
 | 19 | [Competitive Analysis](./19-competitive-analysis.md) | Auriva vs generic PMS/HIS/EMR/HRMS — positioning (labelled inference where speculative) |
 | 20 | [Future Ideas](./20-future-ideas.md) | Speculative directions consistent with the six pillars — explicitly not commitments |
+
+### CPO Addendum (V2 — strategic lenses)
+
+| # | File | Covers |
+|---|---|---|
+| 21 | [Product Maturity Matrix](./21-product-maturity-matrix.md) | Every module × MVP/Beta/Production/Enterprise — "what is production-ready?" |
+| 22 | [Product Journey Map](./22-product-journey-map.md) | One diagram: every actor, every handoff, patient → analytics |
+| 23 | [Business Value Matrix](./23-business-value-matrix.md) | Each feature → *why a clinic pays for it* (roadmap prioritization lens) |
+| 24 | [Competitive Positioning](./24-competitive-positioning.md) | Per-feature vs Cliniko/Jane/HealthPlix/Practo Ray/SimplePractice → Auriva advantage (inference) |
+| 25 | [Technical Debt Register](./25-technical-debt-register.md) | Living ledger: debt · reason · impact · priority — never disappears |
+| 26 | [Future Vision (3 Years)](./26-future-vision-3yr.md) | The strategic arc: Now → Professional → Network → OS → Platform → Marketplace → AI |
+
+### Companion (outside the KB)
+
+| Doc | Covers |
+|---|---|
+| [../AURIVA-PRODUCT-BIBLE.md](../AURIVA-PRODUCT-BIBLE.md) | Auriva's **DNA** — why it exists, philosophy (product/UX/design/eng), decision framework, what we never build, North Star, 5-year vision. A 20-minute read. Not technical. |
 
 ## Conventions used throughout this KB
 
@@ -2595,3 +2613,408 @@ Every idea above should be re-run through the Feature Evaluation Checklist befor
 6. Could integration with an external system achieve the same outcome?
 
 And if any of these ideas start drifting toward HRMS/payroll/attendance/recruitment/asset-management/performance-reviews/generic-accounting/generic-CRM territory, that is not a "future idea" at all — it is a Red Flag requiring an Architecture Review stop (see [01-vision-and-strategy.md](./01-vision-and-strategy.md)).
+
+
+
+===============================================================================
+
+# 21 — Product Maturity Matrix
+
+> **The one question this answers:** *"What is actually production-ready, and what still needs work?"*
+> Companion to [06 Feature Catalog](06-feature-catalog.md) (what exists) and [18 Deferred Features](18-deferred-features.md) (what doesn't).
+
+## Maturity levels (definitions)
+
+| Level | Meaning |
+|---|---|
+| **MVP** | Core happy-path works end-to-end with real data; usable in a demo. |
+| **Beta** | Handles real users + edge cases; empty/error/loading states; safe to pilot with a friendly clinic. |
+| **Production** | Hardened, secure, audit-logged, scales for a single busy clinic; RC-grade. |
+| **Enterprise** | Multi-instance scale, advanced admin/governance, integrations, SLAs, multi-clinic depth. |
+
+Legend: ✅ met · 🟡 partial · ⏳ planned/not started · — not applicable
+
+## The matrix
+
+| Module | MVP | Beta | Production | Enterprise | Notes |
+|---|:--:|:--:|:--:|:--:|---|
+| **Identity & Auth** (staff password, patient OTP) | ✅ | ✅ | 🟡 | ⏳ | Credentialed staff login (scrypt, rate-limited) + real single-use patient OTP. **Prod gap:** OTP delivery is a dev-echo — needs a live SMS provider before external users. |
+| **Appointments / Booking** | ✅ | ✅ | ✅ | 🟡 | Full lifecycle via a real state machine; every mutation writes an event. Enterprise: recurring/advanced planner deferred. |
+| **Reception Queue Board** | ✅ | ✅ | ✅ | 🟡 | 3-lane board, wait-aging, doctor strip, one-action-per-stage. Enterprise: capacity thresholds / auto-balancing deferred. |
+| **Walk-in registration** | ✅ | ✅ | ✅ | — | Under-20-second minimal capture. |
+| **Doctor Consultation / Workbench** | ✅ | ✅ | ✅ | 🟡 | Queue · consult · context; progress stepper; read-only clinical safety chips. Enterprise: clinical-intelligence (AI protocol) deferred. |
+| **Prescription** | ✅ | ✅ | ✅ | 🟡 | Real Rx model, templates, print. Enterprise: drug-interaction checking deferred. |
+| **Lab Orders** | ✅ | ✅ | ✅ | 🟡 | Order → org worklist → result back to consult + patient vault. Enterprise: external lab (LIS) integration ⏳. |
+| **Billing / Desk / Payments** | ✅ | ✅ | ✅ | 🟡 | Invoice drafts on completion; UPI/Cash/Card collect → receipt. Enterprise: online payment gateway ⏳; insurance ⏳. |
+| **Patient App (portal)** | ✅ | ✅ | 🟡 | ⏳ | One centered phone shell; Home/Book/Records/Family/You. **Prod gap:** OTP delivery + push/SMS notifications. |
+| **Records / Clinical Timeline** | ✅ | ✅ | ✅ | 🟡 | Visit timeline, Rx, bills, health vault. Enterprise: structured clinical data model (currently free-text on appointment) ⏳. |
+| **Family Sharing** | ✅ | ✅ | ✅ | 🟡 | One account → many Healthcare Profiles; profile switcher. Enterprise: granular per-member consent ⏳. |
+| **Team / RBAC** | ✅ | ✅ | ✅ | 🟡 | 6 roles, capability model, invite/suspend/archive, last-owner block. Enterprise: per-clinic capability grants ⏳ (TD-S2-2). |
+| **Organization / Multi-clinic** | ✅ | ✅ | 🟡 | 🟡 | Real Organization entity, multi-clinic, departments. **Gap:** multi-clinic admin depth + N+1 command-center query (TD-H5-1). |
+| **Command Center / Reports** | ✅ | 🟡 | 🟡 | ⏳ | Operational overview + attention list exist; deeper reporting/KPIs are thin. |
+| **Analytics** | 🟡 | ⏳ | ⏳ | ⏳ | Basic activity/counts only; no real analytics engine or dashboards yet. |
+| **Notifications** | 🟡 | ⏳ | ⏳ | ⏳ | **In-app only.** No SMS/email/push delivery. The user-facing notification/announcement/preferences platform does **not** exist (only event publishing does). |
+| **Events Platform (OPS-001C)** | ✅ | ✅ | ✅ | 🟡 | Publish/retry/DLQ/replay + audit hooks. Event *publishing* only — not user notifications. |
+| **Audit Logging** | ✅ | ✅ | ✅ | 🟡 | Actions attributed + logged. Enterprise: exportable compliance reports ⏳. |
+| **Availability / Calendar** | ✅ | ✅ | 🟡 | ⏳ | Doctor availability + reception day-grid calendar. Enterprise: drag-drop/recurring/room scheduling ⏳. |
+
+## Reading the matrix — the headline
+
+```
+PRODUCTION-READY (single busy clinic):
+  Appointments · Reception Board · Walk-in · Consultation · Prescription ·
+  Lab · Billing/Desk · Records · Family · Team/RBAC · Events · Audit
+
+PILOT-READY, needs one infra step (SMS/OTP delivery) to reach production:
+  Identity/Auth · Patient App
+
+THIN / EARLY (works but shallow):
+  Command Center/Reports · Multi-clinic admin · Availability calendar
+
+NOT A PRODUCT YET (deliberately):
+  Analytics · Notifications delivery
+```
+
+**Bottom line:** the **encounter-to-cash core is production-grade** for a single clinic. The gating items for an external pilot are **operational** (live SMS/OTP provider, TLS/proxy, persistent rate limiting), not missing features — see [15 Operations](15-operations.md) and [25 Technical Debt Register](25-technical-debt-register.md).
+
+
+
+===============================================================================
+
+# 22 — Product Journey Map
+
+> **The one question this answers:** *"How does a single patient flow through every actor and surface, and where does ownership hand off?"*
+> This is the connective tissue of Auriva — the appointment **status machine** is what links the surfaces (see [08 Business Rules](08-business-rules.md)).
+
+## The one diagram — end to end
+
+```mermaid
+flowchart TD
+    P0([Patient]) -->|books online, or phones in| BOOK[Book appointment]
+    BOOK -->|status: scheduled| REC1[Reception: appointment on the board]
+    WALK([Walk-in arrival]) -->|reception registers <20s| REC1
+
+    REC1 -->|Check in · status: waiting| WAIT[Waiting lane]
+    WAIT -->|Send in · status: doctor_ready| DOC1[Doctor: patient ready]
+    DOC1 -->|status: in_consultation| CONSULT[Consultation · Workbench]
+
+    CONSULT --> DOCU[Document: complaint, notes, vitals, diagnosis]
+    DOCU --> RX[Prescription]
+    DOCU -.optional.-> LAB[Lab order → org worklist → result]
+    RX -->|Sign & complete · status: completed| DONE[Done · to collect]
+
+    DONE -->|handoff to reception| DESK[Reception Desk: checkout]
+    DESK -->|UPI / Cash / Card| PAY[Payment collected · receipt]
+    PAY -->|invoice: paid| RECORDS[Patient Records · timeline]
+
+    LAB -.result lands.-> RECORDS
+    RECORDS -->|book next visit| FOLLOW[Follow-up]
+    FOLLOW -.->|status: scheduled| REC1
+
+    PAY --> ANALYTICS[Owner: Command Center · activity]
+    DONE --> ANALYTICS
+
+    classDef patient fill:#FBF0DF,stroke:#7A4E12,color:#241F1A;
+    classDef reception fill:#E4EFEC,stroke:#0E7466,color:#083F37;
+    classDef doctor fill:#E1EEF4,stroke:#2A7DA3,color:#241F1A;
+    classDef owner fill:#F4EEE6,stroke:#8C8477,color:#241F1A;
+    class P0,WALK,BOOK,RECORDS,FOLLOW patient;
+    class REC1,WAIT,DESK,PAY reception;
+    class DOC1,CONSULT,DOCU,RX,LAB,DONE doctor;
+    class ANALYTICS owner;
+```
+
+## The handoff ledger (single visible owner at every step)
+
+Healthcare systems fail when a task has **two owners** or **no owner**. In Auriva the **status flip is the ownership transfer**.
+
+| Stage | Status | Owner | How the handoff is visible |
+|---|---|---|---|
+| Booking | `scheduled` | Patient (self) or Reception (phone-in) | Confirmation screen / appears on the board |
+| Arrival | `checked_in` → `waiting` | **Reception** | Lands in the **Waiting** lane with a per-doctor count |
+| Called | `doctor_ready` | **Reception → Doctor** | "Send in" moves the card; doctor sees "patient ready" |
+| Seen | `in_consultation` | **Doctor** | "In consultation" lane + Workbench header |
+| Finished | `completed` | **Doctor → Reception** | Card flips to **"Done · to collect"** — the reception inbox |
+| Paid | invoice `paid` | **Reception** | Desk checkout → receipt; visit leaves the desk |
+| Recorded | — | **Patient** (owns their vault) | Visit + Dx + Rx + "Paid" appear in the patient timeline |
+| Follow-up | `scheduled` | Patient / Reception | Next-visit surfaces on patient Home; loop repeats |
+
+## What travels with the patient (nothing silently disappears)
+
+| Data | Enters at | Persists through |
+|---|---|---|
+| Identity (name, phone, Health ID `AUR-…`) | Signup / walk-in | Queue → Workbench header → Invoice → Records |
+| Chief complaint / reason | Booking or walk-in | **Pre-filled** into the Workbench "Chief complaint (from booking)" |
+| Diagnosis & prescription | Doctor Workbench | Patient Records visit detail |
+| Amount | Doctor fee / service | Desk invoice → "Paid" in the patient timeline |
+| Allergies / conditions | Profile / history | Workbench read-only **Clinical Safety** chips |
+
+## The emotional arc (why it feels like care, not software)
+
+```
+Landing ──► Book ──► "You're booked ✓" ──► (staff handle the visit) ──► "Payment completed" ──► Records "you're all caught up"
+  calm       warm        reinforced             patient never sees               reassured                held / rising
+                                                 the cash desk
+```
+
+The operational "coldness" (queues, invoices, cash) is **deliberately confined to staff surfaces the patient never touches**. See [10 Design System](10-design-system.md) (honey vs pine) and [02 Product Constitution](02-product-constitution.md).
+
+
+
+===============================================================================
+
+# 23 — Business Value Matrix
+
+> **The one question this answers:** *"Why does a clinic pay for this?"* — features expressed as **business value**, not capabilities.
+> Use this to prioritize the roadmap: build/keep what a clinic owner would pay for; challenge what they wouldn't. Pairs with [17 Roadmap](17-roadmap.md) and the [Feature Matrix in 06](06-feature-catalog.md).
+
+## The core value chain
+
+Auriva's paid-for promise: **more patients seen per day, no revenue leaking, and a practice that feels calm and professional.** Every feature below maps to *time saved*, *money captured*, or *trust built*.
+
+| Feature | Why the clinic pays for it | Value type | Pillar |
+|---|---|---|---|
+| **Online + phone booking** | Fills the doctor's day without a receptionist on the phone all day; fewer no-shows via reminders. | Revenue ↑ · Time ↓ | Patient Engagement |
+| **Reception queue board** | One screen runs the whole waiting room; new staff are productive in minutes; the room *keeps moving*. | Time ↓ · Trust ↑ | Practice Operations |
+| **Wait-aging on the board** | The desk naturally serves the longest waits first → fewer angry patients, better reviews. | Trust ↑ | Practice Operations |
+| **Walk-in in <20 seconds** | Captures walk-up revenue without friction; no one leaves because "reception is busy." | Revenue ↑ | Practice Operations |
+| **Consult Workbench** | Doctor documents + prescribes in one place → shorter consults, more patients/day, complete records. | Revenue ↑ · Time ↓ | Clinical Excellence |
+| **Clinical safety chips** | Allergies/conditions surfaced at point of care → fewer errors, lower liability. | Trust ↑ (risk ↓) | Clinical Excellence |
+| **E-prescription + templates + print** | Legible, fast, repeatable prescribing; a professional artifact the patient keeps. | Time ↓ · Trust ↑ | Clinical Excellence |
+| **Invoice auto-drafts on completion** | **The revenue-leak killer** — no visit ends without a bill waiting to be collected. | Revenue ↑↑ | Financial Operations |
+| **Desk checkout (UPI/Cash/Card → receipt)** | Money is collected *before the patient leaves*; the cash cycle is never a dead end. | Revenue ↑↑ | Financial Operations |
+| **Lab order → result loop** | Tests ordered from the consult and results returned to the record → no lost paperwork, add-on revenue. | Revenue ↑ · Time ↓ | Clinical Excellence |
+| **Patient app (Records/Bills/Family)** | Patients self-serve their history & bills → fewer "can you resend my report?" calls; stickiness. | Time ↓ · Retention ↑ | Patient Engagement |
+| **Family sharing (one phone → many profiles)** | A parent manages the whole family from one login → the clinic owns the *household*, not one patient. | Retention ↑ | Patient Engagement |
+| **Team / RBAC** | The owner delegates safely — staff see only what their role needs; last-owner protection. | Trust ↑ (control) | Platform Foundation |
+| **Multi-clinic / Organization** | Grow from one clinic to a group without changing tools → Auriva scales with the business. | Retention ↑ (expansion) | Organization Intelligence |
+| **Command Center** | The owner sees "what is my practice doing *right now*" across doctors → operational confidence. | Trust ↑ | Organization Intelligence |
+| **Audit log** | Every action attributed → disputes, compliance, and accountability are answerable. | Risk ↓ | Platform Foundation |
+| **Reassurance-first patient UX** | The practice looks *modern and caring* → better reviews, word-of-mouth, premium positioning. | Brand ↑ | Patient Engagement |
+
+## The "would a clinic owner pay for this?" test
+
+Every proposed feature is scored against the same four questions from [AGENTS.md](../../AGENTS.md):
+
+```
+1. Does it solve a real healthcare workflow?
+2. Would a clinic owner pay for this capability?
+3. Does it strengthen one of the six pillars?
+4. Could another mature SaaS already do it better?   ← if yes, integrate, don't build
+```
+
+**Value concentration:** the two highest-ROI features are the ones that stop revenue leaking — **auto-drafted invoices** and **desk checkout**. Everything else compounds time-savings and trust on top of a practice that is, first, getting paid for every visit.
+
+## What deliberately has *low* direct pay-for value (and why we still do it)
+
+| Item | Why it's not directly monetized |
+|---|---|
+| Resilience system (empty/error/offline) | Invisible when it works — but its absence destroys trust. Table stakes. |
+| Warm patient design | Doesn't bill anything directly; it's the **brand moat** that wins referrals and premium positioning. |
+| Events/audit platform | Infrastructure a clinic never sees — the foundation that makes everything else trustworthy and extensible. |
+
+
+
+===============================================================================
+
+# 24 — Competitive Positioning
+
+> **The one question this answers:** *"Where does Auriva win, and against whom?"*
+> Extends [19 Competitive Analysis](19-competitive-analysis.md) with a **per-feature** comparison against named products.
+>
+> **⚠️ Sourcing note:** No competitor-analysis document exists in the repo. Every claim about a competitor below is **`[INFERENCE]`** from general market knowledge and **must be verified** before it's used in sales, pricing, or strategy. Competitor feature sets change; treat this as a hypothesis map, not fact.
+
+## The competitor landscape
+
+| Product | Primary market | Positioning `[INFERENCE]` |
+|---|---|---|
+| **Cliniko** | Allied health (physio, chiro), AU/UK/global | Clean practice-management + scheduling + notes + telehealth; loved for simplicity. |
+| **Jane** | Allied health / wellness, North America | Beautiful booking + charting + billing + telehealth; strong brand, practitioner-first. |
+| **HealthPlix** | Doctor EMR, **India** | AI-assisted EMR, fast prescription, vernacular, doctor-productivity focus. |
+| **Practo Ray** | Clinic management, **India** | Scheduling + records + billing, tied to the Practo patient marketplace. |
+| **SimplePractice** | Behavioral/mental health, US | Practice management + telehealth + insurance/claims + client portal. |
+
+## Per-feature comparison `[INFERENCE — verify]`
+
+Legend: ✅ strong · 🟡 partial/varies · ⚠️ weak/absent · ❓ unknown
+
+| Capability | Cliniko | Jane | HealthPlix | Practo Ray | SimplePractice | **Auriva** | **Auriva advantage** |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| Online booking | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | Booking is *inside* one warm patient app, not a bolt-on widget |
+| **Live reception queue board** | ⚠️ | ⚠️ | 🟡 | 🟡 | ⚠️ | ✅ | **3-lane "keep the room moving" board with wait-aging** — few Western tools model the physical waiting room; India clinics live in it |
+| Walk-in (<20s) | 🟡 | 🟡 | 🟡 | ✅ | 🟡 | ✅ | First-class walk-in as a button on the board — matches Indian OPD reality |
+| Consult workbench (notes+Rx+vitals in one) | 🟡 | ✅ | ✅ | 🟡 | ✅ | ✅ | Progress stepper + read-only clinical-safety chips; guided, not a blank EMR form |
+| E-prescription (India-appropriate) | ⚠️ | 🟡 | ✅ | ✅ | ⚠️ | ✅ | India-first Rx + templates + print; peer to HealthPlix here |
+| Cash-cycle checkout (UPI/Cash/Card) | 🟡 | ✅ | 🟡 | ✅ | ✅ (insurance) | ✅ | **UPI-first** desk checkout; invoice auto-drafts on completion — no revenue leak |
+| Insurance / claims | 🟡 | ✅ | ⚠️ | 🟡 | ✅ | ⚠️ (deferred) | *Deliberately not built* — India cash/UPI-first; see [Product Bible](../AURIVA-PRODUCT-BIBLE.md) |
+| Patient app (records/bills/family) | 🟡 | 🟡 | ⚠️ | ✅ (marketplace) | ✅ (portal) | ✅ | **One warm phone app + family sharing**; not "clinic software shrunk" |
+| Family / multi-profile on one number | ⚠️ | ⚠️ | ⚠️ | 🟡 | ⚠️ | ✅ | **One phone → many Healthcare Profiles** — built for how Indian families actually share a number |
+| Multi-clinic / group | ✅ | 🟡 | 🟡 | ✅ | 🟡 | 🟡 | Real Organization model; grows solo → group in the same tool |
+| Role-based team management | ✅ | 🟡 | 🟡 | ✅ | ✅ | ✅ | Capability model + last-owner protection; invite/suspend/archive |
+| AI clinical assist | ⚠️ | ⚠️ | ✅ | ⚠️ | 🟡 | ⏳ (deferred) | Explicitly deferred to a future *clinical-intelligence* release — safety/regulatory first |
+| Telehealth | ✅ | ✅ | 🟡 | ✅ | ✅ | ⏳ | Not yet — a clear roadmap gap vs Western tools |
+| Owner "command center" | 🟡 | 🟡 | 🟡 | ✅ | 🟡 | 🟡 | Live operational view; depth still early |
+| Design warmth / brand | ✅ (Jane esp.) | ✅ | 🟡 | 🟡 | ✅ | ✅ | **Reassurance-first patient vs efficiency-first staff** as an explicit, tokenized system |
+
+## Where Auriva wins today (defensible)
+
+1. **The waiting room as a first-class product.** The 3-lane board + wait-aging + walk-in speaks to Indian OPD reality that Western allied-health tools (Cliniko/Jane/SimplePractice) don't model.
+2. **India-native money.** UPI/Cash-first checkout with invoices that auto-draft on completion — no insurance-claims assumption baked in.
+3. **Family sharing.** One phone number → many Healthcare Profiles is architected in, not retrofitted — matches Indian household behavior.
+4. **One warm patient app** that answers five questions, not a shrunken clinic tool.
+5. **Healthcare-workflow-first scoping.** Auriva refuses HRMS/payroll/ERP sprawl — a focused OS, not a do-everything suite.
+
+## Where Auriva is behind (honest gaps) `[INFERENCE]`
+
+| Gap | Who's ahead | Roadmap |
+|---|---|---|
+| Telehealth / video | Cliniko, Jane, SimplePractice | [17 Roadmap](17-roadmap.md) |
+| AI clinical assist | HealthPlix | Deferred clinical-intelligence release |
+| Insurance / claims | SimplePractice, Jane | Deliberate non-goal for India cash-first (revisit for markets that need it) |
+| Analytics depth | Practo Ray, Cliniko | Command Center is early |
+| Marketplace demand-gen | Practo (Ray + Practo.com) | Not a goal — Auriva is the OS, not a lead-gen marketplace |
+
+## Positioning statement (one line)
+
+> **Auriva is the Healthcare Operating System built for how Indian clinics actually run** — the waiting room, the walk-in, the UPI payment, and the family on one phone — with a warm patient app on the front and a calm, capable staff console behind it. `[INFERENCE — validate messaging with real clinics]`
+
+
+
+===============================================================================
+
+# 25 — Technical Debt Register
+
+> **The one question this answers:** *"What do we owe ourselves — and what will it cost if we ignore it?"*
+> **This register must never silently disappear.** It is the honest ledger of shortcuts taken. Source of record: `docs/technical-debt.md` (engineering detail) + [18 Deferred Features](18-deferred-features.md) (product scope). Some items below predate the latest baseline — **verify status before acting.** `[INFERENCE where noted]`
+
+## Priority key
+
+| | Meaning |
+|---|---|
+| 🔴 | Blocks external pilot / real users |
+| 🟡 | Fix after first real usage (observed-behavior driven) |
+| 🟢 | Long-term platform (Release 2+) |
+
+## The register
+
+| # | Debt | Reason it exists | Impact if ignored | Priority |
+|---|---|---|---|---|
+| **TD-01** | **SMS/OTP provider not live** | Code is done; a real provider must be *configured + staging-verified*. Currently dev-echo. | No real patient/staff can receive their OTP → cannot onboard external users. | 🔴 |
+| **TD-02** | **Deploy behind TLS + trusted proxy** | Pilot ran on trusted LAN. | HSTS is cosmetic; per-IP rate limits are spoofable (`X-Forwarded-For` trusted). | 🔴 |
+| **TD-03** | **Browser smoke pass of every workflow + security headers** | Can't run in the build sandbox. | Unverified real-browser behavior (hydration, CSP, framer-motion) before go-live. | 🔴 |
+| **TD-04** | **Notifications delivery does not exist** | Only the *event-publishing* platform was built (OPS-001C). The user-facing notification/announcement/preferences platform was never built. | No SMS/email/push to patients or staff (reminders, results, confirmations) beyond in-app. A major product gap, not just infra. | 🔴 (product) |
+| **TD-05** | **Persistent (shared-store) rate limiting** | In-memory per-process limiter (SQLite-era workaround, still correct on Postgres single-instance). | Running >1 app instance makes limits per-process → weaker protection; also the alert 5xx counter and reminder sweep are per-process. | 🟡 (🔴 if multi-instance) |
+| **TD-06** | **Reminder sweep is single-instance** (`setInterval`) | Simple, correct for one instance. | Multiple instances double-sweep (harmless dedup, but wasteful). | 🟡 |
+| **TD-07** | **Command-Center N+1 query** | Maps per-clinic queries on the org dashboard. | Slows the multi-clinic `/admin` view as clinics grow; not on the solo surface. | 🟡 |
+| **TD-08** | **Per-clinic capability grants** (TD-S2-2) | Grants live on `StaffProfile.capabilities`, one set per profile. | Can't express "reception at clinic A but not B" → blocks fine-grained multi-clinic staffing. | 🟡 |
+| **TD-09** | **Partial capability conversion** (TD-S2-1) | Some routes still use role predicates, not capabilities. | A granted solo practitioner isn't unlocked everywhere (lab, some appointment reads). Mechanical to finish. | 🟡 |
+| **TD-10** | **No pagination on list endpoints** (D10) | Fine at pilot volume. | Response size grows with data; degrades ~1k appointments/clinic. | 🟡 |
+| **TD-11** | **`/api/doctors` over-exposes PII** (D14) | Cross-org doctor directory spreads the full user row (email/phone). | Field-level PII exposure across tenants (no UI renders it today). Trim the projection. | 🟡 |
+| **TD-12** | **Public booking can't disambiguate family profiles** (TD-S2-3) | A shared number books under name-match / first profile. | Mis-booking under a shared number; authenticated portal already has the switcher. | 🟡 |
+| **TD-13** | **Day-boundary TZ duplication** (D8) | Server (server TZ) vs client `isToday` (browser TZ). | Reception vs doctor "today" can differ across TZ/DST once off-LAN. | 🟡 |
+| **TD-14** | **Hand-maintained client types, no runtime validation** (D12) | `src/shared/*` mirrors API shapes by hand. | Server include-shape changes drift silently. Adopt shared zod contracts when contracts next change. | 🟡 |
+| **TD-15** | **Lint baseline** (~35 problems) (TD-H6-1) | Each fix is behavior-changing (react-hooks set-state-in-effect, `no-explicit-any`). | CI-non-blocking but real; resolve in a dedicated typed-error / effects pass. | 🟡 |
+| **TD-16** | **Node runtime pin unverified** (TD-RC1-2) | Declared `>=20 <23` but everything actually ran on Node 24. | The pin is intent, not a verified compatibility claim. Run the suite on real Node 20/22 before RC2. | 🟡 |
+| **TD-17** | **npm audit: PostCSS advisory (transitive via Next.js)** (TD-RC1-1) | Build-time only; the only "fix" downgrades Next.js catastrophically. | Low real-world risk; resolves on Next.js's next bump. **Do not force-downgrade.** | 🟢 |
+| **TD-18** | **`Appointment` "god table"** (TD-H5-2) | Clinical fields (`chief_complaint`, `vitals_json`, `diagnosis`, `prescription_*`) live on the appointment row. | Fine for MVP; revisit as the clinical data model matures (first-class `Prescription`/`LabOrder` already exist). | 🟢 |
+| **TD-19** | **Structured clinical data model** | Health summary is free-text by design (allergies/conditions). | No structured taxonomies/coding → limits analytics, interoperability, decision support. A future clinical-model decision. | 🟢 |
+| **TD-20** | **CSRF synchronizer token** | `SameSite=Lax` is the standard Next.js posture, adequate for pilot. | Post-pilot hardening enhancement. | 🟢 |
+| **TD-21** | **Nonce-based CSP script/style** (TD-H2-1) | Needs real-browser validation the sandbox can't run. | Weaker CSP until validated; add with browser testing. | 🟢 |
+
+## Debt principle (the rule that keeps this honest)
+
+> Every item is tracked because it improves **security, reliability, or the pilot experience** — not because it's technically elegant. Items with no material impact live in 🟢, not 🔴.
+
+## The three debts that matter most right now
+
+1. **TD-04 — Notifications delivery** is the biggest *product* debt: reminders/results/confirmations can't reach patients. It's not "polish," it's a missing pillar-4 capability.
+2. **TD-01 — Live SMS/OTP** gates every external user. Nothing ships to real patients without it.
+3. **TD-05 — Persistent rate limiting** is the first thing that breaks the moment you scale past one instance.
+
+> **Governance:** review this register at every roadmap checkpoint. Debt paid → strike it through with the date. Debt discovered → add it, don't hide it.
+
+
+
+===============================================================================
+
+# 26 — Future Vision (3 Years)
+
+> **The one question this answers:** *"Where is Auriva going, and in what order?"*
+> This is the **strategic arc**, not a dated backlog (that's [17 Roadmap](17-roadmap.md)). It shows how today's product compounds into a platform. Stages beyond "Clinic Network" are **`[SPECULATIVE]`** — directionally consistent with the six pillars, not commitments.
+
+## The arc
+
+```mermaid
+flowchart LR
+    A[Now<br/>Single clinic<br/>encounter→cash core] --> B[Professional<br/>Pilot-hardened<br/>+ notifications + telehealth]
+    B --> C[Clinic Network<br/>Multi-clinic depth<br/>+ analytics]
+    C --> D[Healthcare OS<br/>Full pillar coverage<br/>+ integrations]
+    D --> E["Platform<br/>APIs + extensibility<br/>(3rd-party modules)"]
+    E --> F["Marketplace<br/>Labs · pharmacy · services<br/>ecosystem"]
+    F --> G["AI<br/>Clinical intelligence<br/>+ operational autopilot"]
+
+    classDef now fill:#0E7466,stroke:#083F37,color:#fff;
+    classDef near fill:#E4EFEC,stroke:#0E7466,color:#083F37;
+    classDef mid fill:#FBF0DF,stroke:#7A4E12,color:#241F1A;
+    classDef far fill:#F4EEE6,stroke:#8C8477,color:#241F1A;
+    class A now;
+    class B,C near;
+    class D,E mid;
+    class F,G far;
+```
+
+## Stage by stage
+
+### Stage 0 — Now (implemented)
+**One clinic, encounter-to-cash.** Booking → reception → consult → prescription → checkout → records → follow-up, with team/RBAC, multi-clinic scaffolding, events, and audit. The core is production-grade for a single busy clinic. See [21 Maturity Matrix](21-product-maturity-matrix.md).
+
+### Stage 1 — Professional (next ~6 months) `[stated + inference]`
+Harden the pilot into a real product:
+- **Notifications delivery** (SMS/email/push) — reminders, results, confirmations (closes TD-04).
+- **Live SMS/OTP provider**, TLS/proxy, persistent rate limiting (closes TD-01/02/05).
+- **Telehealth** — the clearest competitive gap vs Cliniko/Jane.
+- Deeper **Command Center / reporting**.
+> Outcome: a clinic can run *entirely* on Auriva and reach its patients.
+
+### Stage 2 — Clinic Network (~year 1) `[inference]`
+Make multi-clinic first-class:
+- Per-clinic capability grants (TD-08), multi-clinic analytics without N+1 (TD-07).
+- Cross-clinic doctor scheduling, group-level roll-ups, room/resource scheduling.
+- The multi-workspace doctor + owner-of-many flows become effortless.
+> Outcome: Auriva scales *with* a growing group, not against it.
+
+### Stage 3 — Healthcare OS (~year 2) `[speculative]`
+Fill the six pillars to depth:
+- Structured clinical data model (beyond free-text) enabling real analytics + interoperability (TD-19).
+- Insurance/claims *where a market needs it* (still a deliberate non-goal for India cash-first).
+- Operational intelligence: capacity prediction, no-show risk, revenue analytics.
+> Outcome: Auriva is the system of record *and* the system of intelligence for a practice.
+
+### Stage 4 — Platform (~year 2–3) `[speculative]`
+Open the OS:
+- Public **APIs + integration framework** (already a named pillar-6 concept) so third parties build *on* Auriva.
+- Extensible modules; partners extend without forking.
+> Outcome: Auriva stops being an app and becomes infrastructure.
+
+### Stage 5 — Marketplace (~year 3) `[speculative]`
+Connect the ecosystem:
+- Labs, pharmacy, diagnostics, allied services transact *through* Auriva.
+- Demand and supply of healthcare services meet on the platform.
+> Outcome: network effects — each clinic and service makes the platform more valuable.
+
+### Stage 6 — AI (continuous, unlocked by data) `[speculative]`
+Layer intelligence on the accumulated, structured data:
+- **Clinical intelligence** — the deferred "Suggested protocol" reborn responsibly, as decision *support* with regulatory guardrails.
+- **Operational autopilot** — queue balancing, scheduling optimization, revenue-leak detection.
+> Outcome: Auriva doesn't just record the practice — it helps run it. **AI comes last, on top of trust and data — never as the opening act.**
+
+## The through-line
+
+```
+Trust  →  Data  →  Intelligence
+(warm, safe,     (structured,      (AI that earns
+ audited          continuous        the right to
+ workflows)       records)          advise)
+```
+
+Auriva earns the right to each stage by nailing the one before it. **We do not skip to AI before the data and trust exist to justify it** — see [Product Bible](../AURIVA-PRODUCT-BIBLE.md) and [02 Product Constitution](02-product-constitution.md).

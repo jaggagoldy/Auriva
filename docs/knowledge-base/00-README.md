@@ -66,6 +66,23 @@ This knowledge base sits **alongside** that chain — it restates and expands it
 | 19 | [Competitive Analysis](./19-competitive-analysis.md) | Auriva vs generic PMS/HIS/EMR/HRMS — positioning (labelled inference where speculative) |
 | 20 | [Future Ideas](./20-future-ideas.md) | Speculative directions consistent with the six pillars — explicitly not commitments |
 
+### CPO Addendum (V2 — strategic lenses)
+
+| # | File | Covers |
+|---|---|---|
+| 21 | [Product Maturity Matrix](./21-product-maturity-matrix.md) | Every module × MVP/Beta/Production/Enterprise — "what is production-ready?" |
+| 22 | [Product Journey Map](./22-product-journey-map.md) | One diagram: every actor, every handoff, patient → analytics |
+| 23 | [Business Value Matrix](./23-business-value-matrix.md) | Each feature → *why a clinic pays for it* (roadmap prioritization lens) |
+| 24 | [Competitive Positioning](./24-competitive-positioning.md) | Per-feature vs Cliniko/Jane/HealthPlix/Practo Ray/SimplePractice → Auriva advantage (inference) |
+| 25 | [Technical Debt Register](./25-technical-debt-register.md) | Living ledger: debt · reason · impact · priority — never disappears |
+| 26 | [Future Vision (3 Years)](./26-future-vision-3yr.md) | The strategic arc: Now → Professional → Network → OS → Platform → Marketplace → AI |
+
+### Companion (outside the KB)
+
+| Doc | Covers |
+|---|---|
+| [../AURIVA-PRODUCT-BIBLE.md](../AURIVA-PRODUCT-BIBLE.md) | Auriva's **DNA** — why it exists, philosophy (product/UX/design/eng), decision framework, what we never build, North Star, 5-year vision. A 20-minute read. Not technical. |
+
 ## Conventions used throughout this KB
 
 - **"Deferred"** means a real product decision was made to *not* build something now — it is different from "not started." Always check 18 before assuming a gap is an oversight.
