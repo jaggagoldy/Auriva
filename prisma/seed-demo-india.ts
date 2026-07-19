@@ -111,7 +111,14 @@ async function main() {
   });
 
   // --- Patients (real Indian identities). ---
-  async function patient(seq: string, fullName: string, dob: string, gender: string, blood: string) {
+  async function patient(
+    seq: string,
+    fullName: string,
+    dob: string,
+    gender: string,
+    blood: string,
+    opts?: { allergies?: string; chronic?: string }
+  ) {
     const user = await prisma.user.create({
       data: { role: "patient", phone_number: `${DEMO_PREFIX}${seq}` },
     });
@@ -122,6 +129,8 @@ async function main() {
         blood_group: blood,
         date_of_birth: new Date(dob),
         gender,
+        allergies: opts?.allergies ?? null,
+        chronic_conditions: opts?.chronic ?? null,
         onboarding_completed: true,
         health_id: healthId(),
         verification_level: "phone_verified",
@@ -133,8 +142,13 @@ async function main() {
     return profile;
   }
 
-  const amit = await patient("0101", "Amit Patel", "1985-08-21", "Male", "B-Positive");
-  const sneha = await patient("0102", "Sneha Kulkarni", "1993-02-11", "Female", "O-Positive");
+  const amit = await patient("0101", "Amit Patel", "1985-08-21", "Male", "B-Positive", {
+    allergies: "Penicillin",
+    chronic: "Hypertension, Type 2 diabetes",
+  });
+  const sneha = await patient("0102", "Sneha Kulkarni", "1993-02-11", "Female", "O-Positive", {
+    chronic: "Asthma",
+  });
   const farooq = await patient("0103", "Mohammed Farooq", "1978-12-03", "Male", "A-Positive");
   const lakshmi = await patient("0104", "Lakshmi Menon", "2001-05-19", "Female", "AB-Positive");
 
@@ -145,6 +159,8 @@ async function main() {
       scheduled_time: new Date(Date.now() - 40 * 60 * 1000), status: "in_consultation", queue_number: 1,
       checked_in_at: new Date(Date.now() - 40 * 60 * 1000), started_at: new Date(Date.now() - 10 * 60 * 1000),
       notes: "Follow-up: blood pressure review.",
+      chief_complaint: "Hypertension review",
+      vitals_json: JSON.stringify({ bp: "158/98", pulse: "88", temp: "98.6°F", spo2: "98%", weight: "82 kg" }),
     },
   });
   await prisma.appointment.create({

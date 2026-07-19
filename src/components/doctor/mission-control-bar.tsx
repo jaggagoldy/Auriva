@@ -72,12 +72,12 @@ export default function MissionControlBar({
 
         <div className="flex items-center gap-5 text-[11px] text-muted-foreground">
           <Stat label="patients" value={total} valueClassName="text-foreground" />
-          <Stat label="waiting" value={waiting} valueClassName="text-warning" />
+          <Stat label="waiting" value={waiting} valueClassName="text-honey-deep" />
           <Stat label="completed" value={completed} valueClassName="text-success" />
         </div>
 
         {behindMinutes > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+          <span className="inline-flex items-center gap-1 rounded-full border border-honey-soft bg-honey-tint px-2 py-0.5 text-[11px] font-semibold text-honey-deep">
             <Clock className="size-3" /> {behindMinutes} min behind
           </span>
         )}

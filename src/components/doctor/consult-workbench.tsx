@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import {
+  AlertTriangle,
   Building2,
+  Check,
   ClipboardList,
   Droplets,
   FlaskConical,
@@ -11,6 +13,7 @@ import {
   Loader2,
   MessageSquareText,
   Play,
+  ShieldCheck,
   Stethoscope,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +33,7 @@ import {
   formatRelative,
   formatTime,
   getInitials,
+  parseMedicines,
   parseVitals,
 } from "@/shared/queue";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
@@ -137,6 +141,12 @@ export default function ConsultWorkbench({
         </div>
       </div>
 
+      {/* PKG-3 sub-header: progress stepper + read-only clinical safety */}
+      <div className="space-y-3 border-b px-6 py-3.5">
+        <ConsultStepper appointment={appointment} />
+        <ClinicalSafety patient={appointment.patient} vitals={parseVitals(appointment.vitals_json)} />
+      </div>
+
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-5 px-6 py-5">
           <dl className="grid grid-cols-4 divide-x rounded-xl border bg-card">
@@ -185,6 +195,154 @@ export default function ConsultWorkbench({
 
       <AppointmentDrawer appointmentId={appointment.id} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </main>
+  );
+}
+
+// PKG-3 progress stepper — derived purely from what's been recorded on the
+// appointment (no inference): arrival → consultation captured → prescription →
+// complete. Presentation of existing state, not a new workflow.
+function ConsultStepper({ appointment }: { appointment: Appointment }) {
+  const arrived = appointment.status !== "scheduled";
+  const consultDone = Boolean(
+    appointment.chief_complaint?.trim() ||
+      appointment.history_notes?.trim() ||
+      appointment.diagnosis?.trim() ||
+      appointment.prescription_notes?.trim()
+  );
+  const rxDone = parseMedicines(appointment.prescription_medicines_json).some((m) => m.name.trim());
+  const completed = appointment.status === "completed";
+
+  const steps = [
+    { label: "Patient ready", done: arrived, active: !arrived },
+    { label: "Consultation", done: consultDone, active: arrived && !consultDone },
+    { label: "Prescription", done: rxDone, active: consultDone && !rxDone },
+    { label: "Complete", done: completed, active: consultDone && rxDone && !completed },
+  ];
+
+  return (
+    <ol className="flex items-center gap-1">
+      {steps.map((step, i) => (
+        <li key={step.label} className="flex flex-1 items-center gap-2">
+          <span
+            className={cn(
+              "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums",
+              step.done
+                ? "bg-primary text-primary-foreground"
+                : step.active
+                  ? "border-2 border-primary text-primary"
+                  : "border border-border text-muted-foreground"
+            )}
+          >
+            {step.done ? <Check className="size-3" strokeWidth={3} /> : i + 1}
+          </span>
+          <span
+            className={cn(
+              "whitespace-nowrap text-[12px] font-medium",
+              step.done || step.active ? "text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {step.label}
+          </span>
+          {i < steps.length - 1 && (
+            <span className={cn("h-px flex-1", step.done ? "bg-primary/40" : "bg-border")} />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// PKG-3 clinical safety — factual, read-only summary of what's already on the
+// record (allergies, chronic conditions, recorded vitals outside the standard
+// reference range). No AI, no recommendation. The AI "Suggested protocol" card
+// from the prototype is deferred (Category-C — see RELEASE-CANDIDATE.md).
+function abnormalVitals(vitals: ReturnType<typeof parseVitals>): string[] {
+  if (!vitals) return [];
+  const flags: string[] = [];
+  const bp = vitals.bp?.trim();
+  if (bp) {
+    const m = bp.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+    if (m) {
+      const sys = Number(m[1]);
+      const dia = Number(m[2]);
+      if (sys >= 140 || dia >= 90) flags.push(`BP ${bp} · above range`);
+      else if (sys < 90 || dia < 60) flags.push(`BP ${bp} · below range`);
+    }
+  }
+  const pulse = parseInt(vitals.pulse ?? "", 10);
+  if (!Number.isNaN(pulse)) {
+    if (pulse > 100) flags.push(`Pulse ${pulse} · above range`);
+    else if (pulse < 50) flags.push(`Pulse ${pulse} · below range`);
+  }
+  const temp = parseFloat(vitals.temp ?? "");
+  if (!Number.isNaN(temp) && temp >= 100.4) flags.push(`Temp ${vitals.temp} · fever range`);
+  const spo2 = parseInt(vitals.spo2 ?? "", 10);
+  if (!Number.isNaN(spo2) && spo2 < 94) flags.push(`SpO₂ ${spo2}% · below range`);
+  return flags;
+}
+
+function SafetyChip({
+  tone,
+  icon: Icon,
+  children,
+}: {
+  tone: "crit" | "warn" | "ok";
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+        tone === "crit" && "border-destructive/30 bg-destructive/10 text-destructive",
+        tone === "warn" && "border-honey-soft bg-honey-tint text-honey-deep",
+        tone === "ok" && "border-success/30 bg-success/10 text-success"
+      )}
+    >
+      <Icon className="size-3" />
+      {children}
+    </span>
+  );
+}
+
+function ClinicalSafety({
+  patient,
+  vitals,
+}: {
+  patient: Appointment["patient"];
+  vitals: ReturnType<typeof parseVitals>;
+}) {
+  const allergies = (patient.allergies ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const chronic = (patient.chronic_conditions ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const vitalFlags = abnormalVitals(vitals);
+  const hasAny = allergies.length + chronic.length + vitalFlags.length > 0;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="mr-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+        Clinical safety
+      </span>
+      {allergies.map((a) => (
+        <SafetyChip key={`al-${a}`} tone="crit" icon={AlertTriangle}>
+          Allergy: {a}
+        </SafetyChip>
+      ))}
+      {chronic.map((c) => (
+        <SafetyChip key={`ch-${c}`} tone="warn" icon={HeartPulse}>
+          {c}
+        </SafetyChip>
+      ))}
+      {vitalFlags.map((v) => (
+        <SafetyChip key={`vt-${v}`} tone="crit" icon={AlertTriangle}>
+          {v}
+        </SafetyChip>
+      ))}
+      {!hasAny && (
+        <SafetyChip tone="ok" icon={ShieldCheck}>
+          No alerts on file
+        </SafetyChip>
+      )}
+    </div>
   );
 }
 

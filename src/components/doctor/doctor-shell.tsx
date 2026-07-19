@@ -8,6 +8,7 @@ import {
   Building2,
   CalendarDays,
   ChevronDown,
+  ClipboardList,
   LogOut,
   Stethoscope,
   User,
@@ -65,6 +66,7 @@ export default function DoctorShell({ doctor, capabilities, children }: DoctorSh
 
         <nav className="flex-1 space-y-0.5 p-3">
           <NavItem icon={Stethoscope} label="Today" href="/doctor" active={pathname === "/doctor"} />
+          <NavItem icon={ClipboardList} label="Workbench" href="/doctor/workbench" active={pathname === "/doctor/workbench"} />
           <NavItem icon={CalendarDays} label="Schedule" href="/doctor/schedule" active={pathname === "/doctor/schedule"} />
           <NavItem icon={Users} label="Patients" href="/doctor/patients" active={pathname === "/doctor/patients"} />
           <NavItem icon={Building2} label="Practice" href="/doctor/practice" active={pathname === "/doctor/practice"} />

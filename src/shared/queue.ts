@@ -171,8 +171,9 @@ export const STATUS_META: Record<
   },
   waiting: {
     label: "Waiting",
-    dot: "bg-[#D97706]",
-    badge: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] dark:bg-[#D97706]/15 dark:text-[#FBBF24] dark:border-[#D97706]/30",
+    // Honey — the warm accent from the PKG design system (--honey / --honey-deep).
+    dot: "bg-honey",
+    badge: "bg-honey-tint text-honey-deep border border-honey-soft",
   },
   skipped: {
     label: "Skipped",
