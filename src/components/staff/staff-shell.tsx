@@ -9,10 +9,8 @@ import {
   ChevronDown,
   FlaskConical,
   LayoutDashboard,
-  ListChecks,
   LogOut,
   ReceiptText,
-  UserPlus,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -60,20 +58,16 @@ export default function StaffShell({ displayName, role, capabilities, children }
           <div className="text-sm font-semibold">Auriva</div>
         </div>
 
+        {/* PKG-4 reception IA: the board is the landing (Front desk), the cash
+            cycle is the Desk. Walk-in is a button on the board; Lab Orders is
+            kept for the Technician who shares this surface. */}
         <nav className="flex-1 space-y-0.5 p-3">
           <NavItem
             icon={LayoutDashboard}
-            label="Dashboard"
-            href="/staff/dashboard"
-            active={pathname === "/staff/dashboard"}
-          />
-          <NavItem
-            icon={ListChecks}
-            label="Queue Board"
+            label="Front desk"
             href="/staff/queue"
-            active={pathname === "/staff/queue"}
+            active={pathname === "/staff/queue" || pathname === "/staff"}
           />
-          {/* PKG-4: reception calendar (reuses ClinicCalendar) */}
           <NavItem
             icon={CalendarDays}
             label="Calendar"
@@ -81,14 +75,8 @@ export default function StaffShell({ displayName, role, capabilities, children }
             active={pathname === "/staff/calendar"}
           />
           <NavItem
-            icon={UserPlus}
-            label="Walk-In"
-            href="/staff/walkin"
-            active={pathname === "/staff/walkin"}
-          />
-          <NavItem
             icon={ReceiptText}
-            label="Billing"
+            label="Desk"
             href="/staff/billing"
             active={pathname === "/staff/billing"}
           />

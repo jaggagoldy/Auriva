@@ -46,6 +46,13 @@ interface BookAppointmentDialogProps {
   clinicId: string;
   doctors: DoctorOption[];
   onBooked: () => void;
+  /** Controlled open (e.g. opened from a calendar free-slot). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Hide the built-in "Book Appointment" trigger button (controlled use). */
+  hideTrigger?: boolean;
+  /** Pre-select a doctor + slot when opened from the calendar. */
+  prefill?: { doctorId?: string; scheduledTime?: string };
 }
 
 const EMPTY_STATE = {
@@ -62,8 +69,17 @@ const EMPTY_STATE = {
   notes: "",
 };
 
-export default function BookAppointmentDialog({ clinicId, doctors, onBooked }: BookAppointmentDialogProps) {
-  const [open, setOpen] = React.useState(false);
+export default function BookAppointmentDialog({
+  clinicId,
+  doctors,
+  onBooked,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+  prefill,
+}: BookAppointmentDialogProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const open = controlledOpen ?? internalOpen;
   const [step, setStep] = React.useState<Step>("search");
   const [searching, setSearching] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -71,11 +87,16 @@ export default function BookAppointmentDialog({ clinicId, doctors, onBooked }: B
   const [form, setForm] = React.useState(EMPTY_STATE);
 
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
     if (next) {
       setStep("search");
       setResults([]);
-      setForm(EMPTY_STATE);
+      setForm({
+        ...EMPTY_STATE,
+        doctorId: prefill?.doctorId ?? "",
+        scheduledTime: prefill?.scheduledTime ?? "",
+      });
     }
   };
 
@@ -171,7 +192,7 @@ export default function BookAppointmentDialog({ clinicId, doctors, onBooked }: B
       toast.success(`Appointment booked for ${form.selectedProfileName}`, {
         description: doctors.find((d) => d.id === form.doctorId)?.full_name,
       });
-      setOpen(false);
+      handleOpenChange(false);
       onBooked();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not book the appointment.");
@@ -189,10 +210,12 @@ export default function BookAppointmentDialog({ clinicId, doctors, onBooked }: B
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <CalendarPlus />
-        Book Appointment
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger render={<Button variant="outline" />}>
+          <CalendarPlus />
+          Book Appointment
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{stepTitles[step]}</DialogTitle>

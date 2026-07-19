@@ -196,7 +196,7 @@ export default function BillingBoard() {
               <TableBody>
                 {invoices.map((invoice) => {
                   const balance = invoice.total - paidSoFar(invoice);
-                  const meta = STATUS_META[invoice.status];
+                  const meta = STATUS_META[invoice.status] ?? STATUS_META.draft;
                   const payable = invoice.status === "draft" || invoice.status === "issued";
                   return (
                     <TableRow key={invoice.id}>
