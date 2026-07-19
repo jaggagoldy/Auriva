@@ -1,0 +1,389 @@
+<title>Auriva Prototype · Package 4 — Reception</title>
+<style>
+  :root{
+    --paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;
+    --pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;
+    --honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;
+    --rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;
+    --ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--night:#0B4A41;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --proto:#241F1A;--proto-fg:#F5EFE7;--proto-line:#3a3128;
+    --fd:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;
+    --fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --nav:78px;--top:60px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;
+    --honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;
+    --ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;
+    --shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}}
+  :root[data-theme="light"]{--paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;--pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;--honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;--rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;--ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);}
+  :root[data-theme="dark"]{--paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;--honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;--ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;--shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}input,select{font-family:var(--fb);color:var(--ink)}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .proto-bar{position:sticky;top:0;z-index:90;background:var(--proto);color:var(--proto-fg);display:flex;align-items:center;gap:14px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--proto-line);font-size:12.5px}
+  .proto-bar .tag{font-family:var(--fd);font-weight:700}.proto-bar .tag b{color:var(--honey)}
+  .proto-nav{display:flex;gap:4px;flex-wrap:wrap}
+  .proto-nav button{background:transparent;color:var(--proto-fg);border:1px solid transparent;padding:5px 10px;border-radius:999px;font-size:12px;cursor:pointer;opacity:.72}
+  .proto-nav button:hover{opacity:1;background:rgba(255,255,255,.07)}.proto-nav button.on{opacity:1;background:var(--honey);color:#241F1A;font-weight:600}
+  .proto-bar .spacer{flex:1}
+  .theme-btn{background:rgba(255,255,255,.08);color:var(--proto-fg);border:1px solid var(--proto-line);padding:5px 12px;border-radius:999px;cursor:pointer;font-size:12px;display:flex;gap:6px;align-items:center}
+
+  .app{display:grid;grid-template-columns:var(--nav) 1fr;grid-template-rows:var(--top) 1fr;min-height:calc(100vh - 44px)}
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:44px;z-index:40}
+  .tb-clinic{display:flex;align-items:center;gap:11px}
+  .tb-clinic .lg{width:32px;height:32px;border-radius:10px;background:var(--pine);display:grid;place-items:center}.tb-clinic .lg svg{width:18px;height:18px}
+  .tb-clinic .nm{font-family:var(--fd);font-weight:700;font-size:15px;line-height:1.1}.tb-clinic .rl{font-size:11px;color:var(--muted)}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:13px}
+  .tb-date{font-size:12px;color:var(--muted)}
+  .tb-av{width:36px;height:36px;border-radius:11px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:13px}
+
+  .nav{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;position:sticky;top:calc(44px + var(--top));height:calc(100vh - 44px - var(--top))}
+  .navb{width:58px;height:58px;border-radius:15px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9.5px;font-weight:650;text-align:center;line-height:1.1}
+  .navb svg{width:21px;height:21px}.navb:hover{background:var(--sand);color:var(--ink)}.navb.on{background:var(--pine-tint);color:var(--pine-deep)}
+
+  .main{padding:clamp(16px,2.4vw,26px);max-width:1200px;width:100%}
+  .panel{display:none}.panel.on{display:block;animation:vin .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .vh .eyebrow{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .vh h1{font-size:clamp(21px,3vw,28px);margin-top:5px}.vh .sub{color:var(--body);font-size:13.5px;margin-top:4px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:42px;padding:0 16px;border-radius:12px;border:none;font-family:var(--fd);font-weight:650;font-size:14px;transition:transform .1s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:16px;height:16px}.btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--pine);color:#fff}.btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}.btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:34px;font-size:12.5px;padding:0 12px;border-radius:10px}.btn-xs{height:29px;font-size:11.5px;padding:0 10px;border-radius:9px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:15px}.pad{padding:18px}
+
+  /* alert strip */
+  .alertstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+  .alert{display:flex;gap:11px;align-items:center;border-radius:13px;padding:11px 13px;border:1px solid}
+  .alert .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}.alert .ic svg{width:16px;height:16px}
+  .alert .t{font-size:12.5px;font-weight:700}.alert .s{font-size:11px;color:var(--muted)}
+  .alert.crit{background:var(--rose-tint);border-color:color-mix(in srgb,var(--rose) 30%,transparent)}.alert.crit .ic{background:var(--rose);color:#fff}
+  .alert.warn{background:var(--honey-tint);border-color:var(--honey-soft)}.alert.warn .ic{background:var(--honey);color:#fff}
+  .alert.good{background:var(--ok-tint);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}.alert.good .ic{background:var(--ok);color:#fff}
+
+  /* doctor strip */
+  .docstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .doccard{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px}
+  .doccard .av{width:38px;height:38px;border-radius:11px;background:var(--pine-tint);color:var(--pine-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:13px;position:relative;flex:0 0 auto}
+  .doccard .av .st{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid var(--surface)}
+  .st.in{background:var(--ok)}.st.late{background:var(--honey)}.st.free{background:var(--info)}
+  .doccard .nm{font-family:var(--fd);font-weight:700;font-size:13.5px}.doccard .mt{font-size:11px;color:var(--muted)}
+  .doccard .cap{margin-left:auto;text-align:center}.doccard .cap .n{font-family:var(--fd);font-weight:800;font-size:17px}.doccard .cap .l{font-size:9.5px;color:var(--muted)}
+
+  /* board */
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .lane{background:var(--sand);border:1px solid var(--line);border-radius:14px;padding:12px;min-height:200px}
+  .lh{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+  .lh .d{width:8px;height:8px;border-radius:50%}
+  .lh .ct{margin-left:auto;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--body)}
+  .lane.wait .lh{color:var(--honey-deep)}.lane.wait .lh .d{background:var(--honey)}
+  .lane.now .lh{color:var(--pine-deep)}.lane.now .lh .d{background:var(--pine)}
+  .lane.collect .lh{color:var(--info)}.lane.collect .lh .d{background:var(--info)}
+  .qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px}
+  .qcard .top{display:flex;align-items:center;gap:9px}
+  .qcard .av{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px;flex:0 0 auto}
+  .qcard .nm{font-size:13px;font-weight:700;font-family:var(--fd)}.qcard .mt{font-size:11px;color:var(--muted)}
+  .qcard .row2{display:flex;align-items:center;gap:7px;margin-top:9px}
+  .tchip{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:99px;padding:2px 7px}
+  .t-walk{background:var(--honey-tint);color:var(--honey-deep)}.t-book{background:var(--pine-tint);color:var(--pine-deep)}.t-follow{background:var(--info-tint);color:var(--info)}
+  .qcard .wait{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:5px}
+  .qcard .wait .adot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .qcard .wait.a0{color:var(--muted);background:var(--sand)}
+  .qcard .wait.a1{color:var(--honey-deep);background:var(--honey-tint)}
+  .qcard .wait.a2{color:color-mix(in srgb,var(--rose) 55%,var(--honey));background:var(--honey-soft)}
+  .qcard .wait.a3{color:var(--rose);background:var(--rose-tint)}
+  .qcard.age2{border-left:3px solid color-mix(in srgb,var(--rose) 55%,var(--honey))}
+  .qcard.age3{border-left:3px solid var(--rose)}
+  .qcard .amt{font-family:var(--fd);font-weight:800;font-size:14px;color:var(--honey-deep)}
+  .qcard .act{margin-left:auto}
+  .av-teal{background:var(--pine-tint);color:var(--pine-deep)}.av-honey{background:var(--honey-soft);color:var(--honey-deep)}.av-info{background:var(--info-tint);color:var(--info)}
+
+  /* desk */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px}
+  .stat .n{font-family:var(--fd);font-weight:800;font-size:23px;font-variant-numeric:tabular-nums}
+  .stat.money .n{color:var(--honey-deep)}.stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .drow{display:flex;align-items:center;gap:13px;padding:13px 4px;border-top:1px solid var(--line)}
+  .drow:first-of-type{border-top:none}
+  .drow .av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px;flex:0 0 auto}
+  .drow .nm{font-size:13.5px;font-weight:700;font-family:var(--fd)}.drow .mt{font-size:11.5px;color:var(--muted)}
+  .drow .amt{margin-left:auto;font-family:var(--fd);font-weight:800;font-size:15px}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 10px}
+
+  /* calendar */
+  .cal{display:grid;grid-template-columns:52px repeat(3,1fr);gap:6px}
+  .cal .ch{font-family:var(--fd);font-weight:700;font-size:12px;padding:6px 4px}.cal .ch .mt{font-size:10px;color:var(--muted);font-weight:500}
+  .cal .th{font-size:11px;color:var(--muted);font-weight:700;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+  .cal .cell{min-height:52px}
+  .cblock{border-radius:9px;padding:6px 8px;font-size:11px;height:100%}
+  .cblock.g{background:var(--pine-tint);color:var(--pine-deep);border-left:3px solid var(--pine)}
+  .cblock.h{background:var(--info-tint);color:var(--info);border-left:3px solid var(--info)}
+  .cblock.block{background:var(--sand2);color:var(--muted)}
+  .cblock.free{background:transparent;border:1px dashed var(--line-2);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .cblock.free:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .cblock .nm{font-weight:700}
+
+  /* modal */
+  .backdrop{position:fixed;inset:0;background:rgba(20,16,13,.5);backdrop-filter:blur(3px);z-index:80;display:none;align-items:flex-start;justify-content:center;padding:52px 16px;overflow-y:auto}
+  .backdrop.on{display:flex;animation:fade .2s}@keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);width:100%;max-width:440px;animation:pop .26s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .mhead{display:flex;align-items:center;padding:20px 22px 6px}.mhead h3{font-size:19px}
+  .x{margin-left:auto;width:34px;height:34px;border-radius:10px;border:none;background:var(--sand);color:var(--muted);display:grid;place-items:center}.x svg{width:17px;height:17px}
+  .mbody{padding:8px 22px 4px}
+  .fld{display:flex;flex-direction:column;gap:7px;margin-top:13px}
+  .fld.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fld label{font-size:12px;font-weight:700;color:var(--body);font-family:var(--fd)}
+  .fld .inp{display:flex;align-items:center;background:var(--paper);border:1.5px solid var(--line-2);border-radius:11px;padding:0 12px}
+  .fld .inp:focus-within{border-color:var(--pine);box-shadow:0 0 0 4px var(--pine-tint)}
+  .fld input,.fld select{flex:1;border:none;background:none;outline:none;font-size:14px;padding:10px 0;color:var(--ink)}
+  .mfoot{display:flex;gap:10px;padding:18px 22px;border-top:1px solid var(--line);background:var(--paper);border-radius:0 0 20px 20px;margin-top:16px}
+
+  /* checkout */
+  .inv{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:6px}
+  .iline{display:flex;justify-content:space-between;font-size:13px;padding:5px 0}
+  .iline.tot{border-top:1px solid var(--line);margin-top:5px;padding-top:9px;font-family:var(--fd);font-weight:800;font-size:16px}
+  .methods{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+  .method{padding:12px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--surface);text-align:center;font-family:var(--fd);font-weight:700;font-size:13px;color:var(--body);display:flex;flex-direction:column;align-items:center;gap:6px}
+  .method svg{width:19px;height:19px}
+  .method.on{border-color:var(--pine);background:var(--pine-tint);color:var(--pine-deep)}
+  .co-done{text-align:center;padding:12px 0 4px}
+  .co-ring{width:54px;height:54px;border-radius:50%;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;margin:0 auto 12px}
+
+  .toastwrap{position:fixed;top:56px;right:16px;z-index:95;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:11px 14px;font-size:13px;font-weight:600;animation:tin .3s;color:var(--ink)}
+  .toast .ic{width:23px;height:23px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}.toast .ic svg{width:14px;height:14px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}.nav{display:none}
+    .alertstrip,.docstrip,.board,.stats{grid-template-columns:1fr}
+    .cal{grid-template-columns:44px repeat(3,1fr)}
+  }
+</style>
+
+<div class="proto-bar">
+  <span class="tag">PROTOTYPE · <b>Package 4 — Reception</b></span>
+  <div class="proto-nav" id="pnav">
+    <button data-go="board" class="on">Front desk</button>
+    <button data-go="calendar">Appointments</button>
+    <button data-go="desk">Desk · Checkout</button>
+    <button data-go="walkin">+ Walk-in</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><span id="themeLbl">Theme</span></button>
+</div>
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="app">
+  <div class="topbar">
+    <button class="tb-clinic" onclick="toast('Workspace switcher — one login, many clinics (Package 1)')" style="border:none;background:none;cursor:pointer;padding:6px 8px;border-radius:12px" aria-haspopup="dialog"><span class="lg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><div style="text-align:left"><div class="nm">HSR Family Clinic</div><div class="rl">Reception · Meera</div></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);margin-left:2px"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="tb-right"><span class="tb-date">Sat, 11 Jul · 10:24 AM</span><span class="tb-av">MN</span></div>
+  </div>
+  <nav class="nav">
+    <button class="navb on" data-nav="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg>Front desk</button>
+    <button class="navb" data-nav="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>Calendar</button>
+    <button class="navb" data-nav="desk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 8h12M9 3c6 0 6 8 0 8M6 8l7 13"/></svg>Desk</button>
+  </nav>
+
+  <main class="main">
+    <!-- BOARD -->
+    <div class="panel on" data-p="board">
+      <div class="vh"><div><div class="eyebrow">Front desk · live</div><h1>Today's flow</h1><div class="sub">Check people in, move the queue, keep the room moving.</div></div>
+        <button class="btn btn-primary" onclick="openModal('walkin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Register walk-in</button></div>
+      <div class="alertstrip">
+        <div class="alert crit"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></span><div><div class="t">Dr. Shah running 20 min late</div><div class="s">3 patients affected · notify?</div></div></div>
+        <div class="alert warn"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span><div><div class="t">Waiting room at 8</div><div class="s">Above comfortable capacity</div></div></div>
+        <div class="alert good"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg></span><div><div class="t">Room 2 now free</div><div class="s">Dr. Iyer available</div></div></div>
+      </div>
+      <div class="docstrip">
+        <div class="doccard"><span class="av">AR<span class="st in"></span></span><div><div class="nm">Dr. Rao</div><div class="mt">In consultation · Room 1</div></div><div class="cap"><div class="n" id="cap-rao">0</div><div class="l">waiting</div></div></div>
+        <div class="doccard"><span class="av">VS<span class="st late"></span></span><div><div class="nm">Dr. Shah</div><div class="mt">20 min late · Room 3</div></div><div class="cap"><div class="n" id="cap-shah">0</div><div class="l">waiting</div></div></div>
+        <div class="doccard"><span class="av">MI<span class="st free"></span></span><div><div class="nm">Dr. Iyer</div><div class="mt">Available · Room 2</div></div><div class="cap"><div class="n" id="cap-iyer">0</div><div class="l">waiting</div></div></div>
+      </div>
+      <div class="board">
+        <div class="lane wait"><div class="lh"><span class="d"></span>Waiting <span class="ct" id="ct-wait">0</span></div><div id="lane-wait"></div></div>
+        <div class="lane now"><div class="lh"><span class="d"></span>In consultation <span class="ct" id="ct-now">0</span></div><div id="lane-now"></div></div>
+        <div class="lane collect"><div class="lh"><span class="d"></span>Done · to collect <span class="ct" id="ct-collect">0</span></div><div id="lane-collect"></div></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="panel" data-p="calendar">
+      <div class="vh"><div><div class="eyebrow">Saturday, 11 July</div><h1>Clinic calendar</h1><div class="sub">Every doctor's day, side by side. Tap a free slot to book.</div></div></div>
+      <div class="card pad">
+        <div class="cal">
+          <div class="ch">&nbsp;</div><div class="ch">Dr. Rao<div class="mt">Room 1 · Dentist</div></div><div class="ch">Dr. Shah<div class="mt">Room 3 · Physio</div></div><div class="ch">Dr. Iyer<div class="mt">Room 2 · Derma</div></div>
+          <div class="th">9:30</div><div class="cell"><div class="cblock g"><span class="nm">Aarav Mehta</span><br>New patient</div></div><div class="cell"><div class="cblock block">Blocked</div></div><div class="cell"><div class="cblock free" onclick="book('Dr. Iyer','9:30')">+ Free</div></div>
+          <div class="th">10:00</div><div class="cell"><div class="cblock g"><span class="nm">Sunita Patil</span><br>Consultation</div></div><div class="cell"><div class="cblock h"><span class="nm">Kiran</span><br>Rehab</div></div><div class="cell"><div class="cblock h"><span class="nm">Neha Gupta</span><br>Skin review</div></div>
+          <div class="th">10:30</div><div class="cell"><div class="cblock g"><span class="nm">Rohan K.</span><br>Follow-up</div></div><div class="cell"><div class="cblock free" onclick="book('Dr. Shah','10:30')">+ Free</div></div><div class="cell"><div class="cblock free" onclick="book('Dr. Iyer','10:30')">+ Free</div></div>
+          <div class="th">11:00</div><div class="cell"><div class="cblock free" onclick="book('Dr. Rao','11:00')">+ Free</div></div><div class="cell"><div class="cblock h"><span class="nm">Arjun</span><br>Rehab</div></div><div class="cell"><div class="cblock g"><span class="nm">Priya S.</span><br>Consultation</div></div>
+          <div class="th">11:30</div><div class="cell"><div class="cblock g"><span class="nm">Kavya R.</span><br>Follow-up</div></div><div class="cell"><div class="cblock free" onclick="book('Dr. Shah','11:30')">+ Free</div></div><div class="cell"><div class="cblock block">Lunch</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESK -->
+    <div class="panel" data-p="desk">
+      <div class="vh"><div><div class="eyebrow">Cash desk</div><h1>Collect &amp; close</h1><div class="sub">Visits finished with the doctor, waiting to be billed.</div></div></div>
+      <div class="stats">
+        <div class="stat money"><div class="n" id="collectedToday">₹6,400</div><div class="l">Collected today</div></div>
+        <div class="stat"><div class="n" id="toCollectCount">0</div><div class="l">Waiting to collect</div></div>
+        <div class="stat"><div class="n" id="toCollectSum">₹0</div><div class="l">Outstanding at desk</div></div>
+      </div>
+      <div class="card pad"><div id="deskList"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- WALK-IN MODAL -->
+<div class="backdrop" id="m-walkin">
+  <div class="modal">
+    <div class="mhead"><h3>Register walk-in</h3><button class="x" onclick="closeModal('walkin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mbody">
+      <div class="fld"><label>Full name</label><div class="inp"><input id="wName" placeholder="e.g. Deepa Nair"></div></div>
+      <div class="fld two"><div class="fld" style="margin:0"><label>Phone</label><div class="inp"><input placeholder="+91 …"></div></div><div class="fld" style="margin:0"><label>Age · Sex</label><div class="inp"><input placeholder="34 · F"></div></div></div>
+      <div class="fld"><label>Reason</label><div class="inp"><input id="wReason" placeholder="e.g. Toothache"></div></div>
+      <div class="fld"><label>Doctor</label><div class="inp"><select id="wDoc"><option>Dr. Rao</option><option>Dr. Shah</option><option>Dr. Iyer</option></select></div></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-line" style="flex:1" onclick="closeModal('walkin')">Cancel</button><button class="btn btn-primary" style="flex:1.4" onclick="addWalkin()">Add to queue</button></div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="backdrop" id="m-checkout">
+  <div class="modal">
+    <div class="mhead"><h3 id="coTitle">Collect payment</h3><button class="x" onclick="closeModal('checkout')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="mbody" id="coBody"></div>
+    <div class="mfoot" id="coFoot"></div>
+  </div>
+</div>
+
+<script>
+  const DOC_KEY={'Dr. Rao':'rao','Dr. Shah':'shah','Dr. Iyer':'iyer'};
+  let P=[
+    {id:'dn',ini:'DN',av:'av-honey',name:'Deepa Nair',reason:'Toothache',type:'walk',doc:'Dr. Rao',wait:'42m',lane:'wait',amt:500},
+    {id:'kr',ini:'KR',av:'av-teal',name:'Kiran Rao',reason:'Rehab session',type:'book',doc:'Dr. Shah',wait:'33m',lane:'wait',amt:800},
+    {id:'sp',ini:'SP',av:'av-teal',name:'Sunita Patil',reason:'Consultation',type:'book',doc:'Dr. Rao',wait:'24m',lane:'wait',amt:500},
+    {id:'ng',ini:'NG',av:'av-info',name:'Neha Gupta',reason:'Skin review',type:'book',doc:'Dr. Iyer',wait:'3m',lane:'wait',amt:600},
+    {id:'rk',ini:'KK',av:'av-teal',name:'Karan Kulkarni',reason:'Follow-up',type:'follow',doc:'Dr. Rao',wait:'',lane:'now',amt:300},
+    {id:'am',ini:'AM',av:'av-teal',name:'Aarav Mehta',reason:'New patient',type:'book',doc:'Dr. Rao',wait:'',lane:'collect',amt:500},
+    {id:'pv',ini:'PV',av:'av-info',name:'Priya Verma',reason:'Consultation',type:'book',doc:'Dr. Iyer',wait:'',lane:'collect',amt:600}
+  ];
+  let collected=6400, coPatient=null, coMethod='upi';
+
+  const money=n=>'₹'+n.toLocaleString('en-IN');
+  const TYPE={walk:'Walk-in',book:'Booked',follow:'Follow-up'};
+  // Progressive queue aging: ≥20 yellow · ≥30 orange · ≥45 red — visual only, no alerts.
+  function waitTier(w){ const m=parseInt(w,10)||0; return m>=45?3:m>=30?2:m>=20?1:0; }
+
+  function qcard(p){
+    let act='';
+    if(p.lane==='wait') act=`<button class="btn btn-line btn-xs act" onclick="move('${p.id}','now')">Send in</button>`;
+    else if(p.lane==='now') act=`<button class="btn btn-line btn-xs act" onclick="move('${p.id}','collect')">Mark done</button>`;
+    else if(p.lane==='collect') act=`<button class="btn btn-primary btn-xs act" onclick="openCheckout('${p.id}')">Collect ${money(p.amt)}</button>`;
+    const tier=waitTier(p.wait);
+    const info = p.lane==='collect'
+      ? `<span class="amt">${money(p.amt)}</span>`
+      : (p.wait?`<span class="wait a${tier}"><span class="adot"></span>${p.wait}</span>`:'');
+    const aged = (p.lane==='wait'&&tier>=2)?' age'+tier:'';
+    return `<div class="qcard${aged}"><div class="top"><span class="avatar av ${p.av}" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px">${p.ini}</span>
+      <div><div class="nm">${p.name}</div><div class="mt">${p.reason} · ${p.doc}</div></div></div>
+      <div class="row2"><span class="tchip t-${p.type}">${TYPE[p.type]}</span>${info}${act}</div></div>`;
+  }
+  function renderBoard(){
+    ['wait','now','collect'].forEach(l=>{
+      const items=P.filter(p=>p.lane===l);
+      document.getElementById('lane-'+l).innerHTML=items.map(qcard).join('')||`<div style="font-size:11.5px;color:var(--muted);text-align:center;padding:14px">Empty</div>`;
+      document.getElementById('ct-'+l).textContent=items.length;
+    });
+    ['rao','shah','iyer'].forEach(k=>{ const n=P.filter(p=>p.lane==='wait'&&DOC_KEY[p.doc]===k).length; document.getElementById('cap-'+k).textContent=n; });
+  }
+  function move(id,to){ const p=P.find(x=>x.id===id); p.lane=to; p.wait=''; renderBoard();
+    toast(p.name.split(' ')[0]+(to==='now'?' sent in':' ready to collect')); }
+
+  function renderDesk(){
+    const list=P.filter(p=>p.lane==='collect');
+    const sum=list.reduce((a,p)=>a+p.amt,0);
+    document.getElementById('collectedToday').textContent=money(collected);
+    document.getElementById('toCollectCount').textContent=list.length;
+    document.getElementById('toCollectSum').textContent=money(sum);
+    document.getElementById('deskList').innerHTML=list.length?list.map(p=>`<div class="drow">
+      <span class="avatar av ${p.av}" style="width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:14px">${p.ini}</span>
+      <div><div class="nm">${p.name}</div><div class="mt">${p.reason} · ${p.doc}</div></div>
+      <span class="amt">${money(p.amt)}</span>
+      <button class="btn btn-primary btn-sm" onclick="openCheckout('${p.id}')">Collect ${money(p.amt)}</button></div>`).join('')
+      : `<div class="empty"><div style="font-size:15px;font-family:var(--fd);font-weight:700;color:var(--ink);margin-bottom:4px">Nothing to collect</div>Everyone's settled. The desk is clear.</div>`;
+  }
+
+  // checkout
+  function openCheckout(id){ coPatient=P.find(p=>p.id===id); coMethod='upi'; renderCheckout(false); openModal('checkout'); }
+  function renderCheckout(done){
+    const p=coPatient;
+    document.getElementById('coTitle').textContent = done?'Payment collected':'Collect payment';
+    if(done){
+      document.getElementById('coBody').innerHTML=`<div class="co-done"><div class="co-ring"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div style="font-family:var(--fd);font-weight:800;font-size:18px">${money(p.amt)} collected</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${p.name} · ${coMethod.toUpperCase()} · receipt ready</div></div>`;
+      document.getElementById('coFoot').innerHTML=`<button class="btn btn-line" style="flex:1" onclick="toast('Receipt printed')">Print receipt</button><button class="btn btn-primary" style="flex:1.2" onclick="closeModal('checkout')">Done</button>`;
+      return;
+    }
+    document.getElementById('coBody').innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;margin:6px 0 4px"><span class="avatar av ${p.av}" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:13px">${p.ini}</span><div><div style="font-family:var(--fd);font-weight:700;font-size:14px">${p.name}</div><div style="font-size:11.5px;color:var(--muted)">${p.reason} · ${p.doc}</div></div></div>
+      <div class="inv"><div class="iline"><span>${p.reason} — consultation</span><span>${money(p.amt)}</span></div><div class="iline tot"><span>Total</span><span>${money(p.amt)}</span></div></div>
+      <label class="fld" style="margin-top:14px"><span style="font-size:12px;font-weight:700;color:var(--body);font-family:var(--fd)">Payment method</span></label>
+      <div class="methods" id="methods">
+        <button class="method on" data-m="upi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>UPI</button>
+        <button class="method" data-m="cash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Cash</button>
+        <button class="method" data-m="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Card</button>
+      </div>`;
+    document.getElementById('coFoot').innerHTML=`<button class="btn btn-line" style="flex:1" onclick="closeModal('checkout')">Cancel</button><button class="btn btn-primary" style="flex:1.5" onclick="collect()">Collect ${money(p.amt)}</button>`;
+    document.getElementById('methods').addEventListener('click',e=>{ const m=e.target.closest('[data-m]'); if(!m) return;
+      document.querySelectorAll('#methods .method').forEach(x=>x.classList.remove('on')); m.classList.add('on'); coMethod=m.dataset.m; });
+  }
+  function collect(){ collected+=coPatient.amt; coPatient.lane='collected'; renderCheckout(true); renderBoard(); renderDesk();
+    toast(money(coPatient.amt)+' collected · '+coPatient.name.split(' ')[0]); }
+
+  // walk-in
+  function addWalkin(){ const name=(document.getElementById('wName').value||'New patient').trim();
+    const ini=name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'NP';
+    P.push({id:'w'+Date.now(),ini,av:'av-honey',name,reason:document.getElementById('wReason').value||'Walk-in',type:'walk',doc:document.getElementById('wDoc').value,wait:'just now',lane:'wait',amt:500});
+    document.getElementById('wName').value='';document.getElementById('wReason').value='';
+    closeModal('walkin'); renderBoard(); toast(name.split(' ')[0]+' added to the queue'); }
+  function book(doc,time){ toast('Booked · '+doc+' at '+time); }
+
+  // modals
+  function openModal(n){ document.getElementById('m-'+n).classList.add('on'); }
+  function closeModal(n){ document.getElementById('m-'+n).classList.remove('on'); }
+  document.querySelectorAll('.backdrop').forEach(b=>b.addEventListener('click',e=>{ if(e.target===b) b.classList.remove('on'); }));
+
+  // nav
+  function go(v){
+    if(v==='walkin'){ openModal('walkin'); return; }
+    document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('on',x.dataset.p===v));
+    document.querySelectorAll('.navb').forEach(b=>b.classList.toggle('on',b.dataset.nav===v));
+    document.querySelectorAll('#pnav button').forEach(b=>b.classList.toggle('on',b.dataset.go===v));
+    if(v==='board') renderBoard(); if(v==='desk') renderDesk(); window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.navb[data-nav]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.nav)));
+  document.getElementById('pnav').addEventListener('click',e=>{ if(e.target.dataset.go) go(e.target.dataset.go); });
+
+  const tw=document.getElementById('toasts');
+  function toast(msg){ const t=document.createElement('div'); t.className='toast';
+    t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';
+    tw.appendChild(t); setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2500); }
+  function curTheme(){ const r=document.documentElement.getAttribute('data-theme'); return r||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }
+  document.getElementById('themeBtn').addEventListener('click',()=>{ const n=curTheme()==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',n); document.getElementById('themeLbl').textContent=n==='dark'?'Dark':'Light'; });
+
+  renderBoard();
+</script>

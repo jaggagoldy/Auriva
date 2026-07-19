@@ -20,5 +20,13 @@ export default async function ChangePasswordPage() {
   });
   if (!user?.must_change_password) redirect("/workspace");
 
-  return <ChangePasswordForm />;
+  // PKG-1: name the clinic that provisioned this account, when resolvable
+  // (their active staff profile's clinic). Falls back to generic wording.
+  const profile = await prisma.staffProfile.findFirst({
+    where: { user_id: session.userId },
+    select: { clinic: { select: { name: true } } },
+    orderBy: { id: "asc" },
+  });
+
+  return <ChangePasswordForm clinicName={profile?.clinic?.name ?? null} />;
 }

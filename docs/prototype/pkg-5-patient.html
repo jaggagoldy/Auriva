@@ -1,0 +1,385 @@
+<title>Auriva Prototype · Package 5 — Patient</title>
+<style>
+  :root{
+    --paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;--stage:#EFE7DB;
+    --pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;
+    --honey:#E8A24C;--honey-2:#E39433;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;
+    --rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;
+    --ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--night:#0B4A41;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --proto:#241F1A;--proto-fg:#F5EFE7;--proto-line:#3a3128;
+    --fd:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;
+    --fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#161109;--surface:#211A12;--sand:#2A2118;--sand2:#33291C;--stage:#0E0A05;
+    --pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;--honey:#E8A24C;--honey-2:#E39433;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;
+    --rose:#E27B72;--rose-tint:#3a2420;--ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;
+    --ink:#F6EFE4;--body:#D2C7B7;--muted:#B0A492;--line:#372D1E;--line-2:#493B29;
+    --shadow:0 24px 54px -26px rgba(0,0,0,.75);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}}
+  :root[data-theme="light"]{--paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;--stage:#EFE7DB;--pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;--honey:#E8A24C;--honey-2:#E39433;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;--rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;--ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;}
+  :root[data-theme="dark"]{--paper:#161109;--surface:#211A12;--sand:#2A2118;--sand2:#33291C;--stage:#0E0A05;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;--honey:#E8A24C;--honey-2:#E39433;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;--ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F6EFE4;--body:#D2C7B7;--muted:#B0A492;--line:#372D1E;--line-2:#493B29;}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--stage);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}input{font-family:var(--fb);color:var(--ink)}
+  :focus-visible{outline:2.5px solid var(--honey-deep);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .proto-bar{position:sticky;top:0;z-index:90;background:var(--proto);color:var(--proto-fg);display:flex;align-items:center;gap:14px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--proto-line);font-size:12.5px}
+  .proto-bar .tag{font-family:var(--fd);font-weight:700}.proto-bar .tag b{color:var(--honey)}
+  .proto-bar .spacer{flex:1}
+  .theme-btn{background:rgba(255,255,255,.08);color:var(--proto-fg);border:1px solid var(--proto-line);padding:5px 12px;border-radius:999px;cursor:pointer;font-size:12px;display:flex;gap:6px;align-items:center}
+
+  .stage{display:flex;justify-content:center;min-height:calc(100vh - 44px);position:relative}
+  .stage::before{content:"";position:fixed;inset:44px 0 0;background:radial-gradient(600px 380px at 20% 12%,color-mix(in srgb,var(--honey) 22%,transparent),transparent 60%),radial-gradient(600px 420px at 100% 30%,color-mix(in srgb,var(--pine) 16%,transparent),transparent 58%);pointer-events:none}
+  .phone{position:relative;width:100%;max-width:420px;min-height:calc(100vh - 44px);background:var(--paper);display:flex;flex-direction:column;box-shadow:0 40px 90px -30px rgba(36,31,26,.5);z-index:1}
+  @media (min-width:480px){.phone{min-height:calc(96vh - 44px);margin:2vh 0;border-radius:34px;overflow:hidden;border:1px solid var(--line)}}
+
+  .p-top{padding:18px 20px 12px;position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(12px);z-index:20}
+  .p-top .row{display:flex;align-items:center;gap:12px}
+  .p-top .hi{font-family:var(--fd);font-weight:700;font-size:21px;line-height:1.1}
+  .p-top .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .p-top .bell{margin-left:auto;width:40px;height:40px;border-radius:13px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;position:relative}
+  .p-top .bell svg{width:19px;height:19px;color:var(--ink)}.p-top .bell .d{position:absolute;top:10px;right:11px;width:7px;height:7px;border-radius:50%;background:var(--rose)}
+  .p-top .av{width:40px;height:40px;border-radius:13px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700}
+  .p-title{font-family:var(--fd);font-weight:700;font-size:20px}
+  .back{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:650;color:var(--body);background:none;border:none;padding:0;margin-bottom:8px}.back svg{width:16px;height:16px}
+
+  .p-body{flex:1;overflow-y:auto;padding:6px 20px 96px}
+  .view{display:none}.view.on{display:block;animation:vin .34s cubic-bezier(.2,.8,.2,1)}
+  @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .sub2{display:none}.sub2.on{display:block;animation:vin .3s ease}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 18px;border-radius:14px;border:none;font-family:var(--fd);font-weight:650;font-size:15px;transition:transform .12s,filter .2s}
+  .btn svg{width:17px;height:17px}.btn:active{transform:translateY(1px) scale(.99)}.btn.block{width:100%}
+  .btn-honey{background:var(--honey);color:#4A3413;box-shadow:0 12px 26px -12px rgba(232,162,76,.55)}.btn-honey:hover{filter:brightness(1.05)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}.btn-line:hover{border-color:var(--honey-deep)}
+  .btn-sm{height:40px;font-size:13.5px;padding:0 14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px}
+  .sec-l{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 4px 12px}
+  .reassure{font-size:14px;color:var(--body);margin:2px 4px 4px}
+  .reassure b{color:var(--ink);font-weight:700;font-family:var(--fd)}
+
+  .nextv{background:linear-gradient(158deg,var(--night),#0A423A);color:#fff;border-radius:20px;padding:19px;position:relative;overflow:hidden;margin-top:6px}
+  .nextv::after{content:"";position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(232,162,76,.2),transparent 62%);right:-90px;top:-100px}
+  .nextv .l{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--honey);position:relative}
+  .nextv .r{display:flex;align-items:center;gap:13px;margin-top:11px;position:relative}
+  .nextv .r .av{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:16px;flex:0 0 auto}
+  .nextv .r .nm{font-family:var(--fd);font-weight:700;font-size:16px}.nextv .r .mt{font-size:12.5px;color:#CFE3DC;margin-top:2px}
+  .nextv .note{font-size:12.5px;color:#DCEAE5;margin-top:12px;position:relative;display:flex;gap:8px;flex-wrap:wrap}
+  .nextv .note span{background:rgba(255,255,255,.12);border-radius:99px;padding:4px 10px;display:inline-flex;gap:6px;align-items:center}
+  .nextv .note svg{width:12px;height:12px}
+  .nextv .acts{display:flex;gap:9px;margin-top:15px;position:relative}
+  .nextv .acts .btn{height:42px;font-size:13.5px;flex:1}
+  .nextv .acts .btn-line{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}
+  .nextv .acts .btn-honey{background:#fff;color:var(--pine-deep);box-shadow:none}
+
+  .todo{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:10px}
+  .todo .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}.todo .ic svg{width:18px;height:18px}
+  .todo .nm{font-family:var(--fd);font-weight:700;font-size:14px}.todo .mt{font-size:12px;color:var(--muted)}
+  .todo .done{margin-left:auto;color:var(--ok);font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
+  .todo .go{margin-left:auto;color:var(--honey-deep);font-weight:700;font-size:12.5px}
+
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;text-align:left;width:100%}
+  .tile:active{transform:scale(.98)}
+  .tile .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;margin-bottom:10px}.tile .ic svg{width:19px;height:19px}
+  .tile.a .ic{background:var(--honey-soft);color:var(--honey-deep)}.tile.b .ic{background:var(--pine-tint);color:var(--pine-deep)}.tile.c .ic{background:var(--ok-tint);color:var(--ok)}.tile.d .ic{background:var(--info-tint);color:var(--info)}
+  .tile .nm{font-family:var(--fd);font-weight:700;font-size:14px}.tile .mt{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  .lrow{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:10px;width:100%;text-align:left}
+  .lrow:hover{box-shadow:var(--shadow-s)}
+  .lrow .av{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:15px;flex:0 0 auto;background:var(--pine-tint);color:var(--pine-deep)}
+  .lrow .av.h{background:var(--honey-soft);color:var(--honey-deep)}.lrow .av.i{background:var(--info-tint);color:var(--info)}
+  .lrow .nm{font-family:var(--fd);font-weight:700;font-size:14.5px}.lrow .mt{font-size:12px;color:var(--muted);margin-top:2px}
+  .lrow .arr{margin-left:auto;color:var(--line-2);flex:0 0 auto}.lrow .arr svg{width:19px;height:19px}
+  .lrow .rt{margin-left:auto;text-align:right;flex:0 0 auto}
+  .pill{font-size:11px;font-weight:700;border-radius:99px;padding:4px 10px}
+  .pill.k{background:var(--ok-tint);color:var(--ok)}.pill.a{background:var(--honey-soft);color:var(--honey-deep)}.pill.g{background:var(--pine-tint);color:var(--pine-deep)}
+
+  /* records timeline */
+  .tl{position:relative;padding-left:24px;margin-top:4px}
+  .tl::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .tlv{position:relative;margin-bottom:12px}
+  .tlv .node{position:absolute;left:-24px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--honey)}
+  .tlv.old .node{border-color:var(--line-2)}
+  .tlv .when{font-size:11.5px;font-weight:700;color:var(--muted);margin:0 0 6px 2px}
+
+  /* doctor profile */
+  .docp{text-align:center;padding:6px 0 4px}
+  .docp .av{width:74px;height:74px;border-radius:22px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:26px;margin:0 auto 12px}
+  .docp h2{font-size:20px}.docp .mt{font-size:13px;color:var(--muted);margin-top:4px}
+  .docp .chips{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+  .docp .chip{font-size:12px;font-weight:650;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 12px;color:var(--body);display:inline-flex;gap:6px;align-items:center}
+  .docp .chip svg{width:14px;height:14px;color:var(--honey-deep)}
+  .slotday{font-size:12.5px;font-weight:700;margin:18px 0 9px}
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .slot{padding:11px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--surface);font-family:var(--fd);font-weight:700;font-size:13.5px;text-align:center}
+  .slot.on{border-color:var(--honey);background:var(--honey-tint);color:var(--honey-deep)}
+  .slot.off{opacity:.4}
+
+  .confirm{text-align:center;padding:24px 0 8px}
+  .confirm .ring{width:66px;height:66px;border-radius:50%;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;margin:0 auto 16px}
+  .confirm .ring svg{width:32px;height:32px}
+  .confirm h2{font-size:22px;margin-bottom:6px}.confirm p{color:var(--body);font-size:14px;max-width:26ch;margin:0 auto 8px}
+
+  /* family */
+  .fam{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:10px;width:100%;text-align:left}
+  .fam.on{border-color:var(--honey);background:var(--honey-tint)}
+  .fam .av{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:16px;flex:0 0 auto}
+  .fam .nm{font-family:var(--fd);font-weight:700;font-size:15px}.fam .mt{font-size:12px;color:var(--muted)}
+  .fam .badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--honey-deep);background:var(--surface);border:1px solid var(--honey-soft);border-radius:99px;padding:4px 10px}
+  .fam .switch{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--honey-deep)}
+
+  /* you */
+  .youhead{display:flex;align-items:center;gap:14px;padding:8px 0 4px}
+  .youhead .av{width:62px;height:62px;border-radius:19px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:22px;flex:0 0 auto}
+  .youhead .nm{font-family:var(--fd);font-weight:700;font-size:19px}.youhead .mt{font-size:12.5px;color:var(--muted);margin-top:2px;font-family:ui-monospace,monospace}
+  .yrow{display:flex;align-items:center;gap:13px;padding:15px 4px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:none;border-left:none;border-right:none;border-top:none}
+  .yrow .ic{width:36px;height:36px;border-radius:11px;background:var(--sand);color:var(--body);display:grid;place-items:center;flex:0 0 auto}.yrow .ic svg{width:18px;height:18px}
+  .yrow .nm{font-family:var(--fd);font-weight:650;font-size:14.5px}.yrow .mt{font-size:11.5px;color:var(--muted)}
+  .yrow .arr{margin-left:auto;color:var(--line-2)}.yrow .arr svg{width:18px;height:18px}
+
+  /* today summary (refinement) */
+  .today-sum{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:6px}
+  .ts-l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--honey-deep);margin-bottom:9px}
+  .ts-row{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--body);padding:3px 0}
+  .ts-row .ck{width:20px;height:20px;border-radius:50%;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}
+  .ts-row .ck svg{width:12px;height:12px}.ts-row b{color:var(--ink);font-weight:700}
+  .recdx{font-size:12px;color:var(--honey-deep);font-weight:600;margin-top:3px}
+  .fam .care{font-size:11.5px;font-weight:650;margin-top:4px;display:flex;align-items:center;gap:6px}
+  .fam .care .cd{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+
+  /* bottom tab bar */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:30}
+  .tabb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;padding:6px 0;color:var(--muted);font-family:var(--fd);font-weight:650;font-size:10px}
+  .tabb svg{width:22px;height:22px}
+  .tabb.on{color:var(--honey-deep)}
+  .tabb.book{position:relative}
+  .tabb.book .fabwrap{width:46px;height:46px;border-radius:16px;background:var(--honey);color:#4A3413;display:grid;place-items:center;box-shadow:0 10px 22px -8px rgba(232,162,76,.6);margin-top:-18px;margin-bottom:2px}
+  .tabb.book .fabwrap svg{width:24px;height:24px}
+  .tabb.book.on{color:var(--honey-deep)}
+
+  .toastwrap{position:fixed;bottom:96px;left:0;right:0;display:flex;justify-content:center;z-index:95;pointer-events:none}
+  .toast{background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);transition:.25s;display:flex;align-items:center;gap:8px}
+  .toast.on{opacity:1;transform:none}.toast svg{width:15px;height:15px;color:var(--honey)}
+</style>
+
+<div class="proto-bar">
+  <span class="tag">PROTOTYPE · <b>Package 5 — Patient</b></span>
+  <span style="opacity:.7">the public face · mobile-first</span>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><span id="themeLbl">Theme</span></button>
+</div>
+
+<div class="stage">
+  <div class="phone">
+    <div class="p-top" id="ptop"></div>
+    <div class="p-body">
+
+      <!-- HOME (Today) -->
+      <div class="view on" id="v-home">
+        <div id="homeSummary"></div>
+        <div class="sec-l">Next visit</div>
+        <div id="homeNext"></div>
+        <div class="sec-l">For you today</div>
+        <div class="todo"><span class="ic" style="background:var(--ok-tint);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><div><div class="nm">Metformin · 500mg</div><div class="mt">Morning dose · 8:00 AM</div></div><span class="done"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Taken</span></div>
+        <button class="todo" onclick="setTab('records')"><span class="ic" style="background:var(--info-tint);color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><div><div class="nm">Blood test report ready</div><div class="mt">Uploaded by City Diagnostics</div></div><span class="go">View →</span></button>
+        <div class="sec-l">Quick actions</div>
+        <div class="tiles">
+          <button class="tile a" onclick="setTab('book')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><div class="nm">Book a visit</div><div class="mt">Find your doctor</div></button>
+          <button class="tile b" onclick="setTab('records')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><div class="nm">My records</div><div class="mt">Visits &amp; reports</div></button>
+          <button class="tile c" onclick="setTab('family')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span><div class="nm">Family</div><div class="mt">2 dependents</div></button>
+          <button class="tile d" onclick="toast('Payments — nothing due right now')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><div class="nm">Payments</div><div class="mt">Nothing due</div></button>
+        </div>
+      </div>
+
+      <!-- BOOK -->
+      <div class="view" id="v-book">
+        <div class="sub2 on" id="book-list">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search doctors or symptoms"></div>
+          <div class="sec-l" style="margin-top:4px">Your care team</div>
+          <div id="docList"></div>
+        </div>
+        <div class="sub2" id="book-profile"></div>
+        <div class="sub2" id="book-confirm"></div>
+      </div>
+
+      <!-- RECORDS -->
+      <div class="view" id="v-records">
+        <div class="sub2 on" id="rec-list">
+          <p class="reassure"><b>You're all caught up.</b> 6 visits and every report on file.</p>
+          <div class="tl" id="visitTl"></div>
+        </div>
+        <div class="sub2" id="rec-detail"></div>
+      </div>
+
+      <!-- FAMILY -->
+      <div class="view" id="v-family">
+        <p class="reassure">Everyone's in good shape. Switch to manage someone's care.</p>
+        <div class="sec-l">Profiles</div>
+        <div id="famList"></div>
+        <button class="btn btn-line block" style="margin-top:6px" onclick="toast('Add a family member')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add family member</button>
+      </div>
+
+      <!-- YOU -->
+      <div class="view" id="v-you">
+        <div class="youhead"><span class="av" id="youAv">GS</span><div><div class="nm" id="youName">Goldy Sharma</div><div class="mt">AUR-1029-4471 · +91 98xxx xxxxx</div></div></div>
+        <div class="sec-l">Account</div>
+        <div class="card" style="padding:0 16px">
+          <button class="yrow" onclick="toast('Personal details')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></span><div><div class="nm">Personal details</div><div class="mt">Name, DOB, blood group</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></button>
+          <button class="yrow" onclick="toast('Insurance')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></span><div><div class="nm">Insurance</div><div class="mt">Star Health · valid</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></button>
+          <button class="yrow" onclick="toast('Payments')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><div><div class="nm">Payments</div><div class="mt">UPI · cards</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></button>
+          <button class="yrow" onclick="toast('Notifications')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg></span><div><div class="nm">Notifications</div><div class="mt">Reminders &amp; results</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></button>
+          <button class="yrow" style="border-bottom:none" onclick="toast('Signed out')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></span><div><div class="nm">Sign out</div></div></button>
+        </div>
+      </div>
+
+    </div>
+
+    <nav class="tabbar" id="tabbar">
+      <button class="tabb on" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2z"/></svg>Home</button>
+      <button class="tabb" data-tab="records"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>Records</button>
+      <button class="tabb book" data-tab="book"><span class="fabwrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Book</button>
+      <button class="tabb" data-tab="family"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.9"/></svg>Family</button>
+      <button class="tabb" data-tab="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>You</button>
+    </nav>
+  </div>
+</div>
+
+<div class="toastwrap"><div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span id="toastMsg"></span></div></div>
+
+<script>
+  const PROFILES=[
+    {id:'goldy',ini:'GS',av:'',name:'Goldy Sharma',rel:'You',age:'34',care:'Visit today at 4:30 PM',tone:'info'},
+    {id:'aarav',ini:'AM',av:'i',name:'Aarav Sharma',rel:'Son',age:'8',care:'Vaccination due next month',tone:'due'},
+    {id:'meera',ini:'MS',av:'h',name:'Meera Sharma',rel:'Mother',age:'61',care:'Follow-up next week',tone:'due'}
+  ];
+  const TONE={info:'var(--info)',due:'var(--honey-deep)',ok:'var(--ok)',none:'var(--muted)'};
+  let active='goldy';
+  const first=()=>PROFILES.find(p=>p.id===active).name.split(' ')[0];
+
+  const DOCTORS=[
+    {id:'iyer',ini:'MI',name:'Dr. Meera Iyer',spec:'Dermatologist',clinic:'HSR Family Clinic',exp:'11 yrs',rating:'4.9',fee:600,slots:['4:30 PM','5:00 PM','5:30 PM','6:00 PM']},
+    {id:'rao',ini:'AR',name:'Dr. Anjali Rao',spec:'Dentist',clinic:'SmileCare Dental',exp:'14 yrs',rating:'4.8',fee:500,slots:['10:00 AM','10:30 AM','11:30 AM']},
+    {id:'shah',ini:'VS',name:'Dr. Vikram Shah',spec:'Physiotherapist',clinic:'Sunrise Physio',exp:'9 yrs',rating:'4.7',fee:800,slots:['9:00 AM','9:30 AM','12:00 PM']}
+  ];
+  const VISITS=[
+    {id:'v1',when:'Today · 15 Jul',doc:'Dr. Meera Iyer',spec:'Skin consultation',dx:'Contact dermatitis',rx:[['Hydrocortisone cream','Apply thin · 0-0-1 · 7 days'],['Cetirizine','10mg · 0-0-1 · 5 days']],reports:['Patch test — normal'],amt:600,paid:true,fresh:true},
+    {id:'v2',when:'2 Jul',doc:'Dr. Anjali Rao',spec:'Dental cleaning',dx:'Routine scaling',rx:[['Chlorhexidine rinse','Twice daily · 7 days']],reports:[],amt:500,paid:true},
+    {id:'v3',when:'20 Jun',doc:'Dr. Vikram Shah',spec:'Physiotherapy',dx:'Lower back strain',rx:[['Ibuprofen','400mg · 1-0-1 · 5 days']],reports:['X-ray lumbar — no fracture'],amt:800,paid:true},
+    {id:'v4',when:'12 May',doc:'Dr. Meera Iyer',spec:'Skin review',dx:'Seasonal allergy',rx:[['Cetirizine','10mg · 5 days']],reports:[],amt:600,paid:true}
+  ];
+  let bookingDoc=null, bookingSlot=null;
+
+  const money=n=>'₹'+n.toLocaleString('en-IN');
+
+  function renderTop(){
+    const home=document.getElementById('v-home').classList.contains('on');
+    const hour=new Date().getHours();
+    const greet=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+    const titles={records:'Your records',book:'Book a visit',family:'Family',you:'You'};
+    let cur='home'; document.querySelectorAll('.view').forEach(v=>{if(v.classList.contains('on'))cur=v.id.replace('v-','');});
+    if(cur==='home'){
+      document.getElementById('ptop').innerHTML=`<div class="row"><div><div class="hi">${greet}, ${first()}</div><div class="sub">Wednesday, 15 July</div></div>
+        <button class="bell" onclick="toast('Notifications')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg><span class="d"></span></button>
+        <button class="av" onclick="setTab('you')">${PROFILES.find(p=>p.id===active).ini}</button></div>`;
+    } else {
+      document.getElementById('ptop').innerHTML=`<div class="p-title">${titles[cur]}</div>`;
+    }
+  }
+
+  function renderHome(){
+    const ck='<span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></span>';
+    document.getElementById('homeSummary').innerHTML=`<div class="today-sum"><div class="ts-l">Today</div>
+      <div class="ts-row">${ck}Appointment at <b>4:30 PM</b> · Dr. Iyer</div>
+      <div class="ts-row">${ck}Morning medicine <b>taken</b></div>
+      <div class="ts-row">${ck}<b>Nothing</b> due to pay</div></div>`;
+    document.getElementById('homeNext').innerHTML=`<div class="nextv">
+      <div class="l">Today · 4:30 PM</div>
+      <div class="r"><span class="av">MI</span><div><div class="nm">Dr. Meera Iyer</div><div class="mt">Skin consultation</div>
+        <div class="mt" style="display:flex;align-items:center;gap:5px;margin-top:3px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>HSR Family Clinic</div></div></div>
+      <div class="note"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Bring previous reports</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Payment completed</span></div>
+      <div class="acts"><button class="btn btn-line" onclick="toast('Opening directions')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>Directions</button><button class="btn btn-honey" onclick="toast('Reschedule — pick a new time')">Reschedule</button></div></div>`;
+  }
+
+  function renderDocList(){
+    document.getElementById('docList').innerHTML=DOCTORS.map(d=>`<button class="lrow" onclick="openDoctor('${d.id}')">
+      <span class="av h">${d.ini}</span><div><div class="nm">${d.name}</div><div class="mt">${d.spec} · ${d.clinic}</div></div>
+      <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></button>`).join('');
+  }
+  function bookSub(id){ ['book-list','book-profile','book-confirm'].forEach(s=>document.getElementById(s).classList.toggle('on',s===id)); document.querySelector('.p-body').scrollTop=0; }
+  function openDoctor(id){
+    bookingDoc=DOCTORS.find(d=>d.id===id); bookingSlot=null;
+    const d=bookingDoc;
+    document.getElementById('book-profile').innerHTML=`<button class="back" onclick="bookSub('book-list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>All doctors</button>
+      <div class="docp"><div class="av">${d.ini}</div><h2>${d.name}</h2><div class="mt">${d.spec} · ${d.clinic}</div>
+        <div class="chips"><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg>${d.rating}</span><span class="chip">${d.exp} experience</span><span class="chip">${money(d.fee)} consult</span></div></div>
+      <div class="slotday">Today, 15 July</div>
+      <div class="slots" id="slots">${d.slots.map((s,i)=>`<button class="slot ${i===3?'off':''}" ${i===3?'disabled':''} onclick="pickSlot(this,'${s}')">${s}</button>`).join('')}</div>
+      <button class="btn btn-honey block" style="margin-top:20px;opacity:.5" id="bookBtn" onclick="doBook()" disabled>Choose a time to continue</button>`;
+    bookSub('book-profile');
+  }
+  function pickSlot(el,s){ document.querySelectorAll('#slots .slot').forEach(x=>x.classList.remove('on')); el.classList.add('on'); bookingSlot=s;
+    const b=document.getElementById('bookBtn'); b.disabled=false; b.style.opacity='1'; b.textContent='Confirm '+s+' with '+bookingDoc.name.split(' ').slice(-1); }
+  function doBook(){
+    if(!bookingSlot) return;
+    document.getElementById('book-confirm').innerHTML=`<div class="confirm"><div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h2>You're booked</h2><p>${bookingDoc.name} · Today at ${bookingSlot}</p><p style="color:var(--muted)">${bookingDoc.clinic}. We'll remind you an hour before.</p>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px"><button class="btn btn-honey block" onclick="toast('Added to your calendar')">Add to calendar</button><button class="btn btn-line block" onclick="setTab('home')">Back to Home</button></div></div>`;
+    bookSub('book-confirm'); toast('Appointment confirmed');
+  }
+
+  function renderVisits(){
+    document.getElementById('visitTl').innerHTML=VISITS.map(v=>`<div class="tlv ${v.fresh?'':'old'}"><span class="node"></span><div class="when">${v.when}</div>
+      <button class="lrow" onclick="openVisit('${v.id}')"><span class="av ${v.fresh?'h':''}">${v.doc.split(' ').slice(-1)[0][0]}${v.doc.split(' ')[1][0]}</span>
+      <div style="flex:1;min-width:0"><div class="nm">${v.spec}</div><div class="mt">${v.doc}</div><div class="recdx">${v.dx}</div></div>
+      <span class="rt"><span class="pill k">${v.paid?'Paid':'Due'}</span></span></button></div>`).join('');
+  }
+  function recSub(id){ ['rec-list','rec-detail'].forEach(s=>document.getElementById(s).classList.toggle('on',s===id)); document.querySelector('.p-body').scrollTop=0; }
+  function openVisit(id){
+    const v=VISITS.find(x=>x.id===id);
+    const rx=v.rx.map(m=>`<div class="lrow" style="margin-bottom:8px"><span class="av h" style="width:38px;height:38px;font-size:12px">Rx</span><div><div class="nm" style="font-size:14px">${m[0]}</div><div class="mt">${m[1]}</div></div></div>`).join('');
+    const reports=v.reports.length?v.reports.map(r=>`<div class="lrow" style="margin-bottom:8px"><span class="av i" style="width:38px;height:38px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><div><div class="nm" style="font-size:14px">${r}</div><div class="mt">Tap to view</div></div><span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span></div>`).join(''):`<p style="font-size:13px;color:var(--muted);margin:4px">No reports from this visit.</p>`;
+    document.getElementById('rec-detail').innerHTML=`<button class="back" onclick="recSub('rec-list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>All visits</button>
+      <div class="card" style="padding:16px;margin-bottom:6px"><div style="font-size:11.5px;color:var(--muted);font-weight:700">${v.when}</div>
+        <div style="font-family:var(--fd);font-weight:700;font-size:17px;margin-top:3px">${v.doc}</div><div style="font-size:13px;color:var(--body)">${v.spec}</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">Diagnosis</div><div style="font-family:var(--fd);font-weight:700;font-size:15px;margin-top:3px">${v.dx}</div></div></div>
+      <div class="sec-l">Prescription</div>${rx}
+      <div class="sec-l">Reports</div>${reports}
+      <div class="sec-l">Invoice</div>
+      <div class="lrow"><span class="av" style="background:var(--honey-soft);color:var(--honey-deep)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12M6 8h12M9 3c6 0 6 8 0 8M6 8l7 13"/></svg></span><div><div class="nm">${money(v.amt)}</div><div class="mt">${v.spec}</div></div><span class="rt"><span class="pill k">Paid</span></span></div>`;
+    recSub('rec-detail');
+  }
+
+  function renderFamily(){
+    document.getElementById('famList').innerHTML=PROFILES.map(p=>`<button class="fam ${p.id===active?'on':''}" onclick="switchProfile('${p.id}')">
+      <span class="av" style="background:${p.id==='goldy'?'var(--honey-soft)':p.av==='i'?'var(--info-tint)':'var(--pine-tint)'};color:${p.id==='goldy'?'var(--honey-deep)':p.av==='i'?'var(--info)':'var(--pine-deep)'}">${p.ini}</span>
+      <div style="flex:1;min-width:0"><div class="nm">${p.name}</div><div class="mt">${p.rel} · ${p.age} yrs</div>
+        <div class="care" style="color:${TONE[p.tone]}"><span class="cd"></span>${p.care}</div></div>
+      ${p.id===active?'<span class="badge">Active</span>':'<span class="switch">Switch</span>'}</button>`).join('');
+  }
+  function switchProfile(id){ active=id; renderFamily(); renderTop(); renderHome();
+    document.getElementById('youAv').textContent=PROFILES.find(p=>p.id===id).ini;
+    document.getElementById('youName').textContent=PROFILES.find(p=>p.id===id).name;
+    toast('Now managing '+first()+"'s care"); }
+
+  function setTab(tab){
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+tab));
+    document.querySelectorAll('.tabb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+    if(tab==='book') bookSub('book-list');
+    if(tab==='records') recSub('rec-list');
+    renderTop();
+    if(tab==='home') renderHome();
+    document.querySelector('.p-body').scrollTop=0;
+  }
+  document.getElementById('tabbar').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]'); if(b) setTab(b.dataset.tab); });
+
+  let tt; function toast(m){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
+  function curTheme(){ const r=document.documentElement.getAttribute('data-theme'); return r||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }
+  document.getElementById('themeBtn').addEventListener('click',()=>{ const n=curTheme()==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',n); document.getElementById('themeLbl').textContent=n==='dark'?'Dark':'Light'; });
+
+  renderTop(); renderHome(); renderDocList(); renderVisits(); renderFamily();
+</script>

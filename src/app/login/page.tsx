@@ -13,7 +13,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +73,8 @@ export default function UnifiedLoginGateway() {
   const [otpCode, setOtpCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('password123'); // seed mock password
+  const [showPassword, setShowPassword] = useState(false); // PKG-1: password show/hide toggle
+  const [authError, setAuthError] = useState<string | null>(null); // PKG-1: inline credential error
 
   // AUTH-004 onboarding — held until the profile is completed, then persisted.
   const [pendingSession, setPendingSession] = useState<{ patientProfile: any; user: any } | null>(null);
@@ -292,8 +296,10 @@ export default function UnifiedLoginGateway() {
 
   const handleB2BLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    // PKG-1: authentication errors belong to the form (inline callout), not a toast.
+    setAuthError(null);
     if (!email.trim() || !password) {
-      toast.error('Email and password are required');
+      setAuthError('Enter your email or phone and password.');
       return;
     }
 
@@ -312,9 +318,12 @@ export default function UnifiedLoginGateway() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Authentication failed');
+      if (!res.ok) {
+        // PKG-1 credential-error copy — never reveal which part failed.
+        setAuthError('Incorrect email/phone or password. Please try again.');
+        return;
+      }
 
-      toast.success(`Authenticated successfully as ${data.user.role}`);
       localStorage.setItem('aura_b2b_session', JSON.stringify({
         user: data.user,
         profile: data.staffProfile
@@ -324,8 +333,8 @@ export default function UnifiedLoginGateway() {
       // (UXS-043 Package 1). Otherwise route through the workspace landing hub,
       // which resolves WHICH workspace and the SURFACE it opens into (APS-045 §7).
       router.push(data.user.must_change_password ? '/change-password' : '/workspace');
-    } catch (err) {
-      toast.error(errorMessage(err) ?? 'Failed to authenticate');
+    } catch {
+      setAuthError('We couldn’t sign you in. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -570,6 +579,18 @@ export default function UnifiedLoginGateway() {
                   ) : (
                     /* Clinical/Staff login route (Email / Password) */
                     <form onSubmit={handleB2BLogin} className="space-y-4">
+                      {/* PKG-1: inline credential error — auth errors belong to the form */}
+                      {authError && (
+                        <div
+                          role="alert"
+                          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="shrink-0">
+                            <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                          </svg>
+                          <span>{authError}</span>
+                        </div>
+                      )}
                       <div className="space-y-1.5">
                         <Label htmlFor="email">Email or phone</Label>
                         <div className="relative">
@@ -601,21 +622,30 @@ export default function UnifiedLoginGateway() {
                           <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             id="pass"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 pr-9"
                             required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
 
                       {showForgotHelp && (
-                        <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                          Password resets aren&apos;t self-service yet — ask your organization owner to
-                          reset it for you from People &rarr; Staff.
-                        </p>
+                        <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+                          <Lock className="mt-0.5 size-3.5 shrink-0" />
+                          {/* SEC-4 deferred (Product Office): assisted reset, not self-service. */}
+                          <span>Password reset is not yet self-service. Please contact your Practice Owner or Administrator.</span>
+                        </div>
                       )}
 
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
@@ -623,9 +653,15 @@ export default function UnifiedLoginGateway() {
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="size-4 rounded border-border accent-primary"
+                          className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
                         />
-                        Remember me on this device
+                        {/* PKG-1: "Keep me signed in" + shared-computer caution */}
+                        <span>
+                          Keep me signed in on this device
+                          <span className="block text-xs text-muted-foreground/80">
+                            Leave this off on shared clinic computers.
+                          </span>
+                        </span>
                       </label>
 
                       <Button type="submit" disabled={loading} className="w-full">
@@ -638,25 +674,44 @@ export default function UnifiedLoginGateway() {
                           </>
                         )}
                       </Button>
-
-                      <button
-                        type="button"
-                        onClick={() => setEntryPath('personal')}
-                        className="block w-full text-center text-xs font-medium text-primary hover:underline"
-                      >
-                        I&apos;m a patient — sign in with OTP
-                      </button>
                     </form>
                   )}
                 </CardContent>
 
-                <div className="border-t border-border px-6 py-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    New to Auriva?{' '}
-                    <Link href="/get-started" className="font-semibold text-primary hover:underline">
-                      Create an account
-                    </Link>
-                  </p>
+                {/* PKG-1 card foot — patient actions + staff note + start-your-practice */}
+                <div className="space-y-1.5 border-t border-border px-6 py-4 text-center">
+                  {entryPath === 'professional' ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Patient?{' '}
+                        <button
+                          type="button"
+                          onClick={() => { setAuthError(null); setEntryPath('personal'); }}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          Sign in with OTP
+                        </button>
+                        {' · '}
+                        <Link href="/get-started?as=patient" className="font-medium text-primary hover:underline">
+                          Create a patient account
+                        </Link>
+                      </p>
+                      <p className="text-xs text-muted-foreground/80">Staff accounts are created by your practice.</p>
+                      <p className="text-xs text-muted-foreground/80">
+                        Opening a new clinic?{' '}
+                        <Link href="/register-org" className="font-medium text-primary hover:underline">
+                          Start your practice &rarr;
+                        </Link>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      New to Auriva?{' '}
+                      <Link href="/get-started" className="font-semibold text-primary hover:underline">
+                        Create an account
+                      </Link>
+                    </p>
+                  )}
                 </div>
               </Card>
             </motion.div>

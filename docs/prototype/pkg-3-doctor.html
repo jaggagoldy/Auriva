@@ -1,0 +1,582 @@
+<title>Auriva Prototype · Package 3 — Doctor Workspace</title>
+<style>
+  :root{
+    --paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;
+    --pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;
+    --honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;
+    --rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;
+    --ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--night:#0B4A41;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --proto:#241F1A;--proto-fg:#F5EFE7;--proto-line:#3a3128;
+    --fd:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;
+    --fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fm:ui-monospace,"Geist Mono",monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;
+    --honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;
+    --ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;
+    --shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}}
+  :root[data-theme="light"]{--paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;--pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;--honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;--rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;--ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);}
+  :root[data-theme="dark"]{--paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;--honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;--ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;--shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}
+  p{margin:0}button{font-family:var(--fb);cursor:pointer}
+  input,textarea,select{font-family:var(--fb);color:var(--ink)}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .proto-bar{position:sticky;top:0;z-index:90;background:var(--proto);color:var(--proto-fg);display:flex;align-items:center;gap:14px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--proto-line);font-size:12.5px}
+  .proto-bar .tag{font-family:var(--fd);font-weight:700}.proto-bar .tag b{color:var(--honey)}
+  .proto-nav{display:flex;gap:4px;flex-wrap:wrap}
+  .proto-nav button{background:transparent;color:var(--proto-fg);border:1px solid transparent;padding:5px 10px;border-radius:999px;font-size:12px;cursor:pointer;opacity:.72}
+  .proto-nav button:hover{opacity:1;background:rgba(255,255,255,.07)}.proto-nav button.on{opacity:1;background:var(--honey);color:#241F1A;font-weight:600}
+  .proto-bar .spacer{flex:1}
+  .theme-btn{background:rgba(255,255,255,.08);color:var(--proto-fg);border:1px solid var(--proto-line);padding:5px 12px;border-radius:999px;cursor:pointer;font-size:12px;display:flex;gap:6px;align-items:center}
+
+  /* shell */
+  .dshell{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 44px)}
+  .dnav{background:var(--surface);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:44px;height:calc(100vh - 44px)}
+  .dnav .logo{display:flex;align-items:center;gap:10px;padding:6px 8px 14px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .dnav .logo .mk{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--pine),var(--pine-deep));display:grid;place-items:center}
+  .dnav .logo .mk svg{width:17px;height:17px}
+  .dnav .logo b{font-size:13px;font-family:var(--fd)}.dnav .logo span{font-size:10.5px;color:var(--muted);display:block}
+  .ni{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;border:none;background:none;color:var(--body);font-size:13.5px;font-weight:550;width:100%;text-align:left}
+  .ni svg{width:18px;height:18px}
+  .ni:hover{background:var(--sand);color:var(--ink)}.ni.on{background:var(--pine-tint);color:var(--pine-deep);font-weight:650}
+  .ni .soon{margin-left:auto;font-size:8.5px;font-weight:700;color:var(--muted);background:var(--sand2);padding:2px 6px;border-radius:99px;text-transform:uppercase}
+  .dnav .acct{margin-top:auto;display:flex;align-items:center;gap:9px;padding:10px 8px;border-top:1px solid var(--line)}
+  .dnav .acct .av{width:30px;height:30px;border-radius:9px;background:var(--honey-soft);color:var(--honey-deep);display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px}
+  .dnav .acct .nm{font-size:12px;font-weight:650}.dnav .acct .rl{font-size:10.5px;color:var(--muted)}
+
+  .dmain{min-width:0;display:flex;flex-direction:column}
+  .dtop{height:52px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:44px;z-index:30}
+  .dtop b{font-size:14px}
+  .dtop .search{margin-left:8px;display:flex;align-items:center;gap:7px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:12px;color:var(--muted);min-width:190px}
+  .dtop .sw{margin-left:auto;display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:5px 11px 5px 7px;font-size:12px;cursor:pointer}
+  .dtop .sw .d{width:22px;height:22px;border-radius:7px;background:var(--pine);display:grid;place-items:center}.dtop .sw .d svg{width:13px;height:13px}
+
+  .panel{display:none}.panel.on{display:block;animation:vin .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .pad{padding:clamp(16px,2.4vw,26px)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 15px;border-radius:11px;border:none;font-family:var(--fd);font-weight:650;font-size:13.5px;transition:transform .1s,filter .2s,background .2s,border-color .2s}
+  .btn svg{width:16px;height:16px}.btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--pine);color:#fff}.btn-primary:hover{filter:brightness(1.07)}
+  .btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}.btn-line:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .btn-sm{height:32px;font-size:12px;padding:0 11px;border-radius:9px}.btn-xs{height:27px;font-size:11px;padding:0 9px;border-radius:8px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+  .avatar{border-radius:10px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;flex:0 0 auto}
+  .av-teal{background:var(--pine-tint);color:var(--pine-deep)}.av-honey{background:var(--honey-soft);color:var(--honey-deep)}.av-info{background:var(--info-tint);color:var(--info)}.av-rose{background:var(--rose-tint);color:var(--rose)}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;padding:3px 9px;border-radius:999px}
+  .lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+  /* Today */
+  .daybar{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+  .daybar .row1{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .daybar .hi{font-size:16px;font-weight:700;font-family:var(--fd)}.daybar .sub{font-size:11.5px;color:var(--muted)}
+  .daybar .div{height:34px;width:1px;background:var(--line)}
+  .daybar .metrics{display:flex;gap:18px}
+  .daybar .metrics b{display:block;font-size:18px;font-family:var(--fd)}.daybar .metrics span{font-size:11px;color:var(--muted)}
+  .behind{display:inline-flex;align-items:center;gap:6px;background:var(--honey-tint);border:1px solid var(--honey-soft);color:var(--honey-deep);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700}
+  .nextp{display:flex;align-items:center;gap:9px;background:var(--pine-tint);border:1px solid color-mix(in srgb,var(--pine) 30%,transparent);border-radius:12px;padding:7px 11px}
+  .nextp .av{width:30px;height:30px;font-size:11px}
+  .qa-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+
+  /* Workbench three-rail */
+  .wb{display:grid;grid-template-columns:224px 1fr 288px;height:calc(100vh - 44px - 52px)}
+  .qrail{border-right:1px solid var(--line);background:var(--surface);padding:12px;overflow:auto}
+  .qgroup{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 7px;display:flex;align-items:center;gap:6px}
+  .qgroup:first-child{margin-top:0}
+  .qgroup .dot{width:7px;height:7px;border-radius:50%}
+  .qitem{display:flex;align-items:center;gap:9px;padding:8px 7px;border-radius:9px;cursor:pointer;margin-bottom:3px;border:1px solid transparent}
+  .qitem:hover{background:var(--sand)}
+  .qitem.cur{background:var(--pine-tint);border-color:color-mix(in srgb,var(--pine) 25%,transparent)}
+  .qitem .tk{width:26px;text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .qitem .av{width:26px;height:26px;font-size:10px;border-radius:8px}
+  .qitem .nm{font-size:12px;font-weight:600}.qitem .ag{font-weight:400;color:var(--muted);font-size:11px}
+  .qitem.skip{opacity:.7;border:1px dashed var(--line-2)}
+
+  .consult{display:flex;flex-direction:column;min-width:0;background:var(--paper)}
+  .cw-head{padding:13px 20px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .cw-head .who{display:flex;align-items:center;gap:11px}
+  .cw-head .av{width:38px;height:38px;font-size:14px;border-radius:11px}
+  .cw-head .nm{font-size:15px;font-weight:700;font-family:var(--fd);display:flex;align-items:center;gap:8px}
+  .cw-head .meta{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .cw-body{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+  .fcard{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+  .fcard .fh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .fcard .ft{font-size:12.5px;font-weight:700;font-family:var(--fd)}
+  .cin{width:100%;border:1px solid var(--line-2);border-radius:9px;background:var(--paper);padding:9px 11px;font-size:13px;outline:none}
+  .cin:focus{border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-tint)}
+  textarea.cin{resize:vertical;min-height:60px;line-height:1.5}
+  .dxrow{display:flex;flex-wrap:wrap;gap:6px}
+  .dxchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--pine-tint);color:var(--pine-deep);border-radius:999px;padding:5px 10px}
+  .dxchip button{background:none;border:none;color:var(--pine-deep);cursor:pointer;display:grid;place-items:center;padding:0;opacity:.7}
+  .dxchip button:hover{opacity:1}
+  .dxadd{font-size:12px;font-weight:600;border:1px dashed var(--line-2);background:transparent;color:var(--muted);border-radius:999px;padding:5px 10px;cursor:pointer}
+  .dxadd:hover{border-color:var(--pine);color:var(--pine-deep)}
+  .dxsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .dxsug button{font-size:11.5px;border:1px solid var(--line);background:var(--paper);color:var(--body);border-radius:999px;padding:4px 10px;cursor:pointer}
+  .dxsug button:hover{border-color:var(--pine);color:var(--pine-deep);background:var(--pine-tint)}
+  .rxhead,.rxrow{display:grid;grid-template-columns:2fr 1fr 1fr .8fr 28px;gap:8px;align-items:center}
+  .rxhead{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+  .rxrow{padding:5px 0;border-top:1px solid var(--line)}
+  .rxrow input{border:1px solid var(--line-2);border-radius:7px;background:var(--paper);padding:6px 8px;font-size:12px;outline:none;width:100%}
+  .rxrow input:focus{border-color:var(--pine)}
+  .rxrow .del{background:none;border:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+  .rxrow .del:hover{color:var(--rose)}
+  .cw-foot{padding:11px 20px;border-top:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:space-between}
+  .cw-foot .saved{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .cw-foot .saved .d{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+
+  .ctx{border-left:1px solid var(--line);background:var(--surface);padding:14px;overflow:auto}
+  .allergy{background:var(--rose-tint);border:1px solid color-mix(in srgb,var(--rose) 35%,transparent);border-radius:12px;padding:11px 13px;margin-bottom:14px}
+  .allergy .t{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;color:var(--rose);text-transform:uppercase;letter-spacing:.03em}
+  .allergy .v{font-size:13.5px;font-weight:700;margin-top:3px}
+  .allergy.none{background:var(--ok-tint);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+  .allergy.none .t{color:var(--ok)}.allergy.none .v{font-weight:600;font-size:12.5px;color:var(--body)}
+  .ctx .sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px}
+  .lastvisit{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+  .lastvisit .dt{font-size:11px;color:var(--muted)}.lastvisit .dx{font-size:12.5px;font-weight:700;margin-top:2px}.lastvisit .rx{font-size:11.5px;color:var(--body);margin-top:2px}
+  .tl{position:relative;padding-left:16px}.tl::before{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:1px;background:var(--line)}
+  .tli{position:relative;margin-bottom:12px}.tli .pt{position:absolute;left:-16px;top:3px;width:7px;height:7px;border-radius:50%;background:var(--pine)}
+  .tli.old .pt{background:var(--line-2)}.tli .dt{font-size:10px;color:var(--muted)}.tli .ev{font-size:11.5px;font-weight:600}
+  .soon-card{margin-top:14px;padding:11px;border:1px dashed var(--line-2);border-radius:10px;text-align:center;color:var(--muted);font-size:10.5px}
+  .empty-consult{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);gap:12px;padding:40px}
+  .empty-consult .ic{width:60px;height:60px;border-radius:18px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center}
+
+  /* Patients */
+  .facets{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .facet{padding:9px 4px;margin-right:18px;font-size:12.5px;color:var(--body);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px}
+  .facet.on{color:var(--pine-deep);font-weight:650;border-bottom-color:var(--pine)}
+  .ptable{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pthead,.ptrow{display:grid;grid-template-columns:2fr 1fr 1fr 1.3fr;gap:10px;align-items:center;padding:11px 15px}
+  .pthead{background:var(--sand);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase}
+  .ptrow{border-top:1px solid var(--line);cursor:pointer}.ptrow:hover{background:var(--sand)}
+  .ptrow .who{display:flex;align-items:center;gap:9px}.ptrow .av{width:28px;height:28px;font-size:10.5px}
+
+  /* Schedule */
+  .sctabs{display:flex;gap:4px;background:var(--sand);border-radius:10px;padding:3px;width:fit-content}
+  .sctab{padding:6px 13px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .sctab.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-s)}
+  .week{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}
+  .day{border:1px solid var(--line);border-radius:11px;padding:9px;min-height:150px}
+  .day.today{border-color:var(--pine);background:var(--pine-tint)}
+  .day .dn{font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:8px}.day.today .dn{color:var(--pine-deep)}
+  .appt{border-left:2px solid var(--pine);background:var(--surface);border-radius:6px;padding:5px 7px;font-size:10.5px;margin-bottom:5px}
+  .appt.i{border-left-color:var(--honey)}
+
+  /* Practice / Profile sub-nav */
+  .subwrap{display:grid;grid-template-columns:180px 1fr;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+  .subnav{background:var(--sand);border-right:1px solid var(--line);padding:12px 9px;display:flex;flex-direction:column;gap:1px}
+  .sni{padding:8px 11px;border-radius:8px;font-size:12.5px;color:var(--body);cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+  .sni.on{background:var(--surface);color:var(--pine-deep);font-weight:650;box-shadow:var(--shadow-s)}
+  .subbody{padding:18px 20px}
+
+  /* Workbench refinement: consultation feel */
+  .cw-progress{border-bottom:1px solid var(--line);background:var(--surface);flex:0 0 auto}
+  .stepper{display:flex;align-items:center;gap:6px;padding:11px 20px 9px}
+  .step{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .step:last-child{flex:0 0 auto}
+  .step .sd{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto;background:var(--sand);color:var(--muted);border:1.5px solid var(--line)}
+  .step .sd svg{width:13px;height:13px}
+  .step .sl{font-size:11.5px;font-weight:650;color:var(--muted);white-space:nowrap}
+  .step .bar{flex:1;height:2px;background:var(--line);border-radius:2px;min-width:12px}
+  .step.done .sd{background:var(--pine);color:#fff;border-color:var(--pine)}
+  .step.done .sl{color:var(--pine-deep)}.step.done .bar{background:var(--pine)}
+  .step.active .sd{background:var(--surface);color:var(--pine);border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-tint)}
+  .step.active .sl{color:var(--ink)}
+  .safety{display:flex;align-items:center;gap:8px;padding:0 20px 11px;flex-wrap:wrap}
+  .safety .sk{font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+  .schip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .schip svg{width:13px;height:13px}
+  .schip.crit{background:var(--rose-tint);color:var(--rose)}
+  .schip.warnc{background:var(--honey-tint);color:var(--honey-deep)}
+  .schip.okc{background:var(--ok-tint);color:var(--ok)}
+  .suggest{background:var(--honey-tint);border:1px solid var(--honey-soft);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:11px}
+  .suggest .si{width:30px;height:30px;border-radius:9px;background:var(--honey);color:#fff;display:grid;place-items:center;flex:0 0 auto}
+  .suggest .si svg{width:17px;height:17px}
+  .suggest .st{font-size:12.5px;font-weight:700}.suggest .ss{font-size:11px;color:var(--honey-deep)}
+  .cw-foot .fa{display:flex;gap:8px;align-items:center}
+  .upnext{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--body);min-width:0}
+  .upnext .avatar{width:24px;height:24px;font-size:9.5px;border-radius:7px}
+  .upnext .ln{font-weight:700}.upnext .lr{color:var(--muted)}
+  .nextcard{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+  .nextcard .nh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .nextcard .nrow{display:flex;align-items:center;gap:9px}
+  .nextcard .avatar{width:30px;height:30px;font-size:11px}
+  .nextcard .nn{font-size:12.5px;font-weight:700}.nextcard .nr{font-size:11px;color:var(--muted)}
+  .nextcard .nflag{margin-top:8px;font-size:11px;font-weight:700;color:var(--rose);display:flex;align-items:center;gap:6px}
+
+  .toastwrap{position:fixed;top:56px;right:16px;z-index:95;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:12px;box-shadow:var(--shadow);padding:11px 14px;font-size:13px;font-weight:600;animation:tin .3s;color:var(--ink)}
+  .toast .ic{width:23px;height:23px;border-radius:7px;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}.toast .ic svg{width:14px;height:14px}
+  @keyframes tin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  @media (max-width:1120px){ .wb{grid-template-columns:210px 1fr}.ctx{display:none} }
+  @media (max-width:860px){
+    .dshell{grid-template-columns:1fr}.dnav{display:none}
+    .wb{grid-template-columns:1fr;height:auto}.qrail{display:none}
+    .week{grid-template-columns:1fr 1fr}.subwrap{grid-template-columns:1fr}.subnav{flex-direction:row;overflow:auto}
+  }
+</style>
+
+<div class="proto-bar">
+  <span class="tag">PROTOTYPE · <b>Package 3 — Doctor (flagship)</b></span>
+  <div class="proto-nav" id="pnav">
+    <button data-go="today" class="on">Today</button>
+    <button data-go="workbench">Consult Workbench ★</button>
+    <button data-go="patients">Patients</button>
+    <button data-go="schedule">Schedule</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="theme-btn" id="themeBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><span id="themeLbl">Theme</span></button>
+</div>
+<div class="toastwrap" id="toasts" role="status" aria-live="polite"></div>
+
+<div class="dshell">
+  <nav class="dnav">
+    <div class="logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span><div><b>Doctor Workspace</b><span>Dr. Arjun Mehta</span></div></div>
+    <button class="ni on" data-nav="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Today</button>
+    <button class="ni" data-nav="workbench"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Workbench</button>
+    <button class="ni" data-nav="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule</button>
+    <button class="ni" data-nav="patients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2"/></svg>Patients</button>
+    <button class="ni" data-nav="practice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Practice</button>
+    <button class="ni" data-nav="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profile</button>
+    <button class="ni" style="color:var(--muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Earnings<span class="soon">Soon</span></button>
+    <div class="acct"><span class="av">AM</span><div><div class="nm">Dr. Arjun Mehta</div><div class="rl">HSR Family Clinic ▾</div></div></div>
+  </nav>
+
+  <div class="dmain">
+    <div class="dtop">
+      <b id="topTitle">Today</b>
+      <span class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search patients…</span>
+      <span class="sw" onclick="toast('Workspace switcher — Package 1')"><span class="d"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 2-6h4"/></svg></span>HSR Family Clinic<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><path d="m6 9 6 6 6-6"/></svg></span>
+    </div>
+
+    <!-- TODAY -->
+    <div class="panel on" data-p="today"><div class="pad">
+      <div class="daybar">
+        <div class="row1">
+          <div style="min-width:150px"><div class="hi">Good morning, Dr. Mehta</div><div class="sub">Thu, 3 Jul · HSR Family Clinic · 9:00–13:00</div></div>
+          <div class="div"></div>
+          <div class="metrics"><div><b>26</b><span>patients</span></div><div><b style="color:var(--honey-deep)">4</b><span>waiting</span></div><div><b style="color:var(--ok)">9</b><span>completed</span></div></div>
+          <div class="div"></div>
+          <span class="behind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>12 min behind</span>
+          <div class="nextp" style="margin-left:auto"><span class="avatar av-teal av" style="width:30px;height:30px;font-size:11px">RS</span><div style="font-size:10.5px;line-height:1.25"><span class="lbl" style="color:var(--pine-deep)">Next</span><br><b style="font-size:12px">Rohan Sharma</b></div><button class="btn btn-primary btn-sm" onclick="callIn()">Call in</button></div>
+        </div>
+        <div class="qa-row">
+          <span class="lbl" style="align-self:center">Quick actions</span>
+          <button class="btn btn-line btn-sm" onclick="go('workbench')">Start consultation</button>
+          <button class="btn btn-line btn-sm" onclick="go('schedule')">Open schedule</button>
+          <button class="btn btn-line btn-sm" style="opacity:.55" onclick="toast('Pause booking — clinic-wide toggle')">Pause booking</button>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="qgroup" style="color:var(--honey-deep)"><span class="dot" style="background:var(--honey)"></span>Waiting · 4</div>
+        <div id="todayQueue"></div>
+        <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:12px">Select a patient to open the Consult Workbench →</div>
+      </div>
+    </div></div>
+
+    <!-- WORKBENCH -->
+    <div class="panel" data-p="workbench">
+      <div class="wb">
+        <aside class="qrail" id="qrail"></aside>
+        <section class="consult" id="consult"></section>
+        <aside class="ctx" id="ctx"></aside>
+      </div>
+    </div>
+
+    <!-- PATIENTS -->
+    <div class="panel" data-p="patients"><div class="pad">
+      <h1 style="font-size:22px;margin-bottom:14px">Patients</h1>
+      <div class="facets">
+        <div class="facet on">Recent</div>
+        <div class="facet"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.3 6.2 21l1.5-6.6L2.5 9.6l6.7-.6L12 3l2.8 6 6.7.6-5.2 4.8 1.5 6.6z"/></svg>Favourites</div>
+        <div class="facet">High Risk</div>
+        <div class="facet">Chronic</div>
+        <div class="facet">Follow-up Due <span class="chip" style="background:var(--info-tint);color:var(--info)">3</span></div>
+      </div>
+      <div class="ptable">
+        <div class="pthead"><span>Patient</span><span>Last visit</span><span>Visits</span><span>Last Dx</span></div>
+        <div class="ptrow" onclick="openPatient('Jordan Lee')"><span class="who"><span class="avatar av-teal av">JL</span>Jordan Lee · 32 F</span><span style="color:var(--body);font-size:12.5px">Today</span><span style="color:var(--body);font-size:12.5px">4</span><span style="color:var(--body);font-size:12.5px">Viral fever</span></div>
+        <div class="ptrow" onclick="openPatient('Rohan Sharma')"><span class="who"><span class="avatar av-info av">RS</span>Rohan Sharma · 34 M</span><span style="color:var(--body);font-size:12.5px">2 days ago</span><span style="color:var(--body);font-size:12.5px">7</span><span style="color:var(--body);font-size:12.5px">Hypertension review</span></div>
+        <div class="ptrow" onclick="openPatient('Priya Joshi')"><span class="who"><span class="avatar av-honey av">PJ</span>Priya Joshi · 28 F</span><span style="color:var(--body);font-size:12.5px">1 week ago</span><span style="color:var(--body);font-size:12.5px">3</span><span style="color:var(--body);font-size:12.5px">Contact dermatitis</span></div>
+      </div>
+    </div></div>
+
+    <!-- SCHEDULE -->
+    <div class="panel" data-p="schedule"><div class="pad">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;flex-wrap:wrap">
+        <h1 style="font-size:22px">Schedule</h1>
+        <div class="sctabs"><span class="sctab on">Calendar</span><span class="sctab" onclick="toast('Availability — weekly hours + time blocks')">Availability</span><span class="sctab" onclick="toast('Requests — reschedule requests')">Requests</span></div>
+        <div style="margin-left:auto;display:flex;gap:6px"><span class="chip" style="background:var(--pine-tint);color:var(--pine-deep)">HSR Family</span><span class="chip" style="background:var(--surface);border:1px solid var(--line-2);color:var(--body)">SmileCare</span></div>
+      </div>
+      <div class="week">
+        <div class="day"><div class="dn">MON 30</div><div class="appt">9:00 Rohan S.</div></div>
+        <div class="day"><div class="dn">TUE 1</div></div>
+        <div class="day today"><div class="dn">WED 2 · Today</div><div class="appt">10:30 Priya J.</div><div class="appt i">16:30 Jordan L.</div></div>
+        <div class="day"><div class="dn">THU 3</div><div class="appt">11:00 Aarti M.</div></div>
+        <div class="day"><div class="dn">FRI 4</div></div>
+      </div>
+    </div></div>
+
+    <!-- PRACTICE -->
+    <div class="panel" data-p="practice"><div class="pad">
+      <h1 style="font-size:22px;margin-bottom:14px">Practice</h1>
+      <div class="subwrap">
+        <div class="subnav"><div class="sni on">Locations</div><div class="sni">Fees</div><div class="sni">Services</div><div class="sni">Online consult <span class="soon">Soon</span></div><div class="sni">Verification</div></div>
+        <div class="subbody">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:14px">Locations</b><button class="btn btn-primary btn-sm">+ Add affiliation</button></div>
+          <div class="card" style="padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;gap:10px;align-items:center"><span class="avatar av-teal av" style="width:34px;height:34px">AF</span><div><b style="font-size:12.5px">HSR Family Clinic</b><div style="font-size:11px;color:var(--muted)">742 Evergreen Terrace · Doctor</div></div></div><span class="chip" style="background:var(--ok-tint);color:var(--ok)">Active</span></div>
+          <div class="card" style="padding:13px 15px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;gap:10px;align-items:center"><span class="avatar av-honey av" style="width:34px;height:34px">SU</span><div><b style="font-size:12.5px">SmileCare Dental</b><div style="font-size:11px;color:var(--muted)">Requested 2 days ago</div></div></div><span class="chip" style="background:var(--honey-tint);color:var(--honey-deep)">Pending approval</span></div>
+        </div>
+      </div>
+    </div></div>
+
+    <!-- PROFILE -->
+    <div class="panel" data-p="profile"><div class="pad">
+      <h1 style="font-size:22px;margin-bottom:14px">Profile</h1>
+      <div class="subwrap">
+        <div class="subnav"><div class="sni on">Personal</div><div class="sni">Professional</div><div class="sni">Practice</div><div class="sni">Verification <span class="chip" style="background:var(--ok-tint);color:var(--ok);padding:1px 7px">✓</span></div></div>
+        <div class="subbody" style="display:grid;grid-template-columns:1fr 240px;gap:20px">
+          <div>
+            <b style="font-size:14px">Personal</b>
+            <div style="height:1px;background:var(--line);margin:12px 0"></div>
+            <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar av-honey av" style="width:52px;height:52px;font-size:18px">AM</span><button class="btn btn-line btn-sm">Change photo</button></div>
+            <label class="lbl">Bio</label>
+            <div class="card" style="padding:9px 11px;margin:4px 0 12px;font-size:12px;color:var(--body)">General physician with 12 years focused on chronic disease management…</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" style="background:var(--sand)">English</span><span class="chip" style="background:var(--sand)">Hindi</span><span class="chip" style="background:var(--sand)">Kannada</span></div>
+          </div>
+          <div class="card" style="padding:14px">
+            <div class="lbl" style="margin-bottom:9px">Public preview</div>
+            <div style="display:flex;gap:9px;align-items:center"><span class="avatar av-honey av" style="width:38px;height:38px;font-size:13px">AM</span><div><b style="font-size:12.5px">Dr. Arjun Mehta</b><div style="font-size:10.5px;color:var(--muted)">General Physician · 12 yrs</div></div></div>
+            <div style="height:1px;background:var(--line);margin:11px 0"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10.5px">
+              <div class="card" style="padding:6px;text-align:center">2,400+ patients</div>
+              <div class="card" style="padding:6px;text-align:center">4.9 ★ (1.2k)</div>
+            </div>
+            <button class="btn btn-line btn-sm" style="width:100%;margin-top:10px;justify-content:center">View as patient</button>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+  </div>
+</div>
+
+<script>
+  let QUEUE=[
+    {id:'jl',ini:'JL',av:'av-teal',name:'Jordan Lee',age:'32 F',blood:'A−',token:11,reason:'Fever & sore throat for 2 days',allergy:'Penicillin',pregnancy:null,chronic:[],vital:null,started:'12:34',waited:'22m',seed:397,status:'consult',last:{dt:'12 Jun 2026',dx:'Seasonal allergy',rx:'Cetirizine 10mg · 5 days'}},
+    {id:'rs',ini:'RS',av:'av-info',name:'Rohan Sharma',age:'34 M',blood:'O+',token:12,reason:'Hypertension review',allergy:null,pregnancy:null,chronic:['Hypertension','Type 2 diabetes'],vital:'BP 158/98',waited:'14m',status:'waiting',last:{dt:'02 Jun 2026',dx:'Hypertension',rx:'Amlodipine 5mg · ongoing'}},
+    {id:'pj',ini:'PJ',av:'av-honey',name:'Priya Joshi',age:'28 F',blood:'B+',token:13,reason:'Follow-up · itchy skin rash',allergy:'Sulfa drugs',pregnancy:'18 weeks pregnant',chronic:[],vital:null,waited:'9m',status:'waiting',last:{dt:'20 Jun 2026',dx:'Contact dermatitis',rx:'Topical steroid · 7 days'}},
+    {id:'am',ini:'AM',av:'av-teal',name:'Aarti Mehndiratta',age:'45 F',blood:'AB+',token:14,reason:'Routine check-up',allergy:null,pregnancy:null,chronic:[],vital:null,waited:'5m',status:'waiting',last:{dt:'—',dx:'First visit',rx:'—'}},
+    {id:'vk',ini:'VK',av:'av-info',name:'Vikram Kumar',age:'51 M',blood:'O−',token:9,reason:'Lower back pain',allergy:null,pregnancy:null,chronic:[],vital:null,waited:'—',status:'skipped',last:{dt:'15 May 2026',dx:'Lumbar strain',rx:'Physio referral'}}
+  ];
+  let dx=[], rx=[], curSug=null, dxFirst=true, rxFirst=true;
+
+  function current(){ return QUEUE.find(p=>p.status==='consult'); }
+
+  // ---- Today queue ----
+  function renderToday(){
+    const el=document.getElementById('todayQueue');
+    const waiting=QUEUE.filter(p=>p.status==='waiting'||p.status==='consult');
+    el.innerHTML=waiting.map(p=>`<div class="qitem" onclick="go('workbench')">
+      <span class="tk">#${p.token}</span><span class="avatar ${p.av} av">${p.ini}</span>
+      <div class="nm">${p.name} <span class="ag">${p.age}</span></div>
+      <span style="margin-left:auto;font-size:11px;color:var(--muted)">${p.reason}</span></div>`).join('');
+  }
+
+  // ---- Workbench ----
+  function renderQrail(){
+    const cur=current();
+    const waiting=QUEUE.filter(p=>p.status==='waiting');
+    const skipped=QUEUE.filter(p=>p.status==='skipped');
+    let h='';
+    if(cur){ h+=`<div class="qgroup" style="color:var(--pine-deep)"><span class="dot" style="background:var(--pine)"></span>In consultation</div>
+      <div class="qitem cur"><span class="tk">#${cur.token}</span><span class="avatar ${cur.av} av">${cur.ini}</span><div class="nm">${cur.name}</div></div>`; }
+    h+=`<div class="qgroup" style="color:var(--honey-deep)"><span class="dot" style="background:var(--honey)"></span>Waiting · ${waiting.length}</div>`;
+    h+=waiting.map(p=>`<div class="qitem" onclick="makeCurrent('${p.id}')"><span class="tk">#${p.token}</span><span class="avatar ${p.av} av">${p.ini}</span><div class="nm">${p.name} <span class="ag">${p.age}</span></div></div>`).join('')||`<div style="font-size:11.5px;color:var(--muted);padding:6px">No one waiting</div>`;
+    if(skipped.length){ h+=`<div class="qgroup" style="color:var(--muted)"><span class="dot" style="background:var(--line-2)"></span>Skipped · ${skipped.length}</div>`;
+      h+=skipped.map(p=>`<div class="qitem skip"><span class="tk">#${p.token}</span><span class="avatar ${p.av} av">${p.ini}</span><div class="nm">${p.name}</div><button class="btn btn-line btn-xs" style="margin-left:auto" onclick="recall('${p.id}')">Recall</button></div>`).join(''); }
+    document.getElementById('qrail').innerHTML=h;
+  }
+  function makeCurrent(id){ const cur=current(); if(cur) cur.status='waiting'; QUEUE.find(p=>p.id===id).status='consult'; loadConsult(); }
+  function recall(id){ QUEUE.find(p=>p.id===id).status='waiting'; renderQrail(); toast('Recalled to waiting'); }
+
+  // Context-aware protocol suggestion, keyed off the chief complaint
+  function suggestFor(reason){
+    const r=(reason||'').toLowerCase();
+    if(/fever|throat|cold|cough|flu/.test(r)) return {name:'Viral fever',dx:['Viral fever','Upper respiratory infection','Acute pharyngitis'],note:`S: ${reason}\nO: Temp 100.8°F, mild throat congestion, chest clear.\nA: Viral fever\nP: Symptomatic care, hydration, review in 3–5 days if persistent.`,rx:[{name:'Paracetamol',dose:'500mg',freq:'1-0-1',days:'5'},{name:'ORS sachets',dose:'1 sachet',freq:'PRN',days:'3'}]};
+    if(/hypertension|\bbp\b|blood pressure/.test(r)) return {name:'Hypertension review',dx:['Essential hypertension','Type 2 diabetes'],note:`S: ${reason}\nO: BP 158/98, no acute distress.\nA: Hypertension — suboptimal control\nP: Continue Amlodipine, reinforce lifestyle advice, review BP in 2 weeks.`,rx:[{name:'Amlodipine',dose:'5mg',freq:'1-0-0',days:'30'}]};
+    if(/rash|skin|itch|derm/.test(r)) return {name:'Dermatitis',dx:['Contact dermatitis','Allergic dermatitis'],note:`S: ${reason}\nO: Erythematous patches, no secondary infection.\nA: Contact dermatitis\nP: Topical steroid, avoid irritants, review in 1 week.`,rx:[{name:'Hydrocortisone cream',dose:'Apply thin',freq:'0-0-1',days:'7'},{name:'Cetirizine',dose:'10mg',freq:'0-0-1',days:'5'}]};
+    if(/back|pain|joint|muscle|knee/.test(r)) return {name:'Musculoskeletal pain',dx:['Lumbar strain','Mechanical back pain'],note:`S: ${reason}\nO: Tenderness lumbar region, SLR negative.\nA: Mechanical back pain\nP: Analgesia, posture advice, physio if not improving in 1 week.`,rx:[{name:'Ibuprofen',dose:'400mg',freq:'1-0-1',days:'5'}]};
+    return {name:'General consult',dx:['Viral fever','Hypertension','Gastritis'],note:`S: ${reason}\nO: Vitals stable.\nA: \nP: Symptomatic care, review as needed.`,rx:[]};
+  }
+
+  function loadConsult(){
+    const p=current();
+    if(!p){ renderQrail(); document.getElementById('ctx').innerHTML='';
+      document.getElementById('consult').innerHTML=`<div class="empty-consult"><div class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div><div><b style="font-family:var(--fd);font-size:16px;color:var(--ink)">All caught up</b><div style="margin-top:4px">No patients waiting. Nice work, Dr. Mehta.</div></div><button class="btn btn-line btn-sm" onclick="go('today')">Back to Today</button></div>`;
+      return; }
+    dx=[]; rx=[]; dxFirst=true; rxFirst=true;
+    curSug=suggestFor(p.reason);
+    if(!p.started) p.started=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const nextP=QUEUE.filter(x=>x.status==='waiting')[0];
+    const upnext = nextP
+      ? `<span class="lr" style="font-weight:600">Up next</span><span class="avatar ${nextP.av}">${nextP.ini}</span><span style="min-width:0"><span class="ln">${nextP.name.split(' ')[0]}</span> · <span class="lr">${nextP.reason}</span></span>`
+      : `<span class="lr">Last patient of this session</span>`;
+    document.getElementById('consult').innerHTML=`
+      <div class="cw-head">
+        <div class="who"><span class="avatar ${p.av} av">${p.ini}</span>
+          <div><div class="nm">${p.name} <span class="chip" style="background:var(--pine-tint);color:var(--pine-deep)"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span>In consultation</span></div>
+          <div class="meta">${p.age} · ${p.blood} · #${p.token} · Started ${p.started} · <span id="elapsed">0m 00s</span> elapsed · Waited ${p.waited}</div></div></div>
+        <button class="btn btn-line btn-sm">Full record</button>
+      </div>
+      <div class="cw-progress">
+        <div class="stepper" id="stepper"></div>
+        <div class="safety" id="safety"></div>
+      </div>
+      <div class="cw-body">
+        <div class="suggest"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="2.5"/></svg></span>
+          <div style="flex:1"><div class="st">Suggested protocol · ${curSug.name}</div><div class="ss">Matched to the complaint — fills notes, diagnosis &amp; prescription in one tap</div></div>
+          <button class="btn btn-primary btn-sm" onclick="applyProtocol()">Apply</button></div>
+        <div class="fcard"><div class="fh"><span class="ft">Chief complaint</span><span class="lbl">from booking</span></div>
+          <input class="cin" id="complaint" value="${p.reason}"></div>
+        <div class="fcard"><div class="fh"><span class="ft">Clinical notes</span><button class="btn btn-line btn-xs" onclick="insertNotes()">Insert template</button></div>
+          <textarea class="cin" id="notes" oninput="renderStepper()" placeholder="Subjective, objective, assessment, plan…"></textarea></div>
+        <div class="fcard"><div class="fh"><span class="ft">Diagnosis</span></div>
+          <div class="dxrow" id="dxRow"></div>
+          <div class="dxsug" id="dxSug"></div></div>
+        <div class="fcard"><div class="fh"><span class="ft">Prescription</span><button class="btn btn-line btn-xs" onclick="applyRx()">Apply template</button></div>
+          <div class="rxhead"><span>Medicine</span><span>Dose</span><span>Freq</span><span>Days</span><span></span></div>
+          <div id="rxBody"></div>
+          <button class="dxadd" style="margin-top:8px" onclick="addRx()">+ Add medicine</button></div>
+      </div>
+      <div class="cw-foot">
+        <div class="upnext">${upnext}</div>
+        <div class="fa">
+          <button class="btn btn-line btn-sm" onclick="toast('Draft saved')">Save draft</button>
+          <button class="btn btn-line btn-sm" onclick="printRx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>Print prescription</button>
+          <button class="btn btn-primary btn-sm" onclick="signComplete()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Complete consultation</button>
+        </div>
+      </div>`;
+    renderStepper(); renderSafety(p); renderDx(); renderRx(); renderCtx(); renderQrail(); startTimer();
+  }
+
+  function renderStepper(){
+    const el=document.getElementById('stepper'); if(!el) return;
+    const notesFilled=(document.getElementById('notes')?.value||'').trim().length>0;
+    const consultDone=notesFilled||dx.length>0;
+    const rxDone=rx.length>0;
+    const steps=[{l:'Patient ready',done:true},{l:'Consultation',done:consultDone,active:!consultDone},{l:'Prescription',done:rxDone,active:consultDone&&!rxDone},{l:'Complete',active:consultDone&&rxDone}];
+    el.innerHTML=steps.map((s,i)=>`<div class="step ${s.done?'done':''} ${s.active?'active':''}">
+      <span class="sd">${s.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>':(i+1)}</span>
+      <span class="sl">${s.l}</span>${i<3?'<span class="bar"></span>':''}</div>`).join('');
+  }
+
+  function renderSafety(p){
+    const el=document.getElementById('safety'); if(!el) return;
+    const tri='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0Z"/></svg>';
+    const dot='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
+    const chips=[];
+    if(p.allergy) chips.push(`<span class="schip crit">${tri}Allergy: ${p.allergy}</span>`);
+    if(p.pregnancy) chips.push(`<span class="schip warnc">${dot}${p.pregnancy}</span>`);
+    (p.chronic||[]).forEach(c=>chips.push(`<span class="schip warnc">${dot}${c}</span>`));
+    if(p.vital) chips.push(`<span class="schip crit">${tri}Critical: ${p.vital}</span>`);
+    el.innerHTML='<span class="sk">Clinical safety</span>'+(chips.length?chips.join(''):`<span class="schip okc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>No critical alerts on file</span>`);
+  }
+
+  function applyProtocol(){
+    if(!curSug) return;
+    document.getElementById('notes').value=curSug.note;
+    dx=curSug.dx.slice(0,1); rx=curSug.rx.map(m=>({...m}));
+    dxFirst=false; rxFirst=false;
+    renderDx(); renderRx(); renderStepper();
+    toast(curSug.name+' protocol applied');
+  }
+
+  function renderDx(){
+    document.getElementById('dxRow').innerHTML = dx.map((d,i)=>`<span class="dxchip">${d}<button onclick="rmDx(${i})" aria-label="Remove"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`).join('') || '<span style="font-size:12px;color:var(--muted)">No diagnosis yet — tap a suggested one below or type.</span>';
+    const sug=(curSug?curSug.dx:[]).filter(s=>!dx.includes(s)).slice(0,5);
+    document.getElementById('dxSug').innerHTML = sug.map(s=>`<button onclick="addDx('${s.replace(/'/g,"\\'")}')">+ ${s}</button>`).join('');
+  }
+  function addDx(name){ if(!dx.includes(name)){ dx.push(name); if(dxFirst){dxFirst=false;toast('Diagnosis captured');} } renderDx(); renderStepper(); }
+  function rmDx(i){ dx.splice(i,1); renderDx(); renderStepper(); }
+
+  function renderRx(){
+    document.getElementById('rxBody').innerHTML = rx.map((m,i)=>`<div class="rxrow">
+      <input value="${m.name}" placeholder="Medicine"><input value="${m.dose}" placeholder="500mg"><input value="${m.freq}" placeholder="1-0-1"><input value="${m.days}" placeholder="5">
+      <button class="del" onclick="rmRx(${i})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('')
+      || '<div style="font-size:12px;color:var(--muted);padding:6px 0">No medicines — apply the template or add one.</div>';
+  }
+  function rxMomentum(){ if(rxFirst && rx.length){ rxFirst=false; toast('Prescription ready'); } }
+  function addRx(){ rx.push({name:'',dose:'',freq:'',days:''}); rxMomentum(); renderRx(); renderStepper(); }
+  function rmRx(i){ rx.splice(i,1); renderRx(); renderStepper(); }
+  function applyRx(){ rx.push(...(curSug&&curSug.rx.length?curSug.rx.map(m=>({...m})):[{name:'Paracetamol',dose:'500mg',freq:'1-0-1',days:'5'}])); rxMomentum(); renderRx(); renderStepper(); toast('Template applied'); }
+  function insertNotes(){ const t=document.getElementById('notes'); t.value=curSug.note; t.focus(); renderStepper(); toast('Notes template inserted'); }
+  function printRx(){ toast(rx.length?'Prescription sent to print':'Add a medicine first'); }
+
+  function renderCtx(){
+    const p=current(); if(!p){document.getElementById('ctx').innerHTML='';return;}
+    const nextP=QUEUE.filter(x=>x.status==='waiting')[0];
+    const nextCard = nextP ? `<div class="nextcard"><div class="nh"><span class="lbl">Up next — prepare</span><span class="nr">#${nextP.token} · waited ${nextP.waited}</span></div>
+      <div class="nrow"><span class="avatar ${nextP.av}">${nextP.ini}</span><div><div class="nn">${nextP.name} <span style="font-weight:400;color:var(--muted)">${nextP.age}</span></div><div class="nr">${nextP.reason}</div></div></div>
+      ${nextP.allergy?`<div class="nflag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0Z"/></svg>Allergy: ${nextP.allergy}</div>`:''}
+      ${nextP.pregnancy?`<div class="nflag" style="color:var(--honey-deep)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>${nextP.pregnancy}</div>`:''}</div>` : '';
+    document.getElementById('ctx').innerHTML=`
+      <div class="sec" style="margin-top:0">Last visit with me</div>
+      <div class="lastvisit"><div class="dt">${p.last.dt}</div><div class="dx">${p.last.dx}</div><div class="rx">${p.last.rx}</div></div>
+      <div class="sec">Timeline</div>
+      <div class="tl"><div class="tli"><span class="pt"></span><div class="dt">${p.last.dt}</div><div class="ev">${p.last.dx}</div></div><div class="tli old"><span class="pt"></span><div class="dt">02 Mar 2026</div><div class="ev">Routine check-up</div></div></div>
+      <div class="soon-card">Vitals · Reports<br>Coming soon</div>
+      ${nextCard}`;
+  }
+
+  let timer=null, secs=0;
+  function paintElapsed(){ const el=document.getElementById('elapsed'); if(el) el.textContent=Math.floor(secs/60)+'m '+String(secs%60).padStart(2,'0')+'s'; }
+  function startTimer(){ clearInterval(timer); secs=(current()&&current().seed)||0; paintElapsed();
+    timer=setInterval(()=>{ secs++; const el=document.getElementById('elapsed'); if(!el){clearInterval(timer);return;} paintElapsed(); },1000); }
+
+  function signComplete(){ const p=current(); p.status='done';
+    toast('Signed — '+p.name.split(' ')[0]+"'s visit complete");
+    const next=QUEUE.find(x=>x.status==='waiting');
+    if(next){ next.status='consult'; setTimeout(loadConsult,250); } else { loadConsult(); }
+    renderToday();
+  }
+  function callIn(){ go('workbench'); }
+  function openPatient(n){ toast('Opening '+n+"'s record"); }
+
+  // nav
+  function setNav(v){
+    document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('on',x.dataset.p===v));
+    document.querySelectorAll('.ni').forEach(b=>b.classList.toggle('on',b.dataset.nav===v));
+    document.querySelectorAll('#pnav button').forEach(b=>b.classList.toggle('on',b.dataset.go===v));
+    const titles={today:'Today',workbench:'Consult Workbench',patients:'Patients',schedule:'Schedule',practice:'Practice',profile:'Profile'};
+    document.getElementById('topTitle').textContent=titles[v]||'';
+    if(v==='today') renderToday();
+    if(v==='workbench') loadConsult();
+    window.scrollTo(0,0);
+  }
+  function go(v){ setNav(v); }
+  document.querySelectorAll('.ni[data-nav]').forEach(b=>b.addEventListener('click',()=>setNav(b.dataset.nav)));
+  document.getElementById('pnav').addEventListener('click',e=>{ if(e.target.dataset.go) setNav(e.target.dataset.go); });
+
+  // facets (visual only)
+  document.querySelectorAll('.facet').forEach(f=>f.addEventListener('click',()=>{ document.querySelectorAll('.facet').forEach(x=>x.classList.remove('on')); f.classList.add('on'); }));
+  document.querySelectorAll('.sctab').forEach(t=>t.addEventListener('click',()=>{ document.querySelectorAll('.sctab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); }));
+  document.querySelectorAll('.sni').forEach(s=>s.addEventListener('click',()=>{ const p=s.closest('.subnav'); p.querySelectorAll('.sni').forEach(x=>x.classList.remove('on')); s.classList.add('on'); }));
+
+  // toast + theme
+  const tw=document.getElementById('toasts');
+  function toast(msg){ const t=document.createElement('div'); t.className='toast';
+    t.innerHTML='<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span><span>'+msg+'</span>';
+    tw.appendChild(t); setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2500); }
+  function curTheme(){ const r=document.documentElement.getAttribute('data-theme'); return r||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }
+  document.getElementById('themeBtn').addEventListener('click',()=>{ const n=curTheme()==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',n); document.getElementById('themeLbl').textContent=n==='dark'?'Dark':'Light'; });
+
+  renderToday();
+</script>

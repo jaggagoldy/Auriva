@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auriva 2.0 — Interactive Clinical Flow Walkthrough</title>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+    :root {
+      /* Auriva Production Colors from globals.css */
+      --background: #FBF8F4;
+      --foreground: #241F1A;
+      --card: #FFFFFF;
+      --card-foreground: #241F1A;
+      --popover: #FFFFFF;
+      --popover-foreground: #241F1A;
+      --primary: #0E7466;             /* Pine Green */
+      --primary-hover: #085B4F;
+      --primary-soft: #E4EFEC;
+      --primary-soft-foreground: #083F37;
+      --secondary: #F4EEE6;
+      --secondary-foreground: #241F1A;
+      --muted: #F4EEE6;
+      --muted-foreground: #8C8477;
+      --accent: #E4EFEC;
+      --accent-foreground: #083F37;
+      
+      --honey: #E8A24C;               /* Amber Honey */
+      --honey-soft: #F7E4C6;
+      --honey-deep: #7A4E12;
+      --honey-tint: #FBF0DF;
+      
+      --destructive: #C9584E;
+      --warning: #C77D24;
+      --success: #3F9D5A;
+      --info: #2A7DA3;
+      --border: #ECE3D6;
+      --input: #E2D7C7;
+      --ring: #0E7466;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: ui-rounded, "SF Pro Rounded", "Outfit", var(--font-sans);
+      
+      --radius-sm: calc(0.85rem * 0.6);
+      --radius-md: calc(0.85rem * 0.8);
+      --radius-lg: 0.85rem;
+      --radius-xl: 1.2rem;
+      
+      --shadow-sm: 0 1px 2px rgba(36, 31, 26, 0.03), 0 2px 4px rgba(36, 31, 26, 0.02);
+      --shadow-md: 0 4px 12px rgba(36, 31, 26, 0.03), 0 8px 24px rgba(36, 31, 26, 0.04);
+      --shadow-lg: 0 12px 24px rgba(36, 31, 26, 0.04), 0 24px 48px rgba(36, 31, 26, 0.08);
+      
+      --transition-standard: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-color: var(--border);
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #14100D;  /* Carbon Theme for Guide Side */
+      color: #F5EFE7;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+    }
+
+    h1, h2, h3, h4, h5 {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    .tour-wrapper {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      flex: 1;
+    }
+
+    /* Left Guide Panel */
+    .guide-sidebar {
+      width: 390px;
+      background-color: #1D1815;
+      border-right: 1px solid rgba(236, 227, 214, 0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 28px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .guide-progress {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+
+    .guide-dot {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      transition: var(--transition-standard);
+    }
+
+    .guide-dot.active {
+      background: var(--honey);
+      box-shadow: 0 0 8px var(--honey);
+    }
+
+    .guide-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--honey-tint);
+      color: var(--honey-deep);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+
+    .guide-main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 24px;
+    }
+
+    .guide-header-title {
+      font-size: 19px;
+      line-height: 1.35;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+    }
+
+    .guide-paragraph {
+      font-size: 13px;
+      color: #B3A99C;
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    .guide-checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .checklist-row {
+      display: flex;
+      align-items: start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: #F5EFE7;
+      transition: var(--transition-standard);
+    }
+
+    .checklist-bullet {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: transparent;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .checklist-row.done {
+      color: rgba(245, 239, 231, 0.35);
+    }
+
+    .checklist-row.done .checklist-bullet {
+      background: var(--success);
+      border-color: var(--success);
+      color: #FFFFFF;
+    }
+
+    .rationale-block {
+      background: rgba(232, 162, 76, 0.06);
+      border: 1px solid rgba(232, 162, 76, 0.15);
+      border-left: 3.5px solid var(--honey);
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      color: #F3D9A8;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .code-mapping-badge {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary-soft);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 8px;
+    }
+
+    .guide-action-btn {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 13px;
+      font-weight: 600;
+      background-color: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(14, 116, 102, 0.2);
+      transition: var(--transition-standard);
+    }
+
+    .guide-action-btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Right Preview Sandbox */
+    .sandbox-viewport {
+      flex: 1;
+      background-color: var(--background);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      color: var(--foreground);
+    }
+
+    .sandbox-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: fadeIn 250ms ease-out;
+    }
+
+    .sandbox-screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.995); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Production Shell Layout Mockup */
+    .sh-header {
+      height: 52px;
+      background: #FFFFFF;
+      border-bottom: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .sh-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sh-sidebar {
+      width: 210px;
+      background: #FFFFFF;
+      border-right: 1.5px solid var(--border);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sh-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: var(--background);
+    }
+
+    /* Shadcn/Auriva Components */
+    .sh-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      transition: var(--transition-standard);
+    }
+
+    .sh-input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--foreground);
+      outline: none;
+      background-color: #FFFFFF;
+      transition: var(--transition-standard);
+    }
+
+    .sh-input:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 2px rgba(14, 116, 102, 0.15);
+    }
+
+    .sh-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238C8477' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 14px;
+      padding-right: 36px;
+    }
+
+    .sh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-standard);
+    }
+
+    .sh-btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    .sh-btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .sh-btn-secondary {
+      background: #FFFFFF;
+      color: var(--foreground);
+      border: 1.5px solid var(--border);
+    }
+    .sh-btn-secondary:hover {
+      background: var(--secondary);
+    }
+
+    .sh-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--foreground);
+      text-decoration: none;
+      cursor: pointer;
+      transition: var(--transition-standard);
+    }
+
+    .sh-nav-link:hover {
+      background: var(--secondary);
+    }
+
+    .sh-nav-link.active {
+      background: var(--honey-soft);
+      color: var(--honey-deep);
+      font-weight: 600;
+    }
+
+    .sh-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sh-badge-primary { background: var(--primary-soft); color: var(--accent-foreground); }
+    .sh-badge-success { background: var(--secondary); color: var(--success); }
+    .sh-badge-warning { background: var(--honey-soft); color: var(--honey-deep); }
+
+    /* Overlay primitive style */
+    .sh-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(36, 31, 26, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 150ms ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tour-wrapper">
+    
+    <!-- LEFT COMPONENT: PRODUCT OFFICE COCKPIT -->
+    <aside class="guide-sidebar">
+      <div>
+        <div class="guide-header">
+          <div class="guide-progress" id="tour-progress">
+            <div class="guide-dot active"></div>
+            <div class="guide-dot"></div>
+            <div class="guide-dot"></div>
+            <div class="guide-dot"></div>
+            <div class="guide-dot"></div>
+          </div>
+          <span class="guide-badge" id="step-badge">Step 1 of 5</span>
+          <h2 style="font-size:16px; color:#FFFFFF; margin-top:4px;">Unified Clinic Journey</h2>
+        </div>
+
+        <div class="guide-main-scroll">
+          <h3 class="guide-header-title" id="step-title">1. Dashboard Readiness</h3>
+          <p class="guide-paragraph" id="step-desc">
+            The owner lands on the home dashboard. The "Get your clinic ready" component stack keeps setup operational, showing live progress.
+          </p>
+
+          <ul class="guide-checklist" id="step-checklist">
+            <li class="checklist-row"><span class="checklist-bullet">✓</span> <span>Load home dashboard framework</span></li>
+            <li class="checklist-row"><span class="checklist-bullet">✓</span> <span>Check readiness checklist percent</span></li>
+            <li class="checklist-row"><span class="checklist-bullet">✓</span> <span>Locate Settings Group navigation</span></li>
+          </ul>
+
+          <div class="rationale-block" id="step-rationale">
+            <strong>Clinical Rationale:</strong> Setting up clinic profile assets drives booking page slots, converting setup tasks into direct clinic wins.
+          </div>
+
+          <div class="code-mapping-badge" id="step-code">
+            Component: HomeView in page.tsx
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-footer">
+        <button class="guide-action-btn" id="btn-next-tour" onclick="nextTourStep()">Proceed to Team Provisioning →</button>
+        <span style="font-size:10px; color:#8C8477; text-align:center;">Interactive UX Flow Walkthrough</span>
+      </div>
+    </aside>
+
+    <!-- RIGHT COMPONENT: HIGH FIDELITY PREVIEW SANDBOX -->
+    <main class="sandbox-viewport">
+
+      <!-- STEP 1: DASHBOARD HOME -->
+      <section class="sandbox-screen active" id="s-screen-home">
+        <header class="sh-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; width:26px; height:26px; background:var(--primary); border-radius:6px; align-items:center; justify-content:center; color:#FFF; font-weight:bold; font-size:13px; font-family:var(--font-heading);">A</span>
+            <span style="font-family:var(--font-heading); font-weight:700; font-size:15px;">Aegis Family Clinic</span>
+          </div>
+          <span class="sh-badge sh-badge-primary">Owner Dashboard</span>
+        </header>
+
+        <div class="sh-body">
+          <aside class="sh-sidebar">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span class="sh-nav-link active">🏠 Dashboard</span>
+              <span class="sh-nav-link">📅 Today</span>
+              <span class="sh-nav-link">📅 Calendar</span>
+              <div style="height:1px; background:var(--border); margin:8px 0;"></div>
+              <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); padding:0 12px 4px 12px; display:block;">Settings</span>
+              <span class="sh-nav-link" onclick="nextTourStep()">👥 Team</span>
+            </div>
+          </aside>
+
+          <main class="sh-content" style="display:flex; flex-direction:column; gap:20px;">
+            <div class="sh-card" style="background:#0E7466; color:#FFF; border:none; position:relative; overflow:hidden;">
+              <div style="position:relative; z-index:2; display:flex; align-items:center; gap:20px;">
+                <div style="width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:var(--honey);">40%</div>
+                <div>
+                  <h3 style="color:#FFF; font-size:16px;">Get your clinic ready</h3>
+                  <p style="font-size:12px; opacity:0.8; margin-top:2px;">Complete provisioning and add treatments to accept bookings</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="sh-card">
+              <h3 style="font-size:14px; margin-bottom:12px;">Clinic readiness steps</h3>
+              <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);"><span>✓ Configure Practice details</span><span style="color:var(--success);">Completed</span></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);"><span>👥 Provision staff directory profile</span><span style="color:var(--honey); font-weight:600; cursor:pointer;" onclick="nextTourStep()">Do this →</span></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0;"><span>🩺 Create treatments list</span><span style="color:var(--muted-foreground);">Locked</span></div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </section>
+
+      <!-- STEP 2: TEAM PROVISIONING -->
+      <section class="sandbox-screen" id="s-screen-team">
+        <header class="sh-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; width:26px; height:26px; background:var(--primary); border-radius:6px; align-items:center; justify-content:center; color:#FFF; font-weight:bold; font-size:13px;">A</span>
+            <span style="font-family:var(--font-heading); font-weight:700; font-size:15px;">Aegis Family Clinic</span>
+          </div>
+          <span class="sh-badge sh-badge-primary">Owner Dashboard</span>
+        </header>
+
+        <div class="sh-body">
+          <aside class="sh-sidebar">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span class="sh-nav-link" onclick="currentStep=1; updateGuideUI(); switchSandboxScreen(1);">🏠 Dashboard</span>
+              <span class="sh-nav-link">📅 Today</span>
+              <span class="sh-nav-link">📅 Calendar</span>
+              <div style="height:1px; background:var(--border); margin:8px 0;"></div>
+              <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); padding:0 12px 4px 12px; display:block;">Settings</span>
+              <span class="sh-nav-link active">👥 Team</span>
+            </div>
+          </aside>
+
+          <main class="sh-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div>
+                <h3 style="font-size:16px; color:var(--foreground);">Team Panel directory</h3>
+                <p style="font-size:12px; color:var(--muted-foreground);">Managed login access tokens roster</p>
+              </div>
+              <button class="sh-btn sh-btn-primary" onclick="simulateProvisionStaff()">+ Provision Staff</button>
+            </div>
+
+            <div class="sh-card" style="padding:0; overflow:hidden;">
+              <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+                <thead>
+                  <tr style="background:var(--secondary); border-bottom:1.5px solid var(--border); color:var(--muted-foreground);">
+                    <th style="padding:12px;">Name</th>
+                    <th style="padding:12px;">Roster Role</th>
+                    <th style="padding:12px;">Identity Token Type</th>
+                    <th style="padding:12px;">Roster Status</th>
+                  </tr>
+                </thead>
+                <tbody id="team-table-tbody">
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:600;">Dr. Sarah Smith</td>
+                    <td style="padding:12px;">Owner (Clinician)</td>
+                    <td style="padding:12px; color:var(--muted-foreground);">Managed profile</td>
+                    <td style="padding:12px;"><span class="sh-badge sh-badge-success">Active</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </main>
+        </div>
+      </section>
+
+      <!-- STEP 3: TODAY VIEW & APPTS -->
+      <section class="sandbox-screen" id="s-screen-today">
+        <header class="sh-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; width:26px; height:26px; background:var(--primary); border-radius:6px; align-items:center; justify-content:center; color:#FFF; font-weight:bold; font-size:13px;">A</span>
+            <span style="font-family:var(--font-heading); font-weight:700; font-size:15px;">Aegis Family Clinic</span>
+          </div>
+          <span class="sh-badge sh-badge-primary">Today list</span>
+        </header>
+
+        <div class="sh-body">
+          <aside class="sh-sidebar">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span class="sh-nav-link" onclick="currentStep=1; updateGuideUI(); switchSandboxScreen(1);">🏠 Dashboard</span>
+              <span class="sh-nav-link active">📅 Today</span>
+              <span class="sh-nav-link">📅 Calendar</span>
+            </div>
+          </aside>
+
+          <main class="sh-content" style="display:flex; flex-direction:column; gap:16px;">
+            <!-- Hero banner showing Next Patient -->
+            <div class="sh-card" style="background:#0B4A41; color:#FFF; border:none; margin:0;" id="today-hero-banner">
+              <p style="font-size:11px; opacity:0.7;">Good morning, Dr. Sarah Smith</p>
+              <div style="margin-top:10px;" id="today-next-patient-banner">
+                <p style="font-size:11px; color:var(--honey); text-transform:uppercase; font-weight:bold; letter-spacing:0.05em;">Your next patient</p>
+                <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                  <div style="width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;">AS</div>
+                  <div>
+                    <strong style="font-size:15px; color:#FFF;">Amit Singh</strong>
+                    <span style="font-size:11px; opacity:0.8; display:block;">10:00 AM · walk-in</span>
+                  </div>
+                </div>
+                <button class="sh-btn sh-btn-secondary" style="background:#FFF; color:#0B4A41; border:none; margin-top:12px;" onclick="triggerConsultOverlay()">Start consultation</button>
+              </div>
+            </div>
+
+            <!-- List Card -->
+            <div class="sh-card" style="margin:0; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:12px; font-weight:700; color:var(--muted-foreground); text-transform:uppercase;">Today's Schedule roster</span>
+                <button class="sh-btn sh-btn-primary" style="padding:4px 10px; font-size:11px;" onclick="openBookDialog()">+ Book patient</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px;" id="today-patient-rows">
+                <!-- Amit Singh row -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px;" id="row-amit-singh">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:50%; background:var(--honey-soft); color:var(--honey-deep); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold;">AS</div>
+                    <div>
+                      <strong style="font-size:13px; display:block;">Amit Singh</strong>
+                      <span style="font-size:11px; color:var(--muted-foreground);">10:00 AM · walk-in · scheduled</span>
+                    </div>
+                  </div>
+                  <button class="sh-btn sh-btn-secondary" style="padding:4px 10px;" onclick="triggerConsultOverlay()">Start</button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <!-- Book Patient Dialog Mock -->
+        <div class="sh-overlay" id="dialog-book-patient" style="display:none;">
+          <div class="sh-card" style="width:100%; max-width:400px; margin:0;" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:14px;">
+              <h3 style="font-size:14px; color:var(--foreground);">Book in-clinic patient</h3>
+              <span style="cursor:pointer;" onclick="closeBookDialog()">×</span>
+            </div>
+            
+            <form onsubmit="handleBookFormSubmit(event)" style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Patient Name</label>
+                <input type="text" value="Amit Singh" class="sh-input" id="book-name" required/>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Phone Number</label>
+                <input type="text" value="+91 98765 43210" class="sh-input" id="book-phone" required/>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Datetime</label>
+                <input type="datetime-local" class="sh-input" id="book-time" required/>
+              </div>
+              <button class="sh-btn sh-btn-primary" type="submit" style="width:100%; padding:10px; margin-top:8px;">Book patient</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 4: CONSULTATION WORKBENCH OVERLAY -->
+      <section class="sandbox-screen" id="s-screen-consultation">
+        <!-- Render full ConsultationWorkbench overlay exactly like the React component -->
+        <div style="height:100%; width:100%; display:flex; flex-direction:column; background:var(--background);">
+          <header class="sh-header">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <strong style="font-size:14px; color:var(--primary);">Consultation Workbench</strong>
+              <span class="sh-badge sh-badge-primary" id="consult-patient-header">Patient: Amit Singh</span>
+            </div>
+            <span style="font-size:11px; color:var(--muted-foreground);">Encounter ID: ENC-98317</span>
+          </header>
+
+          <div class="sh-body">
+            <!-- Left Rail: Patient Context -->
+            <aside class="sh-sidebar" style="width:230px; background:var(--background); padding:16px;">
+              <div>
+                <h4 style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); margin-bottom:10px;">Visit Context Recaps</h4>
+                <div class="sh-card" style="padding:10px; margin-bottom:10px; background:#FFF;">
+                  <span style="font-size:9px; font-weight:bold; color:var(--destructive);">Allergies:</span>
+                  <p style="font-size:11px; font-weight:600; color:var(--destructive);">Penicillin</p>
+                </div>
+                <div class="sh-card" style="padding:10px; background:#FFF;">
+                  <span style="font-size:9px; font-weight:bold; color:var(--primary);">Past Notes:</span>
+                  <p style="font-size:11.5px; color:var(--foreground);">Root canal assessment on 12 May 2026. Prescribed Ibuprofen 400mg.</p>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Center Canvas & Right Prescription side-by-side -->
+            <main class="sh-content" style="display:grid; grid-template-columns: 1fr 270px; gap:20px; padding:20px;">
+              <!-- Left: SOAP areas -->
+              <div class="sh-card" style="margin:0; display:flex; flex-direction:column; gap:14px; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid var(--border); padding-bottom:8px;">
+                  <strong style="font-size:13px;">Clinical Documentation</strong>
+                  <button class="sh-btn sh-btn-secondary" style="padding:2px 8px; font-size:10px; background:var(--honey-soft); border-color:var(--honey); color:var(--honey-deep);" onclick="applyConsultTemplate()">Apply Dental Template</button>
+                </div>
+
+                <!-- Vitals block -->
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; padding:10px; background:var(--secondary); border-radius:var(--radius-md); border:1px solid var(--border);">
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <label style="font-size:8.5px; font-weight:bold; color:var(--muted-foreground);">BP</label>
+                    <input type="text" value="120/80" class="sh-input" style="padding:4px 6px; font-size:11px;" id="c-bp"/>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <label style="font-size:8.5px; font-weight:bold; color:var(--muted-foreground);">Pulse</label>
+                    <input type="text" value="78" class="sh-input" style="padding:4px 6px; font-size:11px;" id="c-pulse"/>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <label style="font-size:8.5px; font-weight:bold; color:var(--muted-foreground);">Temp</label>
+                    <input type="text" value="98.6 °F" class="sh-input" style="padding:4px 6px; font-size:11px;" id="c-temp"/>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:2px;">
+                    <label style="font-size:8.5px; font-weight:bold; color:var(--muted-foreground);">SpO2</label>
+                    <input type="text" value="99%" class="sh-input" style="padding:4px 6px; font-size:11px;" id="c-spo2"/>
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Chief Complaint (S)</label>
+                  <textarea class="sh-input" style="height:44px; resize:none;" placeholder="Chief symptoms..." id="c-complaints"></textarea>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Objective findings (O)</label>
+                  <textarea class="sh-input" style="height:44px; resize:none;" placeholder="Examinations..." id="c-findings"></textarea>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <label style="font-size:10px; font-weight:bold; color:var(--muted-foreground);">Diagnoses (A)</label>
+                  <input type="text" value="Dental Caries" class="sh-input" id="c-diagnosis"/>
+                </div>
+              </div>
+
+              <!-- Right: Rx drug rows -->
+              <div style="display:flex; flex-direction:column; gap:16px; justify-content:space-between; height:100%;">
+                <div class="sh-card" style="flex:1; margin:0; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+                  <div>
+                    <h4 style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); border-bottom:1px solid var(--border); padding-bottom:6px; margin-bottom:8px;">Rx Lines</h4>
+                    <div style="display:flex; flex-direction:column; gap:6px;" id="consult-rx-rows">
+                      <p style="font-size:11px; color:var(--muted-foreground); text-align:center; padding:20px 0;">No items loaded.</p>
+                    </div>
+                  </div>
+                  <button class="sh-btn sh-btn-secondary" style="width:100%; font-size:10.5px;" onclick="addConsultRxItem()">+ Add Ibuprofen 400mg</button>
+                </div>
+
+                <button class="sh-btn sh-btn-primary" style="width:100%; padding:10px; font-size:13px;" onclick="completeConsultationWorkbench()">Complete consultation</button>
+              </div>
+            </main>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5: COLLECT PAYMENT OVERLAY -->
+      <section class="sandbox-screen" id="s-screen-payment" style="display:flex; align-items:center; justify-content:center; padding:20px;">
+        <!-- Render exact PaymentStep dialog overlay -->
+        <div class="sh-card" style="width:100%; max-width:440px; margin:0; box-shadow:var(--shadow-lg);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid var(--border); padding-bottom:10px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:15px; color:var(--foreground);">Collect payment</h2>
+              <p style="font-size:11px; color:var(--muted-foreground);" id="pay-patient-subtitle">Amit Singh</p>
+            </div>
+            <span style="font-size:16px; cursor:pointer;" onclick="currentStep=3; updateGuideUI(); switchSandboxScreen(3);">×</span>
+          </div>
+
+          <div style="font-size:28px; font-weight:bold; color:var(--foreground); margin-bottom:8px;" id="pay-total-value">₹525</div>
+          <p style="font-size:11px; color:var(--muted-foreground); line-height:1.4; margin-bottom:16px;">
+            Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn't process the money.
+          </p>
+
+          <form onsubmit="event.preventDefault(); settleRecordedPayment();" style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; font-weight:700; color:var(--muted-foreground);">Amount (₹)</label>
+              <input type="text" value="525" class="sh-input" id="pay-collected-input"/>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; font-weight:700; color:var(--muted-foreground);">How did they pay?</label>
+              <div style="display:flex; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden;">
+                <button type="button" class="sh-btn" id="pay-btn-cash" onclick="switchPayMethod('cash')" style="flex:1; border:none; border-radius:0; padding:6px 0; background:var(--primary); color:#FFF; font-size:11px;">Cash</button>
+                <button type="button" class="sh-btn" id="pay-btn-upi" onclick="switchPayMethod('upi')" style="flex:1; border:none; border-radius:0; padding:6px 0; background:#FFF; color:var(--muted-foreground); font-size:11px;">UPI</button>
+                <button type="button" class="sh-btn" id="pay-btn-card" onclick="switchPayMethod('card')" style="flex:1; border:none; border-radius:0; padding:6px 0; background:#FFF; color:var(--muted-foreground); font-size:11px;">Card</button>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; gap:12px; margin-top:8px;">
+              <button class="sh-btn sh-btn-secondary" type="button" onclick="settleRecordedPayment(true)" style="flex:1;">Skip</button>
+              <button class="sh-btn sh-btn-primary" type="submit" style="flex:2;">Record payment</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- SUCCESS COMPLETION SCREEN -->
+      <section class="sandbox-screen" id="s-screen-complete" style="display:none; align-items:center; justify-content:center; padding:40px; text-align:center;">
+        <div class="sh-card" style="width:100%; max-width:480px; padding:32px; display:flex; flex-direction:column; align-items:center; gap:24px; box-shadow: var(--shadow-lg);">
+          <div style="width:64px; height:64px; background:var(--primary-soft); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">✓</div>
+          <div>
+            <h3 style="font-size:20px; color:var(--primary); font-weight:bold; margin-bottom:8px;">Walkthrough Complete!</h3>
+            <p style="font-size:13px; color:var(--muted-foreground); line-height:1.5;">You have successfully simulated the core clinical journey from onboarding to payment collection overlays.</p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; width:100%; background:var(--background); border:1.5px solid var(--border); padding:16px; border-radius:var(--radius-lg); text-align:left; font-size:12px;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><strong>Registered Practice:</strong><span id="final-brand-name-tag">Aegis Family Clinic</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px; padding-top:6px;"><strong>Active Roster:</strong><span>Dr. Elena Patel provisioned</span></div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px; padding-top:6px;"><strong>EMR SOAP status:</strong><span>Signed & locked</span></div>
+            <div style="display:flex; justify-content:space-between; padding-top:6px;"><strong>Recorded Payment:</strong><span style="color:var(--success); font-weight:bold;" id="final-payment-label">₹525 Cash received</span></div>
+          </div>
+
+          <button class="sh-btn sh-btn-primary" onclick="resetTour()" style="width:100%; padding:12px; font-size:13px;">Restart Guided Tour</button>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let clinicNameVal = "Aegis Family Clinic";
+    let ownerNameVal = "Dr. Sarah Smith";
+    let selectedPayMethod = "cash";
+
+    const stepDetails = {
+      1: {
+        badge: "Step 1 of 5",
+        title: "1. Dashboard Readiness",
+        desc: "The owner lands on the home dashboard. The 'Get your clinic ready' component stack keeps setup operational, showing live progress.",
+        checklist: ["Load home dashboard framework", "Check readiness checklist percent", "Locate Settings Group navigation"],
+        rationale: "Setting up clinic profile assets drives booking page slots, converting setup tasks into direct clinic wins.",
+        code: "Component: HomeView in page.tsx"
+      },
+      2: {
+        badge: "Step 2 of 5",
+        title: "2. Direct Team Provisioning",
+        desc: "Owner Sarah Smith accesses Settings $\\rightarrow$ Team. Instead of loose invite links, she directly provisions managed credentials for Dr. Elena Patel.",
+        checklist: ["Switch settings views to Team Panel", "Provision credentials for Dr. Elena Patel", "Review active seats limits counts"],
+        rationale: "Managed provisioning prevents loose signup invites, securing HIPAA clinic directories instantly.",
+        code: "Component: TeamPanel in team-panel.tsx"
+      },
+      3: {
+        badge: "Step 3 of 5",
+        title: "3. Patient Booking & Queue",
+        desc: "Receptionist Nina opens the 'Today' view, clicks 'Book' to trigger BookPatientDialog, and registers walk-in patient Amit Singh.",
+        checklist: ["Navigate to Today schedule list view", "Book patient Amit Singh at 10:00 AM", "Locate Amit Singh on the schedule list"],
+        rationale: "In-clinic booking bypasses public interfaces, allowing quick check-in for physical walk-ins.",
+        code: "Component: BookPatientDialog in page.tsx"
+      },
+      4: {
+        badge: "Step 4 of 5",
+        title: "4. EMR Consultation workbench",
+        desc: "Dr. Elena Patel clicks 'Start consultation' inside the TodayView hero. This immediately opens the ConsultationWorkbench overlay.",
+        checklist: ["Check demographics & past history on left rail", "Write SOAP findings and apply Dental template", "Verify Rx medications list is filled and complete"],
+        rationale: "The documentation workbench groups complains suggestions and templates, reducing clinician documentation time.",
+        code: "Component: ConsultationWorkbench in consultation-workbench.tsx"
+      },
+      5: {
+        badge: "Step 5 of 5",
+        title: "5. Collect Payment Checkout",
+        desc: "Finishing EMR immediately advances the overlay to the PaymentStep dialog. Nina records cash collections, settling the invoice.",
+        checklist: ["Transition to Collect Payment overlay dialog", "Select Cash / UPI / Card billing payment method", "Submit recorded payment and verify Today list update"],
+        rationale: "Grouping consultation closing and payments collection keeps patient checkout linear and leakage-free.",
+        code: "Component: PaymentStep in page.tsx"
+      }
+    };
+
+    function updateGuideUI() {
+      const details = stepDetails[currentStep];
+      document.getElementById('step-badge').textContent = details.badge;
+      document.getElementById('step-title').textContent = details.title;
+      document.getElementById('step-desc').textContent = details.desc;
+      document.getElementById('step-rationale').innerHTML = `<strong>Clinical Rationale:</strong> ${details.rationale}`;
+      document.getElementById('step-code').textContent = details.code;
+
+      const checklistUL = document.getElementById('step-checklist');
+      checklistUL.innerHTML = '';
+      details.checklist.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'checklist-row';
+        li.innerHTML = `<span class="checklist-bullet">✓</span> <span>${item}</span>`;
+        checklistUL.appendChild(li);
+      });
+
+      const dots = document.querySelectorAll('#tour-progress .guide-dot');
+      dots.forEach((dot, idx) => {
+        if (idx < currentStep) dot.classList.add('active');
+        else dot.classList.remove('active');
+      });
+
+      const nextBtn = document.getElementById('btn-next-tour');
+      if (currentStep === 1) nextBtn.textContent = "Switch to Team settings tab →";
+      else if (currentStep === 2) nextBtn.textContent = "Go to Today schedule View →";
+      else if (currentStep === 3) nextBtn.textContent = "Start patient consultation overlay →";
+      else if (currentStep === 4) nextBtn.textContent = "Advance to Collect payment step →";
+      else if (currentStep === 5) nextBtn.textContent = "Settle invoice & Complete Walkthrough";
+    }
+
+    function switchSandboxScreen(step) {
+      document.querySelectorAll('.sandbox-screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      });
+
+      let targetId = '';
+      if (step === 1) targetId = 's-screen-home';
+      else if (step === 2) targetId = 's-screen-team';
+      else if (step === 3) targetId = 's-screen-today';
+      else if (step === 4) targetId = 's-screen-consultation';
+      else if (step === 5) targetId = 's-screen-payment';
+
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.style.display = 'flex';
+        el.classList.add('active');
+      }
+    }
+
+    function nextTourStep() {
+      if (currentStep === 1) {
+        clinicNameVal = document.getElementById('ob-clinic') ? document.getElementById('ob-clinic').value : "Aegis Family Clinic";
+        ownerNameVal = document.getElementById('ob-owner') ? document.getElementById('ob-owner').value : "Dr. Sarah Smith";
+      }
+
+      if (currentStep === 5) {
+        document.querySelectorAll('.sandbox-screen').forEach(s => {
+          s.classList.remove('active');
+          s.style.display = 'none';
+        });
+        document.getElementById('s-screen-complete').style.display = 'flex';
+        document.getElementById('s-screen-complete').classList.add('active');
+        document.getElementById('final-brand-name-tag').textContent = clinicNameVal;
+        document.getElementById('final-payment-label').textContent = `₹525 ${selectedPayMethod.toUpperCase()} received`;
+        return;
+      }
+
+      currentStep++;
+      updateGuideUI();
+      switchSandboxScreen(currentStep);
+    }
+
+    function resetTour() {
+      currentStep = 1;
+      updateGuideUI();
+      switchSandboxScreen(currentStep);
+      
+      document.getElementById('team-table-tbody').innerHTML = `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px; font-weight:600;">Dr. Sarah Smith</td>
+          <td style="padding:12px;">Owner (Clinician)</td>
+          <td style="padding:12px; color:var(--muted-foreground);">Managed profile</td>
+          <td style="padding:12px;"><span class="sh-badge sh-badge-success">Active</span></td>
+        </tr>
+      `;
+
+      document.getElementById('today-patient-rows').innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px;" id="row-amit-singh">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--honey-soft); color:var(--honey-deep); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold;">AS</div>
+            <div>
+              <strong style="font-size:13px; display:block;">Amit Singh</strong>
+              <span style="font-size:11px; color:var(--muted-foreground);">10:00 AM · walk-in · scheduled</span>
+            </div>
+          </div>
+          <button class="sh-btn sh-btn-secondary" style="padding:4px 10px;" onclick="triggerConsultOverlay()">Start</button>
+        </div>
+      `;
+
+      document.getElementById('today-next-patient-banner').style.display = 'block';
+
+      document.getElementById('c-complaints').value = '';
+      document.getElementById('c-findings').value = '';
+      document.getElementById('consult-rx-rows').innerHTML = '<p style="font-size:12px; color:var(--muted-foreground); text-align:center; padding:20px 0;">No items loaded.</p>';
+    }
+
+    // Interactive hooks
+    function simulateProvisionStaff() {
+      const tbody = document.getElementById('team-table-tbody');
+      tbody.innerHTML += `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px; font-weight:600;">Dr. Elena Patel</td>
+          <td style="padding:12px;">Doctor (Dentistry)</td>
+          <td style="padding:12px; color:var(--muted-foreground);">Managed profile</td>
+          <td style="padding:12px;"><span class="sh-badge sh-badge-success">Active</span></td>
+        </tr>
+      `;
+      const items = document.querySelectorAll('#step-checklist .checklist-row');
+      items[0].classList.add('done');
+      items[1].classList.add('done');
+    }
+
+    function openBookDialog() {
+      document.getElementById('dialog-book-patient').style.display = 'flex';
+      
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 15);
+      const pad = (n) => String(n).padStart(2, "0");
+      document.getElementById('book-time').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+
+    function closeBookDialog() {
+      document.getElementById('dialog-book-patient').style.display = 'none';
+    }
+
+    function handleBookFormSubmit(event) {
+      event.preventDefault();
+      closeBookDialog();
+      
+      const name = document.getElementById('book-name').value;
+      const timeVal = document.getElementById('book-time').value;
+      const timeStr = new Date(timeVal).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
+      const container = document.getElementById('today-patient-rows');
+      container.innerHTML += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px;" id="row-book-patient">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--honey-soft); color:var(--honey-deep); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold;">${name.slice(0,2).toUpperCase()}</div>
+            <div>
+              <strong style="font-size:13px; display:block;">${name}</strong>
+              <span style="font-size:11px; color:var(--muted-foreground);">${timeStr} · visit · scheduled</span>
+            </div>
+          </div>
+          <button class="sh-btn sh-btn-secondary" style="padding:4px 10px;" onclick="triggerConsultOverlay('${name}')">Start</button>
+        </div>
+      `;
+
+      const items = document.querySelectorAll('#step-checklist .checklist-row');
+      items[0].classList.add('done');
+      items[1].classList.add('done');
+    }
+
+    function triggerConsultOverlay(name = "Amit Singh") {
+      document.getElementById('consult-patient-header').textContent = `Patient: ${name}`;
+      document.getElementById('pay-patient-subtitle').textContent = name;
+      nextTourStep();
+    }
+
+    function applyConsultTemplate() {
+      document.getElementById('c-complaints').value = 'Tooth decay pain in upper left quadrant, sensitive to cold water.';
+      document.getElementById('c-findings').value = 'Deep dental caries in tooth #14. Tenderness on tapping.';
+      addConsultRxItem();
+    }
+
+    function addConsultRxItem() {
+      const list = document.getElementById('consult-rx-rows');
+      list.innerHTML = `
+        <div style="background:var(--background); border:1px solid var(--border); padding:8px; border-radius:var(--radius-md); font-size:12px; font-weight:600;">
+          Ibuprofen 400mg
+          <span style="font-weight:normal; font-size:10px; display:block; color:var(--muted-foreground); margin-top:2px;">1 tab · 1-0-1 · 5 days</span>
+        </div>
+      `;
+      const items = document.querySelectorAll('#step-checklist .checklist-row');
+      items[0].classList.add('done');
+      items[1].classList.add('done');
+    }
+
+    function completeConsultationWorkbench() {
+      const items = document.querySelectorAll('#step-checklist .checklist-row');
+      items[2].classList.add('done');
+      nextTourStep();
+    }
+
+    function switchPayMethod(method) {
+      selectedPayMethod = method;
+      document.getElementById('pay-btn-cash').style.background = method === 'cash' ? 'var(--primary)' : '#FFF';
+      document.getElementById('pay-btn-cash').style.color = method === 'cash' ? '#FFF' : 'var(--muted-foreground)';
+      document.getElementById('pay-btn-upi').style.background = method === 'upi' ? 'var(--primary)' : '#FFF';
+      document.getElementById('pay-btn-upi').style.color = method === 'upi' ? '#FFF' : 'var(--muted-foreground)';
+      document.getElementById('pay-btn-card').style.background = method === 'card' ? 'var(--primary)' : '#FFF';
+      document.getElementById('pay-btn-card').style.color = method === 'card' ? '#FFF' : 'var(--muted-foreground)';
+    }
+
+    function settleRecordedPayment(skip = false) {
+      const items = document.querySelectorAll('#step-checklist .checklist-row');
+      items.forEach(it => it.classList.add('done'));
+
+      if (skip) {
+        selectedPayMethod = "Unpaid";
+      }
+
+      nextTourStep();
+    }
+  </script>
+</body>
+</html>

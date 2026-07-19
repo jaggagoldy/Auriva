@@ -1,0 +1,318 @@
+<title>Auriva Prototype · Package 6 — Experience Resilience System</title>
+<style>
+  :root{
+    --paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;
+    --pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;
+    --honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;
+    --rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;
+    --ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--night:#0B4A41;
+    --shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);
+    --proto:#241F1A;--proto-fg:#F5EFE7;--proto-line:#3a3128;
+    --fd:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;
+    --fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fm:ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;
+    --honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;
+    --ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;
+    --shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}}
+  :root[data-theme="light"]{--paper:#FBF8F4;--surface:#FFFFFF;--sand:#F4EEE6;--sand2:#F0E8DC;--pine:#0E7466;--pine-deep:#083F37;--pine-tint:#E4EFEC;--honey:#E8A24C;--honey-soft:#F7E4C6;--honey-deep:#7A4E12;--honey-tint:#FBF0DF;--rose:#C9584E;--rose-tint:#F7E0DC;--ok:#3F9D5A;--ok-tint:#E4F2E7;--info:#2A7DA3;--info-tint:#E1EEF4;--ink:#241F1A;--body:#5E564C;--muted:#8C8477;--line:#ECE3D6;--line-2:#E2D7C7;--shadow:0 22px 48px -26px rgba(36,31,26,.4);--shadow-s:0 12px 28px -18px rgba(36,31,26,.3);}
+  :root[data-theme="dark"]{--paper:#14100D;--surface:#201A15;--sand:#2A231D;--sand2:#33291F;--pine:#3BAF9E;--pine-deep:#CDEFE7;--pine-tint:#0E5A4F;--honey:#E8A24C;--honey-soft:#4a3a24;--honey-deep:#F7E4C6;--honey-tint:#2b2118;--rose:#E27B72;--rose-tint:#3a2420;--ok:#5FB878;--ok-tint:#1e2f22;--info:#6FB2D0;--info-tint:#1c2a31;--ink:#F5EFE7;--body:#CDC3B6;--muted:#B3A99C;--line:#382E23;--line-2:#4A3B2C;--shadow:0 24px 54px -26px rgba(0,0,0,.7);--shadow-s:0 14px 30px -18px rgba(0,0,0,.6);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;line-height:1.55}
+  h1,h2,h3{font-family:var(--fd);letter-spacing:-.02em;margin:0;font-weight:700}p{margin:0}
+  button{font-family:var(--fb);cursor:pointer}
+  :focus-visible{outline:2.5px solid var(--pine);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .proto-bar{position:sticky;top:0;z-index:90;background:var(--proto);color:var(--proto-fg);display:flex;align-items:center;gap:14px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--proto-line);font-size:12.5px}
+  .proto-bar .tag{font-family:var(--fd);font-weight:700}.proto-bar .tag b{color:var(--honey)}
+  .proto-bar .spacer{flex:1}
+  .tgl-btn,.theme-btn{background:rgba(255,255,255,.08);color:var(--proto-fg);border:1px solid var(--proto-line);padding:5px 12px;border-radius:999px;cursor:pointer;font-size:12px;display:flex;gap:6px;align-items:center}
+  .tgl-btn.on{background:var(--rose);color:#fff;border-color:transparent}
+
+  .wrap{max-width:1060px;margin:0 auto;padding:26px 22px 80px}
+  .lead{margin-bottom:8px}.lead h1{font-size:28px}.lead p{color:var(--body);font-size:15px;margin-top:8px;max-width:70ch}
+  .sec{margin-top:38px}
+  .sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+  .sec-h .n{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--pine);background:var(--pine-tint);border-radius:6px;padding:2px 8px}
+  .sec-h h2{font-size:20px}
+  .sec-d{color:var(--muted);font-size:13.5px;margin-bottom:16px;max-width:74ch}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .empty{text-align:center;padding:26px 18px}
+  .empty .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;margin:0 auto 13px}
+  .empty .ic svg{width:24px;height:24px}
+  .empty .persona{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .empty h3{font-size:15.5px;margin-bottom:5px}.empty p{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .ic.ok{background:var(--ok-tint);color:var(--ok)}.ic.honey{background:var(--honey-tint);color:var(--honey-deep)}.ic.pine{background:var(--pine-tint);color:var(--pine-deep)}.ic.info{background:var(--info-tint);color:var(--info)}.ic.rose{background:var(--rose-tint);color:var(--rose)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 15px;border-radius:11px;border:none;font-family:var(--fd);font-weight:650;font-size:13px}
+  .btn svg{width:15px;height:15px}
+  .btn-primary{background:var(--pine);color:#fff}.btn-line{background:var(--surface);color:var(--ink);border:1.5px solid var(--line-2)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+
+  /* skeleton */
+  .sk{background:linear-gradient(90deg,var(--sand) 25%,color-mix(in srgb,var(--sand) 55%,var(--surface)) 37%,var(--sand) 63%);background-size:400% 100%;animation:sh 1.2s ease infinite;border-radius:8px}
+  @keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  .sk-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .sk-circ{width:44px;height:44px;border-radius:12px;flex:0 0 auto}
+
+  /* banner */
+  .banner{display:flex;align-items:center;gap:11px;border-radius:13px;padding:12px 15px;font-size:13.5px;border:1px solid}
+  .banner .bi{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto}.banner .bi svg{width:15px;height:15px}
+  .banner.off{background:var(--sand);border-color:var(--line-2);color:var(--body)}.banner.off .bi{background:var(--ink);color:var(--paper)}
+  .banner.warn{background:var(--honey-tint);border-color:var(--honey-soft);color:var(--honey-deep)}.banner.warn .bi{background:var(--honey);color:#fff}
+  .banner b{color:var(--ink)}
+
+  .chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+  .cstate{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:650;border-radius:999px;padding:5px 12px;border:1px solid var(--line)}
+  .cstate .dot{width:7px;height:7px;border-radius:50%}
+  .cstate.saving{color:var(--muted)}.cstate.saving .dot{background:var(--muted)}
+  .cstate.saved{color:var(--ok)}.cstate.saved .dot{background:var(--ok)}
+  .cstate.sync{color:var(--info)}.cstate.sync .dot{background:var(--info)}
+  .cstate.queued{color:var(--honey-deep)}.cstate.queued .dot{background:var(--honey)}
+  .cstate.failed{color:var(--rose)}.cstate.failed .dot{background:var(--rose)}
+  .spin .dot{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* error / permission cards */
+  .state{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px}
+  .state .si{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}.state .si svg{width:19px;height:19px}
+  .state .tier{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .state h3{font-size:14.5px;margin:3px 0 3px}.state p{font-size:12.5px;color:var(--muted);margin-bottom:11px}
+  .state.crit{border-color:color-mix(in srgb,var(--rose) 30%,transparent)}
+
+  /* matrix */
+  .mtx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+  table.mtx{width:100%;border-collapse:collapse;min-width:720px;font-size:13px}
+  .mtx th,.mtx td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .mtx thead th{background:var(--sand);font-family:var(--fd);font-size:12.5px}
+  .mtx tbody td:first-child{font-weight:700;color:var(--ink);font-family:var(--fd)}
+  .mtx tbody tr:last-child td{border-bottom:none}
+  .mtx .rule{color:var(--pine-deep);font-weight:600;background:var(--pine-tint)}
+
+  /* checklist */
+  .checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+  .chk{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px}
+  .chk .ok{width:22px;height:22px;border-radius:50%;background:var(--ok-tint);color:var(--ok);display:grid;place-items:center;flex:0 0 auto}.chk .ok svg{width:13px;height:13px}
+  .chk b{font-family:var(--fd)}
+
+  .demorow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .inline-err{display:flex;align-items:center;gap:8px;background:var(--rose-tint);color:var(--rose);border:1px solid color-mix(in srgb,var(--rose) 30%,transparent);border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:600;margin-top:12px}
+  .inline-err svg{width:15px;height:15px}
+
+  /* modal + toast */
+  .backdrop{position:fixed;inset:0;background:rgba(20,16,13,.5);backdrop-filter:blur(3px);z-index:80;display:none;place-items:center;padding:20px}
+  .backdrop.on{display:grid;animation:fade .2s}@keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);width:100%;max-width:400px;padding:22px}
+  .modal h3{font-size:18px;margin-bottom:6px}.modal p{font-size:13px;color:var(--body);margin-bottom:16px}
+  .modal .mf{display:flex;gap:10px}
+  .toastwrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:95;pointer-events:none}
+  .toast{background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);transition:.25s;display:flex;gap:8px;align-items:center}
+  .toast.on{opacity:1;transform:none}.toast svg{width:15px;height:15px;color:var(--honey)}
+  .off-live{display:none}.off-live.on{display:block}
+</style>
+
+<div class="proto-bar">
+  <span class="tag">PROTOTYPE · <b>Package 6 — Experience Resilience</b></span>
+  <span style="opacity:.7">the design-system finale · every state, both themes</span>
+  <span class="spacer"></span>
+  <button class="tgl-btn" id="offBtn">◐ Simulate offline</button>
+  <button class="theme-btn" id="themeBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><span id="themeLbl">Theme</span></button>
+</div>
+
+<div class="wrap">
+  <div class="lead"><h1>Experience Resilience System</h1>
+    <p>How Auriva behaves when reality isn't perfect — empty, loading, offline, errors, permissions, and the accessibility &amp; responsive baseline. One contract across Doctor, Reception, Patient, and Owner. This page is the living reference; every rule is shown live in both themes.</p>
+  </div>
+
+  <div class="off-live" id="offBanner" style="margin-top:16px">
+    <div class="banner off"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M16.7 11.7a6 6 0 00-2.4-1.5M5 12.5a10 10 0 013-2M8.5 16.5a5 5 0 016 0M12 20h.01"/></svg></span>
+      <div><b>You're offline.</b> We'll sync automatically when you're back online — your changes are saved on this device.</div></div>
+  </div>
+
+  <!-- MATRIX -->
+  <div class="sec"><div class="sec-h"><span class="n">00</span><h2>Experience Behavior Matrix</h2></div>
+    <p class="sec-d">The keystone contract. Any new screen must satisfy the relevant row before it ships.</p>
+    <div class="mtx-wrap"><table class="mtx">
+      <thead><tr><th>Situation</th><th>Doctor</th><th>Reception</th><th>Patient</th><th>Owner</th><th>Rule (all surfaces)</th></tr></thead>
+      <tbody>
+        <tr><td>Loading</td><td>Patient-card skeleton</td><td>Queue skeleton</td><td>Hero + timeline skeleton</td><td>Tile/stat skeleton</td><td class="rule">Skeletons match final layout — never spinner-only</td></tr>
+        <tr><td>Empty</td><td>Open your calendar</td><td>Waiting room clear</td><td>You're free today</td><td>Invite first member</td><td class="rule">Reason + one next action; never "No data"</td></tr>
+        <tr><td>Offline</td><td>Queue edits locally</td><td>Queue check-ins</td><td>Read records</td><td>Read dashboards</td><td class="rule">Non-blocking banner + auto-sync; never scare</td></tr>
+        <tr><td>Error</td><td>Retry</td><td>Try again</td><td>Friendly explanation</td><td>Retry</td><td class="rule">Icon + plain cause + recovery; never technical</td></tr>
+        <tr><td>Permission</td><td>Explain + ask owner</td><td>Explain + request access</td><td>Not shown at all</td><td>Coming to your plan</td><td class="rule">Explain + recovery path; never a 403 wall</td></tr>
+        <tr><td>Destructive</td><td>Confirm dialog</td><td>Confirm suspend/archive</td><td>Confirm cancel</td><td>Confirm archive</td><td class="rule">Modal + explicit consequence</td></tr>
+        <tr><td>Success</td><td>Signed ✓ toast</td><td>Collected ✓ toast</td><td>"You're booked" screen</td><td>Invite sent ✓</td><td class="rule">Confirmation + optional next action; never interrupt the workflow</td></tr>
+        <tr><td>Long-running</td><td>—</td><td>CSV import</td><td>Report export</td><td>Bulk invite · restore</td><td class="rule">Show progress · run in background · notify on completion · never freeze the UI</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- EMPTY -->
+  <div class="sec"><div class="sec-h"><span class="n">01</span><h2>Empty states</h2></div>
+    <p class="sec-d">Empty ≠ error. Often it's good news — say so warmly, and always offer the next action.</p>
+    <div class="grid">
+      <div class="card empty"><div class="persona">Doctor · Today</div><span class="ic pine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><h3>No appointments today</h3><p>Start by opening your calendar.</p><button class="btn btn-line">Open schedule</button></div>
+      <div class="card empty"><div class="persona">Reception · Queue</div><span class="ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></span><h3>Waiting room is clear</h3><p>You're all caught up.</p><button class="btn btn-line">Register walk-in</button></div>
+      <div class="card empty"><div class="persona">Patient · Home</div><span class="ic honey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4 12H1M23 12h-3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></span><h3>You're free today</h3><p>Enjoy your day.</p><button class="btn btn-primary">Book a visit</button></div>
+      <div class="card empty"><div class="persona">Records</div><span class="ic info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><h3>Your first visit will appear here</h3><p>Records are built from your visits.</p></div>
+      <div class="card empty"><div class="persona">Calendar</div><span class="ic pine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><h3>Nothing booked yet</h3><p>Tap a free slot to book.</p><button class="btn btn-line">Book</button></div>
+      <div class="card empty"><div class="persona">Payments · Desk</div><span class="ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12M6 8h12M9 3c6 0 6 8 0 8M6 8l7 13"/></svg></span><h3>Nothing to collect today</h3><p>The desk is clear.</p></div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="sec"><div class="sec-h"><span class="n">02</span><h2>Loading — skeletons, not spinners</h2></div>
+    <p class="sec-d">Skeletons mirror the final layout. Shimmer respects reduced-motion. Spinners are only for button-scoped actions.</p>
+    <div class="grid">
+      <div class="card"><div class="persona" style="font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Doctor · patient card</div>
+        <div class="sk-row"><div class="sk sk-circ"></div><div style="flex:1"><div class="sk" style="height:13px;width:60%;margin-bottom:7px"></div><div class="sk" style="height:11px;width:40%"></div></div></div>
+        <div class="sk" style="height:44px"></div></div>
+      <div class="card"><div class="persona" style="font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Reception · queue</div>
+        <div class="sk-row"><div class="sk sk-circ" style="width:32px;height:32px"></div><div class="sk" style="height:12px;flex:1"></div></div>
+        <div class="sk-row"><div class="sk sk-circ" style="width:32px;height:32px"></div><div class="sk" style="height:12px;flex:1"></div></div>
+        <div class="sk-row" style="margin-bottom:0"><div class="sk sk-circ" style="width:32px;height:32px"></div><div class="sk" style="height:12px;flex:1"></div></div></div>
+      <div class="card"><div class="persona" style="font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Patient · hero + timeline</div>
+        <div class="sk" style="height:64px;margin-bottom:12px"></div>
+        <div class="sk-row"><div class="sk sk-circ" style="width:28px;height:28px;border-radius:50%"></div><div class="sk" style="height:11px;flex:1"></div></div>
+        <div class="sk-row" style="margin-bottom:0"><div class="sk sk-circ" style="width:28px;height:28px;border-radius:50%"></div><div class="sk" style="height:11px;flex:1"></div></div></div>
+    </div>
+  </div>
+
+  <!-- OFFLINE -->
+  <div class="sec"><div class="sec-h"><span class="n">03</span><h2>Offline &amp; connectivity</h2></div>
+    <p class="sec-d">Critical for India. Reads stay visible from last sync; writes queue locally and reconcile. Use <b>“Simulate offline”</b> in the top bar to see the banner.</p>
+    <div class="banner off"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M16.7 11.7a6 6 0 00-2.4-1.5M5 12.5a10 10 0 013-2M8.5 16.5a5 5 0 016 0M12 20h.01"/></svg></span>
+      <div><b>You're offline.</b> We'll sync automatically when you're back online.</div></div>
+    <div class="chips">
+      <span class="cstate saving"><span class="dot"></span>Saving…</span>
+      <span class="cstate saved"><span class="dot"></span>Saved</span>
+      <span class="cstate sync spin"><span class="dot"></span>Syncing…</span>
+      <span class="cstate queued"><span class="dot"></span>Queued · 3 changes</span>
+      <span class="cstate failed"><span class="dot"></span>Failed — Retry</span>
+    </div>
+  </div>
+
+  <!-- ERRORS -->
+  <div class="sec"><div class="sec-h"><span class="n">04</span><h2>Error states — three tiers</h2></div>
+    <p class="sec-d">Every error: icon + plain explanation + recovery action. Never a stack trace, code, or bare “Something went wrong.”</p>
+    <div class="grid">
+      <div class="state"><span class="si ic info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.5 9A9 9 0 006 5.3L1 10M23 14l-5 4.7A9 9 0 013.5 15"/></svg></span>
+        <div><div class="tier">Recoverable</div><h3>Couldn't load appointments</h3><p>Check your connection and try again.</p><button class="btn btn-line" onclick="toast('Retrying…')">Retry</button></div></div>
+      <div class="state"><span class="si ic honey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0Z"/></svg></span>
+        <div><div class="tier">Action failed</div><h3>Payment couldn't be recorded</h3><p>No money was moved. Please try again.</p><button class="btn btn-primary" onclick="toast('Retrying payment…')">Try again</button></div></div>
+      <div class="state crit"><span class="si ic rose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
+        <div><div class="tier">Critical</div><h3>Clinic unavailable</h3><p>We can't reach this clinic right now.</p><button class="btn btn-line" onclick="toast('Opening support')">Contact support</button></div></div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="sec"><div class="sec-h"><span class="n">4b</span><h2>Success states — close the loop</h2></div>
+    <p class="sec-d">The completion of the lifecycle. Confirm what happened, offer an optional next step, and never interrupt the flow.</p>
+    <div class="grid">
+      <div class="state"><span class="si ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="tier">Patient</div><h3>You're booked</h3><p>Dr. Iyer · Today 4:30 PM.</p><button class="btn btn-line" onclick="toast('Added to calendar')">Add to calendar</button></div></div>
+      <div class="state"><span class="si ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="tier">Reception</div><h3>₹500 collected</h3><p>UPI · receipt ready.</p><button class="btn btn-line" onclick="toast('Receipt printed')">Print receipt</button></div></div>
+      <div class="state"><span class="si ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="tier">Doctor</div><h3>Prescription sent</h3><p>Shared to the patient's records.</p></div></div>
+      <div class="state"><span class="si ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="tier">Owner</div><h3>Invitation accepted</h3><p>Priya joined as Nurse.</p></div></div>
+    </div>
+    <p class="sec-d" style="margin-top:12px"><b>Rule:</b> most successes are a toast (transient); a few earn a screen (booking, checkout). Never a blocking modal for a good outcome.</p>
+  </div>
+
+  <!-- PERMISSIONS -->
+  <div class="sec"><div class="sec-h"><span class="n">05</span><h2>Permission states — graceful, not 403</h2></div>
+    <p class="sec-d">Capabilities are absent, not greyed. When reached by URL, explain in plain language and offer a path (SAD-043 §7, APS-045 X1).</p>
+    <div class="grid">
+      <div class="state"><span class="si ic pine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+        <div><div class="tier">Reception → Clinical notes</div><h3>Only clinicians can edit consultation notes</h3><p>Your role runs the front desk.</p><button class="btn btn-line" onclick="toast('Request sent to owner')">Request access</button></div></div>
+      <div class="state"><span class="si ic pine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+        <div><div class="tier">Doctor → Finance</div><h3>Revenue is visible to owners</h3><p>Ask your practice owner for figures.</p><button class="btn btn-line" onclick="toast('Message sent to owner')">Ask your owner</button></div></div>
+      <div class="state"><span class="si ic honey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg></span>
+        <div><div class="tier">Owner → Unavailable feature</div><h3>Command Center analytics</h3><p>Coming to your plan.</p><button class="btn btn-line" onclick="toast('Opening plans')">See plans</button></div></div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="sec"><div class="sec-h"><span class="n">06</span><h2>Notifications — when to use which</h2></div>
+    <p class="sec-d">Toast (transient confirm) · Banner (persistent context) · Inline (validation) · Modal (blocking decision).</p>
+    <div class="grid">
+      <div class="card"><h3 style="font-size:14px;margin-bottom:6px">Toast</h3><p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Transient confirmation. Auto-dismiss ~2.5s.</p><button class="btn btn-primary" onclick="toast('₹500 collected · Aarav')">Show toast</button></div>
+      <div class="card"><h3 style="font-size:14px;margin-bottom:6px">Banner</h3><p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Persistent context until resolved.</p><div class="banner warn"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span><div>Your plan expires in 5 days.</div></div></div>
+      <div class="card"><h3 style="font-size:14px;margin-bottom:6px">Inline</h3><p style="font-size:12.5px;color:var(--muted);margin-bottom:0">Field / section validation.</p><div class="inline-err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Enter a valid 10-digit mobile number.</div></div>
+      <div class="card"><h3 style="font-size:14px;margin-bottom:6px">Modal</h3><p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Blocking decision / destructive confirm.</p><button class="btn btn-line" onclick="document.getElementById('demoModal').classList.add('on')">Show modal</button></div>
+    </div>
+  </div>
+
+  <!-- RESPONSIVE -->
+  <div class="sec"><div class="sec-h"><span class="n">07</span><h2>Responsive rules</h2></div>
+    <p class="sec-d">No redesigns — rules. Wide content scrolls inside its own container; the body never scrolls sideways.</p>
+    <div class="mtx-wrap"><table class="mtx">
+      <thead><tr><th>Breakpoint</th><th>Navigation</th><th>Cards</th><th>Tables / Board</th></tr></thead>
+      <tbody>
+        <tr><td>Phone &lt;640</td><td>Patient bottom-tab; staff rail → top/hidden</td><td>1-column stack</td><td>Board lanes stack; tables → list rows</td></tr>
+        <tr><td>Tablet 640–1024</td><td>Rail → top tabs; two-pane → list → detail</td><td>2-column</td><td>Board 1–2 lanes; tables scroll</td></tr>
+        <tr><td>Laptop 1024–1440</td><td>Full rail + content (+context rail)</td><td>3–4 column</td><td>Full board / table</td></tr>
+        <tr><td>Desktop &gt;1440</td><td>Rail + content; width → context/density</td><td>capped max-width</td><td>Full; no stretched lines</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- DARK -->
+  <div class="sec"><div class="sec-h"><span class="n">08</span><h2>Dark-mode audit</h2></div>
+    <p class="sec-d">Not an inversion — audited via tokens. Toggle the theme (top bar) and everything on this page re-tunes.</p>
+    <div class="checks">
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Contrast</b> ≥ 4.5:1 text, ≥ 3:1 UI, both themes</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Semantic status colours constant</b> — a red/amber that shifts at night is a clinical-safety risk</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Queue aging</b> (yellow/orange/red) legible on dark</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Hero / night gradients</b> hold; <b>disabled</b> reads as disabled</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Toasts, focus rings, chips</b> tokened — not hard-coded</div></div>
+    </div>
+  </div>
+
+  <!-- ACCESSIBILITY -->
+  <div class="sec"><div class="sec-h"><span class="n">09</span><h2>Accessibility baseline · WCAG 2.1 AA</h2></div>
+    <p class="sec-d">The platform standard for every screen.</p>
+    <div class="checks">
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Keyboard</b> — every action reachable; Enter confirms, Esc cancels; ⌘K palette (staff)</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Visible focus</b> — 2.5px ring, never removed</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Reduced motion</b> — no shimmer/slide; instant state changes</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Touch targets</b> ≥ 44×44px for primary controls</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Screen-reader labels</b> — icon-only buttons carry aria-label; aria-live for toasts/queue</div></div>
+      <div class="chk"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Colour independence</b> — status paired with icon/label, never colour alone</div></div>
+    </div>
+  </div>
+
+  <!-- MOTION -->
+  <div class="sec"><div class="sec-h"><span class="n">10</span><h2>Motion principles</h2></div>
+    <p class="sec-d">Consistent timing across the platform — not every engineer inventing their own. All motion is disabled under <span style="font-family:var(--fm)">prefers-reduced-motion</span>.</p>
+    <div class="mtx-wrap"><table class="mtx">
+      <thead><tr><th>Motion</th><th>Duration</th><th>Easing / notes</th></tr></thead>
+      <tbody>
+        <tr><td>Page / view transition</td><td>≈ 200 ms</td><td>cubic-bezier(.2,.8,.2,1) — gentle rise + fade</td></tr>
+        <tr><td>Card hover</td><td>≈ 120 ms</td><td>subtle lift / shadow; pointer only</td></tr>
+        <tr><td>Modal open</td><td>≈ 180 ms</td><td>pop + backdrop fade</td></tr>
+        <tr><td>Toast</td><td>≈ 250 ms</td><td>slide-in, auto-dismiss ~2.5 s</td></tr>
+        <tr><td>Skeleton shimmer</td><td>≈ 1.2 s loop</td><td>ease; the only continuous animation</td></tr>
+        <tr><td class="rule" style="background:none;color:var(--rose)">Reduced motion</td><td class="rule" style="background:none;color:var(--rose)">0 ms</td><td class="rule" style="background:none;color:var(--rose)">No movement — instant state changes</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+</div>
+
+<div class="backdrop" id="demoModal">
+  <div class="modal"><h3>Archive this member?</h3><p>Their history is kept forever — nothing is deleted. This can't be undone.</p>
+    <div class="mf"><button class="btn btn-line" style="flex:1" onclick="document.getElementById('demoModal').classList.remove('on')">Cancel</button><button class="btn" style="flex:1;background:var(--rose);color:#fff" onclick="document.getElementById('demoModal').classList.remove('on');toast('Member archived · history kept')">Archive</button></div></div>
+</div>
+<div class="toastwrap"><div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg><span id="toastMsg"></span></div></div>
+
+<script>
+  let tt; function toast(m){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2400); }
+  const offBtn=document.getElementById('offBtn');
+  offBtn.addEventListener('click',()=>{ const on=document.getElementById('offBanner').classList.toggle('on'); offBtn.classList.toggle('on',on); offBtn.textContent=on?'● Offline (simulated)':'◐ Simulate offline'; window.scrollTo({top:0,behavior:'smooth'}); });
+  document.getElementById('demoModal').addEventListener('click',e=>{ if(e.target.id==='demoModal') e.target.classList.remove('on'); });
+  function curTheme(){ const r=document.documentElement.getAttribute('data-theme'); return r||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); }
+  document.getElementById('themeBtn').addEventListener('click',()=>{ const n=curTheme()==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',n); document.getElementById('themeLbl').textContent=n==='dark'?'Dark':'Light'; });
+</script>

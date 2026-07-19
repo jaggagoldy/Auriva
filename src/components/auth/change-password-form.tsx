@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 // signs in with the temporary password their practice gave them and sets their
 // own here; on success they go back through the workspace resolver (/workspace),
 // which opens the correct surface.
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ clinicName }: { clinicName?: string | null }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -51,8 +51,9 @@ export function ChangePasswordForm() {
 
         <div className="mt-4 flex gap-3 rounded-xl border border-accent-foreground/15 bg-accent p-3 text-[12.5px] leading-relaxed text-accent-foreground">
           <span>
-            Your practice created this account. Set your own password to continue &mdash; this replaces the
-            temporary one you were given.
+            {/* PKG-1: name the actual clinic when known; generic fallback otherwise */}
+            <b>{clinicName ?? "Your practice"}</b> created this account for you. Set your own password to
+            continue &mdash; this replaces the temporary one you were given.
           </span>
         </div>
 
@@ -93,7 +94,8 @@ export function ChangePasswordForm() {
         </button>
 
         <p className="mt-3 text-center text-[11px] text-muted-foreground">
-          This step blocks every workspace until it&apos;s done &mdash; by design.
+          {/* PKG-1 Mandatory Change trust line (verbatim) */}
+          Your practice can never see your password &mdash; this step blocks every workspace until it&apos;s done.
         </p>
       </form>
     </div>
