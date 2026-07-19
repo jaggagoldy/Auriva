@@ -23,7 +23,21 @@ Error · Success · Responsive · Accessibility · Approved.
 - **C (New functionality):** self-service password reset (SEC-4) — **NOT built** (Product Office deferred). Assisted-reset retained, styled to PKG.
 - **Data:** mandatory-change now names the actual clinic (fallback generic).
 
-## PKG-2 — Owner · ⬜ not started
+## PKG-2 — Owner · status: **🔒 FROZEN** (Product Office, 2026-07-19)
+Invite-card wired → `/admin` (Team → Invite Member). Grow Transition deferred. "Needs your attention" View/Resolve/Dismiss = future refinement (not RC).
+
+| Screen | Route | Header | Nav | Info Hier. | Sections | Copy | Interactions | Empty | Loading | Error | Success | Responsive | A11y | Approved |
+|---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Solo "Today" | `/clinic` (owner) | ✅ date + Today + sub | ✅ | ✅ | ✅ + solo banner + invite-card | ✅ | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Command Center | `/admin/command-center` | ✅ Practice Health | ✅ | ✅ reordered | ✅ health · attention · quick · at-a-glance · floor · activity | ✅ | ✅ action links | ✅ | ✅ skeletons | ✅ | — | ✅ | ✅ | 🔒 |
+| Team | `/admin` (People) | ✅ "Your people" + sub | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Grow Transition | — | — | — | — | — | — | — | — | — | — | — | — | — | ⏸ **deferred (PO)** |
+
+### PKG-2 change log
+- **A/B (implemented):** Solo hero → date + "Today" + calm sub + solo banner; Command Center reordered to PKG hierarchy (Practice Health → Needs attention → Quick actions → Practice at a glance → On the floor now → Recent activity); "Doctor status" → "On the floor now"; Team → "Your people" + sub.
+- **C (approved, existing-data only per Rule #3):** "Needs your attention" V1 (unpaid invoices, pending labs, patients waiting — all from existing snapshot tiles, no new engine); Practice Health = structured metrics + "N items need your attention today" (no narrative).
+- **C (deferred by PO):** Grow Transition screen (lifecycle/first-run — out of RC scope).
+- **Held for your call:** Solo **invite-card** ("Growing? Add your first teammate.") — the banner is in; the card needs the solo invite entry route confirmed (Category B routing).
 ## PKG-3 — Doctor · ⬜ not started
 ## PKG-4 — Reception · ⬜ not started (largest known gap)
 ## PKG-5 — Patient · ⬜ not started (highest existing alignment)

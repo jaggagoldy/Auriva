@@ -192,9 +192,10 @@ export default function AdminWorkspace() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div>
-            <h1 className="text-sm font-semibold">People</h1>
+            {/* PKG-2 Team */}
+            <h1 className="text-sm font-semibold">Your people</h1>
             <p className="text-[11px] text-muted-foreground">
-              Clinic profile, staff and role access
+              Who&apos;s on your team, what they can do, and their status
             </p>
           </div>
           <div className="flex items-center gap-2.5">

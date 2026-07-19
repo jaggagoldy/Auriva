@@ -11,7 +11,8 @@
 // the Team screen. No suspend/archive/reassign here (Sprint 4).
 
 import * as React from "react";
-import { Loader2, Users } from "lucide-react";
+import Link from "next/link";
+import { Loader2, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -95,25 +96,53 @@ export function DashboardView({ goto }: { goto?: (v: string) => void }) {
     return <div className="flex justify-center py-24 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
   }
 
-  const eyebrow = {
-    practice_owner: "Practice Owner",
-    managing_doctor: "Managing Doctor",
-    doctor: "Doctor",
-    receptionist: "Receptionist",
-  }[data.role];
   const question = {
     practice_owner: "How is my clinic performing today?",
     managing_doctor: "How are my patients and my practice doing today?",
     doctor: "Who is my next patient?",
     receptionist: "Who is waiting and what needs attention?",
   }[data.role];
+  // PKG-2 Solo: a calm date + "Today" + a one-line intent. The solo owner-doctor
+  // sees the practice framing; other consolidated roles keep their question.
+  const isSolo = data.role === "practice_owner" || data.role === "managing_doctor";
+  const dateLabel = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="space-y-4">
       <div>
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">{eyebrow}</div>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">{question}</h1>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">{dateLabel}</div>
+        <h1 className="mt-1 text-xl font-bold tracking-tight">Today</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {isSolo ? "Your whole practice, in one calm place." : question}
+        </p>
       </div>
+
+      {isSolo && (
+        <>
+          <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-2.5 text-xs text-muted-foreground">
+            <ShieldCheck className="size-4 shrink-0 text-primary" />
+            Solo practice &mdash; you see everything in one screen. No separate admin, no switching.
+          </div>
+
+          {/* PKG-2 Solo invite-card — routes to Team → Invite Member (PO: /admin) */}
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border p-4">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <UserPlus className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-sm font-bold">Growing? Add your first teammate.</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                Invite a receptionist or doctor &mdash; Auriva grows into a team workspace automatically.
+              </div>
+            </div>
+            <Link href="/admin" className="ml-auto">
+              <Button size="sm">
+                <UserPlus className="size-4" /> Invite a teammate
+              </Button>
+            </Link>
+          </div>
+        </>
+      )}
 
       {data.role === "managing_doctor" && <ManagingDoctor d={data} goto={goto} />}
       {data.role === "practice_owner" && <PracticeOwner d={data} goto={goto} />}

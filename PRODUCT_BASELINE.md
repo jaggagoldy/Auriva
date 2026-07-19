@@ -38,6 +38,13 @@ When aligning to a PKG, every difference is exactly one of:
 - **Category B — Existing functionality presented differently** (move buttons, different card layout, hero, alerts, information hierarchy) → **realign to the PKG.**
 - **Category C — Entirely new functionality** (new APIs, workflows, permissions, backend logic) → **STOP and ask Product Office.** Never silently add new capability.
 
+## Implementation Rule #3 — Experience First
+
+When a PKG introduces a new concept:
+1. **Can it be built from existing data + workflows?** → **build it.**
+2. **Does it require new business logic?** → **pause and ask Product Office.**
+3. **Does it introduce a new workflow or lifecycle behavior?** → **defer** unless explicitly approved.
+
 ## Rules
 
 1. **PKG-1→6 are the implementation contract.** They take precedence over every other UX concept, mockup, or prototype.
