@@ -37,7 +37,8 @@ export function OfflineBanner({ className }: { className?: string }) {
       )}
     >
       <WifiOff className="size-3.5" />
-      You&apos;re offline — changes may not be saved until your connection returns.
+      {/* PKG-6 §4 offline copy */}
+      You&apos;re offline. We&apos;ll sync automatically when you&apos;re back online.
     </div>
   );
 }

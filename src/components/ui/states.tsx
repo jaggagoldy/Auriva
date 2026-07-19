@@ -81,27 +81,47 @@ export function EmptyState({
   );
 }
 
-/** Something failed — a recoverable error with a retry affordance. */
+/**
+ * Something failed — PKG-6 §5 three tiers:
+ *   - "recoverable" (default): couldn't load — calm, inline, **Retry**.
+ *   - "action":      an action failed — amber, **Try again**.
+ *   - "critical":    unavailable — red, **Contact support**.
+ * Every error carries icon + plain explanation + a recovery action (no codes).
+ */
 export function ErrorState({
   icon = AlertTriangle,
-  title = "Something went wrong",
-  description = "We couldn't load this. Please try again.",
+  tier = "recoverable",
+  title,
+  description,
   onRetry,
-  retryLabel = "Try again",
+  retryLabel,
   className,
 }: {
   icon?: LucideIcon;
+  tier?: "recoverable" | "action" | "critical";
   title?: React.ReactNode;
   description?: React.ReactNode;
   onRetry?: () => void;
   retryLabel?: string;
   className?: string;
 }) {
+  const defaults = {
+    recoverable: { title: "Couldn't load this", description: "This didn't load. Please try again.", label: "Retry" },
+    action: { title: "That didn't go through", description: "The action couldn't be completed. Please try again.", label: "Try again" },
+    critical: { title: "This is temporarily unavailable", description: "Please try again shortly, or contact support if it continues.", label: "Contact support" },
+  }[tier];
+  const tone: Tone = tier === "action" ? "muted" : "danger";
   return (
-    <StateShell icon={icon} tone="danger" title={title} description={description} className={className}>
+    <StateShell
+      icon={icon}
+      tone={tone}
+      title={title ?? defaults.title}
+      description={description ?? defaults.description}
+      className={className}
+    >
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw className="size-4" /> {retryLabel}
+          <RefreshCw className="size-4" /> {retryLabel ?? defaults.label}
         </Button>
       )}
     </StateShell>

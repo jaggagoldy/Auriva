@@ -83,4 +83,22 @@ Invite-card wired → `/admin` (Team → Invite Member). Grow Transition deferre
 - **Verified aligned:** bottom nav (Home/Book/Records/Family/You — exact PKG-5), mobile-first hero ("Your next visit"), quick-action tiles, Book search + care team, Records timeline, Family profiles + switch, You account rows.
 - **A (implemented):** Home section label "Quick access" → **"Quick actions"** (PKG wording); Records warm reassurance line added.
 - **No Category C.**
-## PKG-6 — Resilience · ⬜ not started (note: LoadingState=spinner must become skeletons)
+## PKG-6 — Resilience & UX States · status: **🔒 FROZEN** (Product Office, 2026-07-19)
+
+Cross-cutting system (built in E1/E2; this pass closes the specific PKG-6 gaps).
+
+| State (PKG-6 §) | Component / pattern | Status |
+|---|---|---|
+| Empty (§2) | `EmptyState` — warm, next-action; adopted across workspaces | ✅ |
+| Loading (§3) | `Skeleton` for content (mirrors layout); button-scoped inline spinner; `LoadingState` spinner reserved for bootstrapping/indeterminate (PO ruling) | ✅ |
+| Offline (§4) | `OfflineBanner` — **now mounted globally** in root layout, PKG copy ("You're offline. We'll sync automatically…"), non-blocking | ✅ |
+| Error — 3 tiers (§5) | `ErrorState` **now `tier`**: recoverable (Retry) · action (amber, Try again) · critical (red, Contact support); icon + plain explanation + recovery | ✅ |
+| Success (§4b) | `SuccessState` (full-page for booking/checkout); toasts for the rest | ✅ |
+| Permission (§6) | `PermissionState` (calm, path-to-access); surface-level = capability-absent redirect (PKG: "never shown", correct) | ✅ |
+| Notifications (§7) | in-app notification center | ✅ |
+| Responsive / Dark / A11y (§8–10) | theme-aware tokens, responsive layouts, aria labels | ✅ |
+
+### PKG-6 change log
+- **A/B (implemented):** mounted `OfflineBanner` app-wide (was built, unmounted) + PKG §4 copy; `ErrorState` given the PKG §5 three-tier model (recoverable/action/critical).
+- **Verified:** content regions load with skeletons (not spinners); buttons use inline spinners; empty ≠ error (warm); permission = capability-absent at surfaces.
+- **No Category C.**
