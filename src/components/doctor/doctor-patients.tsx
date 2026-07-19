@@ -129,7 +129,7 @@ export default function DoctorPatients() {
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Star className="size-3.5" />
-            Favourites, high-risk and follow-up-due filters are coming soon.
+            Advanced patient filters will be available in a future release.
           </div>
         </div>
       )}

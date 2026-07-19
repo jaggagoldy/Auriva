@@ -45,6 +45,14 @@ When a PKG introduces a new concept:
 2. **Does it require new business logic?** → **pause and ask Product Office.**
 3. **Does it introduce a new workflow or lifecycle behavior?** → **defer** unless explicitly approved.
 
+## Implementation Rule #4 — Preserve Intent
+
+Alignment validates **both**:
+1. **Visual fidelity** — does the screen match the approved PKG?
+2. **Experience fidelity** — does it create the same user experience and workflow emphasis the PKG intended (e.g. the Consultation Workbench must stay minimal, consultation-first, with clear patient context and obvious primary actions)?
+
+Presentation & hierarchy refinements that preserve the intended experience are encouraged. Anything requiring new workflows, business logic, permissions, persistence, or backend still pauses for Product Office approval.
+
 ## Rules
 
 1. **PKG-1→6 are the implementation contract.** They take precedence over every other UX concept, mockup, or prototype.

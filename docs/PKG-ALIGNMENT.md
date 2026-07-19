@@ -38,7 +38,22 @@ Invite-card wired → `/admin` (Team → Invite Member). Grow Transition deferre
 - **C (approved, existing-data only per Rule #3):** "Needs your attention" V1 (unpaid invoices, pending labs, patients waiting — all from existing snapshot tiles, no new engine); Practice Health = structured metrics + "N items need your attention today" (no narrative).
 - **C (deferred by PO):** Grow Transition screen (lifecycle/first-run — out of RC scope).
 - **Held for your call:** Solo **invite-card** ("Growing? Add your first teammate.") — the banner is in; the card needs the solo invite entry route confirmed (Category B routing).
-## PKG-3 — Doctor · ⬜ not started
+## PKG-3 — Doctor · status: **🔒 FROZEN** (Product Office, 2026-07-19)
+
+| Screen | Route | Header | Nav | Info Hier. | Sections | Copy | Interactions | Empty | Loading | Error | Success | Responsive | A11y | Approved |
+|---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Today | `/doctor` | ✅ greeting + date + clinic | ✅ | ✅ | ✅ patients/waiting/completed + **behind** + next + call-in | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Workbench | `/doctor` consult | ✅ | ✅ 3-col | ✅ | ✅ queue-rail · consult · context-panel | ✅ | ✅ obvious primary actions | ✅ | ✅ | ✅ | ✅ toast | ✅ | ✅ | 🔒 |
+| Patients | `/doctor/patients` | ✅ | ✅ | ✅ | ✅ 4-col table (Patient/Last visit/Visits/Last Dx) | ✅ honest placeholder | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Schedule | `/doctor/schedule` | ✅ | ✅ Calendar/Availability | ✅ | ✅ week view | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Practice | `/doctor/practice` | ✅ | ✅ Locations/Fees/Services/Online/Verification | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+| Profile | `/doctor/profile` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | — | ✅ | ✅ | 🔒 |
+
+### PKG-3 change log
+- **A/B (implemented):** "N min behind" indicator on Today (existing scheduled_time data); honest placeholder wording on Patients ("Advanced patient filters will be available in a future release.").
+- **Already aligned (verified):** patients-total metric; 3-column Workbench (queue-sidebar · consult-workbench · context-panel); Patients 4-column table (Visits + Last Dx present); Practice subnav; Schedule tabs.
+- **C (deferred by PO):** Patients Favourites/High-Risk/Follow-up-Due facets; Schedule "Requests" tab.
+- **Workbench experience validation (Rule #4):** consultation-first 3-column layout preserved — queue rail (context) · consult (primary) · context panel; primary actions obvious; minimal distraction. ✅
 ## PKG-4 — Reception · ⬜ not started (largest known gap)
 ## PKG-5 — Patient · ⬜ not started (highest existing alignment)
 ## PKG-6 — Resilience · ⬜ not started (note: LoadingState=spinner must become skeletons)

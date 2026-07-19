@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Play, RefreshCw } from "lucide-react";
+import { Clock, Loader2, Play, RefreshCw } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,16 @@ export default function MissionControlBar({
   const total = todayAppointments.length;
   const firstName = doctorName.replace(/^Dr\.?\s+/i, "").split(" ")[0];
 
+  // PKG-3 "N min behind": how overdue the queue is running — the most-overdue
+  // still-waiting patient vs their scheduled time. Existing data only.
+  const now = Date.now();
+  const behindMinutes = todayAppointments
+    .filter((a) => a.status === "waiting" || a.status === "doctor_ready")
+    .reduce((max, a) => {
+      const late = Math.floor((now - new Date(a.scheduled_time).getTime()) / 60000);
+      return late > max ? late : max;
+    }, 0);
+
   return (
     <div className="border-b bg-card">
       <div className="flex flex-wrap items-center gap-5 px-6 py-3.5">
@@ -65,6 +75,12 @@ export default function MissionControlBar({
           <Stat label="waiting" value={waiting} valueClassName="text-warning" />
           <Stat label="completed" value={completed} valueClassName="text-success" />
         </div>
+
+        {behindMinutes > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+            <Clock className="size-3" /> {behindMinutes} min behind
+          </span>
+        )}
 
         <div className="h-9 w-px bg-border" />
 
