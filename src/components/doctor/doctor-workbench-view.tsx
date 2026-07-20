@@ -7,6 +7,7 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 import {
   Appointment,
@@ -31,6 +32,10 @@ export default function DoctorWorkbenchView() {
   const [search, setSearch] = React.useState("");
   const [updating, setUpdating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Focus mode: the doctor can collapse the queue rail and/or the clinical
+  // snapshot to concentrate on the consultation (requested in M2 review).
+  const [showQueue, setShowQueue] = React.useState(true);
+  const [showContext, setShowContext] = React.useState(true);
 
   const overridesRef = React.useRef(new Map<string, AppointmentStatus>());
 
@@ -185,18 +190,43 @@ export default function DoctorWorkbenchView() {
 
   return (
     <div className="flex h-dvh min-h-0 flex-1">
-      <QueueSidebar
-        appointments={visible}
-        selectedId={effectiveSelectedId}
-        scope={scope}
-        search={search}
-        returningPatientIds={returningPatientIds}
-        onSelect={setSelectedId}
-        onScopeChange={setScope}
-        onSearchChange={setSearch}
-        onSkip={handleSkip}
-        onRecall={handleRecall}
-      />
+      {/* Left: queue rail — collapsible to focus on the consult */}
+      {showQueue ? (
+        <div className="relative flex min-h-0 shrink-0">
+          <QueueSidebar
+            appointments={visible}
+            selectedId={effectiveSelectedId}
+            scope={scope}
+            search={search}
+            returningPatientIds={returningPatientIds}
+            onSelect={setSelectedId}
+            onScopeChange={setScope}
+            onSearchChange={setSearch}
+            onSkip={handleSkip}
+            onRecall={handleRecall}
+          />
+          <button
+            type="button"
+            onClick={() => setShowQueue(false)}
+            aria-label="Hide queue"
+            title="Hide queue"
+            className="absolute top-2 right-2 z-10 grid size-6 place-items-center rounded-md border bg-card text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <PanelLeftClose className="size-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowQueue(true)}
+          aria-label="Show queue"
+          title="Show queue"
+          className="flex w-9 shrink-0 justify-center border-r bg-sidebar pt-3 text-muted-foreground transition-colors hover:bg-muted"
+        >
+          <PanelLeftOpen className="size-4" />
+        </button>
+      )}
+
       <ConsultWorkbench
         appointment={selected}
         doctorId={doctor.id}
@@ -205,7 +235,33 @@ export default function DoctorWorkbenchView() {
         onUpdateStatus={handleUpdateStatus}
         onSaveClinical={handleSaveClinical}
       />
-      {selected && <ContextPanel appointment={selected} history={patientHistory} />}
+
+      {/* Right: clinical snapshot — collapsible */}
+      {selected &&
+        (showContext ? (
+          <div className="relative flex min-h-0 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowContext(false)}
+              aria-label="Hide clinical snapshot"
+              title="Hide clinical snapshot"
+              className="absolute top-2 left-2 z-10 grid size-6 place-items-center rounded-md border bg-card text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <PanelRightClose className="size-3.5" />
+            </button>
+            <ContextPanel appointment={selected} history={patientHistory} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowContext(true)}
+            aria-label="Show clinical snapshot"
+            title="Show clinical snapshot"
+            className="flex w-9 shrink-0 justify-center border-l bg-card pt-3 text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <PanelRightOpen className="size-4" />
+          </button>
+        ))}
     </div>
   );
 }

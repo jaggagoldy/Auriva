@@ -22,32 +22,47 @@ interface PatientQuickPeekProps {
   className?: string;
 }
 
+const PEEK_WIDTH = 288; // w-72
+
 export default function PatientQuickPeek({ appointment, onOpenRecord, className }: PatientQuickPeekProps) {
   const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState<{ top: number; left: number } | null>(null);
+  const triggerRef = React.useRef<HTMLDivElement>(null);
   const p = appointment.patient;
   const allergies = (p.allergies ?? "").trim();
   const outstanding = appointment.patient_outstanding_balance ?? 0;
   const phone = p.user?.phone_number ?? "—";
 
+  // Measure the trigger and place the panel with FIXED positioning so it escapes
+  // the queue column's overflow (which would otherwise clip it). Clamped to the
+  // viewport so it's never cut off on either edge.
+  const openPeek = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const left = Math.max(8, Math.min(rect.right - PEEK_WIDTH, window.innerWidth - PEEK_WIDTH - 8));
+      setPos({ top: rect.bottom + 6, left });
+    }
+    setOpen(true);
+  };
+
   return (
-    <div className={cn("relative", className)}>
+    <div ref={triggerRef} className={cn("inline-flex", className)}>
       <Button
         variant="ghost"
         size="icon-xs"
         aria-label={`Quick peek — ${p.full_name}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
+        onClick={openPeek}
       >
         <Eye />
       </Button>
 
-      {open && (
+      {open && pos && (
         <>
           <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpen(false); }} aria-hidden />
           <div
-            className="absolute right-0 z-50 mt-1 w-72 rounded-xl border bg-popover p-3 text-left shadow-lg"
+            className="fixed z-50 w-72 rounded-xl border bg-popover p-3 text-left shadow-lg"
+            style={{ top: pos.top, left: pos.left }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header: name + Health ID */}

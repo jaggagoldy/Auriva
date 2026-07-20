@@ -196,16 +196,27 @@ export default function QueueCard({
                     Notify Doctor
                   </DropdownMenuItem>
                 )}
-                {/* M2 · 4.2 — reschedule (date/time only; doctor + reason preserved) */}
+                {/* M2 · 4.2 — reschedule (date/time only; doctor + reason preserved).
+                    stopPropagation so the click doesn't also open the card drawer. */}
                 {appointment.status !== "in_consultation" && (
-                  <DropdownMenuItem onClick={() => setRescheduleOpen(true)}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRescheduleOpen(true);
+                    }}
+                  >
                     <CalendarClock />
                     Reschedule
                   </DropdownMenuItem>
                 )}
                 {/* M2 · 3.4 — reassign allowed only before the consult begins */}
                 {appointment.status !== "in_consultation" && doctors.length > 1 && (
-                  <DropdownMenuItem onClick={() => setReassignOpen(true)}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReassignOpen(true);
+                    }}
+                  >
                     <ArrowRightLeft />
                     Reassign doctor
                   </DropdownMenuItem>
@@ -303,7 +314,8 @@ export default function QueueCard({
           </DialogHeader>
           <p className="text-xs text-muted-foreground">
             Currently with <span className="font-medium text-foreground">{appointment.doctor.full_name}</span>. Pick a
-            new doctor — the patient moves to their queue.
+            new doctor — the patient moves to their queue at the same time. To change the time, use{" "}
+            <span className="font-medium text-foreground">Reschedule</span> instead.
           </p>
           <DoctorPicker doctors={doctors} value={appointment.doctor.id} onChange={handleReassign} />
         </DialogContent>
