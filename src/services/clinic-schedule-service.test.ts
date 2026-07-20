@@ -98,4 +98,39 @@ describe("getClinicSchedule", () => {
     const zero = await getClinicSchedule(clinic.id, owner.id, dateKey(new Date()), 0);
     expect(zero.length).toBe(7); // falls back to a week
   });
+
+  // M3A C3 consumer regression: after relaxing Appointment→Invoice to 1:N, the
+  // board still surfaces a single representative invoice_status (latest wins).
+  it("derives invoice_status from the latest invoice under the 1:N relation", async () => {
+    const { owner, organization, clinic } = await createTestOrganization();
+    const { user, staffProfile } = await createTestStaff(clinic.id, "doctor");
+    const { profile } = await createTestPatient(clinic.id);
+    orgIds.push(organization.id);
+    clinicIds.push(clinic.id);
+    userIds.push(owner.id, user.id);
+
+    const when = atDaysAhead(1, 9);
+    const appt = await scheduleAppointment({
+      patientId: profile.id, doctorId: staffProfile.id, clinicId: clinic.id,
+      scheduledTime: when.toISOString(),
+    });
+    // Two invoices on one appointment — the older draft, the newer paid.
+    await prisma.invoice.create({
+      data: {
+        invoice_number: "INV-TEST-OLD", clinic_id: clinic.id, patient_id: profile.id,
+        appointment_id: appt.id, status: "draft", items_json: "[]", total: 0,
+        created_at: new Date(Date.now() - 60_000),
+      },
+    });
+    await prisma.invoice.create({
+      data: {
+        invoice_number: "INV-TEST-NEW", clinic_id: clinic.id, patient_id: profile.id,
+        appointment_id: appt.id, status: "paid", items_json: "[]", total: 0,
+      },
+    });
+
+    const sched = await getClinicSchedule(clinic.id, owner.id, dateKey(when), 3);
+    const row = sched.flatMap((d) => d.appointments).find((a) => a.id === appt.id);
+    expect(row?.invoice_status).toBe("paid"); // latest of the two, no crash
+  });
 });

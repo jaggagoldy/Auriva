@@ -76,7 +76,9 @@ export async function getClinicSchedule(
         status: true,
         walk_in: true,
         patient: { select: { full_name: true } },
-        invoice: { select: { status: true } },
+        // M3A C3: 1:N link. The board shows one representative status per visit;
+        // latest invoice wins (identical to the old single-invoice behaviour).
+        invoices: { select: { status: true }, orderBy: { created_at: "desc" }, take: 1 },
       },
       orderBy: { scheduled_time: "asc" },
     }),
@@ -105,7 +107,7 @@ export async function getClinicSchedule(
       patient_name: a.patient?.full_name ?? "Patient",
       status: a.status,
       walk_in: a.walk_in,
-      invoice_status: a.invoice?.status ?? null,
+      invoice_status: a.invoices[0]?.status ?? null,
     });
   }
 

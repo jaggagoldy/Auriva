@@ -11,7 +11,7 @@ import {
   timestampPatchFor,
 } from "@/domain/appointment-status";
 import { createAppointmentEvent } from "@/repositories/appointment-repository";
-import { draftInvoiceForAppointment } from "@/services/billing-service";
+import { completeVisitInvoicing } from "@/services/billing-engine-service";
 import { publishEvent } from "@/lib/events";
 
 export class AppointmentNotFoundError extends Error {}
@@ -484,8 +484,12 @@ export async function transitionStatus(
     // WF-17 / APS-041: a completed consultation auto-drafts its invoice —
     // same transaction, so the visit and its charge can never diverge.
     if (nextStatus === "completed") {
-      const invoice = await draftInvoiceForAppointment(tx, updated);
-      generatedInvoiceId = invoice.id;
+      // M3A C3: settlement-aware. If clinical/financial ServiceEvents were
+      // captured this visit, finalize + settle them into an event-sourced
+      // invoice; otherwise the unchanged consultation-fee auto-draft. Same
+      // transaction, so the visit and its charge can never diverge.
+      const invoice = await completeVisitInvoicing(tx, updated);
+      generatedInvoiceId = invoice?.id ?? null;
       await scheduleFollowUpIfRequested(tx, updated);
     }
 

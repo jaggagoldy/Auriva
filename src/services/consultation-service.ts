@@ -168,8 +168,12 @@ export async function completeVisit(input: {
   // Auto-drafts the fee-based invoice in the same txn.
   await transitionStatus(input.appointmentId, "completed", { actorUserId: input.actorUserId });
 
-  const invoice = await prisma.invoice.findUnique({
+  // M3A C3: 1:N link → findFirst. The completion hook has just drafted exactly
+  // one consultation-fee invoice for this appointment; earliest wins for
+  // determinism.
+  const invoice = await prisma.invoice.findFirst({
     where: { appointment_id: input.appointmentId },
+    orderBy: { created_at: "asc" },
   });
   if (!invoice) {
     // Should never happen (completion always drafts one) — surfaced honestly.

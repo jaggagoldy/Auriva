@@ -51,5 +51,11 @@ export async function setBillingPolicy(
     action: "billing_policy_changed",
     detail: `${from} → ${policy}`,
   });
+  // EVENT-READINESS (C3 refinement): this is the single choke point for a policy
+  // change, so a domain event can be published here later WITHOUT changing this
+  // API. When the event platform carries billing events, emit:
+  //   publishEvent({ eventType: "billing.policy.changed", organizationId:
+  //     clinic.organization_id, entityId: clinicId, payload: { from, to: policy } })
+  // Deliberately not wired now (no billing events consumed yet) — 3B.
   return policy;
 }

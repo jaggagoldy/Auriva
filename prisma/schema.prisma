@@ -616,7 +616,7 @@ model Appointment {
   prescription   Prescription?
   labOrders      LabOrder[]
   testRecommendations TestRecommendation[]
-  invoice        Invoice?
+  invoices       Invoice[]      // M3A C3: relaxed 1:1 → 1:N (multi-invoice settlement)
   serviceEvents  ServiceEvent[]
   review         Review?
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
@@ -791,10 +791,10 @@ model Invoice {
   invoice_number String
   clinic_id      String
   patient_id     String
-  // M3A note: staying @unique (1:1) in Checkpoint 1. Relaxing to 1:N forces
-  // Appointment.invoice → invoices[] + ~5 service/UI consumer updates, which is
-  // Checkpoint-3 (billing-engine) work — deferred there, out of C1 scope.
-  appointment_id String?   @unique
+  // M3A Checkpoint 3: relaxed from @unique (1:1) to 1:N. An appointment may now
+  // own multiple invoices (multi-invoice settlement). Existing consumers were
+  // migrated in C3 (findUnique→findFirst; Appointment.invoice→invoices[]).
+  appointment_id String?
   status         String    @default("draft") // 'draft' | 'issued' | 'paid' | 'void'
   items_json     String    // frozen print snapshot generated from InvoiceLine rows (M3A)
   total          Int
@@ -851,6 +851,7 @@ model ServiceEvent {
   unit_price           Int       // snapshot
   qty                  Int       @default(1)
   amount               Int       // snapshot = unit_price * qty
+  currency             String    @default("INR") // snapshot; INR-only today, future-proofed (C3 refinement)
   status               String    @default("draft") // draft | finalized | removed | reversed
   needs_catalog_review Boolean   @default(false)   // ad-hoc flag → admin converts later
   reversal_reason      String?   // required when reversed (post-payment); audited

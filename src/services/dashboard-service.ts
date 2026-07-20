@@ -77,7 +77,9 @@ const APPT_SELECT = {
   follow_up_source_appointment_id: true,
   patient: { select: { id: true, full_name: true } },
   doctor: { select: { id: true, full_name: true } },
-  invoice: { select: { status: true, total: true } },
+  // M3A C3: dropped a dead `invoice` select here — nothing read it; the money
+  // story comes from billingDaySummary. (Under the 1:N relaxation this key no
+  // longer type-resolves anyway.)
 } as const;
 
 function dayBounds() {

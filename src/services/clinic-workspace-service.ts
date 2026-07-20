@@ -148,7 +148,8 @@ const APPOINTMENT_LIST_SELECT = {
   notes: true, // visit reason — shown under the "next patient" hero
   follow_up_source_appointment_id: true,
   patient: { select: { id: true, full_name: true } },
-  invoice: { select: { status: true, total: true } },
+  // M3A C3: dropped a dead `invoice` select (nothing read it; the money summary
+  // comes from billingDaySummary). Also no longer type-resolves under 1:N.
 } as const;
 
 export async function getTodayAppointments(

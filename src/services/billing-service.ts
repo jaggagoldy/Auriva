@@ -28,8 +28,9 @@ function sumItems(items: InvoiceItem[]): number {
   return items.reduce((total, item) => total + item.amount, 0);
 }
 
-/** Next sequential invoice number for a clinic: INV-<year>-<n>. */
-async function nextInvoiceNumber(
+/** Next sequential invoice number for a clinic: INV-<year>-<n>. Exported so the
+ *  M3A billing engine reuses the exact same scheme (no duplicated numbering). */
+export async function nextInvoiceNumber(
   tx: Prisma.TransactionClient,
   clinicId: string
 ): Promise<string> {
@@ -110,8 +111,13 @@ export async function draftInvoiceForAppointment(
     follow_up_source_appointment_id?: string | null;
   }
 ) {
-  const existing = await tx.invoice.findUnique({
+  // M3A C3: the appointment→invoice link is now 1:N, so this is findFirst (was
+  // findUnique on the old @unique). The idempotency guarantee is unchanged — a
+  // completed visit still auto-drafts exactly one consultation-fee invoice
+  // (deterministic: earliest existing wins on any retry).
+  const existing = await tx.invoice.findFirst({
     where: { appointment_id: appointment.id },
+    orderBy: { created_at: "asc" },
   });
   if (existing) return existing;
 
