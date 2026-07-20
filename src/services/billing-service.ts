@@ -52,7 +52,7 @@ export async function nextInvoiceNumber(
  * separate "fee table" — every link is a field that already exists on its
  * natural owner.
  */
-async function resolveConsultationFee(
+export async function resolveConsultationFee(
   tx: Prisma.TransactionClient,
   input: { doctorId: string; isFollowUp: boolean }
 ): Promise<{ fee: number; doctorName: string }> {

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Loader2,
+  Minus,
   Pill,
   Plus,
   Printer,
@@ -39,7 +40,27 @@ export interface WorkbenchService {
   id: string;
   name: string;
   price: number;
+  category?: string;
+  kind?: string;
 }
+
+// A captured charge for this visit (a ServiceEvent from /api/clinic/service-events).
+interface CapturedService {
+  id: string;
+  name: string;
+  category: string;
+  kind: string;
+  unit_price: number;
+  qty: number;
+  amount: number;
+  status: string;
+  needs_catalog_review: boolean;
+}
+
+// The clinical categories a doctor can add during a visit (M3B B1). Consultation
+// is seeded automatically; these stack on top.
+const CAPTURE_CATEGORIES = ["Procedure", "Injection", "Lab", "Therapy", "Consumable"] as const;
+type CaptureCategory = (typeof CAPTURE_CATEGORIES)[number];
 
 interface RxRow {
   id: string;
@@ -109,11 +130,16 @@ export function ConsultationWorkbench({
   const [testCodes, setTestCodes] = React.useState<string[]>([]);
   const [followUpDays, setFollowUpDays] = React.useState<number | null>(null);
   const [advice, setAdvice] = React.useState("");
-  const [treatmentId, setTreatmentId] = React.useState("");
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [vitals, setVitals] = React.useState<VitalsState>({ bp: "", pulse: "", temp: "", spo2: "" });
   const [context, setContext] = React.useState<ConsultContext | null>(null);
+
+  // M3B B1 — the visit's captured charges (ServiceEvents). Consultation is
+  // seeded server-side on open; the doctor stacks clinical services on top.
+  const [serviceEvents, setServiceEvents] = React.useState<CapturedService[] | null>(null);
+  const [savingServices, setSavingServices] = React.useState(false);
+  const [pickerCategory, setPickerCategory] = React.useState<CaptureCategory | null>(null);
 
   // Real clinical context for the left rail — scoped patient allergies /
   // current medicines / past visits. No fake vitals: vitals are captured live
@@ -125,8 +151,57 @@ export function ConsultationWorkbench({
       .catch(() => {});
   }, [appointmentId]);
 
-  const selectedService = services.find((s) => s.id === treatmentId) ?? null;
+  // Open capture — seeds the base Consultation line and loads the visit's charges.
+  React.useEffect(() => {
+    fetch("/api/clinic/service-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "open", appointment_id: appointmentId }),
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: CapturedService[]) => setServiceEvents(Array.isArray(d) ? d : []))
+      .catch(() => setServiceEvents([]));
+  }, [appointmentId]);
+
   const filledRx = rows.filter((r) => r.medicine.trim());
+  const servicesTotal = (serviceEvents ?? []).reduce((sum, s) => sum + s.amount, 0);
+
+  // One mutation helper — every capture action returns the refreshed list, so
+  // the UI always renders from server truth (no optimistic drift).
+  async function captureAction(body: Record<string, unknown>) {
+    setSavingServices(true);
+    try {
+      const res = await fetch("/api/clinic/service-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error((d as { message?: string }).message ?? "Couldn't update services.");
+        return;
+      }
+      setServiceEvents(d as CapturedService[]);
+    } finally {
+      setSavingServices(false);
+    }
+  }
+
+  function addCatalogService(serviceId: string) {
+    setPickerCategory(null);
+    return captureAction({ action: "add", appointment_id: appointmentId, service_id: serviceId });
+  }
+  function addCustomService(category: CaptureCategory, name: string, price: number) {
+    setPickerCategory(null);
+    return captureAction({ action: "add", appointment_id: appointmentId, name, category, unit_price: price });
+  }
+  function setServiceQty(id: string, qty: number) {
+    if (qty < 1) return;
+    return captureAction({ action: "set_qty", id, qty });
+  }
+  function removeService(id: string) {
+    return captureAction({ action: "remove", id });
+  }
 
   function addDiagnosis(value: string) {
     const v = value.trim();
@@ -197,7 +272,9 @@ export function ConsultationWorkbench({
       prescription_medicines_json: medicines.length ? JSON.stringify(medicines) : undefined,
       test_codes: testCodes.length ? testCodes : undefined,
       follow_up_date: followUpDays != null ? isoDateInDays(followUpDays) : undefined,
-      treatment_id: treatmentId || undefined,
+      // M3B B1: the visit's charges are captured ServiceEvents now (settled by
+      // the M3A engine on complete) — the old single treatment_id re-price is
+      // superseded, so it is no longer sent.
     };
   }
 
@@ -402,29 +479,22 @@ export function ConsultationWorkbench({
               />
             </Section>
 
-            {/* Treatment & fee — the visit charge. Single-service for now;
-                multi-line-item billing is a later (P4) scope. */}
-            <Section icon={<Banknote className="size-4" />} title="Treatment &amp; fee">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <select
-                  value={treatmentId}
-                  onChange={(e) => setTreatmentId(e.target.value)}
-                  className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <option value="">Consultation (default fee)</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} — ₹{s.price.toLocaleString()}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex items-baseline justify-between gap-3 sm:justify-end">
-                  <span className="text-sm text-muted-foreground">To collect</span>
-                  <span className="font-heading text-xl font-bold text-honey-deep">
-                    {selectedService ? `₹${selectedService.price.toLocaleString()}` : "Default fee"}
-                  </span>
-                </div>
-              </div>
+            {/* Services — the visit's charges (M3B B1). Consultation is seeded
+                automatically; the doctor stacks clinical services on top. Each
+                line is a draft ServiceEvent, settled by the engine on complete. */}
+            <Section icon={<Banknote className="size-4" />} title="Services" hint="charges for this visit">
+              <ServicesCapture
+                events={serviceEvents}
+                catalog={services}
+                total={servicesTotal}
+                saving={savingServices}
+                pickerCategory={pickerCategory}
+                onOpenPicker={setPickerCategory}
+                onAddCatalog={addCatalogService}
+                onAddCustom={addCustomService}
+                onSetQty={setServiceQty}
+                onRemove={removeService}
+              />
             </Section>
           </div>
         </div>
@@ -440,7 +510,7 @@ export function ConsultationWorkbench({
           investigations={testCodes.map((c) => getTest(c)?.name ?? c)}
           advice={advice}
           followUpLabel={followUpLabel}
-          fee={selectedService ? `₹${selectedService.price.toLocaleString()}` : "Consultation fee"}
+          fee={servicesTotal > 0 ? `₹${servicesTotal.toLocaleString("en-IN")}` : "Consultation fee"}
           busy={busy}
           onBack={() => setReviewOpen(false)}
           onComplete={completeVisit}
@@ -452,6 +522,251 @@ export function ConsultationWorkbench({
 
 const textareaCls =
   "w-full resize-y rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm leading-relaxed outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+// M3B B1 — the Services capture block: the visit's charges (draft ServiceEvents),
+// an inline category picker, and the running total. Inline, not modal.
+function ServicesCapture({
+  events,
+  catalog,
+  total,
+  saving,
+  pickerCategory,
+  onOpenPicker,
+  onAddCatalog,
+  onAddCustom,
+  onSetQty,
+  onRemove,
+}: {
+  events: CapturedService[] | null;
+  catalog: WorkbenchService[];
+  total: number;
+  saving: boolean;
+  pickerCategory: CaptureCategory | null;
+  onOpenPicker: (c: CaptureCategory | null) => void;
+  onAddCatalog: (serviceId: string) => void;
+  onAddCustom: (category: CaptureCategory, name: string, price: number) => void;
+  onSetQty: (id: string, qty: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  if (events === null) {
+    return (
+      <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Loading services…
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {events.length === 0 ? (
+        <div className="rounded-xl border border-dashed bg-muted/30 py-6 text-center text-sm text-muted-foreground">
+          No services added yet.
+        </div>
+      ) : (
+        <div className="divide-y rounded-xl border">
+          {events.map((s) => (
+            <ServiceRow key={s.id} s={s} saving={saving} onSetQty={onSetQty} onRemove={onRemove} />
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {CAPTURE_CATEGORIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            disabled={saving}
+            onClick={() => onOpenPicker(pickerCategory === c ? null : c)}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
+              pickerCategory === c
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-muted"
+            )}
+          >
+            <Plus className="size-3.5" /> {c}
+          </button>
+        ))}
+      </div>
+
+      {pickerCategory && (
+        <CategoryPicker
+          category={pickerCategory}
+          catalog={catalog}
+          saving={saving}
+          onAddCatalog={onAddCatalog}
+          onAddCustom={onAddCustom}
+          onClose={() => onOpenPicker(null)}
+        />
+      )}
+
+      <div className="flex items-baseline justify-between border-t pt-3">
+        <span className="text-sm text-muted-foreground">To collect</span>
+        <span className="font-heading text-xl font-bold text-honey-deep">
+          {total > 0 ? `₹${total.toLocaleString("en-IN")}` : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ServiceRow({
+  s,
+  saving,
+  onSetQty,
+  onRemove,
+}: {
+  s: CapturedService;
+  saving: boolean;
+  onSetQty: (id: string, qty: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium">{s.name}</span>
+          {s.needs_catalog_review && (
+            <span
+              title="Ad-hoc service — flagged for catalog review"
+              className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+            >
+              Custom
+            </span>
+          )}
+        </div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          {s.category} · ₹{s.unit_price.toLocaleString("en-IN")}
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label={`Decrease ${s.name} quantity`}
+          disabled={saving || s.qty <= 1}
+          onClick={() => onSetQty(s.id, s.qty - 1)}
+          className="grid size-7 place-items-center rounded-md border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40"
+        >
+          <Minus className="size-3.5" />
+        </button>
+        <span className="w-6 text-center text-sm font-semibold tabular-nums">{s.qty}</span>
+        <button
+          type="button"
+          aria-label={`Increase ${s.name} quantity`}
+          disabled={saving}
+          onClick={() => onSetQty(s.id, s.qty + 1)}
+          className="grid size-7 place-items-center rounded-md border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40"
+        >
+          <Plus className="size-3.5" />
+        </button>
+      </div>
+      <div className="w-20 text-right text-sm font-semibold tabular-nums">
+        ₹{s.amount.toLocaleString("en-IN")}
+      </div>
+      <button
+        type="button"
+        aria-label={`Remove ${s.name}`}
+        disabled={saving}
+        onClick={() => onRemove(s.id)}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+      >
+        <X className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function CategoryPicker({
+  category,
+  catalog,
+  saving,
+  onAddCatalog,
+  onAddCustom,
+  onClose,
+}: {
+  category: CaptureCategory;
+  catalog: WorkbenchService[];
+  saving: boolean;
+  onAddCatalog: (serviceId: string) => void;
+  onAddCustom: (category: CaptureCategory, name: string, price: number) => void;
+  onClose: () => void;
+}) {
+  const [customName, setCustomName] = React.useState("");
+  const [customPrice, setCustomPrice] = React.useState("");
+  const options = catalog.filter(
+    (s) => (s.kind ?? "clinical") === "clinical" && (s.category ?? "").toLowerCase() === category.toLowerCase()
+  );
+
+  function submitCustom() {
+    const price = Number(customPrice);
+    if (!customName.trim()) {
+      toast.info("Name the service first.");
+      return;
+    }
+    if (!Number.isFinite(price) || price < 0) {
+      toast.info("Enter a valid price.");
+      return;
+    }
+    onAddCustom(category, customName.trim(), Math.round(price));
+    setCustomName("");
+    setCustomPrice("");
+  }
+
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground">Add {category}</span>
+        <button type="button" aria-label="Close picker" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X className="size-4" />
+        </button>
+      </div>
+      {options.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {options.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              disabled={saving}
+              onClick={() => onAddCatalog(s.id)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-40"
+            >
+              {s.name} · ₹{s.price.toLocaleString("en-IN")}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          placeholder={`Custom ${category.toLowerCase()} name`}
+          className="sm:flex-1"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submitCustom();
+            }
+          }}
+        />
+        <Input
+          value={customPrice}
+          onChange={(e) => setCustomPrice(e.target.value.replace(/[^0-9]/g, ""))}
+          inputMode="numeric"
+          placeholder="₹ price"
+          className="sm:w-28"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submitCustom();
+            }
+          }}
+        />
+        <Button variant="outline" size="sm" disabled={saving} onClick={submitCustom}>
+          <Plus className="size-3.5" /> Add
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function Section({
   title,

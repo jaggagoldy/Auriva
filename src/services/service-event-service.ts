@@ -125,6 +125,24 @@ async function transition(id: string, to: ServiceEventStatus, reason?: string) {
   });
 }
 
+/** Re-quantify a draft event (before finalize/payment); recomputes amount from
+ *  the snapshotted unit_price. Draft only — a finalized/settled charge is
+ *  immutable. */
+export async function updateServiceEventQty(id: string, qty: number) {
+  if (!Number.isInteger(qty) || qty < 1) {
+    throw new InvalidServiceEventInputError("qty must be a whole number of at least 1.");
+  }
+  const event = await prisma.serviceEvent.findUnique({ where: { id } });
+  if (!event) throw new ServiceEventNotFoundError(`Service event ${id} not found.`);
+  if (event.status !== "draft") {
+    throw new InvalidServiceEventTransitionError(`Only a draft service can be re-quantified (this one is "${event.status}").`);
+  }
+  return prisma.serviceEvent.update({
+    where: { id },
+    data: { qty, amount: event.unit_price * qty },
+  });
+}
+
 /** Remove a draft event (before finalize/payment). */
 export function removeServiceEvent(id: string) {
   return transition(id, "removed");
