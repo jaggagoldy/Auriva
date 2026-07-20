@@ -37,3 +37,10 @@ export const KIND_ADDED_BY_ROLE: Record<ServiceKind, "doctor" | "reception"> = {
   clinical: "doctor",
   financial: "reception",
 };
+
+/** Permission-by-kind (pure): a doctor may add clinical services, reception may
+ *  add financial charges — never the other way round. Enforced at the service
+ *  layer via this predicate. */
+export function canActorAddKind(role: "doctor" | "reception", kind: ServiceKind): boolean {
+  return KIND_ADDED_BY_ROLE[kind] === role;
+}

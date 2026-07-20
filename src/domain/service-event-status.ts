@@ -34,3 +34,12 @@ export function canTransitionServiceEvent(from: ServiceEventStatus, to: ServiceE
 export function isRemovable(status: ServiceEventStatus): boolean {
   return status === "draft";
 }
+
+/** A reversal (post-payment adjustment) must carry a reason — audited (PO
+ *  decision 10). Other transitions do not require one. Pure predicate. */
+export function isReasonRequiredForTransition(
+  _from: ServiceEventStatus,
+  to: ServiceEventStatus
+): boolean {
+  return to === "reversed";
+}

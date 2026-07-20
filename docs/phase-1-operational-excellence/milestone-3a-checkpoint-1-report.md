@@ -18,6 +18,8 @@
 | **No destructive schema changes** | ✅ Migration SQL scanned — **NONE** (`DROP TABLE/COLUMN/CONSTRAINT`, `DELETE`, `TRUNCATE` = 0). Additive only. |
 
 > **Scope note (deferred, not skipped):** `Invoice.appointment_id` intentionally **stays `@unique` (1:1) in C1.** Relaxing to 1:N forces `Appointment.invoice → invoices[]` and updates to ~5 service/UI consumers (clinic-schedule, dashboard, clinic-workspace, clinic page) — **service-layer work outside C1's authority + the change freeze.** Moved to **Checkpoint 3** (billing engine), where multiple-invoices-per-appointment first becomes real and those consumers are touched anyway. Zero risk to C1.
+>
+> **✅ Product Office Approved Variance (recorded verbatim):** *"The relaxation of the Appointment→Invoice relationship is deferred from Checkpoint 1 to Checkpoint 3 because its first functional use occurs during multi-invoice settlement. Deferring it preserves checkpoint isolation without affecting delivered functionality."*
 
 ## 2. Backfill Report
 
@@ -99,6 +101,23 @@ Apply migration → Backfill
 - **Domain enums** (`service-catalog`, `service-event-status`, `billing-policy`) mirror the existing status-machine pattern — one source of truth, no free-form strings.
 
 ---
+
+## 8. Architectural Debt Register
+
+Intentional gaps carried forward (deliberately postponed, **not** forgotten):
+
+| Deferred item | Reason | Lands in |
+|---|---|---|
+| Appointment → 1:N invoices (relax `@unique`) | First functional use is multi-invoice settlement; coupled to service/UI consumers (Approved Variance) | **C3** |
+| Billing-policy activation (prepaid/hybrid timing) | Engine only reads the policy in 3A; timing is behaviour | **3B** |
+| Service settlement → `InvoiceLine` generation | Billing-engine work (`settleInvoiceFromEvents`) | **C3** |
+| Appointment-completion hook refactor | Billing-engine wiring | **C3** |
+| Adjustments (discounts) | Billing concept, not a ServiceEvent | **3B** |
+| Credit Notes + refund Payments | Revenue Experience | **3B** |
+| Reversal UI + reversal authority rules | Revenue Experience (the *function*+guard are built in C2) | **3B** |
+| Tax / GST activation | Nullable fields exist; activation later | Post-3B |
+| `Service.category/kind` explicit-required at service layer | Migration-safety defaults now; enforced when catalog management is touched | **C2 / 3B** |
+| `Encounter` entity | `encounter_id` placeholder only | Future (care pathways) |
 
 ## Verdict & next step
 
