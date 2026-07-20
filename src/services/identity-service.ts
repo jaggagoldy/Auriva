@@ -99,9 +99,12 @@ async function resolveUnscoped(input: {
   // safety rule: a false-positive auto-match is worse than a duplicate
   // profile, so this tier can never produce an "exact" result.
   if (name) {
+    // Case-insensitive so a lowercase search ("amit") matches "Amit Patel"
+    // (Postgres `contains` is case-sensitive by default). Milestone 1 QA fix.
+    const nameFilter = { contains: name, mode: "insensitive" as const };
     const where = dob
-      ? { full_name: { contains: name }, date_of_birth: new Date(dob) }
-      : { full_name: { contains: name } };
+      ? { full_name: nameFilter, date_of_birth: new Date(dob) }
+      : { full_name: nameFilter };
     const profiles = await prisma.patientProfile.findMany({
       where,
       include: PROFILE_INCLUDE,
