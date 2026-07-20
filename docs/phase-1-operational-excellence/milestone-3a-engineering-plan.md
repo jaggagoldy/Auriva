@@ -1,6 +1,6 @@
 # Milestone 3A — Engineering Plan · Revenue Foundation
 
-**Status:** PLAN — awaiting Product Office approval (Gate 5). **No code, and — per PO scope — NO UI in 3A.**
+**Status:** PLAN (v2 — **all 10 Product Office refinements incorporated**, marked inline "PO refinement N") — awaiting authorization to begin Checkpoint 1. **No code, and — per PO scope — NO UI in 3A.**
 **Scope (approved):** `Service` (+ category + kind) · `ServiceEvent` · `InvoiceLine` · Billing Policy — the data + service layer only.
 **Deferred to 3B (Revenue Experience):** doctor/reception service-adding UI, Billing UI, checkout, multiple-invoice UX, **Adjustments (discounts)**, **Credit Notes / refunds**, reversal UI.
 **Architecture basis:** [Billing & Revenue Architecture Review](./milestone-3-billing-architecture-review.md), with the Product Office's 11 refinements applied.
@@ -14,6 +14,7 @@
 |---|---|---|
 | `category` | String (validated) | Consultation · Procedure · Lab · Radiology · Vaccination · Injection · Therapy · Consumable · Administrative · **Package** |
 | `kind` | String (validated) | `clinical` \| `financial` — drives who may add it (§3) |
+| `version` | Int `@default(1)` | **PO refinement 1** — bumped by `updateService` on any material change (name/price/category/kind). Lets a `ServiceEvent` snapshot the exact catalog definition it was created from. |
 
 *(Tax fields `tax_rate`/`hsn_sac` are intentionally **not** in 3A — additive later; noted so the InvoiceLine design leaves room.)*
 
@@ -24,9 +25,10 @@ id · clinic_id · patient_id
 appointment_id            // ACTIVE relationship (M3)
 encounter_id  String?     // FUTURE-PROOF — nullable, UNUSED in M3 (per PO)
 service_id    String?     // catalog link; null = ad-hoc
+service_version Int?      // PO refinement 1 — snapshot of Service.version (null for ad-hoc)
 name · category · kind    // snapshots
 unit_price · qty · amount // snapshots (amount = unit_price * qty)
-status  String            // draft → finalized | removed ; finalized → reversed
+status  String            // ServiceEventStatus enum (§3): draft → finalized | removed ; finalized → reversed
 needs_catalog_review Boolean @default(false)   // ad-hoc flag (per PO decision 8)
 added_by_user_id String? · added_by_role String  // 'doctor' | 'reception'
 added_at · finalized_at? · removed_at?
@@ -38,10 +40,17 @@ Relational lines are the source of truth for reporting/GST/packages/insurance; `
 ```
 id · invoice_id
 service_event_id String? @unique   // null for legacy/consult-fee lines
+origin  String                     // PO refinement 6 — ServiceEvent | LegacyMigration |
+                                   //   ManualAdjustment | Package | CreditNote (enum;
+                                   //   only ServiceEvent + LegacyMigration used in 3A)
 description · category?             // snapshots
 qty · unit_price · amount
+tax_amount      Int?               // PO refinement 2 — NULL in 3A (tax activates later)
+discount_amount Int?               // PO refinement 2 — NULL in 3A (Adjustments land in 3B)
+net_amount      Int?               // PO refinement 2 — NULL in 3A; = amount − discount + tax later
 created_at
 ```
+The three financial fields are **added now and left NULL in 3A** so GST/discounts never require another migration.
 
 ### 1.4 `Invoice` — relax + bridge
 - **Drop `appointment_id @unique`** → an appointment may have **1..N invoices** (PO decision 4).
@@ -52,6 +61,8 @@ created_at
 | New field | Type | Default |
 |---|---|---|
 | `billing_policy` | String | **`postpaid`** for existing rows (zero behaviour change); **new clinics created as `prepaid`** (default for Indian clinics, PO decision 1) |
+
+**PO refinement 3 — policy changes are auditable operational configuration.** A billing-policy change is not a silent DB write: it goes through a service function (`setBillingPolicy(clinicId, policy, actor)`) that writes an **`AuditLog`** entry (who · from → to · when). No full policy-history table in 3A, but the service layer is shaped so a `BillingPolicyHistory` table can be added later **without touching call sites** (the setter is the single choke point).
 
 > **Not in 3A (designed-for, built in 3B):** `Adjustment` (discounts — a *billing* concept, not a ServiceEvent, PO decision 7) and `CreditNote` + refund `Payment` (PO decision 9). 3A's schema is shaped so both attach to `Invoice` additively later.
 
@@ -64,7 +75,8 @@ created_at
 3. **Create `InvoiceLine`.**
 4. **Drop the unique index on `Invoice.appointment_id`** (keep the FK; it becomes 1:N).
 5. **Add `Clinic.billing_policy`** default `postpaid`.
-6. **Data backfill:** for every existing `Invoice`, parse `items_json` → create matching `InvoiceLine` rows (so 100% of invoices have relational lines; totals verified equal). No `ServiceEvent` is retro-created for historical invoices (they predate the event model — their lines carry `service_event_id = null`).
+6. **Data backfill:** for every existing `Invoice`, parse `items_json` → create matching `InvoiceLine` rows (`origin = LegacyMigration`, `service_event_id = null`). No `ServiceEvent` is retro-created for historical invoices (they predate the event model).
+   - **PO refinement 4 — fail-fast, all-or-nothing.** The backfill runs in a **single transaction** and asserts, per invoice, a **three-way equality**: `Invoice.total == Σ InvoiceLine.amount == snapshot(items_json) total`. **If even one invoice fails to reconcile, the entire migration aborts and rolls back** — never a partial migration. A pre-flight dry-run reports any offenders before the real run.
 
 Each step is its own migration; steps 1–5 are schema, 6 is a data migration run once and idempotent.
 
@@ -75,6 +87,7 @@ Each step is its own migration; steps 1–5 are schema, 6 is a data migration ru
 | Module | Change |
 |---|---|
 | `domain/service-catalog.ts` (new) | `SERVICE_CATEGORIES`, `SERVICE_KINDS`, validators — the single source for the enums (mirrors `appointment-status.ts`/`invoice-status.ts`). |
+| `domain/service-event-status.ts` (new) | **PO refinement 5** — `ServiceEventStatus` enum (`draft` · `finalized` · `removed` · `reversed`) + a `TRANSITIONS` table + `canTransition()`, exactly like `appointment-status.ts`/`invoice-status.ts`. No free-form strings — one source of truth. |
 | `service-catalog-service.ts` | `createService`/`updateService` accept `category` + `kind` (validated). |
 | `service-event-service.ts` (new) | `addServiceEvent(appointmentId, input, actor)` — **permission by kind**: `clinical` requires the doctor capability, `financial` requires reception; ad-hoc (`service_id=null`) sets `needs_catalog_review`. `removeServiceEvent` — **draft only**. `finalizeServiceEvents(appointmentId)` — draft→finalized. `reverseServiceEvent(id, reason)` — finalized→reversed, **reason mandatory** (PO decision 10; the *function + guard* land in 3A, the UI in 3B). |
 | `billing-service.ts` | New `settleInvoiceFromEvents(tx, appointmentId, opts)` — creates an `Invoice` + `InvoiceLine`s from **finalized** ServiceEvents and writes the `items_json` snapshot. One shared **`renderItemsJson(lines)`** generator (the only place JSON is produced → no drift). Balance stays **derived** (`total − Σpayments`; expose Outstanding/Paid/Balance — PO decision 6). |
@@ -114,6 +127,8 @@ Each step is its own migration; steps 1–5 are schema, 6 is a data migration ru
 4. `items_json` is preserved throughout, so **every invoice remains intact and printable** after rollback.
 Backfilled `InvoiceLine`s are derived data (droppable). No invoice or payment is ever mutated by rollback.
 
+**PO refinement 9 — inviolable rollback rule:** rollback may drop *new derived structures* (`ServiceEvent`, `InvoiceLine`, new columns) but **must NEVER delete or mutate `Payment` records, issued/printed `Invoice` records (incl. `items_json`), or any `AuditLog`/`AppointmentEvent` history.** The down-migrations touch only the tables/columns introduced by 3A; financial and audit history are append-only and untouched.
+
 ---
 
 ## 7. Test strategy
@@ -123,6 +138,11 @@ Backfilled `InvoiceLine`s are derived data (droppable). No invoice or payment is
 - **billing-service:** `settleInvoiceFromEvents` → correct `InvoiceLine`s + `items_json` snapshot; `total = Σ lines`; consult-fee path output identical to today; **idempotency guard** (R2).
 - **Migration/backfill:** each existing invoice → lines whose sum equals the original `total`; `items_json` unchanged.
 - **Backward-compat:** existing draft→issue→pay flow unchanged; M1 balance math unaffected; Desk/print snapshot identical.
+- **Property / invariant tests (PO refinement 8):** generate randomized invoices (lines, qty, prices, partial payments) and assert the billing engine's core invariant holds for *every* generated case:
+  ```
+  Invoice.total  ==  Σ InvoiceLine.amount  ==  snapshot(items_json) total  ==  Outstanding + Paid
+  ```
+  This validates the *engine*, not hand-picked scenarios — the strongest guard against silent billing drift.
 - **Data QA script** (the M1/M2 pattern): against the dev DB, exercise the real services + a backfill dry-run; then reseed.
 - Gate: tsc · lint (0 new over baseline) · full vitest suite · `next build` · data QA.
 
@@ -139,6 +159,7 @@ Backfilled `InvoiceLine`s are derived data (droppable). No invoice or payment is
 | **R5** | **Billing-policy default regressions** | Existing clinics `postpaid` (unchanged); new clinics `prepaid` at creation; engine timing inert until 3B. |
 | **R6** | Code assuming 1:1 invoice↔appointment | Audit call sites (`getInvoice`, enrichment, drafting); only the drafting idempotency relies on it → R2. |
 | **R7** | Performance (line joins) | Indexed FKs; pilot-scale; `items_json` still serves the hot read path. |
+| **R8** | **Concurrent settlement (PO)** — reception opens checkout while the doctor adds another `ServiceEvent`: which invoice gets it? does checkout lock? does settlement retry? | **Documented in 3A, solved in 3B.** *Expected behaviour to implement in 3B:* only **draft** service events are settle-eligible; `settleInvoiceFromEvents` snapshots the set of finalized events **inside a transaction** and marks them `finalized` atomically — a service event added *after* settlement stays `draft` and flows to the **next** invoice (never lost, never double-billed). 3B's checkout will re-fetch + confirm the event set before issuing, and surface "new charges were added — review" rather than silently locking. 3A builds the atomic finalize primitive that makes this safe. |
 
 ---
 
@@ -154,9 +175,21 @@ Backfilled `InvoiceLine`s are derived data (droppable). No invoice or payment is
 
 ---
 
-## 10. Out-of-scope confirmation (3A)
+## 10. Implementation checkpoints — mandatory review gates (PO refinement 10)
+
+3A is built in **three checkpoints; I STOP for Product Office review after each** (same discipline as M1/M2):
+
+| Checkpoint | Content | Gate at the STOP |
+|---|---|---|
+| **C1 — Schema** | Schema evolution → migrations → **backfill (fail-fast reconciliation)** | tsc/build clean; backfill dry-run + real run reconcile 3-way for **every** invoice; **STOP · review** |
+| **C2 — Service layer** | Domain enums + `service-event-service` + `billing-policy` + `setBillingPolicy` (audited) → **unit tests** (incl. permission-by-kind, status transitions) | tsc/lint/tests; **STOP · review** |
+| **C3 — Billing engine** | `settleInvoiceFromEvents` + completion-hook refactor → **regression tests + property/invariant tests + data QA + build** | full suite 522+ green; invariants hold; zero user-visible change confirmed; **STOP · final review** |
+
+No checkpoint proceeds without explicit approval of the previous one.
+
+## 11. Out-of-scope confirmation (3A)
 No UI. No Adjustments/Credit-Notes/refunds implementation (schema-compatible, built in 3B). No Encounter entity (only the nullable `encounter_id` placeholder). No tax activation. No appointment-status-machine change. No change to visible billing behaviour (postpaid stays identical).
 
 ---
 
-**Awaiting approval to build 3A.** After 3A ships and is QA-passed, we move to **3B — Revenue Experience** (the UI, adjustments, credit notes, multi-invoice checkout), planned and gated the same way.
+**All 10 Product Office refinements are now incorporated.** Awaiting your authorization to begin **Checkpoint 1**. After 3A ships and is QA-passed, we move to **3B — Revenue Experience** (the UI, adjustments, credit notes, multi-invoice checkout, concurrency handling per R8), planned and gated the same way.
