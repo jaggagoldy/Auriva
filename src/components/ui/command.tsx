@@ -34,13 +34,14 @@ function CommandDialog({
   title = "Command Menu",
   description = "Search or jump to a page.",
   children,
+  ...props
 }: {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   title?: string
   description?: string
   children?: React.ReactNode
-}) {
+} & React.ComponentProps<typeof CommandPrimitive>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -49,7 +50,12 @@ function CommandDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">{description}</DialogDescription>
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground">
+        {/* Forward props (e.g. shouldFilter) to Command so callers doing
+            server-side search can disable cmdk's built-in filtering. */}
+        <Command
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+          {...props}
+        >
           {children}
         </Command>
       </DialogContent>

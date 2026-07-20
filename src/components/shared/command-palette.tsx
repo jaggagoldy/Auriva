@@ -154,8 +154,14 @@ export default function CommandPalette({ surface }: { surface: CommandSurface })
     router.push(href);
   };
 
+  // Patient results are already filtered SERVER-side; jump-to we filter here.
+  // cmdk's built-in filtering is disabled (shouldFilter={false}) so it can't
+  // hide valid server results (its scorer misses ids/health-id-shaped values).
+  const query = search.trim().toLowerCase();
+  const destinations = DESTINATIONS[surface].filter((d) => d.label.toLowerCase().includes(query));
+
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
       <CommandInput
         placeholder="Search patients (name · phone · AUR-ID) or jump to…"
         value={search}
@@ -185,14 +191,16 @@ export default function CommandPalette({ surface }: { surface: CommandSurface })
           </>
         )}
 
-        <CommandGroup heading="Jump to">
-          {DESTINATIONS[surface].map((dest) => (
-            <CommandItem key={dest.href} value={dest.label} onSelect={() => go(dest.href)}>
-              <dest.icon />
-              {dest.label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        {destinations.length > 0 && (
+          <CommandGroup heading="Jump to">
+            {destinations.map((dest) => (
+              <CommandItem key={dest.href} value={dest.label} onSelect={() => go(dest.href)}>
+                <dest.icon />
+                {dest.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
       </CommandList>
     </CommandDialog>
   );
