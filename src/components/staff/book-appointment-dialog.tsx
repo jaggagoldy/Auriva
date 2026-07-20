@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DoctorOption } from "@/components/staff/doctor-filter";
+import DoctorPicker from "@/components/shared/doctor-picker";
 
 interface SearchResultProfile {
   id: string;
@@ -354,21 +355,7 @@ export default function BookAppointmentDialog({
 
             <div className="space-y-1.5">
               <Label>Doctor</Label>
-              <Select value={form.doctorId} onValueChange={(v) => patch({ doctorId: v as string })}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {form.doctorId ? doctors.find((d) => d.id === form.doctorId)?.full_name : <span className="text-muted-foreground">Select a doctor</span>}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      {doctor.full_name}
-                      {doctor.specialty ? ` · ${doctor.specialty}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <DoctorPicker doctors={doctors} value={form.doctorId} onChange={(v) => patch({ doctorId: v })} />
             </div>
 
             <div className="space-y-1.5">
