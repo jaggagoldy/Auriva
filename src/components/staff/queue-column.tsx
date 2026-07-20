@@ -6,12 +6,14 @@ import { Reorder } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Appointment } from "@/shared/queue";
 import type { Lane } from "@/components/staff/queue-board";
+import type { DoctorOption } from "@/components/staff/doctor-filter";
 import QueueCard from "@/components/staff/queue-card";
 
 interface QueueColumnProps {
   lane: Lane;
   appointments: Appointment[];
   clinicId: string;
+  doctors: DoctorOption[];
   onOpenDetails: (id: string) => void;
   onChanged: () => void;
   onReorder: (orderedIds: string[]) => void;
@@ -29,6 +31,7 @@ export default function QueueColumn({
   lane,
   appointments,
   clinicId,
+  doctors,
   onOpenDetails,
   onChanged,
   onReorder,
@@ -84,6 +87,7 @@ export default function QueueColumn({
                   appointment={appointment}
                   clinicId={clinicId}
                   laneTone={lane.tone}
+                  doctors={doctors}
                   onOpenDetails={(id) => {
                     if (draggingRef.current) return;
                     onOpenDetails(id);
@@ -101,6 +105,7 @@ export default function QueueColumn({
                 appointment={appointment}
                 clinicId={clinicId}
                 laneTone={lane.tone}
+                doctors={doctors}
                 onOpenDetails={onOpenDetails}
                 onChanged={onChanged}
               />

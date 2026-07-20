@@ -305,6 +305,7 @@ export default function QueueBoard() {
               lane={lane}
               appointments={laneItems.get(lane.key) ?? []}
               clinicId={clinicId ?? ""}
+              doctors={doctors}
               onOpenDetails={setDrawerId}
               onChanged={load}
               onReorder={handleReorder}

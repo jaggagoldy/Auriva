@@ -68,6 +68,63 @@ export async function checkIn(
   return updated;
 }
 
+// Milestone 2 · 3.4 — reassigning a waiting patient to another doctor. This is a
+// FIELD update (doctor_id), not a status transition, so it never touches the
+// status machine. Product Office decision F: only before the consult begins.
+const REASSIGN_BLOCKED_STATUSES = ["in_consultation", "completed", "cancelled", "no_show"];
+
+export async function reassignDoctor(
+  appointmentId: string,
+  newDoctorId: string,
+  clinicId: string,
+  actorUserId?: string | null
+) {
+  return prisma.$transaction(async (tx) => {
+    const appointment = await tx.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { doctor: { select: { full_name: true } } },
+    });
+    if (!appointment || appointment.clinic_id !== clinicId) {
+      throw new AppointmentNotFoundError(`Appointment ${appointmentId} not found.`);
+    }
+    if (REASSIGN_BLOCKED_STATUSES.includes(appointment.status)) {
+      throw new InvalidTransitionError(
+        `A patient who is "${appointment.status}" can no longer be reassigned to another doctor.`
+      );
+    }
+    // The new doctor must be a staff profile on THIS clinic (tenant safety).
+    const newDoctor = await tx.staffProfile.findFirst({
+      where: { id: newDoctorId, clinic_id: clinicId },
+      select: { id: true, full_name: true },
+    });
+    if (!newDoctor) {
+      throw new AppointmentNotFoundError(`That doctor is not on this clinic.`);
+    }
+    if (appointment.doctor_id === newDoctorId) {
+      return tx.appointment.findUniqueOrThrow({ where: { id: appointmentId }, include: QUEUE_INCLUDE });
+    }
+
+    // Give the patient the new doctor's next queue number when already queued.
+    const newQueueNumber =
+      appointment.queue_number != null ? await assignQueueNumber(tx, newDoctorId, new Date()) : null;
+
+    const result = await tx.appointment.update({
+      where: { id: appointmentId },
+      data: { doctor_id: newDoctorId, queue_number: newQueueNumber },
+      include: QUEUE_INCLUDE,
+    });
+
+    // Audit (Product Office req #1): from → to doctor · who · when.
+    await logAppointmentEvent(tx, appointmentId, {
+      type: "doctor_reassigned",
+      note: `Reassigned from ${appointment.doctor.full_name} to ${newDoctor.full_name}`,
+      actorUserId,
+    });
+
+    return result;
+  });
+}
+
 export async function getDashboardSummary(clinicId: string) {
   const today = new Date();
   const queue = await getQueue({ clinicId, date: today });

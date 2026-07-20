@@ -42,6 +42,7 @@ export interface Appointment {
   is_returning?: boolean;
   patient_outstanding_balance?: number;
   invoice_balance?: number;
+  last_visit_at?: string | null;
   patient: {
     id: string;
     full_name: string;
@@ -240,6 +241,11 @@ export function formatTime(date: string | Date): string {
 
 export function formatDay(date: string | Date): string {
   return dayFormat.format(new Date(date));
+}
+
+/** Indian-rupee amount, e.g. ₹1,200. Shared so board/peek/Desk never drift. */
+export function formatINR(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN")}`;
 }
 
 export function isToday(date: string | Date): boolean {

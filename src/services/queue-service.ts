@@ -2,9 +2,19 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 
 export const QUEUE_INCLUDE = {
-  // `allergies` added for the reception board's read-only safety chip (Milestone 1
-  // · 4.4). Still a projection — no new columns, no behaviour change.
-  patient: { select: { id: true, full_name: true, blood_group: true, user_id: true, allergies: true } },
+  // `allergies` (M1 · 4.4) + `health_id`/phone (M2 · 4.1 Quick Peek) — all
+  // projections, no new columns, no behaviour change.
+  patient: {
+    select: {
+      id: true,
+      full_name: true,
+      blood_group: true,
+      user_id: true,
+      allergies: true,
+      health_id: true,
+      user: { select: { phone_number: true } },
+    },
+  },
   doctor: { select: { id: true, full_name: true, specialty: true, clinic_id: true, user_id: true } },
   clinic: { select: { id: true, name: true, address: true, organization_id: true } },
 } satisfies Prisma.AppointmentInclude;
@@ -20,6 +30,8 @@ export interface QueueEnrichment {
   patient_outstanding_balance: number;
   /** Balance on THIS appointment's invoice (the "Collect ₹X" amount); 0 if none/paid. */
   invoice_balance: number;
+  /** ISO date of the patient's most recent completed visit at this clinic (M2 · 4.1). */
+  last_visit_at: string | null;
 }
 
 async function enrichQueue<T extends { id: string; patient_id: string }>(
@@ -30,7 +42,8 @@ async function enrichQueue<T extends { id: string; patient_id: string }>(
   const patientIds = [...new Set(appointments.map((a) => a.patient_id))];
   const appointmentIds = appointments.map((a) => a.id);
 
-  // 1) Returning: patients with a prior completed visit at this clinic (not today's rows).
+  // 1) Returning + last-visit: patients with a prior completed visit at this
+  //    clinic (not today's rows), and the most recent one's date.
   const priorCompleted = await prisma.appointment.groupBy({
     by: ["patient_id"],
     where: {
@@ -40,8 +53,13 @@ async function enrichQueue<T extends { id: string; patient_id: string }>(
       id: { notIn: appointmentIds },
     },
     _count: { _all: true },
+    _max: { completed_at: true },
   });
   const returning = new Set(priorCompleted.filter((c) => c._count._all > 0).map((c) => c.patient_id));
+  const lastVisitByPatient = new Map<string, string>();
+  for (const c of priorCompleted) {
+    if (c._max.completed_at) lastVisitByPatient.set(c.patient_id, c._max.completed_at.toISOString());
+  }
 
   // 2/3) Open invoices → per-patient outstanding + per-appointment balance.
   const openInvoices = await prisma.invoice.findMany({
@@ -73,6 +91,7 @@ async function enrichQueue<T extends { id: string; patient_id: string }>(
     is_returning: returning.has(a.patient_id),
     patient_outstanding_balance: balanceByPatient.get(a.patient_id) ?? 0,
     invoice_balance: balanceByAppointment.get(a.id) ?? 0,
+    last_visit_at: lastVisitByPatient.get(a.patient_id) ?? null,
   }));
 }
 

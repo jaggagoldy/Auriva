@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Bell, IndianRupee, Info, MoreHorizontal, Send, Stethoscope, UserX, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRightLeft, Bell, CalendarClock, IndianRupee, MoreHorizontal, Send, Stethoscope, UserX, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,16 +20,17 @@ import {
   Appointment,
   AppointmentStatus,
   STATUS_META,
+  formatINR,
   formatTime,
 } from "@/shared/queue";
 import CheckInButton from "@/components/staff/check-in-button";
+import PatientQuickPeek from "@/components/staff/patient-quick-peek";
+import RescheduleDialog from "@/components/staff/reschedule-dialog";
+import DoctorPicker from "@/components/shared/doctor-picker";
+import type { DoctorOption } from "@/components/staff/doctor-filter";
 import type { LaneTone } from "@/components/staff/queue-board";
 
 const TERMINAL_STATUSES: AppointmentStatus[] = ["completed", "cancelled", "no_show"];
-
-function formatINR(amount: number): string {
-  return `₹${amount.toLocaleString("en-IN")}`;
-}
 
 // PKG-4 progressive wait-aging (visual-only, no alerts): the desk naturally
 // prioritises the longest waits. Thresholds from the frozen prototype.
@@ -43,6 +45,8 @@ interface QueueCardProps {
   appointment: Appointment;
   clinicId: string;
   laneTone: LaneTone;
+  /** Bookable doctors for reassignment (M2 · 3.4). */
+  doctors: DoctorOption[];
   onOpenDetails: (id: string) => void;
   onChanged: () => void;
 }
@@ -51,12 +55,41 @@ export default function QueueCard({
   appointment,
   clinicId,
   laneTone,
+  doctors,
   onOpenDetails,
   onChanged,
 }: QueueCardProps) {
   const router = useRouter();
   const meta = STATUS_META[appointment.status];
   const [busy, setBusy] = React.useState(false);
+  const [reassignOpen, setReassignOpen] = React.useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = React.useState(false);
+
+  // M2 · 3.4 — reassign to another doctor (field update, not a status change).
+  // The board reloads via onChanged, so the patient moves A→B queues live.
+  const handleReassign = async (newDoctorId: string) => {
+    if (newDoctorId === appointment.doctor.id) {
+      setReassignOpen(false);
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/reception/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_id: appointment.id, clinic_id: clinicId, doctor_id: newDoctorId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Reassignment failed.");
+      toast.success(`${appointment.patient.full_name} reassigned to ${data.doctor?.full_name ?? "the doctor"}`);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reassignment failed.");
+    } finally {
+      setBusy(false);
+      setReassignOpen(false);
+    }
+  };
 
   const setStatus = async (status: AppointmentStatus) => {
     setBusy(true);
@@ -137,17 +170,10 @@ export default function QueueCard({
               {waitMinutes}m
             </span>
           )}
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={`View details for ${appointment.patient.full_name}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenDetails(appointment.id);
-            }}
-          >
-            <Info />
-          </Button>
+          <PatientQuickPeek
+            appointment={appointment}
+            onOpenRecord={() => onOpenDetails(appointment.id)}
+          />
 
           {!isTerminal && (
             <DropdownMenu>
@@ -168,6 +194,20 @@ export default function QueueCard({
                   <DropdownMenuItem onClick={() => setStatus("doctor_ready")}>
                     <Bell />
                     Notify Doctor
+                  </DropdownMenuItem>
+                )}
+                {/* M2 · 4.2 — reschedule (date/time only; doctor + reason preserved) */}
+                {appointment.status !== "in_consultation" && (
+                  <DropdownMenuItem onClick={() => setRescheduleOpen(true)}>
+                    <CalendarClock />
+                    Reschedule
+                  </DropdownMenuItem>
+                )}
+                {/* M2 · 3.4 — reassign allowed only before the consult begins */}
+                {appointment.status !== "in_consultation" && doctors.length > 1 && (
+                  <DropdownMenuItem onClick={() => setReassignOpen(true)}>
+                    <ArrowRightLeft />
+                    Reassign doctor
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => setStatus("no_show")}>
@@ -254,6 +294,29 @@ export default function QueueCard({
             </p>
           ))}
       </div>
+
+      {/* M2 · 3.4 — reassign dialog (reuses the shared DoctorPicker) */}
+      <Dialog open={reassignOpen} onOpenChange={setReassignOpen}>
+        <DialogContent className="sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Reassign {appointment.patient.full_name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Currently with <span className="font-medium text-foreground">{appointment.doctor.full_name}</span>. Pick a
+            new doctor — the patient moves to their queue.
+          </p>
+          <DoctorPicker doctors={doctors} value={appointment.doctor.id} onChange={handleReassign} />
+        </DialogContent>
+      </Dialog>
+
+      {/* M2 · 4.2 — reschedule dialog */}
+      <RescheduleDialog
+        key={rescheduleOpen ? `rs-${appointment.scheduled_time}` : "rs-closed"}
+        appointment={appointment}
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        onRescheduled={onChanged}
+      />
     </div>
   );
 }
