@@ -3,6 +3,7 @@
 > Single-file bundle of all Knowledge Base sections (00–26), in order. Give this file to an AI product advisor (e.g. ChatGPT) so it can act as Product Office / CPO / UX Director / Solution Architect for Auriva without reading the codebase.
 > Inferred/speculative claims are tagged inline as [INFERRED] / [INFERENCE] / [SPECULATIVE].
 > Companion (separate): ../AURIVA-PRODUCT-BIBLE.md — the DNA/philosophy document.
+> Phase 1 (Operational Excellence) M1+M2 detail: ../phase-1-operational-excellence/
 
 
 
@@ -12,7 +13,9 @@
 
 **Purpose:** this is the permanent, self-contained reference for Auriva — a Healthcare Operating System — written so that another AI (or a new human hire) can act as Product Office, Chief Product Officer, UX Director, or Solution Architect **without reading the codebase**. It assumes the reader has never seen Auriva before.
 
-**Last updated:** 2026-07-19 (reflects PKG-1→6 frozen, Batch F in progress, Release Candidate pending go-live gates).
+**Last updated:** 2026-07-20 (reflects PKG-1→6 frozen + **Phase 1 Operational Excellence M1 + M2 shipped**).
+
+> **Phase 1 — Operational Excellence (post-PKG):** Milestones **M1 and M2 are shipped and QA-passed** — universal patient search, encounter-to-cash display (collect amount / outstanding), reception context flags + Quick Peek, the unified doctor picker (queue load + next slot), availability-aware discovery, reschedule-on-board, walk-in speed, doctor reassignment (with audit), and Workbench focus mode. The **authoritative per-milestone record** is [`docs/phase-1-operational-excellence/`](../phase-1-operational-excellence/) (changelogs + progress tracker). Section [16 Release Notes](./16-release-notes.md) summarizes it; [09 UI Components](./09-ui-components.md) lists the new shared components. All Phase 1 work was **additive** — no new/duplicate APIs, no schema/migration, no status-machine change.
 
 **Status of the underlying product:** Auriva Professional Edition is **feature-complete** for its planned scope. UX is **100% frozen** (UXS-043 Packages 1–6). Engineering health is strong (522 tests green, `tsc`/`next build` clean). The release is a **Release Candidate** — pending infrastructure go-live gates (production DB, backups, OTP/SMS provider, monitoring), not further feature work. See [17-roadmap.md](./17-roadmap.md) and [15-operations.md](./15-operations.md).
 
@@ -1613,6 +1616,22 @@ Backs both the `/workspace` full-page selector (post-login, 2+ memberships) and 
 | `SiteHeader` / `SiteFooter` (`marketing/site-header.tsx`, `site-footer.tsx`) | Public nav/footer, dropdown mega-menus (Products/Solutions/For Patients/Company) |
 | `PageHero` / `Container` (`marketing/page-hero.tsx`, `container.tsx`) | Shared marketing page layout primitives |
 
+## Phase 1 — Operational Excellence additions (M1 + M2)
+
+New shared/reusable components and helpers from Phase 1. All carry doc comments + reusable props; none duplicate styling (the repo has no Storybook, so demo examples are N/A).
+
+| Component / helper | Location | Purpose |
+|---|---|---|
+| `CommandPalette` | `components/shared/command-palette.tsx` | Shared ⌘K palette (Admin/Reception/Doctor). Org-scoped patient search (name/phone/**health-id** via the existing `/api/patients`); per-surface jump-to; `shouldFilter={false}` so server results aren't re-filtered. Admin's is a thin re-export. |
+| `DoctorPicker` | `components/shared/doctor-picker.tsx` | Unified doctor selector (walk-in/booking/reassign). Search → specialty → available-today → rows with **queue load + next slot**. |
+| `PatientQuickPeek` | `components/staff/patient-quick-peek.tsx` | Glanceable popover (fixed-positioned, viewport-clamped): New/Returning · Allergy · Outstanding · Last visit · Phone · Doctor · Health ID + open-record. Reads the enriched queue payload. |
+| `RescheduleDialog` | `components/staff/reschedule-dialog.tsx` | Date/time-only reschedule (doctor/reason/type preserved) over `PATCH /api/appointments/[id]`. |
+| `doctor-directory` helpers | `shared/doctor-directory.ts` | The 3.1 filter model — `DoctorFilters`, `matchesDoctorFilters`, `uniqueSpecialties`, `formatNextSlot` (pure). |
+| `use-doctor-directory` hooks | `components/shared/use-doctor-directory.ts` | `useTodayKey` (SSR-safe via `useSyncExternalStore`) + `useNextSlots` (batch `/api/doctors/next-slots`). |
+| `formatINR` | `shared/queue.ts` | Centralized ₹ formatter (board/peek/Desk share it — no drift). |
+
+Server-side (not components, but part of the same work): the reception queue payload (`queue-service.ts`) is enriched — `allergies`, `is_returning`, `patient_outstanding_balance`, `invoice_balance`, `health_id`, phone, `last_visit_at` — all **batched** (no N+1), **display only**, derived from the same invoice source as the Desk. Reassignment is `reassignDoctor()` in `reception-service.ts` (field update + audit event), exposed via an additive `doctor_id` branch on `PATCH /api/reception/status`.
+
 ## Experience Behaviour Matrix (the contract every component above must satisfy)
 
 | Situation | Rule (all surfaces) |
@@ -2288,6 +2307,18 @@ Classify any issue found: **P1** (material usability) / **P2** (low-risk polish)
 ← [15 Operations](./15-operations.md) · [Index](./00-README.md) · Next: [17 Roadmap](./17-roadmap.md)
 
 A dated changelog synthesized from git history, `docs/DELIVERY-DASHBOARD.md`, `docs/PKG-ALIGNMENT.md`, and `docs/PRODUCT-HANDBOOK.md`. Dates below are commit-message-era labels (batch/sprint names), not calendar dates except where explicitly noted — this codebase's own docs date most milestones by batch/sprint identifier rather than by calendar day.
+
+## Phase 1 — Operational Excellence (latest) — ✅ M1 + M2 shipped
+
+The post-PKG programme that refines *how a clinic runs on Auriva* (removing operational friction), gated per-milestone (5-gate release process). Full detail: [`docs/phase-1-operational-excellence/`](../phase-1-operational-excellence/) (per-milestone changelogs + progress tracker).
+
+| Milestone | Delivered | Commits |
+|---|---|---|
+| **M1** | **Universal patient search** (⌘K, org-scoped, name/phone/**health-id**, reused `/api/patients`; new `/doctor/patients/[id]`), **Amount on Collect**, **Outstanding-balance flag**, **reception context flags** (Returning/Allergy/₹due). Reception queue payload enriched server-side (allergies, returning, balances) — display only, no rule change. | `80fe308`-era → `9d9c684`, `ba0c792`, `448d58d` |
+| **M2 · Wave A** | **Consistent doctor-filter model** (`shared/doctor-directory`), **unified Doctor Picker** (queue load + next slot), **availability-aware patient discovery** — reused `/api/doctors` + `/api/doctors/next-slots`. | `31e81ba` |
+| **M2 · Wave B** | **Patient Quick Peek** (glanceable, no drawer), **Reschedule on board** (date/time only), **walk-in speed** (single-doctor auto-select, keyboard-first), **Doctor Reassignment** (field update, guarded pre-consult, full audit event, live queue move). Additive `doctor_id` on `PATCH /api/reception/status`. Plus **Doctor Workbench focus mode** (collapsible rail/snapshot). | `7805d7d`, `64f2b3e` |
+
+Discipline: **no new/duplicate APIs**, **no schema/migration**, **no status-machine change** across all of Phase 1 M1–M2. Every milestone: tsc/lint/tests/build clean + data QA + human UI QA.
 
 ## Foundational product build (pre-APS-044) — ✅ Built
 

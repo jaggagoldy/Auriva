@@ -108,6 +108,22 @@ Backs both the `/workspace` full-page selector (post-login, 2+ memberships) and 
 | `SiteHeader` / `SiteFooter` (`marketing/site-header.tsx`, `site-footer.tsx`) | Public nav/footer, dropdown mega-menus (Products/Solutions/For Patients/Company) |
 | `PageHero` / `Container` (`marketing/page-hero.tsx`, `container.tsx`) | Shared marketing page layout primitives |
 
+## Phase 1 — Operational Excellence additions (M1 + M2)
+
+New shared/reusable components and helpers from Phase 1. All carry doc comments + reusable props; none duplicate styling (the repo has no Storybook, so demo examples are N/A).
+
+| Component / helper | Location | Purpose |
+|---|---|---|
+| `CommandPalette` | `components/shared/command-palette.tsx` | Shared ⌘K palette (Admin/Reception/Doctor). Org-scoped patient search (name/phone/**health-id** via the existing `/api/patients`); per-surface jump-to; `shouldFilter={false}` so server results aren't re-filtered. Admin's is a thin re-export. |
+| `DoctorPicker` | `components/shared/doctor-picker.tsx` | Unified doctor selector (walk-in/booking/reassign). Search → specialty → available-today → rows with **queue load + next slot**. |
+| `PatientQuickPeek` | `components/staff/patient-quick-peek.tsx` | Glanceable popover (fixed-positioned, viewport-clamped): New/Returning · Allergy · Outstanding · Last visit · Phone · Doctor · Health ID + open-record. Reads the enriched queue payload. |
+| `RescheduleDialog` | `components/staff/reschedule-dialog.tsx` | Date/time-only reschedule (doctor/reason/type preserved) over `PATCH /api/appointments/[id]`. |
+| `doctor-directory` helpers | `shared/doctor-directory.ts` | The 3.1 filter model — `DoctorFilters`, `matchesDoctorFilters`, `uniqueSpecialties`, `formatNextSlot` (pure). |
+| `use-doctor-directory` hooks | `components/shared/use-doctor-directory.ts` | `useTodayKey` (SSR-safe via `useSyncExternalStore`) + `useNextSlots` (batch `/api/doctors/next-slots`). |
+| `formatINR` | `shared/queue.ts` | Centralized ₹ formatter (board/peek/Desk share it — no drift). |
+
+Server-side (not components, but part of the same work): the reception queue payload (`queue-service.ts`) is enriched — `allergies`, `is_returning`, `patient_outstanding_balance`, `invoice_balance`, `health_id`, phone, `last_visit_at` — all **batched** (no N+1), **display only**, derived from the same invoice source as the Desk. Reassignment is `reassignDoctor()` in `reception-service.ts` (field update + audit event), exposed via an additive `doctor_id` branch on `PATCH /api/reception/status`.
+
 ## Experience Behaviour Matrix (the contract every component above must satisfy)
 
 | Situation | Rule (all surfaces) |

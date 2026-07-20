@@ -2,7 +2,9 @@
 
 **Purpose:** this is the permanent, self-contained reference for Auriva — a Healthcare Operating System — written so that another AI (or a new human hire) can act as Product Office, Chief Product Officer, UX Director, or Solution Architect **without reading the codebase**. It assumes the reader has never seen Auriva before.
 
-**Last updated:** 2026-07-19 (reflects PKG-1→6 frozen, Batch F in progress, Release Candidate pending go-live gates).
+**Last updated:** 2026-07-20 (reflects PKG-1→6 frozen + **Phase 1 Operational Excellence M1 + M2 shipped**).
+
+> **Phase 1 — Operational Excellence (post-PKG):** Milestones **M1 and M2 are shipped and QA-passed** — universal patient search, encounter-to-cash display (collect amount / outstanding), reception context flags + Quick Peek, the unified doctor picker (queue load + next slot), availability-aware discovery, reschedule-on-board, walk-in speed, doctor reassignment (with audit), and Workbench focus mode. The **authoritative per-milestone record** is [`docs/phase-1-operational-excellence/`](../phase-1-operational-excellence/) (changelogs + progress tracker). Section [16 Release Notes](./16-release-notes.md) summarizes it; [09 UI Components](./09-ui-components.md) lists the new shared components. All Phase 1 work was **additive** — no new/duplicate APIs, no schema/migration, no status-machine change.
 
 **Status of the underlying product:** Auriva Professional Edition is **feature-complete** for its planned scope. UX is **100% frozen** (UXS-043 Packages 1–6). Engineering health is strong (522 tests green, `tsc`/`next build` clean). The release is a **Release Candidate** — pending infrastructure go-live gates (production DB, backups, OTP/SMS provider, monitoring), not further feature work. See [17-roadmap.md](./17-roadmap.md) and [15-operations.md](./15-operations.md).
 

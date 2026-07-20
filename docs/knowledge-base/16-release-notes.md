@@ -4,6 +4,18 @@
 
 A dated changelog synthesized from git history, `docs/DELIVERY-DASHBOARD.md`, `docs/PKG-ALIGNMENT.md`, and `docs/PRODUCT-HANDBOOK.md`. Dates below are commit-message-era labels (batch/sprint names), not calendar dates except where explicitly noted — this codebase's own docs date most milestones by batch/sprint identifier rather than by calendar day.
 
+## Phase 1 — Operational Excellence (latest) — ✅ M1 + M2 shipped
+
+The post-PKG programme that refines *how a clinic runs on Auriva* (removing operational friction), gated per-milestone (5-gate release process). Full detail: [`docs/phase-1-operational-excellence/`](../phase-1-operational-excellence/) (per-milestone changelogs + progress tracker).
+
+| Milestone | Delivered | Commits |
+|---|---|---|
+| **M1** | **Universal patient search** (⌘K, org-scoped, name/phone/**health-id**, reused `/api/patients`; new `/doctor/patients/[id]`), **Amount on Collect**, **Outstanding-balance flag**, **reception context flags** (Returning/Allergy/₹due). Reception queue payload enriched server-side (allergies, returning, balances) — display only, no rule change. | `80fe308`-era → `9d9c684`, `ba0c792`, `448d58d` |
+| **M2 · Wave A** | **Consistent doctor-filter model** (`shared/doctor-directory`), **unified Doctor Picker** (queue load + next slot), **availability-aware patient discovery** — reused `/api/doctors` + `/api/doctors/next-slots`. | `31e81ba` |
+| **M2 · Wave B** | **Patient Quick Peek** (glanceable, no drawer), **Reschedule on board** (date/time only), **walk-in speed** (single-doctor auto-select, keyboard-first), **Doctor Reassignment** (field update, guarded pre-consult, full audit event, live queue move). Additive `doctor_id` on `PATCH /api/reception/status`. Plus **Doctor Workbench focus mode** (collapsible rail/snapshot). | `7805d7d`, `64f2b3e` |
+
+Discipline: **no new/duplicate APIs**, **no schema/migration**, **no status-machine change** across all of Phase 1 M1–M2. Every milestone: tsc/lint/tests/build clean + data QA + human UI QA.
+
 ## Foundational product build (pre-APS-044) — ✅ Built
 
 Before the Identity & Workspace platform work began, the "existing product" already included: clinic/doctor/reception/patient surfaces, billing, appointments, and audit — i.e. the core clinical/operational spine predates the RBAC/identity rework described below. The engineering narrative throughout this era: real follow-up appointments, reception booking/reschedule/cancel, a real "previous visits" / reachable patient timeline, billing line-items UI, browser-native print (Rx/visit-summary/invoice), patient Bills/Lab tabs, the Organization entity (multi-clinic, departments, fees), and the Event Platform (OPS-001C: publish/retry/DLQ/replay + audit hooks).
