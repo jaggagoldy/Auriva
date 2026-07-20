@@ -202,6 +202,11 @@ model Clinic {
   // link / share). Backs the "Share your booking page" guided-checklist item
   // as a REAL signal rather than a guessed one — null = not shared yet.
   booking_shared_at                 DateTime?
+  // M3A Revenue Foundation — clinic-wide billing policy (validated in
+  // domain/billing-policy.ts). Default 'postpaid' = today's behaviour for every
+  // existing clinic (zero change). New clinics set 'prepaid' at creation (C2/3B).
+  // The engine only READS this in 3A; policy timing activates in 3B.
+  billing_policy                    String   @default("postpaid")
   default_slot_duration_minutes     Int?     @default(15)
   buffer_minutes                    Int?     @default(0)
   max_appointments_per_doctor_per_day Int?   // null = unlimited
@@ -244,6 +249,7 @@ model Clinic {
   testRecommendations TestRecommendation[]
   clinicalTemplates ClinicalTemplate[]
   invoices       Invoice[]
+  serviceEvents  ServiceEvent[]
   invitations    Invitation[]
   departments    Department[]
   // APS-029/010: profiles this org registered (registration provenance —
@@ -421,10 +427,17 @@ model Service {
   buffer_minutes   Int?     // null = use the clinic's buffer_minutes
   is_active        Boolean  @default(true)
   sort_order       Int      @default(0)
+  // M3A Revenue Foundation — the catalog gains billing meaning. Defaults keep the
+  // migration safe on existing rows; validated in domain/service-catalog.ts.
+  // Explicit values are required at the service layer (Checkpoint 2 / 3B).
+  category         String   @default("Consultation") // Consultation|Procedure|Lab|Radiology|Vaccination|Injection|Therapy|Consumable|Administrative|Package
+  kind             String   @default("clinical")     // 'clinical' | 'financial'
+  version          Int      @default(1)              // bumped on material change; snapshotted by ServiceEvent
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  clinic        Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  serviceEvents ServiceEvent[]
 
   @@index([clinic_id, is_active])
   @@map("Services")
@@ -513,6 +526,7 @@ model PatientProfile {
   labOrders     LabOrder[]
   testRecommendations TestRecommendation[]
   invoices      Invoice[]
+  serviceEvents ServiceEvent[]
   reviews       Review[]
   favoriteDoctors PatientFavoriteDoctor[]
   notifications Notification[]
@@ -603,6 +617,7 @@ model Appointment {
   labOrders      LabOrder[]
   testRecommendations TestRecommendation[]
   invoice        Invoice?
+  serviceEvents  ServiceEvent[]
   review         Review?
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
   followUpBooking Appointment? @relation("AppointmentFollowUp")
@@ -776,9 +791,12 @@ model Invoice {
   invoice_number String
   clinic_id      String
   patient_id     String
+  // M3A note: staying @unique (1:1) in Checkpoint 1. Relaxing to 1:N forces
+  // Appointment.invoice → invoices[] + ~5 service/UI consumer updates, which is
+  // Checkpoint-3 (billing-engine) work — deferred there, out of C1 scope.
   appointment_id String?   @unique
   status         String    @default("draft") // 'draft' | 'issued' | 'paid' | 'void'
-  items_json     String    // [{ description, qty, unit_price, amount }]
+  items_json     String    // frozen print snapshot generated from InvoiceLine rows (M3A)
   total          Int
   created_at     DateTime  @default(now())
   issued_at      DateTime?
@@ -789,6 +807,7 @@ model Invoice {
   patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
   clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
   payments    Payment[]
+  lines       InvoiceLine[]  // M3A: source of truth for the invoice's charges
 
   @@unique([clinic_id, invoice_number])
   @@map("Invoices")
@@ -812,6 +831,69 @@ model Payment {
   // this index makes it an indexed, already-ordered SEARCH.
   @@index([clinic_id, received_at])
   @@map("Payments")
+}
+
+// M3A Revenue Foundation — the atomic clinical/financial fact ("a service was
+// added to a visit"). Snapshots the catalog so later price/definition changes
+// never rewrite history. Status is domain/service-event-status.ts. The keystone
+// the future (packages, insurance, GST, analytics, inventory, AI) hangs off of.
+model ServiceEvent {
+  id                   String    @id @default(uuid())
+  clinic_id            String
+  patient_id           String
+  appointment_id       String    // active relationship (M3)
+  encounter_id         String?   // FUTURE-PROOF — nullable, unused in M3
+  service_id           String?   // catalog link; null = ad-hoc
+  service_version      Int?      // snapshot of Service.version (null for ad-hoc)
+  name                 String    // snapshot
+  category             String    // snapshot
+  kind                 String    // snapshot: 'clinical' | 'financial'
+  unit_price           Int       // snapshot
+  qty                  Int       @default(1)
+  amount               Int       // snapshot = unit_price * qty
+  status               String    @default("draft") // draft | finalized | removed | reversed
+  needs_catalog_review Boolean   @default(false)   // ad-hoc flag → admin converts later
+  reversal_reason      String?   // required when reversed (post-payment); audited
+  added_by_user_id     String?
+  added_by_role        String    // 'doctor' | 'reception'
+  added_at             DateTime  @default(now())
+  finalized_at         DateTime?
+  removed_at           DateTime?
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment Appointment    @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  service     Service?       @relation(fields: [service_id], references: [id], onDelete: SetNull)
+  invoiceLine InvoiceLine?   // back-relation; the FK lives on InvoiceLine.service_event_id
+
+  @@index([clinic_id, status])
+  @@index([appointment_id])
+  @@map("Service_Events")
+}
+
+// M3A — the relational invoice line (source of truth for the invoice's charges).
+// items_json on Invoice is a generated snapshot of these. tax/discount/net are
+// added now (nullable) so GST/discounts never need another migration.
+model InvoiceLine {
+  id               String   @id @default(uuid())
+  invoice_id       String
+  service_event_id String?  @unique // the event this line bills (null for legacy/consult-fee)
+  origin           String   // ServiceEvent | LegacyMigration | ManualAdjustment | Package | CreditNote
+  description      String   // snapshot
+  category         String?  // snapshot for reporting
+  qty              Int
+  unit_price       Int
+  amount           Int
+  tax_amount       Int?     // NULL in 3A (tax activates later)
+  discount_amount  Int?     // NULL in 3A (Adjustments land in 3B)
+  net_amount       Int?     // NULL in 3A
+  created_at       DateTime @default(now())
+
+  invoice      Invoice       @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  serviceEvent ServiceEvent? @relation(fields: [service_event_id], references: [id], onDelete: SetNull)
+
+  @@index([invoice_id])
+  @@map("Invoice_Lines")
 }
 
 // Activity timeline for Sprint 1 (Epic 8), and the seed of the future
