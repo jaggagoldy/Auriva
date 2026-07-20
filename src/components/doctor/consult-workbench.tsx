@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   AlertTriangle,
+  Banknote,
   Building2,
   Check,
   ClipboardList,
@@ -38,6 +39,7 @@ import {
 } from "@/shared/queue";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
 import PrescriptionEditor from "@/components/doctor/prescription-editor";
+import { ServicesCaptureView, useServiceCapture } from "@/components/shared/service-capture";
 
 function ageFromDob(dob: string | null): number | null {
   if (!dob) return null;
@@ -177,6 +179,13 @@ export default function ConsultWorkbench({
             doctorId={doctorId}
           />
 
+          {/* M3B B1b — Doctor Service Capture, at parity with the /clinic
+              workbench (shared component). Available once the consultation is
+              underway, matching when /clinic mounts capture. */}
+          {appointment.status === "in_consultation" && (
+            <VisitServicesSection key={`svc-${appointment.id}`} appointmentId={appointment.id} />
+          )}
+
           <PrescriptionEditor
             key={`rx-${appointment.id}`}
             appointment={appointment}
@@ -195,6 +204,23 @@ export default function ConsultWorkbench({
 
       <AppointmentDrawer appointmentId={appointment.id} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </main>
+  );
+}
+
+// M3B B1b — the Services section on the /doctor surface, in the doctor-surface
+// section chrome but with the SAME shared capture body as /clinic (parity).
+function VisitServicesSection({ appointmentId }: { appointmentId: string }) {
+  const capture = useServiceCapture(appointmentId);
+  return (
+    <section className="rounded-xl border bg-card">
+      <header className="flex items-center gap-2 border-b px-4 py-3">
+        <Banknote className="size-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold">Services</h2>
+      </header>
+      <div className="px-4 py-3">
+        <ServicesCaptureView capture={capture} />
+      </div>
+    </section>
   );
 }
 

@@ -795,21 +795,12 @@ function BookPatientDialog({ defaultWhen, onClose, onBooked }: { defaultWhen: st
 function VisitOverlay({ visit, clinicName, onClose, onAdvance, onDone }: {
   visit: Visit; clinicName: string; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
 }) {
-  const [services, setServices] = React.useState<Service[]>([]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    fetch("/api/services", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).then((d) => { if (!cancelled) setServices(d); });
-    return () => { cancelled = true; };
-  }, []);
-
   if (visit.step === "consult") {
     return (
       <ConsultationWorkbench
         appointmentId={visit.appointmentId}
         patientName={visit.patientName}
         clinicName={clinicName}
-        services={services}
         onCancel={onClose}
         onCompleted={(inv) => onAdvance({ ...visit, step: "pay", invoiceId: inv.invoiceId, total: inv.total })}
       />
