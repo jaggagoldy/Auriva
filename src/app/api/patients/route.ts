@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import prisma from '@/lib/prisma';
 import { badRequest, ok, serverError } from '@/api/http';
 import { requireStaffContext } from '@/api/session';
 import { canManageAppointments } from '@/domain/authorization';
@@ -25,7 +26,19 @@ export async function GET(request: NextRequest) {
     const auth = await requireStaffContext(canManageAppointments);
     if (!auth.ok) return auth.response;
 
-    const resolution = await resolveHealthcareProfile({ phone, healthId, name, dob });
+    // Milestone 1 (2.1) — `scope=org` tenant-scopes the results to the caller's
+    // organization (global staff search). Omitted by walk-in/book, which stay
+    // cross-org (patient portability). Additive, backward-compatible.
+    let organizationId: string | undefined;
+    if (searchParams.get('scope') === 'org') {
+      const clinic = await prisma.clinic.findUnique({
+        where: { id: auth.clinicId },
+        select: { organization_id: true },
+      });
+      organizationId = clinic?.organization_id ?? undefined;
+    }
+
+    const resolution = await resolveHealthcareProfile({ phone, healthId, name, dob, organizationId });
     if (resolution.kind === 'none') {
       return ok({ kind: 'none', profiles: [] });
     }

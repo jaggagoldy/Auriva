@@ -36,6 +36,12 @@ export interface Appointment {
   prescription_medicines_json: string | null;
   follow_up_date: string | null;
   events?: AppointmentEvent[];
+  // Milestone 1 (1.2/1.6/4.4) — reception board context, computed server-side from
+  // billing/appointment data (display only). Optional: only the reception queue
+  // payload populates them.
+  is_returning?: boolean;
+  patient_outstanding_balance?: number;
+  invoice_balance?: number;
   patient: {
     id: string;
     full_name: string;

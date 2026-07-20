@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Bell, IndianRupee, Info, MoreHorizontal, Send, Stethoscope, UserX, XCircle } from "lucide-react";
+import { AlertTriangle, Bell, IndianRupee, Info, MoreHorizontal, Send, Stethoscope, UserX, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,10 @@ import CheckInButton from "@/components/staff/check-in-button";
 import type { LaneTone } from "@/components/staff/queue-board";
 
 const TERMINAL_STATUSES: AppointmentStatus[] = ["completed", "cancelled", "no_show"];
+
+function formatINR(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
 
 // PKG-4 progressive wait-aging (visual-only, no alerts): the desk naturally
 // prioritises the longest waits. Thresholds from the frozen prototype.
@@ -83,6 +87,14 @@ export default function QueueCard({
   const since = appointment.checked_in_at ?? appointment.scheduled_time;
   const waitMinutes = Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 60000));
   const aging = arrived ? waitAging(waitMinutes) : null;
+
+  // Milestone 1 — read-only context from the server-enriched queue payload
+  // (1.2 Collect amount · 1.6 outstanding balance · 4.4 flags). Display only.
+  const allergies = (appointment.patient.allergies ?? "").trim();
+  const invoiceBalance = appointment.invoice_balance ?? 0;
+  // "Other/prior" due = the patient's total open balance minus THIS visit's
+  // invoice (which is shown on the Collect button), so we never double-count.
+  const priorDue = Math.max(0, (appointment.patient_outstanding_balance ?? 0) - invoiceBalance);
 
   return (
     // Not role="button" — it contains real interactive controls (check-in,
@@ -173,6 +185,29 @@ export default function QueueCard({
         </div>
       </div>
 
+      {/* Milestone 1 · 4.4 — read-only context flags (colour + icon + label,
+          never colour alone). Returning/New always; allergy + prior due when present. */}
+      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        <span className="inline-flex items-center rounded-full border bg-muted px-1.5 py-0.5 text-[9.5px] font-medium text-muted-foreground">
+          {appointment.is_returning ? "Returning" : "New"}
+        </span>
+        {allergies && (
+          <span
+            className="inline-flex items-center gap-0.5 rounded-full border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-destructive"
+            title={`Allergy: ${allergies}`}
+          >
+            <AlertTriangle className="size-2.5" />
+            Allergy
+          </span>
+        )}
+        {priorDue > 0 && (
+          <span className="inline-flex items-center gap-0.5 rounded-full border border-honey-soft bg-honey-tint px-1.5 py-0.5 text-[9.5px] font-semibold text-honey-deep">
+            <IndianRupee className="size-2.5" />
+            {formatINR(priorDue)} due
+          </span>
+        )}
+      </div>
+
       {/* Status chip — hidden in the Waiting lane where the wait badge + primary
           action already carry the state, kept where it adds meaning. */}
       {!(laneTone === "waiting" && arrived) && (
@@ -201,17 +236,23 @@ export default function QueueCard({
         {appointment.status === "doctor_ready" && (
           <p className="text-[11px] font-medium text-primary">Sent in · waiting for the doctor</p>
         )}
-        {appointment.status === "completed" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full"
-            onClick={() => router.push(`/staff/billing?patient=${appointment.patient.id}`)}
-          >
-            <IndianRupee />
-            Collect
-          </Button>
-        )}
+        {appointment.status === "completed" &&
+          (invoiceBalance > 0 ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push(`/staff/billing?patient=${appointment.patient.id}`)}
+            >
+              <IndianRupee />
+              Collect {formatINR(invoiceBalance)}
+            </Button>
+          ) : (
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success">
+              <IndianRupee className="size-3" />
+              Collected
+            </p>
+          ))}
       </div>
     </div>
   );

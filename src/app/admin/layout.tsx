@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession, getEffectiveCapabilitiesForSession } from "@/api/session";
 import { hasCapability } from "@/domain/authorization";
 import { requirePasswordChanged } from "@/lib/require-password-changed";
-import CommandPalette from "@/components/admin/command-palette";
+import CommandPalette from "@/components/shared/command-palette";
 
 // Sprint 3: /admin previously had no server-side guard at all (unlike
 // /staff and /doctor, which both have a real layout check) — every page
@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <>
       {children}
-      <CommandPalette />
+      <CommandPalette surface="admin" />
     </>
   );
 }

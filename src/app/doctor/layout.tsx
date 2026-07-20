@@ -5,6 +5,7 @@ import { getCurrentSession } from "@/api/session";
 import { effectiveCapabilities, hasCapability } from "@/domain/authorization";
 import { requirePasswordChanged } from "@/lib/require-password-changed";
 import DoctorShell from "@/components/doctor/doctor-shell";
+import CommandPalette from "@/components/shared/command-palette";
 
 export default async function DoctorLayout({
   children,
@@ -50,6 +51,7 @@ export default async function DoctorLayout({
       capabilities={capabilities}
     >
       {children}
+      <CommandPalette surface="doctor" />
     </DoctorShell>
   );
 }

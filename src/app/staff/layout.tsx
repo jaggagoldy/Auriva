@@ -5,6 +5,7 @@ import { getCurrentSession, getEffectiveCapabilitiesForSession } from "@/api/ses
 import { hasCapability } from "@/domain/authorization";
 import { requirePasswordChanged } from "@/lib/require-password-changed";
 import StaffShell from "@/components/staff/staff-shell";
+import CommandPalette from "@/components/shared/command-palette";
 
 export default async function StaffLayout({
   children,
@@ -45,6 +46,7 @@ export default async function StaffLayout({
       capabilities={capabilities}
     >
       {children}
+      <CommandPalette surface="staff" />
     </StaffShell>
   );
 }
