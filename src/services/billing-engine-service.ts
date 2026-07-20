@@ -126,6 +126,32 @@ export async function completeVisitInvoicing(
 }
 
 /**
+ * Rebuild an invoice's `total` and frozen `items_json` snapshot from its
+ * current `InvoiceLine`s (M3B B2). Keeps the 4-way reconciliation intact
+ * (total == Σ lines == Σ snapshot) after a draft invoice's lines change —
+ * reception financial charges or a concession. Adjustment lines are negative,
+ * so they net down both total and snapshot by construction.
+ */
+export async function regenerateInvoice(tx: Prisma.TransactionClient, invoiceId: string): Promise<number> {
+  const lines = await tx.invoiceLine.findMany({
+    where: { invoice_id: invoiceId },
+    orderBy: { created_at: "asc" },
+  });
+  const total = lines.reduce((sum, l) => sum + l.amount, 0);
+  const snapshot: InvoiceItem[] = lines.map((l) => ({
+    description: l.description,
+    qty: l.qty,
+    unit_price: l.unit_price,
+    amount: l.amount,
+  }));
+  await tx.invoice.update({
+    where: { id: invoiceId },
+    data: { total, items_json: JSON.stringify(snapshot) },
+  });
+  return total;
+}
+
+/**
  * The C3 settlement invariant, enforceable in code and asserted in tests: for a
  * given appointment, every finalized ServiceEvent is attached to exactly one
  * InvoiceLine OR is awaiting settlement — never lost, never double-attached, and

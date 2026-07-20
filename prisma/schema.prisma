@@ -798,6 +798,7 @@ model Invoice {
   status         String    @default("draft") // 'draft' | 'issued' | 'paid' | 'void'
   items_json     String    // frozen print snapshot generated from InvoiceLine rows (M3A)
   total          Int
+  checkout_notes String?    // M3B B2: reception operational notes (NOT clinical) — "paid by spouse", "concession approved by Dr X"; audited
   created_at     DateTime  @default(now())
   issued_at      DateTime?
   paid_at        DateTime?

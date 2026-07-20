@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
+import { CheckoutWorkspace } from "@/components/shared/checkout/checkout-workspace";
 import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
 import { PracticeSetup } from "@/components/clinic/practice-setup";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
@@ -49,7 +50,6 @@ import { PlanScreen } from "@/components/clinic/plan-screen";
 type View = "home" | "today" | "calendar" | "treatments" | "payments" | "practice" | "team" | "plan";
 const SETTINGS_VIEWS: View[] = ["practice", "team", "plan"];
 type Save = "idle" | "saving" | "saved";
-type Method = "cash" | "upi" | "card";
 
 interface ReadyStep { key: string; label: string; done: boolean; }
 interface Overview {
@@ -807,65 +807,10 @@ function VisitOverlay({ visit, clinicName, onClose, onAdvance, onDone }: {
     );
   }
 
-  return <PaymentStep visit={visit} onClose={onClose} onDone={onDone} />;
+  // M3B B2: the shared Checkout Workspace replaces the old single-amount PaymentStep.
+  return <CheckoutWorkspace invoiceId={visit.invoiceId ?? ""} onClose={onClose} onDone={onDone} />;
 }
 
-// Its own component so it mounts fresh at the pay step and can lazy-init the
-// amount from the treatment total — no setState-in-effect needed.
-function PaymentStep({ visit, onClose, onDone }: { visit: Visit; onClose: () => void; onDone: () => void }) {
-  const [method, setMethod] = React.useState<Method>("cash");
-  const [amount, setAmount] = React.useState(() => (visit.total != null ? String(visit.total) : ""));
-  const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  async function pay() {
-    const amt = Number(amount);
-    if (!Number.isInteger(amt) || amt <= 0) return toast.error("Enter a valid amount.");
-    setBusy(true);
-    try {
-      const res = await fetch("/api/clinic/payment", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoice_id: visit.invoiceId, amount: amt, method }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(d.message ?? "Couldn't record the payment."); return; }
-      toast.success(`₹${amt.toLocaleString()} received from ${visit.patientName}`);
-      onDone();
-    } finally { setBusy(false); }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
-      <Card className="w-full max-w-lg space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
-        <div>
-          <h2 className="text-base font-semibold">Collect payment</h2>
-          <p className="text-xs text-muted-foreground">{visit.patientName}</p>
-        </div>
-        <div className="text-3xl font-bold">₹{Number(amount || visit.total || 0).toLocaleString()}</div>
-        <p className="text-xs text-muted-foreground">Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn&apos;t process the money.</p>
-        <div className="space-y-1.5"><Label htmlFor="amt">Amount (₹)</Label>
-          <Input id="amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></div>
-        <div className="space-y-1.5"><Label>How did they pay?</Label>
-          <div className="inline-flex overflow-hidden rounded-lg border">
-            {(["cash", "upi", "card"] as Method[]).map((m) => (
-              <button key={m} onClick={() => setMethod(m)}
-                className={cn("px-4 py-2 text-sm font-medium capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}>{m}</button>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" onClick={onDone}>Skip</Button>
-          <Button disabled={busy} onClick={pay}>{busy && <Loader2 className="size-4 animate-spin" />} Record ₹{Number(amount || 0).toLocaleString()} received</Button>
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 function PaymentsView() {
   const [data, setData] = React.useState<{ payments: { id: string; amount: number; method: string; received_at: string; invoice: { invoice_number: string; patient: { full_name: string } | null } | null }[]; summary: { collected_today: number; payments_today: number; outstanding_total: number; open_invoices: number } } | null>(null);
