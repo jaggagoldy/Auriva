@@ -215,7 +215,7 @@ function VisitServicesSection({ appointmentId }: { appointmentId: string }) {
     <section className="rounded-xl border bg-card">
       <header className="flex items-center gap-2 border-b px-4 py-3">
         <Banknote className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold">Services</h2>
+        <h2 className="text-sm font-semibold">Clinical Services</h2>
       </header>
       <div className="px-4 py-3">
         <ServicesCaptureView capture={capture} />

@@ -403,7 +403,7 @@ export function ConsultationWorkbench({
             {/* Services — the visit's charges (M3B B1). Consultation is seeded
                 automatically; the doctor stacks clinical services on top. Each
                 line is a draft ServiceEvent, settled by the engine on complete. */}
-            <Section icon={<Banknote className="size-4" />} title="Services" hint="charges for this visit">
+            <Section icon={<Banknote className="size-4" />} title="Clinical Services" hint="what was performed this visit">
               <ServicesCaptureView capture={capture} />
             </Section>
           </div>
