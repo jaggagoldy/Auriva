@@ -250,6 +250,7 @@ model Clinic {
   clinicalTemplates ClinicalTemplate[]
   invoices       Invoice[]
   serviceEvents  ServiceEvent[]
+  documents      Document[]
   invitations    Invitation[]
   departments    Department[]
   // APS-029/010: profiles this org registered (registration provenance —
@@ -527,6 +528,7 @@ model PatientProfile {
   testRecommendations TestRecommendation[]
   invoices      Invoice[]
   serviceEvents ServiceEvent[]
+  documents      Document[]
   reviews       Review[]
   favoriteDoctors PatientFavoriteDoctor[]
   notifications Notification[]
@@ -618,6 +620,7 @@ model Appointment {
   testRecommendations TestRecommendation[]
   invoices       Invoice[]      // M3A C3: relaxed 1:1 → 1:N (multi-invoice settlement)
   serviceEvents  ServiceEvent[]
+  documents      Document[]
   review         Review?
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
   followUpBooking Appointment? @relation("AppointmentFollowUp")
@@ -1092,3 +1095,33 @@ model OtpChallenge {
   @@map("Otp_Challenges")
 }
 
+
+// M3B B3 — Clinical Document Platform Foundation. A Document is a permanent,
+// immutable clinical artifact: generated from a source (invoice/visit/payments),
+// snapshotted into content_json, versioned (regenerate → new version, prior
+// superseded), and categorized. Reprints render the snapshot (never live data).
+// Extensible: new document types add a `type` + renderer + assembler, no model
+// change. `category`/`status` carry reserved values for the future platform.
+model Document {
+  id                   String   @id @default(uuid())
+  clinic_id            String
+  patient_id           String
+  appointment_id       String?
+  invoice_id           String?  // for financial documents (invoice/receipt)
+  type                 String   // visit_summary | invoice | receipt (+ future: prescription, certificate, referral, lab_request, radiology_request, ...)
+  category             String   // Financial | Clinical | Diagnostic | Administrative (B3 uses Financial + Clinical)
+  number               String   // unified human ref: INV-2026-0003 | RCPT-2026-0003 | VS-2026-0003 | (future CERT/LAB/RAD/REF)
+  version              Int      @default(1) // regenerate → version+1; prior kept as superseded
+  status               String   @default("issued") // draft(reserved) | issued | superseded | void
+  content_json         String   // immutable rendered snapshot — the single render input
+  generated_at         DateTime @default(now())
+  generated_by_user_id String?
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+
+  @@index([appointment_id])
+  @@index([clinic_id, type])
+  @@map("Documents")
+}

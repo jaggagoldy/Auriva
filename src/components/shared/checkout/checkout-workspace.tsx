@@ -11,18 +11,19 @@
 import * as React from "react";
 import {
   ArrowLeft, Banknote, Check, CheckCircle2, ChevronDown, FileText, Loader2,
-  Lock, Plus, Printer, Sparkles, Trash2,
+  Lock, Plus, Sparkles, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ClinicalArtifacts } from "@/components/shared/documents/clinical-artifacts";
 
 // ---- view-model types (mirror checkout-service.getCheckout) -----------------
 interface Line { id: string; description: string; category: string | null; qty: number; unit_price: number; amount: number; removable?: boolean }
 interface CheckoutView {
-  invoice: { id: string; invoice_number: string; status: string };
+  invoice: { id: string; invoice_number: string; status: string; appointment_id: string | null };
   visit: { patient_name: string; token: number | null; doctor_name: string | null; appointment_type: string; scheduled_time: string | null; status: string };
   groups: { clinical: Line[]; administrative: Line[] };
   concession: { amount: number; lineId: string | null };
@@ -106,7 +107,7 @@ export function CheckoutWorkspace({ invoiceId, onClose, onDone }: { invoiceId: s
       )}
 
       {completed && view && (
-        <CheckoutCompletion view={view} onPrint={() => window.open(`/print/invoice/${view.invoice.id}`, "_blank")} onDone={() => { onDone?.(); onClose(); }} />
+        <CheckoutCompletion view={view} onDone={() => { onDone?.(); onClose(); }} />
       )}
     </div>
   );
@@ -307,7 +308,10 @@ function SideRail({ view, saving, act }: { view: CheckoutView; saving: boolean; 
     <aside className="space-y-4">
       <ReceptionNotes view={view} saving={saving} act={act} />
       <PaymentHistory payments={view.payments} />
-      <SlotStub icon={<FileText className="size-4" />} title="Documents" note="Receipt & Visit Summary — coming in B3" />
+      <section className="rounded-2xl border bg-card p-4">
+        <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><FileText className="size-4 text-muted-foreground" /> Clinical Artifacts</div>
+        {view.invoice.appointment_id ? <ClinicalArtifacts appointmentId={view.invoice.appointment_id} /> : <p className="text-xs text-muted-foreground">No visit linked.</p>}
+      </section>
       <SlotStub icon={<Sparkles className="size-4" />} title="Recommendations" note="Treatment planning — future" />
     </aside>
   );
@@ -369,11 +373,11 @@ function SlotStub({ icon, title, note }: { icon: React.ReactNode; title: string;
   );
 }
 
-function CheckoutCompletion({ view, onPrint, onDone }: { view: CheckoutView; onPrint: () => void; onDone: () => void }) {
+function CheckoutCompletion({ view, onDone }: { view: CheckoutView; onDone: () => void }) {
   const [nextOpen, setNextOpen] = React.useState(false);
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 p-4">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-lg">
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border bg-card p-6 shadow-lg">
         <div className="mb-4 flex items-center gap-2">
           <CheckCircle2 className="size-6 text-success" />
           <h2 className="font-heading text-lg font-bold">Visit Completed Successfully</h2>
@@ -383,8 +387,13 @@ function CheckoutCompletion({ view, onPrint, onDone }: { view: CheckoutView; onP
           <CheckItem>Payment Recorded · {inr(view.money.collected)}</CheckItem>
           <CheckItem>Invoice Ready · {view.invoice.invoice_number}</CheckItem>
         </ul>
+        {view.invoice.appointment_id && (
+          <div className="mt-4 overflow-y-auto">
+            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Clinical Artifacts</div>
+            <ClinicalArtifacts appointmentId={view.invoice.appointment_id} />
+          </div>
+        )}
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onPrint}><Printer className="size-4" /> Print invoice</Button>
           <div className="relative">
             <Button variant="outline" onClick={() => setNextOpen((o) => !o)}>Next Action <ChevronDown className="size-4" /></Button>
             {nextOpen && (
