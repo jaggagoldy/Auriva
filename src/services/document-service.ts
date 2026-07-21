@@ -219,6 +219,18 @@ export async function getVisitDocuments(appointmentId: string, clinicId: string)
   }));
 }
 
+/** Resolve an invoice to its (ensured) invoice Document — for repointing legacy
+ *  invoice print at the Document Platform (S1 Batch B). */
+export async function getInvoiceDocument(invoiceId: string, clinicId: string): Promise<{ id: string } | null> {
+  const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, clinic_id: clinicId }, select: { appointment_id: true } });
+  if (!invoice?.appointment_id) return null;
+  await ensureVisitDocuments(invoice.appointment_id, clinicId);
+  return prisma.document.findFirst({
+    where: { appointment_id: invoice.appointment_id, type: "invoice", status: "issued" },
+    select: { id: true },
+  });
+}
+
 /** One document with its immutable snapshot + metadata (for the viewer/print). */
 export async function getDocument(id: string, clinicId: string) {
   const doc = await prisma.document.findFirst({ where: { id, clinic_id: clinicId } });

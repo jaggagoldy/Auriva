@@ -6,6 +6,7 @@ import {
   DocumentError,
   ensureVisitDocuments,
   getDocument,
+  getInvoiceDocument,
   regenerateDocument,
 } from "@/services/document-service";
 
@@ -25,9 +26,14 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const appointmentId = url.searchParams.get("appointment_id");
+    const invoiceId = url.searchParams.get("invoice_id");
     if (id) return ok(await getDocument(id, auth.clinicId));
     if (appointmentId) return ok(await ensureVisitDocuments(appointmentId, auth.clinicId, auth.session.userId));
-    return badRequest("id or appointment_id is required.");
+    if (invoiceId) {
+      const doc = await getInvoiceDocument(invoiceId, auth.clinicId);
+      return doc ? ok(doc) : notFound("No invoice document for this invoice.");
+    }
+    return badRequest("id, appointment_id or invoice_id is required.");
   } catch (error) {
     return mapDocError(error) ?? mapDomainError(error) ?? serverError("Error loading documents", error);
   }

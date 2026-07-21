@@ -7,7 +7,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { IndianRupee, Loader2, Plus, Printer, ReceiptText } from "lucide-react";
+import { IndianRupee, Printer, ReceiptText } from "lucide-react";
 import { EmptyState } from "@/components/ui/states";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -245,78 +244,29 @@ export default function BillingBoard() {
         />
       )}
 
-      <InvoiceDetailDialog
-        invoice={viewingInvoice}
-        onClose={() => setViewingInvoice(null)}
-        onChanged={(updated) => {
-          setViewingInvoice(updated);
-          load();
-        }}
-      />
+      <InvoiceDetailDialog invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
     </div>
   );
 }
 
+// S1 Batch B: a READ-ONLY invoice inspector. Editing (charge/discount) moved to
+// the Checkout Workspace; Print points at the Document Platform. Kept for one
+// stabilization cycle as a safety net, then retired.
 function InvoiceDetailDialog({
   invoice,
   onClose,
-  onChanged,
 }: {
   invoice: InvoiceRow | null;
   onClose: () => void;
-  onChanged: (updated: InvoiceRow) => void;
 }) {
-  const [description, setDescription] = React.useState("");
-  const [amount, setAmount] = React.useState("");
-  const [kind, setKind] = React.useState<"charge" | "discount">("charge");
-  const [adding, setAdding] = React.useState(false);
-  const amountInputRef = React.useRef<HTMLInputElement>(null);
-
-  const quickFill = (desc: string) => {
-    setDescription(desc);
-    amountInputRef.current?.focus();
-  };
-
-  React.useEffect(() => {
-    setDescription("");
-    setAmount("");
-    setKind("charge");
-  }, [invoice?.id]);
-
   if (!invoice) return null;
   const items = parseItems(invoice.items_json);
-  const canEdit = invoice.status === "draft";
 
-  const addItem = async () => {
-    const desc = description.trim();
-    const value = Number(amount);
-    if (!desc || !Number.isFinite(value) || value <= 0) {
-      toast.error("Enter a description and a positive amount.");
-      return;
-    }
-    setAdding(true);
-    try {
-      const res = await fetch(`/api/billing/invoices/${invoice.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "add_item",
-          description: desc,
-          qty: 1,
-          unit_price: kind === "discount" ? -value : value,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "Could not add line item");
-      toast.success(kind === "discount" ? "Discount applied" : "Charge added");
-      setDescription("");
-      setAmount("");
-      onChanged(data);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add line item");
-    } finally {
-      setAdding(false);
-    }
+  const printDocument = async () => {
+    const res = await fetch(`/api/clinic/documents?invoice_id=${invoice.id}`, { cache: "no-store" });
+    if (!res.ok) { toast.error("No invoice document available."); return; }
+    const doc = await res.json();
+    window.open(`/print/document/${doc.id}`, "_blank");
   };
 
   return (
@@ -324,7 +274,7 @@ function InvoiceDetailDialog({
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>{invoice.invoice_number}</DialogTitle>
-          <DialogDescription>{invoice.patient.full_name}</DialogDescription>
+          <DialogDescription>{invoice.patient.full_name} · read-only</DialogDescription>
         </DialogHeader>
 
         <div className="divide-y rounded-lg border">
@@ -347,59 +297,12 @@ function InvoiceDetailDialog({
             <span className="tabular-nums">{formatINR(invoice.total)}</span>
           </div>
         </div>
-
-        {canEdit && (
-          <div className="space-y-2 rounded-lg border border-dashed p-3">
-            <div className="flex gap-1.5">
-              <Button
-                size="xs"
-                variant={kind === "charge" ? "default" : "outline"}
-                onClick={() => setKind("charge")}
-              >
-                Charge
-              </Button>
-              <Button
-                size="xs"
-                variant={kind === "discount" ? "default" : "outline"}
-                onClick={() => setKind("discount")}
-              >
-                Discount
-              </Button>
-              <div className="ml-auto flex gap-1">
-                <Button size="xs" variant="ghost" onClick={() => quickFill("Lab charge")}>
-                  + Lab
-                </Button>
-                <Button size="xs" variant="ghost" onClick={() => quickFill("Procedure charge")}>
-                  + Procedure
-                </Button>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="h-8"
-              />
-              <Input
-                ref={amountInputRef}
-                placeholder="₹"
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-                className="h-8 w-24"
-              />
-              <Button size="sm" disabled={adding} onClick={addItem}>
-                {adding ? <Loader2 className="animate-spin" /> : <Plus />}
-              </Button>
-            </div>
-          </div>
-        )}
+        <p className="text-xs text-muted-foreground">To change charges or collect payment, use <strong>Checkout</strong>.</p>
 
         <DialogFooter className="!justify-between">
-          <Button variant="outline" nativeButton={false} render={<a href={`/print/invoice/${invoice.id}`} target="_blank" rel="noreferrer" />}>
+          <Button variant="outline" onClick={printDocument}>
             <Printer />
-            Print / Receipt
+            Print / PDF
           </Button>
           <Button variant="ghost" onClick={onClose}>
             Close
