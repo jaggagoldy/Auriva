@@ -9,10 +9,12 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CalendarClock,
+  FileText,
   FlaskConical,
   IndianRupee,
   Pill,
   ReceiptText,
+  Sparkles,
   Stethoscope,
 } from "lucide-react";
 
@@ -23,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/shared/queue";
 import { cn } from "@/lib/utils";
 
-type TimelineKind = "appointment" | "prescription" | "lab" | "invoice" | "payment";
+type TimelineKind = "appointment" | "treatment_plan" | "prescription" | "lab" | "document" | "invoice" | "payment";
 
 interface TimelineEntry {
   id: string;
@@ -31,6 +33,9 @@ interface TimelineEntry {
   title: string;
   detail: string | null;
   at: string;
+  actor?: string | null;
+  status?: string | null;
+  link?: { kind: string; id: string } | null;
 }
 
 interface TimelineData {
@@ -49,8 +54,10 @@ const KIND_META: Record<
   { icon: React.ComponentType<{ className?: string }>; className: string }
 > = {
   appointment: { icon: Stethoscope, className: "bg-info/10 text-info dark:text-info" },
+  treatment_plan: { icon: Sparkles, className: "bg-honey-soft text-honey-deep" },
   prescription: { icon: Pill, className: "bg-info/10 text-info dark:text-info" },
   lab: { icon: FlaskConical, className: "bg-warning/10 text-warning dark:text-warning" },
+  document: { icon: FileText, className: "bg-muted text-muted-foreground dark:text-muted-foreground" },
   invoice: { icon: ReceiptText, className: "bg-muted text-muted-foreground dark:text-muted-foreground" },
   payment: { icon: IndianRupee, className: "bg-success/10 text-success dark:text-success" },
 };
@@ -73,11 +80,32 @@ function ageFromDob(dob: string | null): number | null {
 const FILTERS: Array<{ id: "all" | TimelineKind; label: string }> = [
   { id: "all", label: "All" },
   { id: "appointment", label: "Visits" },
+  { id: "treatment_plan", label: "Plans" },
+  { id: "document", label: "Documents" },
   { id: "prescription", label: "Prescriptions" },
   { id: "lab", label: "Labs" },
   { id: "invoice", label: "Invoices" },
   { id: "payment", label: "Payments" },
 ];
+
+// C3 — deep-links: every artifact-bearing entry opens its artifact (never a
+// dead-end). Documents/invoices/plans resolve to the Document viewer/print.
+async function openArtifact(link: { kind: string; id: string }) {
+  try {
+    if (link.kind === "document") { window.open(`/print/document/${link.id}`, "_blank"); return; }
+    if (link.kind === "invoice") {
+      const res = await fetch(`/api/clinic/documents?invoice_id=${link.id}`, { cache: "no-store" });
+      if (res.ok) { const d = await res.json(); window.open(`/print/document/${d.id}`, "_blank"); }
+      return;
+    }
+    if (link.kind === "plan") {
+      const res = await fetch("/api/clinic/treatment-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "print", plan_id: link.id }) });
+      if (res.ok) { const d = await res.json(); window.open(`/print/document/${d.id}`, "_blank"); }
+      return;
+    }
+  } catch { /* non-blocking */ }
+}
+const CLICKABLE = new Set(["document", "invoice", "plan"]);
 
 export default function PatientTimeline({ patientId }: { patientId: string }) {
   const router = useRouter();
@@ -193,8 +221,9 @@ export default function PatientTimeline({ patientId }: { patientId: string }) {
             ) : (
               <ol className="relative space-y-1 border-l pl-6">
                 {visibleEntries.map((entry) => {
-                  const meta = KIND_META[entry.kind];
+                  const meta = KIND_META[entry.kind] ?? KIND_META.appointment;
                   const Icon = meta.icon;
+                  const clickable = entry.link && CLICKABLE.has(entry.link.kind);
                   return (
                     <li key={entry.id} className="relative pb-4">
                       <span
@@ -205,12 +234,19 @@ export default function PatientTimeline({ patientId }: { patientId: string }) {
                       >
                         <Icon className="size-3.5" />
                       </span>
-                      <div className="flex items-baseline justify-between gap-3">
+                      <div
+                        className={cn("flex items-baseline justify-between gap-3", clickable && "-mx-2 cursor-pointer rounded-md px-2 py-1 hover:bg-muted/50")}
+                        onClick={clickable ? () => openArtifact(entry.link!) : undefined}
+                        role={clickable ? "button" : undefined}
+                      >
                         <div className="min-w-0">
-                          <div className="text-sm font-medium">{entry.title}</div>
-                          {entry.detail && (
+                          <div className="text-sm font-medium">
+                            {entry.title}
+                            {clickable && <span className="ml-1.5 text-[11px] font-normal text-primary">View →</span>}
+                          </div>
+                          {(entry.detail || entry.actor || entry.status) && (
                             <div className="truncate text-xs text-muted-foreground">
-                              {entry.detail}
+                              {[entry.detail, entry.actor, entry.status].filter(Boolean).join(" · ")}
                             </div>
                           )}
                         </div>

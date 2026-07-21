@@ -45,6 +45,21 @@ Pure **read-model / aggregation** — no new ledger, no new tables. C3 extends `
 ## Demo Story
 > A returning patient arrives. The doctor opens their **Clinical Timeline** before the consult and sees, in one scroll: last visit + diagnosis, the **active Physio Plan at session 6/10**, the last **Invoice** and **Receipt**, and the **Visit Summary** document — each a tap away, no tab-switching. Filter to **Documents** → every artifact for this patient, newest first.
 
+## Integrates With (new PO rule)
+Revenue Platform · Treatment Planning (C1) · Procedure Management (C2) · Documents (B3) · Calendar · Patient App. **Positions the Timeline as the connective tissue of the platform, not a feature.**
+
+## PO Amendments (approved — incorporated)
+1. **Timeline philosophy (architectural law):** *"The Timeline never owns data; it only reveals relationships between existing clinical and operational artifacts."*
+2. **Canonical event taxonomy (documented now, UI reveals progressively):** **Clinical** — Visit · Diagnosis(future) · Procedure/Session · Treatment Plan · Prescription(C4); **Documents** — Visit Summary · Invoice · Receipt · Credit Note · Refund · Treatment Plan PDF; **Financial** — Invoice · Payment · Refund; **Laboratory** — Lab Order · Lab Result; **Communication**(C5) — SMS · WhatsApp · Email; **System** — Patient Created · Plan Extended · Plan Completed. Future milestones use these names — no incompatible types.
+3. **Canonical entry shape (every entry, every future module conforms):** `timestamp · icon · title · subtitle · actor · status · link`.
+4. **Patient surface = "My Health Record", not "Activity Log":** the patient app uses warmer, human language over the *same* events.
+5. **Progressive loading (rule):** newest-first, paginated — never load the whole history on first render.
+6. **Future-events rule:** every future milestone must answer *"Should this create a Timeline event?"* (C4 Prescription Issued → yes; C5 Reminder Sent → yes; Phase-4 Membership Purchased → yes).
+7. **Deep-links mandatory:** every entry is `Timeline → one click → artifact`. Never a dead-end / informational-only.
+8. **Consult Context (future, recorded):** before a consult, the Timeline auto-focuses Last Visit / Last Diagnosis / Current Plan / Last Prescription rather than the newest generic event — a future default mode.
+9. **Deterministic ordering (built + tested):** same-timestamp entries use a stable tie-break (timestamp desc, then a fixed kind-priority, then id) — never DB retrieval order.
+10. **Customer Promise strengthened:** *"Understand every patient's story in one place."*
+
 ## Future behaviour (recorded per PO, not built)
 - **Course Completion split** (PO note): surface *"Course Completed — awaiting doctor review"* — separating **operational completion** (all sessions attended) from **clinical completion** (doctor signs off). The Timeline is the natural place to show this; candidate for C3-surface / C4.
 
