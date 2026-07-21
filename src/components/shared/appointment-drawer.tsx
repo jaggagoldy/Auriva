@@ -237,8 +237,13 @@ export default function AppointmentDrawer({
                       <Button
                         variant="outline"
                         size="sm"
-                        nativeButton={false}
-                        render={<a href={`/print/visit-summary/${appointment.id}`} target="_blank" rel="noreferrer" />}
+                        onClick={async () => {
+                          // S1 Batch C: Visit Summary is a Document Platform artifact now.
+                          const res = await fetch(`/api/clinic/documents?appointment_id=${appointment.id}`, { cache: "no-store" });
+                          const docs: { id: string; type: string }[] = res.ok ? await res.json() : [];
+                          const vs = docs.find((d) => d.type === "visit_summary");
+                          if (vs) window.open(`/print/document/${vs.id}`, "_blank");
+                        }}
                       >
                         <FileText />
                         Visit summary
