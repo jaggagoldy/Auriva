@@ -331,7 +331,7 @@ This is the story Sales, Onboarding, and Release Notes can all use — a clinic 
 | S1 Stabilization | — | ✅ | ✅ | — | — | ✅ | ✅ | Zero legacy-path incidents | (cleanup, mostly invisible) | ✅ Shipped |
 | **C1 Treatment Planning** | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Follow-up booking rate | "Plan" in consult + checkout | ✅ **Approved** (+C1.1 polish) |
 | C2 Procedure Management | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Session completion rate | Follow-ups worklist + progress | ✅ **Approved** |
-| C3 Clinical Timeline | 1–2 | ✅ | ✅ | — | ✅ | ✅ | ✅ | Consult prep time (qualitative) | Enriched deep-linked Timeline (doctor + reception) | 🧪 **In PO review** |
+| C3 Clinical Timeline | 1–2 | ✅ | ✅ | — | ✅ | ✅ | ✅ | Consult prep time (qualitative) | Enriched deep-linked Timeline (doctor + reception) | ✅ **Approved** |
 | C4 Prescription Platform | 1–2 | 🔲 | 🔲 | — | 🔲 | 🔲 | 🔲 | % structured prescriptions | Structured Rx editor | ⬜ Planned |
 | C5 Communication Platform | 2–3 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | No-show rate reduction | SMS/WhatsApp/Email | ⬜ Planned |
 

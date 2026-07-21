@@ -103,4 +103,22 @@ The doctor stops reconstructing a patient's history by hand before each consult;
 | **Tests** | 620/620 pass (3 new C3 tests) · lint ✅ · build ✅ |
 | **Deferred** | Patient-app "My Health Record" enrichment · "Load older" UI · Consult Context focus mode · Course Completion split |
 | **Unlocks** | C4 (Prescription) and C5 (Communication) surface through the Timeline |
-| **Status** | 🧪 In Product-Office review |
+| **Status** | ✅ **Approved** — Product Office (accepted) |
+
+---
+
+## 7. Platform Contracts Introduced
+
+> Recorded per PO (new documentation standard from C4 onward; captured retroactively for C3). These are the stable interfaces future milestones build on — as opposed to internal implementation detail.
+
+| Contract | Shape / rule | Consumed by |
+|----------|--------------|-------------|
+| **`TimelineEntry` contract** | `{ id, kind, title, detail (subtitle), at (ISO), actor?, status?, link? }` — the canonical entry shape every future timeline-emitting module conforms to | Any surface rendering a timeline |
+| **Deep-link contract** | `link: { kind, id }` where `kind ∈ { appointment, plan, document, prescription, lab, invoice, payment }` — every artifact-backed entry resolves `Timeline → one click → artifact`; never a dead-end | Timeline component `openArtifact()` |
+| **Timeline ordering contract** | Deterministic: `at` DESC → fixed `KIND_ORDER` priority → `id` — never DB retrieval order | All timeline consumers (stable across calls) |
+| **Timeline pagination contract** | `getPatientTimeline(patientId, clinicId, { limit })` returns `{ entries, has_more, total }`; newest-first slice, default limit 40 | Progressive-loading UI |
+
+## 8. Recorded future direction (per PO — not built)
+
+- **Timeline Highlight Events** — eventually some events carry more visual weight (🩺 Visit Completed · ⭐ New Treatment Plan · 💊 Prescription Issued · ⚠ Missed Session · 💰 Payment Received). The data model already supports this via `kind` + `status`; it becomes a **purely presentational** enhancement later. No implementation now.
+- **Consult Context focus mode**, **Patient "My Health Record"** experience, **"Load older"** UI — deferred (see §4).
