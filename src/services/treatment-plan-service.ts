@@ -109,13 +109,16 @@ export async function extendPlan(planId: string, clinicId: string, additional: n
   return getPlan(planId, clinicId);
 }
 
-/** Reception books the next unbooked planned session as an appointment. */
+/** Reception books the next bookable session (planned or needs_rebook) as an
+ *  appointment. Concurrency-safe: the appointment_id is claimed with an atomic
+ *  guarded update, so two receptionists can't double-book the same session
+ *  (Amendment 9). */
 export async function bookNextSession(planId: string, clinicId: string, input: { scheduledTime: string; doctorId?: string | null }, actorUserId?: string | null) {
   const plan = await requirePlan(planId, clinicId);
   if (!planAcceptsSessions(plan.status as PlanStatus)) throw new TreatmentPlanError("Only an active plan's sessions can be booked.");
   const next = await prisma.treatmentPlanSession.findFirst({
-    where: { plan_id: plan.id, status: "planned", appointment_id: null },
-    orderBy: { sequence: "asc" },
+    where: { plan_id: plan.id, appointment_id: null, status: { in: ["planned", "needs_rebook"] } },
+    orderBy: [{ status: "asc" }, { sequence: "asc" }], // needs_rebook (missed) first, then by sequence
   });
   if (!next) throw new TreatmentPlanError("No unbooked sessions remain — extend the plan first.");
 
@@ -125,9 +128,45 @@ export async function bookNextSession(planId: string, clinicId: string, input: {
     clinicId,
     scheduledTime: input.scheduledTime,
   });
-  await prisma.treatmentPlanSession.update({ where: { id: next.id }, data: { appointment_id: appt.id } });
+  // Atomic claim — only succeeds if the session is still unbooked.
+  const claim = await prisma.treatmentPlanSession.updateMany({
+    where: { id: next.id, appointment_id: null },
+    data: { appointment_id: appt.id, status: "planned" },
+  });
+  if (claim.count === 0) {
+    await prisma.appointment.delete({ where: { id: appt.id } }).catch(() => {});
+    throw new TreatmentPlanError("That session was just booked by someone else — please try again.");
+  }
   await recordAudit({ organizationId: await orgId(clinicId), actorUserId, action: "treatment_session_booked", detail: `${plan.title} · session ${next.sequence}` });
   return getPlan(planId, clinicId);
+}
+
+/** Reception reschedules a booked session (moves its appointment time). */
+export async function rescheduleSession(sessionId: string, clinicId: string, scheduledTime: string, actorUserId?: string | null) {
+  const session = await prisma.treatmentPlanSession.findFirst({ where: { id: sessionId, plan: { clinic_id: clinicId } } });
+  if (!session) throw new TreatmentPlanError("Session not found in this clinic.");
+  if (!session.appointment_id) throw new TreatmentPlanError("This session isn't booked yet.");
+  const when = new Date(scheduledTime);
+  if (Number.isNaN(when.getTime())) throw new TreatmentPlanError("Invalid date/time.");
+  await prisma.appointment.update({ where: { id: session.appointment_id }, data: { scheduled_time: when } });
+  await recordAudit({ organizationId: await orgId(clinicId), actorUserId, action: "treatment_session_rescheduled", detail: `session ${session.sequence}` });
+  return getPlan(session.plan_id, clinicId);
+}
+
+/** Session notes — clinical (doctor) and operational (reception), never mixed
+ *  (Amendment 4). The caller (API) gates which field a role may set. */
+export async function setSessionNote(sessionId: string, clinicId: string, patch: { clinicalNote?: string | null; operationalNote?: string | null }, actorUserId?: string | null) {
+  const session = await prisma.treatmentPlanSession.findFirst({ where: { id: sessionId, plan: { clinic_id: clinicId } } });
+  if (!session) throw new TreatmentPlanError("Session not found in this clinic.");
+  await prisma.treatmentPlanSession.update({
+    where: { id: session.id },
+    data: {
+      ...(patch.clinicalNote !== undefined ? { clinical_note: patch.clinicalNote?.trim() || null } : {}),
+      ...(patch.operationalNote !== undefined ? { operational_note: patch.operationalNote?.trim() || null } : {}),
+    },
+  });
+  await recordAudit({ organizationId: await orgId(clinicId), actorUserId, action: "treatment_session_note", detail: `session ${session.sequence}` });
+  return getPlan(session.plan_id, clinicId);
 }
 
 /** Reception cancels a planned session (frees it; the plan can be re-booked/extended). */
@@ -142,9 +181,12 @@ export async function cancelSession(sessionId: string, clinicId: string, actorUs
 
 // ---- reads --------------------------------------------------------------
 
-function planView(plan: { id: string; title: string; status: string; sessions_planned: number; service_id: string; doctor_id: string; notes: string | null; created_at: Date; sessions: { id: string; sequence: number; status: string; appointment_id: string | null }[] }) {
+interface SessionRow { id: string; sequence: number; status: string; appointment_id: string | null; clinical_note: string | null; operational_note: string | null }
+function planView(plan: { id: string; title: string; status: string; sessions_planned: number; service_id: string; doctor_id: string; patient_id: string; notes: string | null; created_at: Date; sessions: SessionRow[] }) {
+  // Progress is ATTENDANCE-based (Amendment 6): completed / planned, never booked.
   const completed = plan.sessions.filter((s) => s.status === "completed").length;
   const booked = plan.sessions.filter((s) => s.status === "planned" && s.appointment_id).length;
+  const needsRebook = plan.sessions.filter((s) => s.status === "needs_rebook").length;
   return {
     id: plan.id,
     title: plan.title,
@@ -152,13 +194,20 @@ function planView(plan: { id: string; title: string; status: string; sessions_pl
     sessions_planned: plan.sessions_planned,
     sessions_completed: completed,
     sessions_booked: booked,
+    sessions_needs_rebook: needsRebook,
     service_id: plan.service_id,
     doctor_id: plan.doctor_id,
+    patient_id: plan.patient_id,
     notes: plan.notes,
     created_at: plan.created_at.toISOString(),
     sessions: plan.sessions
       .sort((a, b) => a.sequence - b.sequence)
-      .map((s) => ({ id: s.id, sequence: s.sequence, status: s.status, appointment_id: s.appointment_id })),
+      .map((s) => ({
+        id: s.id, sequence: s.sequence,
+        status: s.appointment_id && s.status === "planned" ? "booked" : s.status, // "booked" is derived
+        appointment_id: s.appointment_id,
+        clinical_note: s.clinical_note, operational_note: s.operational_note,
+      })),
   };
 }
 
@@ -193,6 +242,66 @@ export async function getPatientPlans(patientId: string, clinicId: string) {
 export async function getActivePlansForPatient(patientId: string, clinicId: string) {
   const plans = await prisma.treatmentPlan.findMany({ where: { patient_id: patientId, clinic_id: clinicId, status: "active" }, include: { sessions: true }, orderBy: { created_at: "desc" } });
   return withNextSession(plans.map(planView));
+}
+
+/** Patient-app read — the patient's own plans (all clinics). */
+export async function getPlansForPatientApp(patientId: string) {
+  const plans = await prisma.treatmentPlan.findMany({ where: { patient_id: patientId, status: { in: ["active", "completed"] } }, include: { sessions: true }, orderBy: { created_at: "desc" } });
+  return withNextSession(plans.map(planView));
+}
+
+/**
+ * C2 — the reception "Treatment Follow-ups" command centre. For active plans in
+ * the clinic: counters (Due Today · Overdue · Booked · Needs Re-book) + a
+ * worklist of patients who need attention (missed a session, overdue, or
+ * mid-course with nothing booked next). Attendance-based throughout.
+ */
+export async function getTreatmentFollowups(clinicId: string) {
+  const plans = await prisma.treatmentPlan.findMany({
+    where: { clinic_id: clinicId, status: "active" },
+    include: { sessions: true, clinic: { select: { id: true } } },
+  });
+  const patientIds = plans.map((p) => p.patient_id);
+  const patients = await prisma.patientProfile.findMany({ where: { id: { in: patientIds } }, select: { id: true, full_name: true } });
+  const nameById = new Map(patients.map((p) => [p.id, p.full_name]));
+  const apptIds = plans.flatMap((p) => p.sessions.filter((s) => s.status === "planned" && s.appointment_id).map((s) => s.appointment_id!));
+  const appts = apptIds.length ? await prisma.appointment.findMany({ where: { id: { in: apptIds } }, select: { id: true, scheduled_time: true } }) : [];
+  const timeById = new Map(appts.map((a) => [a.id, a.scheduled_time]));
+
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday); endOfToday.setDate(endOfToday.getDate() + 1);
+
+  let dueToday = 0, overdue = 0, booked = 0, needsRebook = 0, completed = 0;
+  const items: { plan_id: string; patient_name: string; title: string; reason: string; sessions_completed: number; sessions_planned: number }[] = [];
+
+  for (const p of plans) {
+    const view = planView(p);
+    completed += view.sessions_completed;
+    let planNeedsAttention = "";
+    const rebook = p.sessions.filter((s) => s.status === "needs_rebook").length;
+    if (rebook > 0) { needsRebook += rebook; planNeedsAttention = "Needs re-book"; }
+
+    for (const s of p.sessions.filter((x) => x.status === "planned" && x.appointment_id)) {
+      const t = timeById.get(s.appointment_id!);
+      if (!t) continue;
+      if (t >= startOfToday && t < endOfToday) { dueToday += 1; if (!planNeedsAttention) planNeedsAttention = "Session due today"; }
+      else if (t < startOfToday) { overdue += 1; planNeedsAttention = "Overdue session"; }
+      else booked += 1;
+    }
+    // Mid-course but nothing booked next (and sessions remain)
+    const hasUnbooked = p.sessions.some((s) => (s.status === "planned" || s.status === "needs_rebook") && !s.appointment_id);
+    const hasFuture = p.sessions.some((s) => s.status === "planned" && s.appointment_id && (timeById.get(s.appointment_id!) ?? new Date(0)) >= startOfToday);
+    if (!planNeedsAttention && hasUnbooked && !hasFuture && view.sessions_completed > 0) planNeedsAttention = "Book next session";
+
+    if (planNeedsAttention) {
+      items.push({ plan_id: p.id, patient_name: nameById.get(p.patient_id) ?? "Patient", title: p.title, reason: planNeedsAttention, sessions_completed: view.sessions_completed, sessions_planned: view.sessions_planned });
+    }
+  }
+
+  return {
+    counters: { due_today: dueToday, overdue, booked, completed, needs_rebook: needsRebook },
+    items: items.sort((a, b) => a.patient_name.localeCompare(b.patient_name)),
+  };
 }
 
 /** Generate a printable Treatment Plan document (immutable snapshot, B3 platform). */

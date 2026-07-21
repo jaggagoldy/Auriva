@@ -33,6 +33,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
 import { CheckoutWorkspace } from "@/components/shared/checkout/checkout-workspace";
+import { TreatmentFollowups } from "@/components/shared/treatment-plan/treatment-plan";
 import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
 import { PracticeSetup } from "@/components/clinic/practice-setup";
 import { BillingPolicySettings } from "@/components/clinic/billing-policy-settings";
@@ -49,7 +50,7 @@ import { PlanScreen } from "@/components/clinic/plan-screen";
 
 // BRD-043 Sprint 5 (US-601): the flat "settings" view is replaced by a
 // Settings GROUP — Practice / Team / Plan.
-type View = "home" | "today" | "calendar" | "treatments" | "payments" | "practice" | "team" | "plan";
+type View = "home" | "today" | "followups" | "calendar" | "treatments" | "payments" | "practice" | "team" | "plan";
 const SETTINGS_VIEWS: View[] = ["practice", "team", "plan"];
 type Save = "idle" | "saving" | "saved";
 
@@ -175,6 +176,7 @@ export default function MyClinicWorkspace() {
   const ALL_NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
     { key: "home", label: "Dashboard", q: "What needs me today?", icon: <Home className="size-4" /> },
     { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
+    { key: "followups", label: "Follow-ups", q: "Who needs attention today?", icon: <Activity className="size-4" /> },
     { key: "calendar", label: "Calendar", q: "When am I free?", icon: <CalendarRange className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
@@ -189,9 +191,9 @@ export default function MyClinicWorkspace() {
     { key: "plan", label: "Plan" },
   ];
   const NAV_BY_ROLE: Record<string, View[]> = {
-    managing_doctor: ["home", "today", "calendar", "treatments", "payments", "practice", "team", "plan"],
-    practice_owner: ["home", "today", "calendar", "treatments", "payments", "practice", "team", "plan"],
-    receptionist: ["home", "today", "payments"],
+    managing_doctor: ["home", "today", "followups", "calendar", "treatments", "payments", "practice", "team", "plan"],
+    practice_owner: ["home", "today", "followups", "calendar", "treatments", "payments", "practice", "team", "plan"],
+    receptionist: ["home", "today", "followups", "payments"],
     doctor: ["home"],
   };
   const allowed = NAV_BY_ROLE[role ?? ""] ?? ["home"];
@@ -277,6 +279,11 @@ export default function MyClinicWorkspace() {
               <Card className="p-8 text-center text-sm text-muted-foreground">Couldn&apos;t load your clinic.</Card>
             ) : view === "today" ? (
               <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setPendingStart({ appointmentId: appt, patientName: name })} />
+            ) : view === "followups" ? (
+              <div className="space-y-4">
+                <div><h1 className="text-xl font-semibold tracking-tight">Treatment Follow-ups</h1><p className="text-sm text-muted-foreground">Patients mid-course who need a session booked or re-booked.</p></div>
+                <TreatmentFollowups />
+              </div>
             ) : view === "calendar" ? (
               <ClinicCalendar doctorId={ov.doctorId} />
             ) : view === "treatments" ? (

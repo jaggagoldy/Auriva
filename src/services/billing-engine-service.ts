@@ -182,6 +182,20 @@ export async function capturePlanSessionCharge(tx: Prisma.TransactionClient, app
 }
 
 /**
+ * C2 — a booked Treatment Plan session's visit no-showed/cancelled → the session
+ * needs re-booking (a distinct business state), never silently lost. Lives here
+ * (with capturePlanSessionCharge) to avoid an appointment↔plan import cycle. A
+ * completed (charged) session is immutable and never reacts. Returns true if a
+ * session was affected.
+ */
+export async function reflectSessionAttendance(tx: Prisma.TransactionClient, appointmentId: string): Promise<boolean> {
+  const session = await tx.treatmentPlanSession.findFirst({ where: { appointment_id: appointmentId, status: "planned" } });
+  if (!session) return false;
+  await tx.treatmentPlanSession.update({ where: { id: session.id }, data: { status: "needs_rebook", appointment_id: null } });
+  return true;
+}
+
+/**
  * Finalize a visit's remaining draft ServiceEvents and settle them into an
  * invoice — the event-sourced settlement path WITHOUT any consultation-fee seed.
  * `completeVisitInvoicing` = ensure-consultation + this. C1 uses this directly

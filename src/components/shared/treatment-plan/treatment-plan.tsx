@@ -204,6 +204,109 @@ export function PatientPlanCard({ plans }: { plans: PlanView[] }) {
   );
 }
 
+// ---- Treatment Follow-ups (reception command centre) ------------------------
+interface Followups {
+  counters: { due_today: number; overdue: number; booked: number; completed: number; needs_rebook: number };
+  items: { plan_id: string; patient_name: string; title: string; reason: string; sessions_completed: number; sessions_planned: number }[];
+}
+const REASON_TONE: Record<string, string> = {
+  "Needs re-book": "bg-destructive/10 text-destructive",
+  "Overdue session": "bg-warning/10 text-warning dark:text-warning",
+  "Session due today": "bg-primary/10 text-primary",
+  "Book next session": "bg-honey-soft text-honey-deep",
+};
+
+export function TreatmentFollowups() {
+  const [data, setData] = React.useState<Followups | null>(null);
+  const [reload, setReload] = React.useState(0);
+  const [bookingFor, setBookingFor] = React.useState<string | null>(null);
+  const [when, setWhen] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/clinic/treatment-plans?followups=1", { cache: "no-store" });
+      if (cancelled) return;
+      setData(res.ok ? await res.json() : { counters: { due_today: 0, overdue: 0, booked: 0, completed: 0, needs_rebook: 0 }, items: [] });
+    })();
+    return () => { cancelled = true; };
+  }, [reload]);
+
+  async function book(planId: string) {
+    if (!when) return toast.info("Pick a date & time.");
+    setBusy(true);
+    try {
+      const d = await planApi({ action: "book_next", plan_id: planId, scheduled_time: new Date(when).toISOString() });
+      if (d) { setBookingFor(null); setWhen(""); setReload((x) => x + 1); toast.success("Session booked."); }
+    } finally { setBusy(false); }
+  }
+
+  if (!data) return <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading follow-ups…</div>;
+  const c = data.counters;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <Counter label="Due today" value={c.due_today} tone="text-primary" />
+        <Counter label="Overdue" value={c.overdue} tone="text-warning" />
+        <Counter label="Needs re-book" value={c.needs_rebook} tone="text-destructive" />
+        <Counter label="Booked" value={c.booked} tone="text-foreground" />
+        <Counter label="Completed" value={c.completed} tone="text-success" />
+      </div>
+
+      {data.items.length === 0 ? (
+        <p className="rounded-xl border border-dashed bg-muted/20 py-8 text-center text-sm text-muted-foreground">Everyone's on track — no follow-ups need attention.</p>
+      ) : (
+        <div className="divide-y rounded-xl border">
+          {data.items.map((it) => (
+            <div key={it.plan_id} className="px-3 py-2.5">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{it.patient_name}</div>
+                  <div className="text-xs text-muted-foreground">{it.title} · {it.sessions_completed}/{it.sessions_planned}</div>
+                </div>
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", REASON_TONE[it.reason] ?? "bg-muted text-muted-foreground")}>{it.reason}</span>
+                <Button variant="outline" size="sm" onClick={() => { setBookingFor(bookingFor === it.plan_id ? null : it.plan_id); setWhen(""); }}>Book</Button>
+              </div>
+              {bookingFor === it.plan_id && (
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="flex-1" />
+                  <Button size="sm" disabled={busy} onClick={() => book(it.plan_id)}>{busy && <Loader2 className="size-4 animate-spin" />} Confirm</Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function Counter({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-3 text-center">
+      <div className={cn("font-heading text-2xl font-bold tabular-nums", tone)}>{value}</div>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+// ---- Patient-app read wrapper ----------------------------------------------
+export function PatientPlans() {
+  const [plans, setPlans] = React.useState<PlanView[] | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/patient/treatment-plans", { cache: "no-store" });
+      if (cancelled) return;
+      setPlans(res.ok ? await res.json() : []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!plans || plans.length === 0) return null;
+  return <PatientPlanCard plans={plans} />;
+}
+
 // convenience: a collapsible section wrapper (checkout side rail)
 export function PlanSection({ children, title = "Treatment Plans" }: { children: React.ReactNode; title?: string }) {
   const [open, setOpen] = React.useState(true);

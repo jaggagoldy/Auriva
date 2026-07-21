@@ -17,6 +17,7 @@ export interface ScheduleAppointment {
   status: string;
   walk_in: boolean;
   invoice_status: string | null;
+  plan_label: string | null; // C2: "Title (Session n/N)" for plan-session appointments
 }
 export interface ScheduleBlock {
   id: string;
@@ -98,6 +99,16 @@ export async function getClinicSchedule(
   }
   const byDate = new Map(daysArr.map((d) => [d.date, d]));
 
+  // C2: label plan-session appointments "Title (Session n/N)".
+  const apptIds = appts.map((a) => a.id);
+  const planSessions = apptIds.length
+    ? await prisma.treatmentPlanSession.findMany({
+        where: { appointment_id: { in: apptIds } },
+        select: { appointment_id: true, sequence: true, plan: { select: { title: true, sessions_planned: true } } },
+      })
+    : [];
+  const planLabelByAppt = new Map(planSessions.map((s) => [s.appointment_id!, `${s.plan.title} (Session ${s.sequence}/${s.plan.sessions_planned})`]));
+
   for (const a of appts) {
     const day = byDate.get(localDateKey(a.scheduled_time));
     if (!day) continue;
@@ -108,6 +119,7 @@ export async function getClinicSchedule(
       status: a.status,
       walk_in: a.walk_in,
       invoice_status: a.invoices[0]?.status ?? null,
+      plan_label: planLabelByAppt.get(a.id) ?? null,
     });
   }
 

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 // effects/handlers (never in render) to satisfy react-hooks/purity.
 
 type CalView = "day" | "week" | "month";
-interface SAppt { id: string; time: string; patient_name: string; status: string; walk_in: boolean; invoice_status: string | null }
+interface SAppt { id: string; time: string; patient_name: string; status: string; walk_in: boolean; invoice_status: string | null; plan_label: string | null }
 interface SBlock { id: string; start: string; end: string; reason: string | null }
 interface SDay { date: string; appointments: SAppt[]; blocks: SBlock[] }
 
@@ -172,7 +172,10 @@ function ApptCard({ a }: { a: SAppt }) {
     <div className="flex items-center gap-2 rounded-lg border bg-card px-2.5 py-1.5 text-[12px]">
       <StatusDot status={a.status} invoice={a.invoice_status} />
       <span className="font-semibold tabular-nums">{fmtTime(a.time)}</span>
-      <span className="min-w-0 flex-1 truncate">{a.patient_name}</span>
+      <span className="min-w-0 flex-1 truncate">
+        {a.patient_name}
+        {a.plan_label && <span className="ml-1 text-[11px] text-muted-foreground">· {a.plan_label}</span>}
+      </span>
     </div>
   );
 }

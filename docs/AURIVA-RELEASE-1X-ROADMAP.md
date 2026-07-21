@@ -330,7 +330,7 @@ This is the story Sales, Onboarding, and Release Notes can all use — a clinic 
 | B5 Financial Corrections | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Correction audit completeness | Corrections panel | ✅ Shipped |
 | S1 Stabilization | — | ✅ | ✅ | — | — | ✅ | ✅ | Zero legacy-path incidents | (cleanup, mostly invisible) | ✅ Shipped |
 | **C1 Treatment Planning** | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Follow-up booking rate | "Plan" in consult + checkout | ✅ **Approved** (+C1.1 polish) |
-| C2 Procedure Management | 2 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | Session completion rate | Progress tracker | ⬜ Planned |
+| C2 Procedure Management | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | Session completion rate | Follow-ups worklist + progress | 🧪 In PO review |
 | C3 Clinical Timeline | 1–2 | 🔲 | 🔲 | — | 🔲 | 🔲 | 🔲 | Consult prep time (qualitative) | Unified Timeline screen | ⬜ Planned |
 | C4 Prescription Platform | 1–2 | 🔲 | 🔲 | — | 🔲 | 🔲 | 🔲 | % structured prescriptions | Structured Rx editor | ⬜ Planned |
 | C5 Communication Platform | 2–3 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | No-show rate reduction | SMS/WhatsApp/Email | ⬜ Planned |

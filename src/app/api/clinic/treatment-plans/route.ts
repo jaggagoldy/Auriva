@@ -17,6 +17,9 @@ import {
   getActivePlansForPatient,
   getPatientPlans,
   getPlan,
+  getTreatmentFollowups,
+  rescheduleSession,
+  setSessionNote,
   updatePlanClinical,
 } from "@/services/treatment-plan-service";
 
@@ -37,10 +40,11 @@ export async function GET(request: NextRequest) {
     const planId = url.searchParams.get("plan_id");
     const patientId = url.searchParams.get("patient_id");
     const activePatientId = url.searchParams.get("active_patient_id");
+    if (url.searchParams.get("followups")) return ok(await getTreatmentFollowups(auth.clinicId));
     if (planId) return ok(await getPlan(planId, auth.clinicId));
     if (activePatientId) return ok(await getActivePlansForPatient(activePatientId, auth.clinicId));
     if (patientId) return ok(await getPatientPlans(patientId, auth.clinicId));
-    return badRequest("plan_id, patient_id or active_patient_id is required.");
+    return badRequest("plan_id, patient_id, active_patient_id or followups is required.");
   } catch (error) {
     return mapErr(error) ?? serverError("Error loading treatment plans", error);
   }
@@ -87,6 +91,17 @@ export async function POST(request: NextRequest) {
           return ok(await bookNextSession(String(body.plan_id), auth.clinicId, { scheduledTime: body.scheduled_time, doctorId: body.doctor_id ?? null }, actor));
         }
         case "cancel_session": return ok(await cancelSession(String(body.session_id), auth.clinicId, actor));
+        case "reschedule_session": {
+          if (typeof body.scheduled_time !== "string") return badRequest("scheduled_time is required.");
+          return ok(await rescheduleSession(String(body.session_id), auth.clinicId, body.scheduled_time, actor));
+        }
+        case "set_note": {
+          // Clinical note is doctor/owner-only; operational note is reception (Amendment 4).
+          if (body.clinical_note !== undefined && !(canAccessDoctorWorkspace(auth.session.role) || canAccessAdminPortal(auth.session.role))) {
+            return forbidden("Only a doctor or the owner can set a clinical note.");
+          }
+          return ok(await setSessionNote(String(body.session_id), auth.clinicId, { clinicalNote: body.clinical_note, operationalNote: body.operational_note }, actor));
+        }
         case "print": {
           const doc = await generatePlanDocument(String(body.plan_id), auth.clinicId, actor);
           return doc ? ok(doc) : notFound("Could not generate the plan document.");

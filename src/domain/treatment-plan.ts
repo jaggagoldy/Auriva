@@ -28,13 +28,20 @@ export function planAcceptsSessions(status: PlanStatus): boolean {
   return status === "active";
 }
 
-export type SessionStatus = "planned" | "completed" | "cancelled";
-export const SESSION_STATUSES: SessionStatus[] = ["planned", "completed", "cancelled"];
+// C2: `needs_rebook` — a Booked session whose visit no-showed/cancelled. A
+// distinct business state (not "planned again") so the follow-up queue can
+// prioritise it. A session is "Booked" when it has an appointment (derived).
+export type SessionStatus = "planned" | "completed" | "cancelled" | "needs_rebook";
+export const SESSION_STATUSES: SessionStatus[] = ["planned", "completed", "cancelled", "needs_rebook"];
 
 export function isSessionStatus(v: string): v is SessionStatus {
   return SESSION_STATUSES.includes(v as SessionStatus);
 }
-/** Only a planned session can be booked, completed, or cancelled. */
+/** Bookable: a fresh planned session or one that needs re-booking after a miss. */
+export function isSessionBookable(status: SessionStatus): boolean {
+  return status === "planned" || status === "needs_rebook";
+}
+/** A planned/needs_rebook session may still be cancelled by reception. */
 export function isSessionActionable(status: SessionStatus): boolean {
-  return status === "planned";
+  return status === "planned" || status === "needs_rebook";
 }

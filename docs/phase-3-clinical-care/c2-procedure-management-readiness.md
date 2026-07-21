@@ -46,5 +46,22 @@ Pure reuse of C1's `TreatmentPlan`/`TreatmentPlanSession`. C2 adds an **aggregat
 ## Demo Story
 > A patient is mid-course on a **10-session physio plan**. The schedule shows **"Physio (Session 4/10)"** on today's booking. The patient **no-shows** → the session returns to *needs re-book* and appears on reception's **Sessions due** list → reception re-books it → progress stays truthful (still 3/10 attended). The patient's app now shows their plan card with **3 of 10 complete**.
 
+## Operational question (per the PO framing)
+**C2 answers: "Who needs attention today?"** (C1 answered "what treatment is this patient prescribed?").
+
+## PO Amendments (approved — incorporated into the build)
+1. **Rename** the reception view **"Sessions Due" → "Treatment Follow-ups"** (clinical context + operational task).
+2. **Explicit session lifecycle:** `Planned → Booked (= planned + appointment) → Completed`; alternate `Booked → No-show/Cancelled → Needs Re-book → Booked`. **`needs_rebook` is a distinct business state** (a stored status, not just "planned again") so the follow-up queue is meaningful.
+3. **Treatment Follow-ups = an operational command center, not a table:** counters — **Due Today · Overdue · Booked · Completed · Needs Re-book** — over the worklist.
+4. **Session notes ownership (Principle 6):** two fields — **`clinical_note` (doctor)** and **`operational_note` (reception)** — never mixed.
+5. **Calendar** shows "Physio (Session 4/10)"; the design **allows future status color-coding** (Completed/Today/Missed/Re-book) — not built now, but structured for it.
+6. **Progress is ATTENDANCE-based, never booking-based:** 10 planned · 8 booked · 3 attended → **3/10**, never 8/10. Explicit rule.
+7. **KPIs (success metrics):** no-show recovery rate · average days between sessions · re-book success rate · plan completion rate · overdue sessions.
+8. **Demo — add the Doctor Extension scenario:** 8 complete → doctor adds 2 → reception sees 10 total → progress 8/10 (continuity C1↔C2).
+9. **QA — multi-receptionist concurrency:** two receptionists booking the same session → **no duplicate booking** (atomic optimistic guard: `updateMany where appointment_id IS NULL`; the loser is told to pick the next).
+10. **Architecture rule (added):** *"Procedure Management remains specialty-agnostic. Specialty-specific documentation (dental charts, physiotherapy assessments, speech-therapy milestones) will extend the session model through specialty modules rather than modifying the core `TreatmentPlanSession`."*
+
+**Schema delta (revised):** `TreatmentPlanSession` gains `clinical_note String?`, `operational_note String?`, and the `needs_rebook` status (no new column for status — same field). Additive migration.
+
 ---
-**STOP — awaiting Product Office approval of this readiness before implementation.** On approval I build the entire C2 milestone, then deliver the full Process v3.0 package (Completion Report · Demo · QA · Known Limitations · "What's New in C2" · Milestone Summary Card · Release Dashboard update) and stop for review.
+**Approved — proceeding to full C2 implementation under Process v3.0.** Deliverables at completion: Completion Report · Demo · QA · Known Limitations · "What's New in C2" · Milestone Summary Card · Release Dashboard update · STOP for review.

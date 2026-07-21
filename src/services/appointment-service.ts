@@ -11,7 +11,7 @@ import {
   timestampPatchFor,
 } from "@/domain/appointment-status";
 import { createAppointmentEvent } from "@/repositories/appointment-repository";
-import { capturePlanSessionCharge, completeVisitInvoicing, settleAllForAppointment } from "@/services/billing-engine-service";
+import { capturePlanSessionCharge, completeVisitInvoicing, reflectSessionAttendance, settleAllForAppointment } from "@/services/billing-engine-service";
 import { evaluateConsultationGate, PrepaidGateError } from "@/services/billing-policy-service";
 import { publishEvent } from "@/lib/events";
 
@@ -507,6 +507,12 @@ export async function transitionStatus(
         : await completeVisitInvoicing(tx, updated);
       generatedInvoiceId = invoice?.id ?? null;
       await scheduleFollowUpIfRequested(tx, updated);
+    }
+
+    // C2: a plan session's visit that no-showed or was cancelled returns the
+    // session to "needs re-book" — attendance stays truthful.
+    if (nextStatus === "no_show" || nextStatus === "cancelled") {
+      await reflectSessionAttendance(tx, updated.id);
     }
 
     return updated;

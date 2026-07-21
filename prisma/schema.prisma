@@ -1201,9 +1201,11 @@ model TreatmentPlanSession {
   id               String   @id @default(uuid())
   plan_id          String
   sequence         Int      // 1..N
-  status           String   @default("planned") // planned | completed | cancelled
+  status           String   @default("planned") // planned | completed | cancelled | needs_rebook (C2)
   appointment_id   String?  // set when booked
   service_event_id String?  // set when performed (the charge)
+  clinical_note    String?  // C2: doctor-owned session note
+  operational_note String?  // C2: reception-owned session note
   created_at       DateTime @default(now())
 
   plan TreatmentPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
