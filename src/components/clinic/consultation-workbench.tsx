@@ -24,6 +24,7 @@ import { DiagnosticsSelector } from "@/components/clinic/diagnostics-selector";
 import { getTest } from "@/domain/diagnostics-catalog";
 import { ConsultTemplates, type ClinicalTemplate } from "@/components/clinic/consult-templates";
 import { ServicesCaptureView, useServiceCapture } from "@/components/shared/service-capture";
+import { TreatmentPlanCreate } from "@/components/shared/treatment-plan/treatment-plan";
 
 // Phase 5 — Clinical consultation (matches design/mockups/auriva-clinical.html,
 // adapted to real data + the warm design tokens). This REPLACES the cramped
@@ -406,6 +407,12 @@ export function ConsultationWorkbench({
             <Section icon={<Banknote className="size-4" />} title="Clinical Services" hint="what was performed this visit">
               <ServicesCaptureView capture={capture} />
             </Section>
+
+            {context && (
+              <Section icon={<Banknote className="size-4" />} title="Treatment Plan" hint="plan a course of care">
+                <TreatmentPlanCreate appointmentId={appointmentId} patientId={context.patient_id} doctorId={context.doctor_id} />
+              </Section>
+            )}
           </div>
         </div>
       </div>
@@ -486,6 +493,8 @@ function SuggestChip({ children, onClick }: { children: React.ReactNode; onClick
 
 type VitalsState = { bp: string; pulse: string; temp: string; spo2: string };
 interface ConsultContext {
+  patient_id: string;
+  doctor_id: string;
   patient: {
     full_name: string;
     blood_group: string | null;

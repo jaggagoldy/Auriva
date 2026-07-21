@@ -40,6 +40,7 @@ import {
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
 import PrescriptionEditor from "@/components/doctor/prescription-editor";
 import { ServicesCaptureView, useServiceCapture } from "@/components/shared/service-capture";
+import { TreatmentPlanCreate } from "@/components/shared/treatment-plan/treatment-plan";
 
 function ageFromDob(dob: string | null): number | null {
   if (!dob) return null;
@@ -184,6 +185,18 @@ export default function ConsultWorkbench({
               underway, matching when /clinic mounts capture. */}
           {appointment.status === "in_consultation" && (
             <VisitServicesSection key={`svc-${appointment.id}`} appointmentId={appointment.id} />
+          )}
+
+          {appointment.status === "in_consultation" && (
+            <section className="rounded-xl border bg-card">
+              <header className="flex items-center gap-2 border-b px-4 py-3">
+                <Banknote className="size-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Treatment Plan</h2>
+              </header>
+              <div className="px-4 py-3">
+                <TreatmentPlanCreate appointmentId={appointment.id} patientId={appointment.patient.id} doctorId={doctorId} />
+              </div>
+            </section>
           )}
 
           <PrescriptionEditor

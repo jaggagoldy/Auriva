@@ -138,12 +138,61 @@ export async function completeVisitInvoicing(
     });
   }
 
-  // Finalize any remaining draft charges, then settle — one event-sourced path.
+  return settleAllForAppointment(tx, appointment.id);
+}
+
+/**
+ * C1 — if this appointment is a booked Treatment Plan session, capture the
+ * plan's service as the session's finalized ServiceEvent (the charge) and mark
+ * the session completed. Returns true if it was a plan session. Lives here (not
+ * in treatment-plan-service) to avoid an appointment↔plan import cycle; it is a
+ * plain data operation. A plan session charges exactly once, and only on
+ * completion — so unattended sessions never charge (financial integrity).
+ */
+export async function capturePlanSessionCharge(tx: Prisma.TransactionClient, appointmentId: string): Promise<boolean> {
+  const session = await tx.treatmentPlanSession.findFirst({
+    where: { appointment_id: appointmentId, status: "planned" },
+    include: { plan: true },
+  });
+  if (!session) return false;
+  const service = await tx.service.findFirst({ where: { id: session.plan.service_id, clinic_id: session.plan.clinic_id } });
+  if (!service) return false; // no service → can't charge; leave the session as-is
+
+  const event = await tx.serviceEvent.create({
+    data: {
+      clinic_id: session.plan.clinic_id,
+      patient_id: session.plan.patient_id,
+      appointment_id: appointmentId,
+      service_id: service.id,
+      service_version: service.version,
+      name: `${service.name} (session ${session.sequence})`,
+      category: service.category,
+      kind: "clinical",
+      unit_price: service.price,
+      qty: 1,
+      amount: service.price,
+      status: "finalized",
+      finalized_at: new Date(),
+      needs_catalog_review: false,
+      added_by_role: "doctor",
+    },
+  });
+  await tx.treatmentPlanSession.update({ where: { id: session.id }, data: { status: "completed", service_event_id: event.id } });
+  return true;
+}
+
+/**
+ * Finalize a visit's remaining draft ServiceEvents and settle them into an
+ * invoice — the event-sourced settlement path WITHOUT any consultation-fee seed.
+ * `completeVisitInvoicing` = ensure-consultation + this. C1 uses this directly
+ * for a plan session (whose charge is the plan's service, not a consult fee).
+ */
+export async function settleAllForAppointment(tx: Prisma.TransactionClient, appointmentId: string): Promise<{ id: string } | null> {
   await tx.serviceEvent.updateMany({
-    where: { appointment_id: appointment.id, status: "draft" },
+    where: { appointment_id: appointmentId, status: "draft" },
     data: { status: "finalized", finalized_at: new Date() },
   });
-  const result = await settleInvoiceFromEvents(appointment.id, { tx });
+  const result = await settleInvoiceFromEvents(appointmentId, { tx });
   return result.invoiceId ? { id: result.invoiceId } : null;
 }
 

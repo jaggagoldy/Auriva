@@ -19,11 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ClinicalArtifacts } from "@/components/shared/documents/clinical-artifacts";
+import { PlanSection, TreatmentPlanPanel } from "@/components/shared/treatment-plan/treatment-plan";
 
 // ---- view-model types (mirror checkout-service.getCheckout) -----------------
 interface Line { id: string; description: string; category: string | null; qty: number; unit_price: number; amount: number; removable?: boolean }
 interface CheckoutView {
-  invoice: { id: string; invoice_number: string; status: string; appointment_id: string | null };
+  invoice: { id: string; invoice_number: string; status: string; appointment_id: string | null; patient_id: string };
   visit: { patient_name: string; token: number | null; doctor_name: string | null; appointment_type: string; scheduled_time: string | null; status: string };
   groups: { clinical: Line[]; administrative: Line[] };
   concession: { amount: number; lineId: string | null };
@@ -313,8 +314,8 @@ function SideRail({ view, saving, act }: { view: CheckoutView; saving: boolean; 
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><FileText className="size-4 text-muted-foreground" /> Clinical Artifacts</div>
         {view.invoice.appointment_id ? <ClinicalArtifacts appointmentId={view.invoice.appointment_id} /> : <p className="text-xs text-muted-foreground">No visit linked.</p>}
       </section>
+      <PlanSection title="Treatment Plans"><TreatmentPlanPanel patientId={view.invoice.patient_id} /></PlanSection>
       {view.money.collected > 0 && <CorrectionsPanel invoiceId={view.invoice.id} />}
-      <SlotStub icon={<Sparkles className="size-4" />} title="Recommendations" note="Treatment planning — future" />
     </aside>
   );
 }
@@ -458,14 +459,6 @@ function PaymentHistory({ payments }: { payments: CheckoutView["payments"] }) {
   );
 }
 
-function SlotStub({ icon, title, note }: { icon: React.ReactNode; title: string; note: string }) {
-  return (
-    <section className="rounded-2xl border border-dashed bg-muted/20 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">{icon} {title}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{note}</p>
-    </section>
-  );
-}
 
 function CheckoutCompletion({ view, onDone }: { view: CheckoutView; onDone: () => void }) {
   const [nextOpen, setNextOpen] = React.useState(false);

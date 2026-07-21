@@ -252,6 +252,7 @@ model Clinic {
   invoices       Invoice[]
   serviceEvents  ServiceEvent[]
   documents      Document[]
+  treatmentPlans TreatmentPlan[]
   invitations    Invitation[]
   departments    Department[]
   // APS-029/010: profiles this org registered (registration provenance —
@@ -1166,4 +1167,48 @@ model Refund {
 
   @@index([credit_note_id])
   @@map("Refunds")
+}
+
+// C1 — Treatment Planning. A plan is a sequence of sessions against one catalog
+// service (a physio course, a dental root-canal course, etc.) — NOT a new
+// ledger. Each performed session becomes a ServiceEvent charged by the existing
+// engine, so unattended sessions never charge. The doctor owns clinical content
+// (service/count/notes); reception only books/reschedules/cancels sessions.
+model TreatmentPlan {
+  id                    String   @id @default(uuid())
+  clinic_id             String
+  patient_id            String
+  doctor_id             String
+  origin_appointment_id String?  // the consult where it was created
+  parent_plan_id        String?  // RESERVED (multi-phase plans) — no logic in C1
+  title                 String
+  service_id            String   // the catalog service each session bills (priced/named)
+  sessions_planned      Int
+  notes                 String?  // clinical notes — doctor-owned
+  status                String   @default("draft") // draft | active | completed | archived | cancelled
+  created_by_user_id    String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  clinic   Clinic                 @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  sessions TreatmentPlanSession[]
+
+  @@index([clinic_id, patient_id])
+  @@map("Treatment_Plans")
+}
+
+model TreatmentPlanSession {
+  id               String   @id @default(uuid())
+  plan_id          String
+  sequence         Int      // 1..N
+  status           String   @default("planned") // planned | completed | cancelled
+  appointment_id   String?  // set when booked
+  service_event_id String?  // set when performed (the charge)
+  created_at       DateTime @default(now())
+
+  plan TreatmentPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+  @@index([appointment_id])
+  @@map("Treatment_Plan_Sessions")
 }

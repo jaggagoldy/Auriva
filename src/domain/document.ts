@@ -12,6 +12,7 @@ export const DOCUMENT_TYPES = [
   // M3B B5 — financial corrections:
   "credit_note",
   "refund_receipt",
+  "treatment_plan",
   // reserved (not generated in B3):
   "prescription",
   "medical_certificate",
@@ -39,6 +40,7 @@ export const TYPE_CATEGORY: Record<DocumentType, DocumentCategory> = {
   receipt: "Financial",
   credit_note: "Financial",
   refund_receipt: "Financial",
+  treatment_plan: "Clinical",
   visit_summary: "Clinical",
   prescription: "Clinical",
   medical_certificate: "Clinical",
@@ -56,6 +58,7 @@ export const TYPE_NUMBER_PREFIX: Record<DocumentType, string> = {
   receipt: "RCPT",
   credit_note: "CN",
   refund_receipt: "RFND",
+  treatment_plan: "TP",
   visit_summary: "VS",
   prescription: "RX",
   medical_certificate: "CERT",
@@ -71,6 +74,7 @@ export const TYPE_LABEL: Record<DocumentType, string> = {
   receipt: "Receipt",
   credit_note: "Credit Note",
   refund_receipt: "Refund Receipt",
+  treatment_plan: "Treatment Plan",
   visit_summary: "Visit Summary",
   prescription: "Prescription",
   medical_certificate: "Medical Certificate",

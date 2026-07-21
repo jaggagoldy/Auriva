@@ -23,7 +23,7 @@ export interface DocumentDetail {
   };
 }
 
-const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt" };
+const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt", treatment_plan: "Treatment Plan" };
 const inr = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
@@ -114,7 +114,30 @@ const BODIES: Record<string, React.FC<BodyProps>> = {
   visit_summary: VisitSummaryBody,
   credit_note: CreditNoteBody,
   refund_receipt: RefundReceiptBody,
+  treatment_plan: TreatmentPlanBody,
 };
+
+function TreatmentPlanBody({ body }: BodyProps) {
+  const sessions = (body.sessions as { sequence: number; status: string }[]) ?? [];
+  return (
+    <div className="space-y-3 text-[12px]">
+      <div className="text-base font-semibold">{String(body.title ?? "")}</div>
+      <Sec label="Service">{String(body.service ?? "")} · {inr(Number(body.service_price ?? 0))} per session</Sec>
+      <Sec label="Progress">{Number(body.sessions_completed ?? 0)} of {Number(body.sessions_planned ?? 0)} sessions</Sec>
+      {body.notes ? <Sec label="Notes">{String(body.notes)}</Sec> : null}
+      <div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">Sessions</div>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {sessions.map((s) => (
+            <span key={s.sequence} className={`rounded border px-2 py-0.5 ${s.status === "completed" ? "border-neutral-400 bg-neutral-100" : s.status === "cancelled" ? "text-neutral-400 line-through" : ""}`}>
+              {s.sequence}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function CreditNoteBody({ body }: BodyProps) {
   return (

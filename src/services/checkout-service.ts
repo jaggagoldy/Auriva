@@ -112,7 +112,7 @@ export async function getCheckout(invoiceId: string, clinicId: string) {
           : "Ready for Checkout";
 
   return {
-    invoice: { id: invoice.id, invoice_number: invoice.invoice_number, status: invoice.status, appointment_id: invoice.appointment_id },
+    invoice: { id: invoice.id, invoice_number: invoice.invoice_number, status: invoice.status, appointment_id: invoice.appointment_id, patient_id: invoice.patient_id },
     visit: {
       patient_name: invoice.patient?.full_name ?? "Patient",
       token: appt?.queue_number ?? null,

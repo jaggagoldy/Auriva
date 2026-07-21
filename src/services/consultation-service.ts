@@ -56,6 +56,9 @@ export async function getConsultationContext(appointmentId: string, clinicId: st
   }
 
   return {
+    // C1: ids the workbench needs to create a Treatment Plan.
+    patient_id: appt.patient_id,
+    doctor_id: appt.doctor_id,
     patient: patient
       ? {
           full_name: patient.full_name,

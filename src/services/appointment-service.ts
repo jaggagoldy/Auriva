@@ -11,7 +11,7 @@ import {
   timestampPatchFor,
 } from "@/domain/appointment-status";
 import { createAppointmentEvent } from "@/repositories/appointment-repository";
-import { completeVisitInvoicing } from "@/services/billing-engine-service";
+import { capturePlanSessionCharge, completeVisitInvoicing, settleAllForAppointment } from "@/services/billing-engine-service";
 import { evaluateConsultationGate, PrepaidGateError } from "@/services/billing-policy-service";
 import { publishEvent } from "@/lib/events";
 
@@ -497,11 +497,14 @@ export async function transitionStatus(
     // WF-17 / APS-041: a completed consultation auto-drafts its invoice —
     // same transaction, so the visit and its charge can never diverge.
     if (nextStatus === "completed") {
-      // M3A C3: settlement-aware. If clinical/financial ServiceEvents were
-      // captured this visit, finalize + settle them into an event-sourced
-      // invoice; otherwise the unchanged consultation-fee auto-draft. Same
-      // transaction, so the visit and its charge can never diverge.
-      const invoice = await completeVisitInvoicing(tx, updated);
+      // C1: if this visit is a booked Treatment Plan session, its charge is the
+      // plan's service (captured here) — settle that (+ any captured extras)
+      // with NO separate consultation fee. Otherwise the normal event-sourced
+      // completion (ensure-consultation + settle). Same transaction throughout.
+      const isPlanSession = await capturePlanSessionCharge(tx, updated.id);
+      const invoice = isPlanSession
+        ? await settleAllForAppointment(tx, updated.id)
+        : await completeVisitInvoicing(tx, updated);
       generatedInvoiceId = invoice?.id ?? null;
       await scheduleFollowUpIfRequested(tx, updated);
     }
