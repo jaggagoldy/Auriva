@@ -162,21 +162,37 @@ function planView(plan: { id: string; title: string; status: string; sessions_pl
   };
 }
 
+// C1.1: enrich views with the next upcoming booked session's time (for the
+// checkout "Next: …" summary). One batched appointment query.
+async function withNextSession<T extends { sessions: { status: string; appointment_id: string | null }[] }>(views: T[]): Promise<(T & { next_session_at: string | null })[]> {
+  const apptIds = views.flatMap((v) => v.sessions.filter((s) => s.status === "planned" && s.appointment_id).map((s) => s.appointment_id!));
+  const appts = apptIds.length ? await prisma.appointment.findMany({ where: { id: { in: apptIds } }, select: { id: true, scheduled_time: true } }) : [];
+  const timeById = new Map(appts.map((a) => [a.id, a.scheduled_time]));
+  return views.map((v) => {
+    const times = v.sessions
+      .filter((s) => s.status === "planned" && s.appointment_id)
+      .map((s) => timeById.get(s.appointment_id!))
+      .filter((d): d is Date => Boolean(d))
+      .sort((a, b) => a.getTime() - b.getTime());
+    return { ...v, next_session_at: times[0]?.toISOString() ?? null };
+  });
+}
+
 export async function getPlan(planId: string, clinicId: string) {
   const plan = await prisma.treatmentPlan.findFirst({ where: { id: planId, clinic_id: clinicId }, include: { sessions: true } });
   if (!plan) throw new TreatmentPlanError("Treatment plan not found in this clinic.");
-  return planView(plan);
+  return (await withNextSession([planView(plan)]))[0];
 }
 
 export async function getPatientPlans(patientId: string, clinicId: string) {
   const plans = await prisma.treatmentPlan.findMany({ where: { patient_id: patientId, clinic_id: clinicId }, include: { sessions: true }, orderBy: { created_at: "desc" } });
-  return plans.map(planView);
+  return withNextSession(plans.map(planView));
 }
 
 /** Active plans for a patient — for the checkout panel (by the invoice's patient). */
 export async function getActivePlansForPatient(patientId: string, clinicId: string) {
   const plans = await prisma.treatmentPlan.findMany({ where: { patient_id: patientId, clinic_id: clinicId, status: "active" }, include: { sessions: true }, orderBy: { created_at: "desc" } });
-  return plans.map(planView);
+  return withNextSession(plans.map(planView));
 }
 
 /** Generate a printable Treatment Plan document (immutable snapshot, B3 platform). */

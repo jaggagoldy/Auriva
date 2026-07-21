@@ -329,7 +329,7 @@ This is the story Sales, Onboarding, and Release Notes can all use — a clinic 
 | B4 Billing Policy Framework | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Prepaid collection rate | Billing Policy settings, gate | ✅ Shipped |
 | B5 Financial Corrections | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Correction audit completeness | Corrections panel | ✅ Shipped |
 | S1 Stabilization | — | ✅ | ✅ | — | — | ✅ | ✅ | Zero legacy-path incidents | (cleanup, mostly invisible) | ✅ Shipped |
-| **C1 Treatment Planning** | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | Follow-up booking rate | "Plan" in consult + checkout | 🧪 In PO review |
+| **C1 Treatment Planning** | 2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Follow-up booking rate | "Plan" in consult + checkout | ✅ **Approved** (+C1.1 polish) |
 | C2 Procedure Management | 2 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | Session completion rate | Progress tracker | ⬜ Planned |
 | C3 Clinical Timeline | 1–2 | 🔲 | 🔲 | — | 🔲 | 🔲 | 🔲 | Consult prep time (qualitative) | Unified Timeline screen | ⬜ Planned |
 | C4 Prescription Platform | 1–2 | 🔲 | 🔲 | — | 🔲 | 🔲 | 🔲 | % structured prescriptions | Structured Rx editor | ⬜ Planned |

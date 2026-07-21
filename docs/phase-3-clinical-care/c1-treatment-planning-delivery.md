@@ -55,6 +55,7 @@
 **Permissions:** clinical actions (create/activate/update/extend/complete/archive/cancel) require **doctor or owner** — reception is 403; session ops (book/cancel) allowed for reception.
 **Financial Integrity (Amendment 9 — automated):** an 8-session plan with **3 attended → exactly 3 charges** (₹800 each), **0 consultation fees**, 5 sessions still planned, 3 invoices each with one plan-service line.
 **Browser:** Chrome/Safari/Edge — the plan UI reuses existing primitives (Section/Input/Button/select, datetime-local); no new browser-specific APIs. **Mobile:** the panel + patient card are responsive (stack on small screens).
+**Regression — "Doctor Leaves Clinic" (PO-requested, manual):** doctor A creates a plan → reception books sessions → doctor A unavailable → **another doctor / reception can VIEW the plan but cannot edit its clinical content** (403, Amendment 2) → the **owner** (super_admin, who passes `canAccessDoctorWorkspace`/`canAccessAdminPortal`) can edit/complete/extend it. Confirms clinical ownership survives a staffing change without data loss. *(Formal per-doctor ownership transfer is a future capability; today the owner is always able to act.)*
 
 ---
 

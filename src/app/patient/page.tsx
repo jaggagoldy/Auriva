@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, CalendarDays, ReceiptText, FileText, Users, CalendarCheck, Pill, IndianRupee, Check, FlaskConical } from "lucide-react";
+import { ChevronRight, MapPin, CalendarDays, ReceiptText, FileText, Users, CalendarCheck, Pill, IndianRupee, Check, FlaskConical, Sparkles } from "lucide-react";
 import { usePatientSession } from "@/components/patient/patient-session";
 import BookAppointmentDialog from "@/components/patient/book-appointment-dialog";
 import NotificationCenter from "@/components/patient/notification-center";
@@ -261,6 +261,15 @@ export default function PatientHomePage() {
           <Tile href="/patient/records" tone="pine" icon={FileText} name="Records" meta={visitCount ? `${visitCount} visit${visitCount > 1 ? "s" : ""}` : "Your timeline"} />
           <Tile href="/patient/family" tone="ok" icon={Users} name="Family" meta={`${linkedProfiles.length} ${linkedProfiles.length === 1 ? "person" : "people"}`} />
           <Tile href="/patient/records?tab=bills" tone="sand" icon={ReceiptText} name="Payments" meta="Bills & receipts" />
+        </div>
+
+        {/* C1.1: Treatment Plans placeholder — sets expectations until the in-app card lands (C1 follow-up). */}
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+          <Sparkles className="size-5 text-honey-deep" />
+          <div>
+            <div className="text-sm font-semibold">Treatment Plans</div>
+            <div className="text-xs text-muted-foreground">Track your ongoing care plans here — coming soon.</div>
+          </div>
         </div>
       </div>
     </div>

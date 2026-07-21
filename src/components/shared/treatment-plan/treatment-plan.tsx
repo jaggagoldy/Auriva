@@ -20,7 +20,17 @@ export interface PlanView {
   id: string; title: string; status: string;
   sessions_planned: number; sessions_completed: number; sessions_booked: number;
   service_id: string; doctor_id: string; notes: string | null; created_at: string;
+  next_session_at?: string | null;
   sessions: PlanSession[];
+}
+
+function relDay(iso: string): string {
+  const d = new Date(iso); const now = new Date();
+  const days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86400000);
+  const t = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (days === 0) return `Today · ${t}`;
+  if (days === 1) return `Tomorrow · ${t}`;
+  return `${d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })} · ${t}`;
 }
 interface CatalogService { id: string; name: string; price: number; category?: string; kind?: string }
 
@@ -66,7 +76,7 @@ export function TreatmentPlanCreate({ appointmentId, patientId, doctorId }: { ap
     setBusy(true);
     try {
       const d = await planApi({ action: "create", activate: true, patient_id: patientId, doctor_id: doctorId, origin_appointment_id: appointmentId, title: title.trim(), service_id: serviceId, sessions_planned: n });
-      if (d) { setOpen(false); setTitle(""); setServiceId(""); setSessions(""); setReload((x) => x + 1); toast.success("Treatment plan created."); }
+      if (d) { setOpen(false); setTitle(""); setServiceId(""); setSessions(""); setReload((x) => x + 1); toast.success(`Treatment Plan created · ${n} session${n === 1 ? "" : "s"} · ready for reception`); }
     } finally { setBusy(false); }
   }
 
@@ -142,10 +152,14 @@ export function TreatmentPlanPanel({ patientId }: { patientId: string }) {
         <div key={p.id} className="rounded-xl border p-3 text-sm">
           <div className="flex items-center justify-between">
             <span className="font-medium">{p.title}</span>
-            <span className="text-xs font-semibold text-honey-deep">{p.sessions_completed} / {p.sessions_planned}</span>
+            <span className="text-xs text-muted-foreground">{p.sessions_planned} sessions</span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((p.sessions_completed / p.sessions_planned) * 100)}%` }} />
+          </div>
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="font-semibold text-honey-deep">{p.sessions_completed} / {p.sessions_planned} complete</span>
+            {p.next_session_at && <span className="text-muted-foreground">Next: {relDay(p.next_session_at)}</span>}
           </div>
           {bookingFor === p.id ? (
             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
