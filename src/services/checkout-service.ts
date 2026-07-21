@@ -16,7 +16,8 @@
 import prisma from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { recordPayment } from "@/services/billing-service";
-import { regenerateInvoice } from "@/services/billing-engine-service";
+import { regenerateInvoice, settleInvoiceFromEvents } from "@/services/billing-engine-service";
+import { openVisitCapture } from "@/services/service-capture-service";
 import { canActorAddKind, isServiceCategory } from "@/domain/service-catalog";
 import { PaymentMethod } from "@/domain/invoice-status";
 
@@ -336,4 +337,22 @@ export async function recordCheckoutPayment(input: {
     receivedByUserId: input.actorUserId ?? null,
   });
   return getCheckout(input.invoiceId, input.clinicId);
+}
+
+/**
+ * M3B B4 — prepare the consultation invoice for prepaid/hybrid "collect up
+ * front": seed the base Consultation event (idempotent), finalize it, and settle
+ * it into an invoice reception can collect BEFORE the doctor. Returns the
+ * invoiceId (existing one if the consultation is already settled).
+ */
+export async function prepareConsultationInvoice(appointmentId: string, clinicId: string, actorUserId?: string | null): Promise<string | null> {
+  await openVisitCapture(appointmentId, clinicId, actorUserId); // seeds the Consultation draft (idempotent)
+  await prisma.serviceEvent.updateMany({
+    where: { appointment_id: appointmentId, category: "Consultation", status: "draft" },
+    data: { status: "finalized", finalized_at: new Date() },
+  });
+  const result = await settleInvoiceFromEvents(appointmentId);
+  if (result.invoiceId) return result.invoiceId;
+  const existing = await prisma.invoice.findFirst({ where: { appointment_id: appointmentId, clinic_id: clinicId }, orderBy: { created_at: "asc" }, select: { id: true } });
+  return existing?.id ?? null;
 }

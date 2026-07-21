@@ -35,6 +35,8 @@ import { ConsultationWorkbench } from "@/components/clinic/consultation-workbenc
 import { CheckoutWorkspace } from "@/components/shared/checkout/checkout-workspace";
 import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
 import { PracticeSetup } from "@/components/clinic/practice-setup";
+import { BillingPolicySettings } from "@/components/clinic/billing-policy-settings";
+import { ConsultationGateDialog } from "@/components/clinic/consultation-gate-dialog";
 import { AvailabilitySettings } from "@/components/clinic/availability-settings";
 import { TimeOffSettings } from "@/components/clinic/time-off-settings";
 import { TeamPanel } from "@/components/clinic/team-panel";
@@ -98,6 +100,7 @@ export default function MyClinicWorkspace() {
   const [ov, setOv] = React.useState<Overview | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [visit, setVisit] = React.useState<Visit | null>(null);
+  const [pendingStart, setPendingStart] = React.useState<{ appointmentId: string; patientName: string } | null>(null); // M3B B4 gate
   // BRD-043 Sprint 3: the caller's dashboard role drives the adaptive nav.
   // Fetched from the role-shaped /api/clinic/dashboard (works for every staff
   // role, unlike /api/clinic/overview which is reception-scoped). `null` while
@@ -273,7 +276,7 @@ export default function MyClinicWorkspace() {
             ) : !ov ? (
               <Card className="p-8 text-center text-sm text-muted-foreground">Couldn&apos;t load your clinic.</Card>
             ) : view === "today" ? (
-              <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+              <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setPendingStart({ appointmentId: appt, patientName: name })} />
             ) : view === "calendar" ? (
               <ClinicCalendar doctorId={ov.doctorId} />
             ) : view === "treatments" ? (
@@ -343,6 +346,15 @@ export default function MyClinicWorkspace() {
           </button>
         )}
       </nav>
+
+      {pendingStart && (
+        <ConsultationGateDialog
+          appointmentId={pendingStart.appointmentId}
+          patientName={pendingStart.patientName}
+          onProceed={() => { setVisit({ step: "consult", appointmentId: pendingStart.appointmentId, patientName: pendingStart.patientName }); setPendingStart(null); }}
+          onCancel={() => setPendingStart(null)}
+        />
+      )}
 
       {visit && (
         <VisitOverlay
@@ -988,6 +1000,9 @@ function PracticeView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
     <div className="space-y-4">
       {/* P3 Practice Setup — the complete clinic + doctor profile module */}
       <PracticeSetup onSaved={onChanged} />
+
+      {/* M3B B4 — Billing Policy */}
+      <BillingPolicySettings />
 
       <Card className="space-y-3 p-5">
         <h2 className="text-base font-semibold">Online bookings</h2>

@@ -6,9 +6,16 @@
 import prisma from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { BillingPolicy, DEFAULT_BILLING_POLICY, isBillingPolicy } from "@/domain/billing-policy";
+import { resolveConsultationFee } from "@/services/billing-service";
 
 export class InvalidBillingPolicyError extends Error {}
 export class ClinicNotFoundError extends Error {}
+export class PrepaidGateError extends Error {} // M3B B4: hard gate blocks consult start
+
+/** Policies that collect the consultation fee BEFORE the doctor (M3B B4). */
+export function requiresPrepaidConsultation(policy: BillingPolicy): boolean {
+  return policy === "prepaid" || policy === "hybrid";
+}
 
 /** Deterministic: a recognized policy passes through; anything else (legacy,
  *  null, typo) falls back to postpaid. Never throws. */
@@ -58,4 +65,61 @@ export async function setBillingPolicy(
   //     clinic.organization_id, entityId: clinicId, payload: { from, to: policy } })
   // Deliberately not wired now (no billing events consumed yet) — 3B.
   return policy;
+}
+
+// ---- M3B B4: policy settings + the consultation-start gate -------------------
+
+export interface PolicySettings { policy: BillingPolicy; hardGate: boolean }
+
+export async function getPolicySettings(clinicId: string): Promise<PolicySettings> {
+  const clinic = await prisma.clinic.findUnique({ where: { id: clinicId }, select: { billing_policy: true, prepaid_hard_gate: true } });
+  return { policy: resolveBillingPolicy(clinic?.billing_policy), hardGate: clinic?.prepaid_hard_gate ?? false };
+}
+
+/** Toggle the hard gate (prepaid/hybrid block-until-collected). Audited. */
+export async function setPrepaidHardGate(clinicId: string, hardGate: boolean, actorUserId?: string | null): Promise<PolicySettings> {
+  const clinic = await prisma.clinic.findUnique({ where: { id: clinicId }, select: { prepaid_hard_gate: true, organization_id: true } });
+  if (!clinic) throw new ClinicNotFoundError(`Clinic ${clinicId} not found.`);
+  if (clinic.prepaid_hard_gate !== hardGate) {
+    await prisma.clinic.update({ where: { id: clinicId }, data: { prepaid_hard_gate: hardGate } });
+    await recordAudit({ organizationId: clinic.organization_id, actorUserId: actorUserId ?? null, action: "prepaid_hard_gate_changed", detail: `${hardGate ? "on" : "off"}` });
+  }
+  return getPolicySettings(clinicId);
+}
+
+export interface ConsultationGate {
+  policy: BillingPolicy;
+  required: boolean;   // policy collects the consult fee up front
+  satisfied: boolean;  // the consult fee has been collected (or not required)
+  hardBlock: boolean;  // required && !satisfied && hardGate → consult start is blocked
+  consultationFee: number;
+  collected: number;
+}
+
+/**
+ * Evaluate the prepaid/hybrid consultation gate for a visit. Postpaid → inert
+ * (required=false, satisfied=true). "Satisfied" = payments recorded across the
+ * visit's invoices cover the resolved consultation fee.
+ */
+export async function evaluateConsultationGate(appointmentId: string, clinicId: string): Promise<ConsultationGate> {
+  const appt = await prisma.appointment.findFirst({
+    where: { id: appointmentId, clinic_id: clinicId },
+    select: { doctor_id: true, follow_up_source_appointment_id: true },
+  });
+  if (!appt) throw new ClinicNotFoundError("Appointment not found in this clinic.");
+
+  const { policy, hardGate } = await getPolicySettings(clinicId);
+  const required = requiresPrepaidConsultation(policy);
+
+  const { fee } = await prisma.$transaction((tx) =>
+    resolveConsultationFee(tx, { doctorId: appt.doctor_id, isFollowUp: Boolean(appt.follow_up_source_appointment_id) })
+  );
+  const paid = await prisma.payment.aggregate({
+    where: { invoice: { appointment_id: appointmentId }, clinic_id: clinicId },
+    _sum: { amount: true },
+  });
+  const collected = paid._sum.amount ?? 0;
+  const satisfied = !required || collected >= fee;
+
+  return { policy, required, satisfied, hardBlock: required && !satisfied && hardGate, consultationFee: fee, collected };
 }

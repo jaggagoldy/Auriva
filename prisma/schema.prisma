@@ -207,6 +207,7 @@ model Clinic {
   // existing clinic (zero change). New clinics set 'prepaid' at creation (C2/3B).
   // The engine only READS this in 3A; policy timing activates in 3B.
   billing_policy                    String   @default("postpaid")
+  prepaid_hard_gate                 Boolean  @default(false) // M3B B4: prepaid/hybrid — hard-block consult start until the fee is collected (else soft warn+override)
   default_slot_duration_minutes     Int?     @default(15)
   buffer_minutes                    Int?     @default(0)
   max_appointments_per_doctor_per_day Int?   // null = unlimited

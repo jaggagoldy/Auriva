@@ -12,6 +12,7 @@ import {
 } from "@/domain/appointment-status";
 import { createAppointmentEvent } from "@/repositories/appointment-repository";
 import { completeVisitInvoicing } from "@/services/billing-engine-service";
+import { evaluateConsultationGate, PrepaidGateError } from "@/services/billing-policy-service";
 import { publishEvent } from "@/lib/events";
 
 export class AppointmentNotFoundError extends Error {}
@@ -447,6 +448,18 @@ export async function transitionStatus(
       throw new InvalidTransitionError(
         `Cannot move an appointment from "${from}" to "${nextStatus}".`
       );
+    }
+
+    // M3B B4: prepaid/hybrid HARD gate — block starting the consultation until
+    // the consultation fee is collected. Soft gate is enforced in the UI (warn +
+    // audited override); this backend block covers all surfaces. Postpaid inert.
+    if (nextStatus === "in_consultation") {
+      const gate = await evaluateConsultationGate(appointmentId, appointment.clinic_id);
+      if (gate.hardBlock) {
+        throw new PrepaidGateError(
+          `This clinic collects the consultation fee before the visit (prepaid). Collect ₹${gate.consultationFee} to start.`
+        );
+      }
     }
 
     // Sprint 3: the clinic's own cancellation-window policy — e.g. "no
