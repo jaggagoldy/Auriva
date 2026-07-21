@@ -1,17 +1,14 @@
 // Milestone 1 (First Clinic Ready), Batch 5 — the solo visit flow. Real DB:
-// start → complete (clinical + treatment-priced invoice) → collect payment.
+// start → complete (clinical + settled invoice) → checkout payment.
+// S1 Batch A: legacy treatment-price + collectVisitPayment removed — charges are
+// ServiceEvents (B1), payment is the Checkout Workspace.
 
 import { afterAll, describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
 import { createTestOrganization, createTestStaff, createTestPatient } from "@/test/fixtures";
-import { createService } from "@/services/service-catalog-service";
 import { scheduleAppointment } from "@/services/appointment-service";
-import {
-  startConsultation,
-  completeVisit,
-  collectVisitPayment,
-  ConsultationInputError,
-} from "@/services/consultation-service";
+import { startConsultation, completeVisit } from "@/services/consultation-service";
+import { recordCheckoutPayment } from "@/services/checkout-service";
 
 const orgIds: string[] = [];
 const userIds: string[] = [];
@@ -49,9 +46,8 @@ async function setupVisit() {
 }
 
 describe("solo visit flow", () => {
-  it("starts, completes with a treatment price, and collects full payment", async () => {
+  it("starts, completes, and collects full payment via checkout", async () => {
     const { owner, clinic, appointment } = await setupVisit();
-    const treatment = await createService(clinic.id, { name: "Follow-up session", durationMinutes: 30, price: 800 });
 
     const started = await startConsultation({
       appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id,
@@ -60,23 +56,20 @@ describe("solo visit flow", () => {
 
     const completed = await completeVisit({
       appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id,
-      notes: "ROM improving.", diagnosis: "Mechanical LBP", treatmentId: treatment.id,
+      notes: "ROM improving.", diagnosis: "Mechanical LBP",
     });
-    // Invoice is priced from the treatment, not the generic consult fee.
-    expect(completed.total).toBe(800);
+    expect(completed.total).toBeGreaterThan(0); // settled consultation invoice
 
     const appt = await prisma.appointment.findUnique({ where: { id: appointment.id } });
     expect(appt?.status).toBe("completed");
     expect(appt?.history_notes).toBe("ROM improving.");
 
-    const paid = await collectVisitPayment({
-      invoiceId: completed.invoiceId, clinicId: clinic.id, amount: 800, method: "cash", actorUserId: owner.id,
+    await recordCheckoutPayment({
+      invoiceId: completed.invoiceId, clinicId: clinic.id, amount: completed.total, method: "cash", actorUserId: owner.id,
     });
-    expect(paid.status).toBe("paid");
-
     const payments = await prisma.payment.findMany({ where: { invoice_id: completed.invoiceId } });
     expect(payments).toHaveLength(1);
-    expect(payments[0].amount).toBe(800);
+    expect(payments[0].amount).toBe(completed.total);
   });
 
   it("persists structured medicines + chief complaint to the Prescription store", async () => {
@@ -140,28 +133,13 @@ describe("solo visit flow", () => {
     expect(recs).toHaveLength(0);
   });
 
-  it("keeps the fee-based invoice when no treatment is chosen", async () => {
+  it("settles a consultation-fee invoice on completion", async () => {
     const { owner, clinic, appointment } = await setupVisit();
     const completed = await completeVisit({
       appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id,
     });
-    // A generic invoice still exists (auto-drafted) with a positive total.
     expect(completed.total).toBeGreaterThan(0);
     expect(completed.invoiceId).toBeTruthy();
-  });
-
-  it("rejects a treatment from another clinic", async () => {
-    const { owner, clinic, appointment } = await setupVisit();
-    const other = await createTestOrganization();
-    orgIds.push(other.organization.id);
-    clinicIds.push(other.clinic.id);
-    const foreign = await createService(other.clinic.id, { name: "X", durationMinutes: 30, price: 500 });
-
-    await expect(
-      completeVisit({
-        appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id, treatmentId: foreign.id,
-      })
-    ).rejects.toThrow(ConsultationInputError);
   });
 
   it("cannot start a consultation for an appointment in another clinic", async () => {
@@ -177,12 +155,11 @@ describe("solo visit flow", () => {
 
   it("rejects overpayment beyond the invoice total", async () => {
     const { owner, clinic, appointment } = await setupVisit();
-    const treatment = await createService(clinic.id, { name: "Consult", durationMinutes: 30, price: 500 });
     const completed = await completeVisit({
-      appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id, treatmentId: treatment.id,
+      appointmentId: appointment.id, clinicId: clinic.id, actorUserId: owner.id,
     });
     await expect(
-      collectVisitPayment({ invoiceId: completed.invoiceId, clinicId: clinic.id, amount: 999, method: "cash", actorUserId: owner.id })
+      recordCheckoutPayment({ invoiceId: completed.invoiceId, clinicId: clinic.id, amount: completed.total + 999, method: "cash", actorUserId: owner.id })
     ).rejects.toThrow();
   });
 });

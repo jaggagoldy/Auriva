@@ -1,13 +1,11 @@
 // Milestone 1 (First Clinic Ready), Batch 5 — the solo visit: Today →
-// Consultation → Payment, entirely inside the clinic workspace. This service
+// Consultation → Checkout, entirely inside the clinic workspace. This service
 // ORCHESTRATES existing primitives; it invents no new status machine or ledger:
 //   - transitionStatus (appointment-service) owns every status change,
 //   - updateClinicalRecord (appointment-service) saves the notes/diagnosis/follow-up,
-//   - transitionStatus already auto-drafts the visit invoice on completion,
-//   - setDraftInvoiceItems (billing-service) re-prices that draft to the chosen
-//     Treatment, and recordPayment (billing-service) collects the money.
-// The one solo-specific rule: the visit's charge is the chosen Treatment's
-// price, not the generic consultation fee.
+//   - completion settles the visit's ServiceEvents into the invoice (M3A/B1).
+// S1 Batch A: the legacy single-Treatment re-price + collectVisitPayment wrapper
+// were retired — charges are ServiceEvents (B1), payment is the Checkout Workspace.
 
 import prisma from "@/lib/prisma";
 import {
@@ -15,9 +13,7 @@ import {
   updateClinicalRecord,
   AppointmentNotFoundError,
 } from "@/services/appointment-service";
-import { setDraftInvoiceItems, recordPayment } from "@/services/billing-service";
 import { recommendTests } from "@/services/test-recommendation-service";
-import type { InvoiceItem, PaymentMethod } from "@/domain/invoice-status";
 
 export class ConsultationInputError extends Error {}
 
@@ -107,21 +103,10 @@ export async function completeVisit(input: {
   prescriptionNotes?: string | null;
   prescriptionMedicinesJson?: string | null;
   testCodes?: string[] | null;
-  treatmentId?: string | null;
 }) {
   const appointment = await requireClinicAppointment(input.appointmentId, input.clinicId);
   if (appointment.status === "completed") {
     throw new ConsultationInputError("This visit is already completed.");
-  }
-
-  // 1) Validate the chosen treatment BEFORE completing, so a bad id never
-  // leaves a completed-but-mispriced visit behind.
-  let service = null;
-  if (input.treatmentId) {
-    service = await prisma.service.findFirst({
-      where: { id: input.treatmentId, clinic_id: input.clinicId, is_active: true },
-    });
-    if (!service) throw new ConsultationInputError("That treatment isn't available in this clinic.");
   }
 
   // 2) Clinical documentation (only if anything was provided). Structured
@@ -176,38 +161,11 @@ export async function completeVisit(input: {
     orderBy: { created_at: "asc" },
   });
   if (!invoice) {
-    // Should never happen (completion always drafts one) — surfaced honestly.
+    // Should never happen (completion always settles/drafts one) — surfaced honestly.
     throw new ConsultationInputError("Visit completed but no invoice was drafted.");
   }
 
-  // 4) Re-price to the chosen treatment (solo-specific rule). If no treatment
-  // was chosen, keep the auto-drafted consultation-fee line as-is.
-  if (service) {
-    const items: InvoiceItem[] = [
-      { description: service.name, qty: 1, unit_price: service.price, amount: service.price },
-    ];
-    const repriced = await setDraftInvoiceItems(invoice.id, input.clinicId, items);
-    return { invoiceId: repriced.id, total: repriced.total, invoiceNumber: repriced.invoice_number };
-  }
-
+  // S1 Batch A: the legacy single-treatment re-price is gone — charges are the
+  // visit's ServiceEvents, settled by the M3A engine on completion (B1).
   return { invoiceId: invoice.id, total: invoice.total, invoiceNumber: invoice.invoice_number };
-}
-
-/** Collect the payment for a visit's invoice — thin wrapper over recordPayment. */
-export async function collectVisitPayment(input: {
-  invoiceId: string;
-  clinicId: string;
-  amount: number;
-  method: PaymentMethod;
-  reference?: string | null;
-  actorUserId: string;
-}) {
-  return recordPayment({
-    invoiceId: input.invoiceId,
-    clinicId: input.clinicId,
-    amount: input.amount,
-    method: input.method,
-    reference: input.reference ?? null,
-    receivedByUserId: input.actorUserId,
-  });
 }

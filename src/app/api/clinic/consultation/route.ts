@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
           testCodes: Array.isArray(body.test_codes)
             ? body.test_codes.filter((t: unknown): t is string => typeof t === "string")
             : undefined,
-          treatmentId: typeof body.treatment_id === "string" ? body.treatment_id : null,
         });
         return ok({ success: true, ...result });
       }
