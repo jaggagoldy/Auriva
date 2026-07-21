@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
 import { createTestOrganization, createTestPatient, createTestStaff } from "@/test/fixtures";
 import { addServiceEvent, finalizeServiceEvent } from "@/services/service-event-service";
+import { transitionStatus } from "@/services/appointment-service";
 import {
   AppointmentNotFoundError,
   checkSettlementInvariant,
@@ -230,8 +231,8 @@ describe("settlement invariant", () => {
   });
 });
 
-describe("completeVisitInvoicing — backward-compatible either/or", () => {
-  it("with NO events, drafts the legacy consultation-fee invoice (no ServiceEvent lines)", async () => {
+describe("completeVisitInvoicing — unified event-sourced (S1 Batch D)", () => {
+  it("with NO events, seeds a Consultation ServiceEvent and settles it (event-sourced)", async () => {
     const s = await scenario();
     const invoice = await prisma.$transaction((tx) =>
       completeVisitInvoicing(tx, {
@@ -243,8 +244,29 @@ describe("completeVisitInvoicing — backward-compatible either/or", () => {
     );
     expect(invoice).not.toBeNull();
     const lines = await prisma.invoiceLine.findMany({ where: { invoice_id: invoice!.id } });
-    // legacy path writes items_json only — no event-sourced lines
-    expect(lines.filter((l) => l.origin === "ServiceEvent")).toHaveLength(0);
+    // Unified: the consultation fee is now a ServiceEvent line — no legacy fallback.
+    expect(lines).toHaveLength(1);
+    expect(lines[0].origin).toBe("ServiceEvent");
+    const consult = await prisma.serviceEvent.findFirst({ where: { appointment_id: s.appointment.id, category: "Consultation" } });
+    expect(consult?.status).toBe("finalized");
+    const inv = await checkSettlementInvariant(s.appointment.id);
+    expect(inv.healthy).toBe(true);
+    expect(inv.awaiting).toBe(0);
+  });
+
+  it("VERIFICATION: completion via transitionStatus (no capture) is event-sourced — the fallback is unreachable", async () => {
+    const s = await scenario(); // in_consultation, no openVisitCapture
+    await transitionStatus(s.appointment.id, "completed", { actorUserId: s.doctor.userId });
+    const invoice = await prisma.invoice.findFirstOrThrow({
+      where: { appointment_id: s.appointment.id },
+      include: { lines: { include: { serviceEvent: { select: { category: true } } } } },
+    });
+    expect(invoice.lines).toHaveLength(1);
+    expect(invoice.lines[0].origin).toBe("ServiceEvent"); // NOT a legacy items_json-only draft
+    expect(invoice.lines[0].serviceEvent?.category).toBe("Consultation");
+    const inv = await checkSettlementInvariant(s.appointment.id);
+    expect(inv.awaiting).toBe(0);
+    expect(inv.healthy).toBe(true);
   });
 
   it("with captured events, finalizes drafts and settles them", async () => {
@@ -263,9 +285,11 @@ describe("completeVisitInvoicing — backward-compatible either/or", () => {
       })
     );
     expect(invoice).not.toBeNull();
-    const lines = await prisma.invoiceLine.findMany({ where: { invoice_id: invoice!.id } });
-    expect(lines).toHaveLength(1);
-    expect(lines[0].origin).toBe("ServiceEvent");
+    const lines = await prisma.invoiceLine.findMany({ where: { invoice_id: invoice!.id }, include: { serviceEvent: { select: { category: true } } } });
+    // Consultation (seeded) + Nebulization (captured) — both event-sourced.
+    expect(lines).toHaveLength(2);
+    expect(lines.every((l) => l.origin === "ServiceEvent")).toBe(true);
+    expect(lines.some((l) => l.serviceEvent?.category === "Consultation")).toBe(true);
     const inv = await checkSettlementInvariant(s.appointment.id);
     expect(inv.healthy).toBe(true);
     expect(inv.awaiting).toBe(0);

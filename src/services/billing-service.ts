@@ -95,57 +95,6 @@ export async function resolveConsultationFee(
   return { fee: DEFAULT_CONSULT_FEE, doctorName };
 }
 
-/**
- * Auto-drafts the visit invoice when a consultation completes (WF-17: charges
- * assemble from the encounter). Runs inside the caller's transaction so the
- * status change and its invoice commit together. Idempotent per appointment
- * (the schema's unique appointment link).
- */
-export async function draftInvoiceForAppointment(
-  tx: Prisma.TransactionClient,
-  appointment: {
-    id: string;
-    clinic_id: string;
-    patient_id: string;
-    doctor_id: string;
-    follow_up_source_appointment_id?: string | null;
-  }
-) {
-  // M3A C3: the appointment→invoice link is now 1:N, so this is findFirst (was
-  // findUnique on the old @unique). The idempotency guarantee is unchanged — a
-  // completed visit still auto-drafts exactly one consultation-fee invoice
-  // (deterministic: earliest existing wins on any retry).
-  const existing = await tx.invoice.findFirst({
-    where: { appointment_id: appointment.id },
-    orderBy: { created_at: "asc" },
-  });
-  if (existing) return existing;
-
-  const { fee, doctorName } = await resolveConsultationFee(tx, {
-    doctorId: appointment.doctor_id,
-    isFollowUp: Boolean(appointment.follow_up_source_appointment_id),
-  });
-  const items: InvoiceItem[] = [
-    {
-      description: `${appointment.follow_up_source_appointment_id ? "Follow-up consultation" : "Consultation"} — ${doctorName}`,
-      qty: 1,
-      unit_price: fee,
-      amount: fee,
-    },
-  ];
-
-  return tx.invoice.create({
-    data: {
-      invoice_number: await nextInvoiceNumber(tx, appointment.clinic_id),
-      clinic_id: appointment.clinic_id,
-      patient_id: appointment.patient_id,
-      appointment_id: appointment.id,
-      status: "draft",
-      items_json: JSON.stringify(items),
-      total: sumItems(items),
-    },
-  });
-}
 
 export interface InvoiceSearchFilters {
   clinicId: string;

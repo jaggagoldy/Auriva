@@ -18,7 +18,7 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { InvoiceItem } from "@/domain/invoice-status";
-import { draftInvoiceForAppointment, nextInvoiceNumber } from "@/services/billing-service";
+import { nextInvoiceNumber, resolveConsultationFee } from "@/services/billing-service";
 
 export class AppointmentNotFoundError extends Error {}
 
@@ -91,12 +91,14 @@ export async function settleInvoiceFromEvents(
 }
 
 /**
- * The completion-hook orchestrator (WF-17). Backward-compatible either/or:
- *   • no ServiceEvents captured (today's reality — no capture UI until 3B) →
- *     the existing consultation-fee auto-draft, byte-for-byte unchanged.
- *   • events captured → finalize the visit's draft charges, then settle them
- *     into an event-sourced invoice.
- * Returns the invoice id, or null if settlement produced nothing.
+ * The completion-hook orchestrator (WF-17). S1 Batch D — UNIFIED: every
+ * completion is event-sourced. If the visit has no Consultation charge yet
+ * (e.g. completion driven purely by a status transition, no consult surface
+ * opened), we seed the base Consultation ServiceEvent server-side; then we
+ * finalize all draft charges and settle. The legacy `draftInvoiceForAppointment`
+ * fallback is gone — the consultation fee is always a ServiceEvent.
+ * Returns the invoice id, or null if settlement produced nothing new (e.g. the
+ * consultation was already settled/paid up front under a prepaid policy).
  */
 export async function completeVisitInvoicing(
   tx: Prisma.TransactionClient,
@@ -108,15 +110,35 @@ export async function completeVisitInvoicing(
     follow_up_source_appointment_id?: string | null;
   }
 ): Promise<{ id: string } | null> {
-  const eventCount = await tx.serviceEvent.count({
-    where: { appointment_id: appointment.id, status: { in: ["draft", "finalized"] } },
+  // Ensure the consultation charge exists as a ServiceEvent (idempotent).
+  const hasConsultation = await tx.serviceEvent.count({
+    where: { appointment_id: appointment.id, category: "Consultation", status: { in: ["draft", "finalized"] } },
   });
-  if (eventCount === 0) {
-    return draftInvoiceForAppointment(tx, appointment); // legacy path — unchanged
+  if (hasConsultation === 0) {
+    const { fee, doctorName } = await resolveConsultationFee(tx, {
+      doctorId: appointment.doctor_id,
+      isFollowUp: Boolean(appointment.follow_up_source_appointment_id),
+    });
+    await tx.serviceEvent.create({
+      data: {
+        clinic_id: appointment.clinic_id,
+        patient_id: appointment.patient_id,
+        appointment_id: appointment.id,
+        name: `${appointment.follow_up_source_appointment_id ? "Follow-up consultation" : "Consultation"} — ${doctorName}`,
+        category: "Consultation",
+        kind: "clinical",
+        unit_price: fee,
+        qty: 1,
+        amount: fee,
+        status: "finalized",
+        finalized_at: new Date(),
+        needs_catalog_review: false,
+        added_by_role: "doctor",
+      },
+    });
   }
 
-  // Completing the visit finalizes its captured charges. draft → finalized is a
-  // guard-free transition (no reason required); batch it in-transaction.
+  // Finalize any remaining draft charges, then settle — one event-sourced path.
   await tx.serviceEvent.updateMany({
     where: { appointment_id: appointment.id, status: "draft" },
     data: { status: "finalized", finalized_at: new Date() },
