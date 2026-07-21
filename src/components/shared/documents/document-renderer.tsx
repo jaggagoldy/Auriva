@@ -23,7 +23,7 @@ export interface DocumentDetail {
   };
 }
 
-const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary" };
+const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt" };
 const inr = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
@@ -80,7 +80,7 @@ function DocumentBranding({ doc }: { doc: DocumentDetail }) {
 // Reserved slots — signature / clinic stamp / footer. Rendered empty (no data)
 // so the layout is ready when these are enabled; invisible until then.
 function DocumentFooter({ doc }: { doc: DocumentDetail }) {
-  if (doc.type !== "visit_summary" && doc.type !== "invoice" && doc.type !== "receipt") return null;
+  if (!["visit_summary", "invoice", "receipt", "credit_note", "refund_receipt"].includes(doc.type)) return null;
   return (
     <footer className="mt-10 flex items-end justify-between">
       <div className="text-[10px] text-neutral-400">{/* footer slot (reserved) */}</div>
@@ -112,7 +112,35 @@ const BODIES: Record<string, React.FC<BodyProps>> = {
   invoice: InvoiceBody,
   receipt: ReceiptBody,
   visit_summary: VisitSummaryBody,
+  credit_note: CreditNoteBody,
+  refund_receipt: RefundReceiptBody,
 };
+
+function CreditNoteBody({ body }: BodyProps) {
+  return (
+    <div className="space-y-2 text-[12px]">
+      <div className="text-neutral-600">Credit against invoice {String(body.original_invoice ?? "")}</div>
+      <Sec label="Reason">{String(body.reason ?? "")}</Sec>
+      <div className="mt-3 flex items-center justify-between border-t pt-2">
+        <span className="font-semibold">Credited</span>
+        <span className="font-bold tabular-nums">{inr(Number(body.amount ?? 0))}</span>
+      </div>
+    </div>
+  );
+}
+
+function RefundReceiptBody({ body }: BodyProps) {
+  return (
+    <div className="space-y-2 text-[12px]">
+      <div className="text-neutral-600">Refund against credit note {String(body.credit_note_number ?? "")}</div>
+      <div className="capitalize">Method: {String(body.method ?? "")}{body.reference ? ` · ${String(body.reference)}` : ""}</div>
+      <div className="mt-3 flex items-center justify-between border-t pt-2">
+        <span className="font-semibold">Refunded</span>
+        <span className="font-bold tabular-nums">{inr(Number(body.amount ?? 0))}</span>
+      </div>
+    </div>
+  );
+}
 
 function InvoiceBody({ body }: BodyProps) {
   const lines = (body.lines as { description: string; qty: number; unit_price: number; amount: number }[]) ?? [];

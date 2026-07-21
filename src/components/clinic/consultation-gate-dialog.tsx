@@ -97,7 +97,7 @@ export function ConsultationGateDialog({
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
           {!gate.hardBlock && (
-            <Button variant="outline" disabled={busy} onClick={startAnyway}>Start anyway</Button>
+            <Button variant="outline" disabled={busy} onClick={startAnyway}>Continue Without Payment</Button>
           )}
           <Button disabled={busy} onClick={collectNow}>{busy && <Loader2 className="size-4 animate-spin" />} Collect now</Button>
         </div>

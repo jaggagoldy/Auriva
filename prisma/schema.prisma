@@ -813,6 +813,7 @@ model Invoice {
   clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
   payments    Payment[]
   lines       InvoiceLine[]  // M3A: source of truth for the invoice's charges
+  creditNotes CreditNote[]   // M3B B5: compensating corrections (invoice stays immutable)
 
   @@unique([clinic_id, invoice_number])
   @@map("Invoices")
@@ -1125,4 +1126,44 @@ model Document {
   @@index([appointment_id])
   @@index([clinic_id, type])
   @@map("Documents")
+}
+
+// M3B B5 — Financial Corrections Framework. A paid invoice is IMMUTABLE;
+// corrections are compensating artifacts, never edits. A CreditNote reduces the
+// receivable against an original Invoice (kept forever); a Refund records money
+// physically returned against a CreditNote. Both are also generated as Documents
+// (credit_note / refund_receipt) via the B3 platform.
+model CreditNote {
+  id                  String   @id @default(uuid())
+  clinic_id           String   // plain FK (queried); invoice relation carries cascade
+  patient_id          String
+  invoice_id          String
+  number              String   // CN-YYYY-NNNN (unified document numbering)
+  amount              Int      // credited amount (positive)
+  reason              String
+  status              String   @default("issued") // issued | refunded | void
+  created_by_user_id  String?
+  created_at          DateTime @default(now())
+
+  invoice Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  refunds Refund[]
+
+  @@index([invoice_id])
+  @@map("Credit_Notes")
+}
+
+model Refund {
+  id                  String   @id @default(uuid())
+  clinic_id           String
+  credit_note_id      String
+  amount              Int      // refunded amount (positive)
+  method              String   // 'cash' | 'upi' | 'card'
+  reference           String?
+  created_by_user_id  String?
+  created_at          DateTime @default(now())
+
+  creditNote CreditNote @relation(fields: [credit_note_id], references: [id], onDelete: Cascade)
+
+  @@index([credit_note_id])
+  @@map("Refunds")
 }

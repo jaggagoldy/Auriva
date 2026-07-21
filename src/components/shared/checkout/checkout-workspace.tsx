@@ -46,7 +46,7 @@ function useCheckout(invoiceId: string) {
       .catch(() => setView(null));
   }, [invoiceId]);
 
-  const act = React.useCallback(async (body: Record<string, unknown>): Promise<boolean> => {
+  const act = React.useCallback(async (body: Record<string, unknown>): Promise<CheckoutView | null> => {
     setSaving(true);
     try {
       const res = await fetch("/api/clinic/checkout", {
@@ -54,9 +54,9 @@ function useCheckout(invoiceId: string) {
         body: JSON.stringify({ invoice_id: invoiceId, ...body }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error((d as { message?: string }).message ?? "Something went wrong."); return false; }
+      if (!res.ok) { toast.error((d as { message?: string }).message ?? "Something went wrong."); return null; }
       setView(d as CheckoutView);
-      return true;
+      return d as CheckoutView;
     } finally { setSaving(false); }
   }, [invoiceId]);
 
@@ -73,7 +73,7 @@ const STATUS_STYLE: Record<string, string> = {
 // ---- workspace --------------------------------------------------------------
 export function CheckoutWorkspace({ invoiceId, onClose, onDone }: { invoiceId: string; onClose: () => void; onDone?: () => void }) {
   const { view, saving, act } = useCheckout(invoiceId);
-  const completed = view?.invoice.status === "paid"; // derived — the completion overlay shows once paid
+  const [justPaid, setJustPaid] = React.useState(false); // completion overlay only on THIS session's payment
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -99,14 +99,14 @@ export function CheckoutWorkspace({ invoiceId, onClose, onDone }: { invoiceId: s
           <div className="mx-auto grid max-w-6xl gap-5 p-4 md:grid-cols-[minmax(0,1fr)_320px] md:p-6">
             <div className="min-w-0 space-y-4">
               <ChargesPanel view={view} saving={saving} act={act} />
-              <PaymentPanel key={view.money.outstanding} view={view} saving={saving} act={act} />
+              <PaymentPanel key={view.money.outstanding} view={view} saving={saving} act={act} onPaid={() => setJustPaid(true)} />
             </div>
             <SideRail view={view} saving={saving} act={act} />
           </div>
         </div>
       )}
 
-      {completed && view && (
+      {justPaid && view && (
         <CheckoutCompletion view={view} onDone={() => { onDone?.(); onClose(); }} />
       )}
     </div>
@@ -131,7 +131,7 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{children}</span>;
 }
 
-type Act = (body: Record<string, unknown>) => Promise<boolean>;
+type Act = (body: Record<string, unknown>) => Promise<CheckoutView | null>;
 
 function ChargesPanel({ view, saving, act }: { view: CheckoutView; saving: boolean; act: Act }) {
   const [addOpen, setAddOpen] = React.useState(false);
@@ -269,7 +269,7 @@ function ConcessionInline({ view, saving, act, onClose }: { view: CheckoutView; 
 
 const METHODS = ["cash", "upi", "card"] as const;
 
-function PaymentPanel({ view, saving, act }: { view: CheckoutView; saving: boolean; act: Act }) {
+function PaymentPanel({ view, saving, act, onPaid }: { view: CheckoutView; saving: boolean; act: Act; onPaid: () => void }) {
   const outstanding = view.money.outstanding;
   const [method, setMethod] = React.useState<(typeof METHODS)[number]>("cash");
   const [amount, setAmount] = React.useState(String(outstanding)); // re-inits via key on outstanding change
@@ -279,7 +279,8 @@ function PaymentPanel({ view, saving, act }: { view: CheckoutView; saving: boole
     const a = Number(amount);
     if (!Number.isInteger(a) || a <= 0) return toast.info("Enter an amount.");
     if (a > outstanding) return toast.error(`Amount exceeds the ${inr(outstanding)} outstanding.`);
-    await act({ action: "pay", amount: a, method });
+    const nv = await act({ action: "pay", amount: a, method });
+    if (nv && nv.invoice.status === "paid") onPaid();
   }
   const partial = Number(amount) > 0 && Number(amount) < outstanding;
   return (
@@ -312,8 +313,101 @@ function SideRail({ view, saving, act }: { view: CheckoutView; saving: boolean; 
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><FileText className="size-4 text-muted-foreground" /> Clinical Artifacts</div>
         {view.invoice.appointment_id ? <ClinicalArtifacts appointmentId={view.invoice.appointment_id} /> : <p className="text-xs text-muted-foreground">No visit linked.</p>}
       </section>
+      {view.money.collected > 0 && <CorrectionsPanel invoiceId={view.invoice.id} />}
       <SlotStub icon={<Sparkles className="size-4" />} title="Recommendations" note="Treatment planning — future" />
     </aside>
+  );
+}
+
+interface CreditNoteRow { id: string; number: string; amount: number; reason: string; status: string; refunded: number; refunds: { id: string; amount: number; method: string }[] }
+
+// M3B B5 — corrections on a paid invoice. Owner-authorized (the API enforces).
+function CorrectionsPanel({ invoiceId }: { invoiceId: string }) {
+  const [rows, setRows] = React.useState<CreditNoteRow[] | null>(null);
+  const [mode, setMode] = React.useState<"none" | "credit" | { refundCnId: string; max: number }>("none");
+  const [amount, setAmount] = React.useState("");
+  const [reason, setReason] = React.useState("");
+  const [method, setMethod] = React.useState<(typeof METHODS)[number]>("cash");
+  const [busy, setBusy] = React.useState(false);
+  const [reloadKey, setReloadKey] = React.useState(0);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch(`/api/clinic/corrections?invoice_id=${invoiceId}`, { cache: "no-store" });
+      if (cancelled) return;
+      setRows(res.ok ? await res.json() : []);
+    })();
+    return () => { cancelled = true; };
+  }, [invoiceId, reloadKey]);
+
+  async function post(body: Record<string, unknown>) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/clinic/corrections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error((d as { message?: string }).message ?? "Couldn't record the correction."); return; }
+      setMode("none"); setAmount(""); setReason("");
+      setReloadKey((x) => x + 1);
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <section className="rounded-2xl border bg-card p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-semibold">Corrections</span>
+        {mode === "none" && <Button variant="outline" size="sm" disabled={busy} onClick={() => setMode("credit")}>Issue Credit Note</Button>}
+      </div>
+
+      {mode === "credit" && (
+        <div className="mb-3 space-y-2 rounded-xl border bg-muted/30 p-3">
+          <Input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="₹ credit amount" />
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (required)" />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" disabled={busy} onClick={() => setMode("none")}>Cancel</Button>
+            <Button size="sm" disabled={busy} onClick={() => post({ action: "credit_note", invoice_id: invoiceId, amount: Number(amount), reason })}>Credit</Button>
+          </div>
+        </div>
+      )}
+
+      {rows === null ? (
+        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> Loading…</div>
+      ) : rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No corrections. A paid invoice is never edited — corrections are credit notes & refunds.</p>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((note) => (
+            <div key={note.id} className="rounded-xl border p-2.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{note.number}</span>
+                <span className="tabular-nums">{inr(note.amount)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">{note.reason} · {note.status}{note.refunded > 0 ? ` · refunded ${inr(note.refunded)}` : ""}</div>
+              {typeof mode === "object" && mode.refundCnId === note.id ? (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-2">
+                    <Input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder={`₹ ≤ ${mode.max}`} className="flex-1" />
+                    <div className="inline-flex overflow-hidden rounded-lg border">
+                      {METHODS.map((m) => <button key={m} onClick={() => setMethod(m)} className={cn("px-2.5 py-1 text-xs capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground")}>{m}</button>)}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" disabled={busy} onClick={() => setMode("none")}>Cancel</Button>
+                    <Button size="sm" disabled={busy} onClick={() => post({ action: "refund", credit_note_id: note.id, amount: Number(amount), method })}>Refund</Button>
+                  </div>
+                </div>
+              ) : (
+                note.status !== "refunded" && note.amount - note.refunded > 0 && (
+                  <button className="mt-1 text-xs font-medium text-primary hover:underline" onClick={() => { setMode({ refundCnId: note.id, max: note.amount - note.refunded }); setAmount(String(note.amount - note.refunded)); }}>
+                    Record refund
+                  </button>
+                )
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
