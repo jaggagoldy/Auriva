@@ -10,6 +10,7 @@
 
 import prisma from "@/lib/prisma";
 import { TYPE_LABEL } from "@/domain/document";
+import { parseMedicines } from "@/domain/prescription";
 
 // C3 — the Timeline never owns data; it only reveals relationships between
 // existing clinical/operational artifacts. Read-time aggregation, deep-linked.
@@ -60,7 +61,7 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
     }),
     prisma.prescription.findMany({
       where: { patient_id: patientId, clinic_id: clinicId },
-      select: { id: true, medicines_json: true, created_at: true, doctor: { select: { full_name: true } } },
+      select: { id: true, appointment_id: true, medicines_json: true, created_at: true, doctor: { select: { full_name: true } } },
     }),
     prisma.labOrder.findMany({
       where: { patient_id: patientId, clinic_id: clinicId },
@@ -87,9 +88,17 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
     }),
     prisma.document.findMany({
       where: { patient_id: patientId, clinic_id: clinicId, status: "issued" },
-      select: { id: true, type: true, number: true, generated_at: true },
+      select: { id: true, type: true, number: true, generated_at: true, appointment_id: true },
     }),
   ]);
+
+  // A8 — the issued Prescription document per appointment, so the "Prescription
+  // issued" entry carries the RX number and deep-links to the document (and the
+  // generic Document loop below skips it, avoiding a duplicate row).
+  const rxDocByAppt = new Map<string, { id: string; number: string }>();
+  for (const d of documents) {
+    if (d.type === "prescription" && d.appointment_id) rxDocByAppt.set(d.appointment_id, { id: d.id, number: d.number });
+  }
 
   const entries: TimelineEntry[] = [];
 
@@ -115,20 +124,19 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
   }
 
   for (const rx of prescriptions) {
-    let count = 0;
-    try {
-      count = (JSON.parse(rx.medicines_json) as unknown[]).length;
-    } catch {
-      count = 0;
-    }
+    const count = parseMedicines(rx.medicines_json).length;
+    const doc = rxDocByAppt.get(rx.appointment_id);
+    // A8 subtitle: "3 medicines · RX-2026-0042" (+ actor rendered separately).
+    const detail = `${count} medicine${count === 1 ? "" : "s"}${doc ? ` · ${doc.number}` : ""}`;
     entries.push({
       id: `rx-${rx.id}`,
       kind: "prescription",
       title: "Prescription issued",
-      detail: `${count} medicine${count === 1 ? "" : "s"}`,
+      detail,
       actor: rx.doctor?.full_name ?? "doctor",
       at: rx.created_at.toISOString(),
-      link: { kind: "prescription", id: rx.id },
+      // Deep-link to the issued document when it exists; else the prescription.
+      link: doc ? { kind: "document", id: doc.id } : { kind: "prescription", id: rx.id },
     });
   }
 
@@ -198,8 +206,11 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
     });
   }
 
-  // B3 — Documents (each deep-links to the Document viewer/print).
+  // B3 — Documents (each deep-links to the Document viewer/print). Prescription
+  // documents are represented by the "Prescription issued" entry above (A8), so
+  // skip them here to avoid a duplicate timeline row.
   for (const d of documents) {
+    if (d.type === "prescription") continue;
     entries.push({
       id: `doc-${d.id}`,
       kind: "document",

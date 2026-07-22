@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Appointment, PrescriptionMedicine, formatTime, parseMedicines } from "@/shared/queue";
 import { COMMON_MEDICINES, DOSAGE_PRESETS, NOTE_TEMPLATES } from "@/shared/medicine-catalog";
+import { formatMedicine } from "@/domain/prescription";
 
 function emptyMedicine(): PrescriptionMedicine {
   return { id: crypto.randomUUID(), name: "", dosage: "", frequency: "", duration: "" };
@@ -329,6 +330,31 @@ export default function PrescriptionEditor({
           <p className="text-[10.5px] text-muted-foreground">
             Drug interaction checking is not yet available — verify interactions manually.
           </p>
+
+          {/* C4 A4 — live preview through the SAME formatter the printed
+              Prescription document uses, with patient-facing wording, so what
+              the doctor sees is exactly what the patient receives. */}
+          {medicines.some((m) => m.name.trim()) && (
+            <div className="rounded-lg border border-dashed bg-muted/30 p-3">
+              <div className="mb-1.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                Prescription preview (as the patient will read it)
+              </div>
+              <ol className="space-y-1">
+                {medicines.filter((m) => m.name.trim()).map((m, i) => {
+                  const { name, directions } = formatMedicine(m, "patient");
+                  return (
+                    <li key={m.id} className="flex gap-2 text-[12px]">
+                      <span className="text-muted-foreground tabular-nums">{i + 1}.</span>
+                      <span>
+                        <span className="font-medium">{name}</span>
+                        {directions ? <span className="text-muted-foreground"> — {directions}</span> : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">

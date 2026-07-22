@@ -14,6 +14,7 @@ import {
   TYPE_NUMBER_PREFIX,
   isDocumentType,
 } from "@/domain/document";
+import { parseMedicines } from "@/domain/prescription";
 
 export class DocumentError extends Error {}
 
@@ -111,6 +112,27 @@ const CONTENT_ASSEMBLERS: Partial<Record<DocumentType, Assembler>> = {
       },
     };
   },
+  // C4 — the issued Prescription document (RX-numbered, immutable snapshot).
+  // Prescription MODEL stays the source of truth; this is its immutable copy at
+  // issue-time (same pattern as Invoice → Invoice Document). Returns null when
+  // no medicines, so an empty prescription document is never generated.
+  prescription: async (tx, appointmentId, clinicId) => {
+    const { appt, branding, meta } = await loadVisitContext(tx, appointmentId, clinicId);
+    const rx = await tx.prescription.findUnique({ where: { appointment_id: appointmentId } });
+    const medicines = parseMedicines(rx?.medicines_json ?? appt.prescription_medicines_json);
+    if (medicines.length === 0) return null;
+    return {
+      branding,
+      meta,
+      body: {
+        visit_id: appointmentId, // A7 — carried for future integrations
+        diagnosis: appt.diagnosis ?? null,
+        medicines, // structured PrescriptionMedicine[] snapshot
+        advice: rx?.notes ?? appt.prescription_notes ?? null,
+        follow_up_date: (rx?.follow_up_date ?? appt.follow_up_date)?.toISOString() ?? null,
+      },
+    };
+  },
 };
 
 /** Unified numbering: `${PREFIX}-${year}-${seq}`, per clinic + type + year.
@@ -150,7 +172,7 @@ export async function generateDocument(
     const version = prior ? prior.version + 1 : 1;
     if (prior) await tx.document.update({ where: { id: prior.id }, data: { status: "superseded" } });
 
-    const invoice = type === "visit_summary"
+    const invoice = type === "visit_summary" || type === "prescription"
       ? null
       : await tx.invoice.findFirst({ where: { appointment_id: appointmentId, clinic_id: clinicId }, orderBy: { created_at: "asc" }, select: { id: true, patient_id: true } });
     const patientId = invoice?.patient_id ?? (await tx.appointment.findUniqueOrThrow({ where: { id: appointmentId }, select: { patient_id: true } })).patient_id;
@@ -188,7 +210,9 @@ export async function generateDocument(
 /** Idempotently ensure the visit's B3 documents exist (generate missing ones).
  *  Safe to call on checkout completion and on view. */
 export async function ensureVisitDocuments(appointmentId: string, clinicId: string, actorUserId?: string | null) {
-  for (const type of B3_DOCUMENT_TYPES) {
+  // B3 types + C4 prescription. The prescription assembler returns null (no
+  // document) when the visit has no medicines, so this stays a no-op then.
+  for (const type of [...B3_DOCUMENT_TYPES, "prescription" as DocumentType]) {
     const existing = await prisma.document.findFirst({ where: { appointment_id: appointmentId, type, status: "issued" } });
     if (!existing) await generateDocument(type, appointmentId, clinicId, actorUserId);
   }

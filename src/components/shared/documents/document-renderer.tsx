@@ -5,6 +5,7 @@
 // type adds a body to BODIES — no other change.
 
 import * as React from "react";
+import { formatMedicine, type PrescriptionMedicine } from "@/domain/prescription";
 
 export interface DocumentDetail {
   id: string;
@@ -23,7 +24,7 @@ export interface DocumentDetail {
   };
 }
 
-const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt", treatment_plan: "Treatment Plan" };
+const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt", treatment_plan: "Treatment Plan", prescription: "Prescription" };
 const inr = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
@@ -80,7 +81,7 @@ function DocumentBranding({ doc }: { doc: DocumentDetail }) {
 // Reserved slots — signature / clinic stamp / footer. Rendered empty (no data)
 // so the layout is ready when these are enabled; invisible until then.
 function DocumentFooter({ doc }: { doc: DocumentDetail }) {
-  if (!["visit_summary", "invoice", "receipt", "credit_note", "refund_receipt"].includes(doc.type)) return null;
+  if (!["visit_summary", "invoice", "receipt", "credit_note", "refund_receipt", "prescription"].includes(doc.type)) return null;
   return (
     <footer className="mt-10 flex items-end justify-between">
       <div className="text-[10px] text-neutral-400">{/* footer slot (reserved) */}</div>
@@ -115,6 +116,7 @@ const BODIES: Record<string, React.FC<BodyProps>> = {
   credit_note: CreditNoteBody,
   refund_receipt: RefundReceiptBody,
   treatment_plan: TreatmentPlanBody,
+  prescription: PrescriptionBody,
 };
 
 function TreatmentPlanBody({ body }: BodyProps) {
@@ -227,6 +229,39 @@ function VisitSummaryBody({ body }: BodyProps) {
         </Sec>
       )}
       {services.length > 0 && <Sec label="Services performed">{services.map((s) => s.name).join(", ")}</Sec>}
+      {body.advice ? <Sec label="Advice">{String(body.advice)}</Sec> : null}
+      {body.follow_up_date ? <Sec label="Follow-up">{fmtDate(String(body.follow_up_date))}</Sec> : null}
+    </div>
+  );
+}
+// C4 — the printed Prescription handed to the patient. Renders through the
+// SHARED formatter (A4: identical to the editor preview) with PATIENT labels
+// (A6: "Three times daily", never "TDS").
+function PrescriptionBody({ body }: BodyProps) {
+  const medicines = (body.medicines as PrescriptionMedicine[]) ?? [];
+  return (
+    <div className="space-y-3 text-[12px]">
+      {body.diagnosis ? <Sec label="Diagnosis">{String(body.diagnosis)}</Sec> : null}
+      <Sec label="Medicines">
+        {medicines.length === 0 ? (
+          <span className="text-neutral-500">No medicines prescribed.</span>
+        ) : (
+          <ol className="space-y-1.5">
+            {medicines.map((m, i) => {
+              const { name, directions } = formatMedicine(m, "patient");
+              return (
+                <li key={i} className="flex gap-2">
+                  <span className="text-neutral-400 tabular-nums">{i + 1}.</span>
+                  <span>
+                    <span className="font-medium text-neutral-800">{name}</span>
+                    {directions ? <span className="text-neutral-600"> — {directions}</span> : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </Sec>
       {body.advice ? <Sec label="Advice">{String(body.advice)}</Sec> : null}
       {body.follow_up_date ? <Sec label="Follow-up">{fmtDate(String(body.follow_up_date))}</Sec> : null}
     </div>

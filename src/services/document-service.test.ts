@@ -107,14 +107,46 @@ describe("versioning + numbering", () => {
 });
 
 describe("ensureVisitDocuments", () => {
-  it("generates the applicable set idempotently", async () => {
-    const s = await completedVisit({ pay: true });
+  it("generates the applicable set idempotently (incl. C4 prescription)", async () => {
+    const s = await completedVisit({ pay: true }); // harness seeds a legacy-shape prescription
     const set1 = await ensureVisitDocuments(s.appt.id, s.clinic.id, s.doctorUser.id);
     const types = set1.map((d) => d.type).sort();
-    expect(types).toEqual(["invoice", "receipt", "visit_summary"]);
+    expect(types).toEqual(["invoice", "prescription", "receipt", "visit_summary"]);
     const set2 = await ensureVisitDocuments(s.appt.id, s.clinic.id, s.doctorUser.id);
-    expect(set2).toHaveLength(3); // idempotent — not duplicated
+    expect(set2).toHaveLength(4); // idempotent — not duplicated
     const count = await prisma.document.count({ where: { appointment_id: s.appt.id, status: "issued" } });
-    expect(count).toBe(3);
+    expect(count).toBe(4);
+  });
+});
+
+// C4 — the issued Prescription document.
+describe("prescription document", () => {
+  it("RX-numbered Clinical doc that snapshots structured medicines from a LEGACY row (A9)", async () => {
+    const s = await completedVisit(); // harness prescription is the legacy {name,dosage,frequency,duration} shape
+    const res = await generateDocument("prescription", s.appt.id, s.clinic.id, s.doctorUser.id);
+    expect(res).not.toBeNull();
+    expect(res!.number).toMatch(/^RX-\d{4}-0001$/);
+    const doc = await getDocument(res!.id, s.clinic.id);
+    expect(doc.category).toBe("Clinical");
+    expect(doc.content.body.visit_id).toBe(s.appt.id); // A7 metadata
+    const meds = doc.content.body.medicines as { name: string }[];
+    expect(meds).toHaveLength(1);
+    expect(meds[0].name).toBe("Paracetamol 650");
+    expect(doc.content.branding.clinic_name).toBeTruthy(); // self-contained snapshot
+  });
+
+  it("is NOT generated when the visit has no medicines", async () => {
+    const { clinic } = await createTestOrganization();
+    clinicIds.push(clinic.id);
+    const { staffProfile: doctor, user: doctorUser } = await createTestStaff(clinic.id, "doctor");
+    const { profile: patient } = await createTestPatient(clinic.id);
+    const appt = await prisma.appointment.create({
+      data: { patient_id: patient.id, doctor_id: doctor.id, clinic_id: clinic.id, scheduled_time: new Date(), status: "in_consultation", diagnosis: "Advice only" },
+    });
+    await openVisitCapture(appt.id, clinic.id, doctorUser.id);
+    await transitionStatus(appt.id, "completed", { actorUserId: doctorUser.id });
+    expect(await generateDocument("prescription", appt.id, clinic.id, doctorUser.id)).toBeNull();
+    const set = await ensureVisitDocuments(appt.id, clinic.id, doctorUser.id);
+    expect(set.some((d) => d.type === "prescription")).toBe(false);
   });
 });

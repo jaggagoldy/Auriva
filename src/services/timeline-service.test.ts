@@ -5,7 +5,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import prisma from "@/lib/prisma";
 import { createTestOrganization, createTestPatient, createTestStaff } from "@/test/fixtures";
-import { transitionStatus } from "@/services/appointment-service";
+import { transitionStatus, updateClinicalRecord } from "@/services/appointment-service";
 import { openVisitCapture } from "@/services/service-capture-service";
 import { recordCheckoutPayment } from "@/services/checkout-service";
 import { createPlan } from "@/services/treatment-plan-service";
@@ -72,6 +72,31 @@ describe("deterministic ordering (Amendment 9)", () => {
     const invIdx = ids.indexOf(`inv-${s.invoice.id}`);
     expect(docIdx).toBeGreaterThanOrEqual(0);
     expect(docIdx).toBeLessThan(invIdx);
+  });
+});
+
+describe("C4 — prescription timeline enrichment (A8)", () => {
+  it("Rx entry carries medicine count + RX number, deep-links to the doc, no duplicate document row", async () => {
+    const { clinic } = await createTestOrganization();
+    clinicIds.push(clinic.id);
+    const { staffProfile: doctor, user: doctorUser } = await createTestStaff(clinic.id, "doctor");
+    const { profile: patient } = await createTestPatient(clinic.id);
+    const appt = await prisma.appointment.create({ data: { patient_id: patient.id, doctor_id: doctor.id, clinic_id: clinic.id, scheduled_time: new Date(), status: "in_consultation" } });
+    await openVisitCapture(appt.id, clinic.id, doctorUser.id);
+    // Writes the Prescription MODEL row (the timeline's source).
+    await updateClinicalRecord(appt.id, { prescription_medicines_json: JSON.stringify([{ name: "Amoxicillin", dosage: "500 mg", frequency: "TDS", duration: "5 days" }, { name: "Paracetamol", dosage: "650 mg", frequency: "SOS", duration: "3 days" }]) });
+    await transitionStatus(appt.id, "completed", { actorUserId: doctorUser.id });
+    const set = await ensureVisitDocuments(appt.id, clinic.id, doctorUser.id);
+    const rxDoc = set.find((d) => d.type === "prescription")!;
+    expect(rxDoc.number).toMatch(/^RX-/);
+
+    const t = await getPatientTimeline(patient.id, clinic.id, { limit: 100 });
+    const rxEntry = t!.entries.find((e) => e.kind === "prescription")!;
+    expect(rxEntry.detail).toContain("2 medicines");
+    expect(rxEntry.detail).toContain(rxDoc.number); // A8: RX number in the subtitle
+    expect(rxEntry.link).toEqual({ kind: "document", id: rxDoc.id }); // deep-links to the issued doc
+    // Deduped: no generic document entry points at the prescription document.
+    expect(t!.entries.filter((e) => e.kind === "document" && e.link?.id === rxDoc.id)).toHaveLength(0);
   });
 });
 

@@ -3,6 +3,7 @@
 > **Process v3.0 · Step 1.** Concise readiness for Product-Office approval. **No code until approved.**
 > **Customer Promise:** *"Every prescription, captured clearly — and reusable."* · Phase 3 · Milestone C4 · ~1–2 sprints.
 > **Operational question:** *"What treatment did the doctor decide — and can it be captured cleanly, printed properly, and reused?"*
+> **Canonical Business Object:** `PrescriptionMedicine` (new PO rule — every milestone names the object it establishes in Auriva's shared vocabulary).
 
 ## Why now?
 - **Why needed now:** a prescription today is **free text** — medicines are a loose JSON blob (`name/dosage/frequency/duration`), typed fresh every visit, and the prescription is **not a real document** the way an invoice is (no number, no immutable snapshot, not in the Document registry). Doctors retype the same common drugs; patients get a printout that isn't a governed artifact.
@@ -61,6 +62,20 @@ Consultation / Clinical Record (writes the prescription) · **Document Platform 
 
 ## Demo Story
 > During a consult the doctor adds a medicine: types "Amoxicillin", picks **500 mg**, taps **TDS · after food**, sets **5 days** — the live preview shows the full line. A second drug comes straight from the **recent-medicines quick-pick** in one tap. On completing the visit, Auriva issues **Prescription RX-2026-0042** — a proper numbered document. It appears on the patient's **Timeline** (one click → the prescription), in their **Documents**, and is ready for **C5** to send them a copy.
+
+## PO Amendments (approved — incorporated in the build)
+1. **Prescription lifecycle** documented — draft → saved-during-consult → issued → superseded(future) → archived(future); only the *issued document* is immutable, the Prescription model stays source of truth (`domain/prescription.ts` header).
+2. **`display_name`** added to the medicine contract; the UI reads it, never an internal drug id.
+3. **Frequency and administration separated** — two distinct fields (`frequency` = OD/BD/TDS…, `administration` = before/after food).
+4. **Preview === print** — one shared `formatMedicine()` behind both the editor's live preview and the printed document (identical rendering, not approximate).
+5. **Recent-medicines** quick-pick is a read-model (already frequency-ranked in the workbench); recency tie-break noted.
+6. **Patient language** — patient-facing rendering shows "Three times daily", "At bedtime" (the contract keeps codes; presentation differs).
+7. **Document metadata** — the prescription snapshot carries visit_id + doctor + clinic + issued time + version + RX number.
+8. **Timeline** entry enriched — "N medicines · RX-2026-XXXX · Dr. …", deep-linking to the issued document (and de-duplicated from the generic document row).
+9. **QA golden path** — a legacy `{name,dosage,frequency,duration}` row opens, saves, generates a document, and appears on the timeline (automated).
+10. **Guardrail recorded** — the medicine contract is *clinical, not commercial* (no SKU / stock / price / vendor; those belong to a future Pharmacy module).
+
+**New PO rule adopted (effective C4):** every readiness names its **Canonical Business Object** (see header). These objects (TreatmentPlan · TreatmentPlanSession · TimelineEntry · **PrescriptionMedicine** · CommunicationMessage) are Auriva's shared vocabulary.
 
 ---
 **STOP — awaiting Product Office approval of this readiness before implementation.** On approval I build the entire C4 milestone, then deliver the full Process v3.0 package (Completion Report · Demo · QA · Known Limitations · "What's New in C4" · **Platform Contracts Introduced** · Milestone Summary Card · Release Dashboard update) and stop for review.
