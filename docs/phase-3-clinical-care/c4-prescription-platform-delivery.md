@@ -117,4 +117,18 @@ The doctor's **primary clinical output** is now structured, patient-readable, an
 | **Tests** | 632/632 pass (+12) · lint ✅ · build ✅ |
 | **Deferred** | Full-contract capture in the editor · interaction checking (integration) · curated medicine catalog · explicit lifecycle UI |
 | **Unlocks** | C5 (Communication) sends the prescription; Phase-4 analytics reads it |
-| **Status** | 🧪 In Product-Office review |
+| **Status** | ✅ **Approved** — Product Office (accepted) |
+
+---
+
+## 9. Business Rules Preserved (recorded per PO — new governance from C5)
+
+- Prescription **model remains the source of truth**; the document is an immutable snapshot.
+- The prescription **document is immutable** (regeneration → new version, prior superseded).
+- **Preview equals print** — one shared `formatMedicine()`.
+- **Patients never see clinical abbreviations** — patient-facing rendering translates codes.
+- The structured contract stays **clinical, not commercial** (no SKU / stock / price / vendor).
+
+## 10. Recorded future direction (per PO — not built)
+
+- **Prescription Renewal** — distinguish *New Prescription* from *Repeat Previous Prescription* using the same `PrescriptionMedicine` contract. Future enhancement; not implemented now.
