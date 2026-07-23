@@ -71,3 +71,14 @@
 * **Rejected Reason:** Multi-step page reloads slow down doctor charting and increase friction during busy clinic hours.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-007: Structured Prescription JSON Snapshot & RX Document Generation
+* **Requirement:** `REQ-DOC-002` (Structured Prescription Authoring & Printable Rx)
+* **Decision:** Persist medicines as structured JSON (`prescription_medicines_json`) with explicit fields (`name`, `dosage`, `frequency`, `duration`), generating a immutable `RX-` numbered document snapshot upon consultation sign-off.
+* **Reason:** Guarantees Rx readability, enables pharmacy integration, and preserves audit trail without relying on un-structured free-text fields.
+* **Alternatives Considered:** Store prescription as free-text paragraph string.
+* **Rejected Reason:** Free-text paragraphs cause dispensing errors and prevent clinical analytics or interaction checking.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23
