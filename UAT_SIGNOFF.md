@@ -7,13 +7,13 @@
 
 ---
 
-## 1. HUMAN UAT TESTER ASSIGNMENTS
+## 1. HUMAN UAT TESTER ASSIGNMENTS & VALIDATED CREDENTIALS
 
-| Role Persona | Tester Name / Title | Verification Date | Surface URL | Target Workstream | Sign-off Verdict |
-|---|---|---|---|---|---|
-| **Front-Desk Receptionist** | [ Tester Name ] | [ Date ] | `http://localhost:3000/staff` | Workstream B1 (Reception) | 🟡 PENDING UAT |
-| **Attending Doctor** | [ Tester Name ] | [ Date ] | `http://localhost:3000/doctor` | Workstream B2 (Doctor) | 🟡 PENDING UAT |
-| **Practice Owner** | [ Tester Name ] | [ Date ] | `http://localhost:3000/admin` | Workstream C1 (Owner) | 🟡 PENDING UAT |
+| Role Persona | Tester Name / Title | Login Email | Password | Surface URL | Target Workstream | Sign-off Verdict |
+|---|---|---|---|---|---|---|
+| **Practice Owner** | [ Tester Name ] | `admin@aegiscare.com` | `password123` | `http://localhost:3000/admin` | Workstream C1 (Owner) | 🟡 PENDING UAT |
+| **Attending Doctor** | [ Tester Name ] | `dr.smith@aegiscare.com` | `password123` | `http://localhost:3000/doctor` | Workstream B2 (Doctor) | 🟡 PENDING UAT |
+| **Front-Desk Receptionist** | [ Tester Name ] | `staff@aegiscare.com` | `password123` | `http://localhost:3000/staff` | Workstream B1 (Reception) | 🟡 PENDING UAT |
 
 ---
 
@@ -21,7 +21,7 @@
 
 ### Scenario 1: Front-Desk Receptionist Journey
 * **Goal:** Verify walk-in registration, 1-click check-in, emergency priority bypass, doctor transfer, and cashier checkout without leaving `/staff`.
-* **Prerequisite Account:** `reception@test.local` / `password123`
+* **Prerequisite Account:** `staff@aegiscare.com` / `password123`
 
 | Test Step | Action Required | Expected Result | Human Tester Observed Result | Verdict |
 |---|---|---|---|---|
@@ -35,7 +35,7 @@
 
 ### Scenario 2: Attending Doctor Clinical Journey
 * **Goal:** Verify uninterrupted consultation charting, structured prescription authoring, and 1-click sign-off on `/doctor`.
-* **Prerequisite Account:** `doctor@test.local` / `password123`
+* **Prerequisite Account:** `dr.smith@aegiscare.com` / `password123`
 
 | Test Step | Action Required | Expected Result | Human Tester Observed Result | Verdict |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@
 
 ### Scenario 3: Practice Owner Operational Journey
 * **Goal:** Verify morning operational snapshot, real-time KPIs, and service catalog management on `/admin`.
-* **Prerequisite Account:** `owner@test.local` / `password123`
+* **Prerequisite Account:** `admin@aegiscare.com` / `password123`
 
 | Test Step | Action Required | Expected Result | Human Tester Observed Result | Verdict |
 |---|---|---|---|---|
