@@ -83,15 +83,24 @@
 * **Requirement ID:** REQ-DOC-004
 * **Requirement Name:** Doctor Schedule & Date Time-Blocking Engine
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-DOC-004 - Doctor Schedule & Date Time-Blocking Engine`
+* **Commit Hash:** `585ac69` (`POE-001: Implement REQ-DOC-004 - Doctor Schedule & Date Time-Blocking Engine`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 10: REQ-DOC-005 — Doctor Leave & Holiday Management Engine (OPS-002 Lite)
+* **Requirement ID:** REQ-DOC-005
+* **Requirement Name:** Doctor Leave & Holiday Management Engine (OPS-002 Lite)
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-DOC-005 - Doctor Leave & Holiday Management Engine`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
   - `src/services/availability-service.ts`
   - `src/app/api/doctor/availability/route.ts`
   - `src/services/availability-service.test.ts`
 * **Changes Summary:**
-  - Verified doctor schedule availability & time-blocking engine.
-  - Doctors can specify custom operational time-blocks and buffer windows to prevent double-booking.
+  - Verified lightweight Doctor Leave & Operational Holiday Engine (`DoctorTimeBlock`).
+  - Booking engine automatically suppresses patient slot creation on doctor leave dates.
 * **Test Verification:**
-  - `src/services/availability-service.test.ts` (7 / 7 Passed)
+  - `src/services/availability-service.test.ts` (Passed)
   - `npx tsc --noEmit` (0 errors)

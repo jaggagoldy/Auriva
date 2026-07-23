@@ -104,3 +104,14 @@
 * **Rejected Reason:** Client-side only validation allows race conditions when multiple receptionists book simultaneously.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-010: Operational Doctor Leave Slot Suppression (OPS-002 Lite)
+* **Requirement:** `REQ-DOC-005` (Doctor Leave & Holiday Management Engine)
+* **Decision:** Implement doctor leave via lightweight `DoctorTimeBlock` date range suppression, blocking slot generation in `getBookableSlots` without introducing complex HRMS/Payroll entities.
+* **Reason:** Fulfills clinical practice leave operations while adhering strictly to Auriva's Product Philosophy against HRMS bloat.
+* **Alternatives Considered:** Build full employee leave entitlement & approval workflow database schema.
+* **Rejected Reason:** Violates Auriva Architecture Principles by adding non-clinical HRMS complexity.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

@@ -17,7 +17,7 @@
 - [x] **REQ-DOC-002**: Structured Prescription Authoring & Printable Rx (`completed`)
 - [x] **REQ-DOC-003**: 1-Click Consultation Sign-off & Automated Invoicing (`completed`)
 - [x] **REQ-DOC-004**: Doctor Schedule & Date Time-Blocking Engine (`completed`)
-- [ ] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`not_started`)
+- [x] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`completed`)
 - [ ] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`not_started`)
 - [ ] **REQ-OWN-002**: Real-time Operational Intelligence & Practice KPIs (`not_started`)
 - [ ] **REQ-OWN-003**: Treatment Services Catalog & Pricing Engine (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 9 / 18 (50.0%)
+* **Completed:** 10 / 18 (55.6%)
 * **In Progress:** 0 / 18
-* **Remaining:** 9 / 18
+* **Remaining:** 8 / 18
