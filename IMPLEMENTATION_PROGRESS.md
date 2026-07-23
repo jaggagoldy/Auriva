@@ -20,7 +20,7 @@
 - [x] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`completed` · 🔒 Frozen)
 - [x] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`completed`)
 - [x] **REQ-OWN-002**: Real-time Operational Intelligence & Practice KPIs (`completed`)
-- [ ] **REQ-OWN-003**: Treatment Services Catalog & Pricing Engine (`not_started`)
+- [x] **REQ-OWN-003**: Treatment Services Catalog & Pricing Engine (`completed`)
 - [ ] **REQ-TEA-001**: Staff Directory & Capabilities Assignment Engine (`not_started`)
 - [ ] **REQ-TEA-002**: Phone-First Staff Invitation & Onboarding Lifecycle (`not_started`)
 - [ ] **REQ-PLT-001**: Unified Adaptive Workspace Shell & Information Hubs (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 12 / 18 (66.7%)
+* **Completed:** 13 / 18 (72.2%)
 * **In Progress:** 0 / 18
-* **Remaining:** 6 / 18
+* **Remaining:** 5 / 18

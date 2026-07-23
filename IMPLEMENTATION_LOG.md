@@ -25,15 +25,23 @@
 * **Requirement ID:** REQ-OWN-002
 * **Requirement Name:** Real-time Operational Intelligence & Practice KPIs
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-OWN-002 - Real-time Operational Intelligence & Practice KPIs`
+* **Commit Hash:** `61c7467` (`POE-001: Implement REQ-OWN-002 - Real-time Operational Intelligence & Practice KPIs`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 13: REQ-OWN-003 — Treatment Services Catalog & Pricing Engine
+* **Requirement ID:** REQ-OWN-003
+* **Requirement Name:** Treatment Services Catalog & Pricing Engine
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-OWN-003 - Treatment Services Catalog & Pricing Engine`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/services/dashboard-service.ts`
-  - `src/services/billing-service.ts`
-  - `src/components/admin/owner-dashboard.tsx`
-  - `src/services/dashboard-service.test.ts`
+  - `src/services/service-catalog-service.ts`
+  - `src/components/admin/service-catalog-manager.tsx`
+  - `src/services/service-catalog-service.test.ts`
 * **Changes Summary:**
-  - Verified real-time operational intelligence dashboard aggregating monthly/daily revenue trends, patient volume by doctor, average wait time, and payment channel breakdown.
+  - Verified Service Catalog & Pricing Engine supporting custom procedure pricing, durations, categories, and permission-by-kind validation (clinical vs administrative).
 * **Test Verification:**
-  - `src/services/dashboard-service.test.ts` (Passed)
+  - `src/services/service-catalog-service.test.ts` (17 / 17 Passed)
   - `npx tsc --noEmit` (0 errors)

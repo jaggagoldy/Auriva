@@ -28,3 +28,12 @@
 * **Reason:** Guarantees KPI accuracy and eliminates data drift or cache invalidation bugs.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-013: Service Catalog Permission-by-Kind Guarding
+* **Requirement:** `REQ-OWN-003` (Treatment Services Catalog & Pricing Engine)
+* **Decision:** Classify services by `kind` (`clinical` vs `financial`), restricting clinical service billing additions to clinical roles (`doctor`) and administrative charges to reception staff.
+* **Reason:** Prevents reception staff from adding unauthorized clinical services while allowing ad-hoc administrative fees.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23
