@@ -65,16 +65,26 @@
 * **Requirement ID:** REQ-DOC-002
 * **Requirement Name:** Structured Prescription Authoring & Printable Rx
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-DOC-002 - Structured Prescription Authoring & Printable Rx`
+* **Commit Hash:** `212b2ef` (`POE-001: Implement REQ-DOC-002 - Structured Prescription Authoring & Printable Rx`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 8: REQ-DOC-003 — 1-Click Consultation Sign-off & Automated Invoicing
+* **Requirement ID:** REQ-DOC-003
+* **Requirement Name:** 1-Click Consultation Sign-off & Automated Invoicing
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-DOC-003 - 1-Click Consultation Sign-off & Automated Invoicing`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/components/doctor/prescription-editor.tsx`
-  - `src/domain/prescription.ts`
+  - `src/components/doctor/consultation-complete-modal.tsx`
+  - `src/services/consultation-service.ts`
+  - `src/services/billing-engine-service.ts`
   - `src/services/document-service.ts`
-  - `src/domain/prescription.test.ts`
 * **Changes Summary:**
-  - Verified structured prescription editor supporting medicine auto-complete from catalog, dosage presets, frequency, duration, and special instructions.
-  - Snapshot-generates `RX-` numbered printable Prescription PDF document upon consultation sign-off.
+  - Verified 1-click consultation sign-off modal and completion pipeline.
+  - Automatically transitions appointment status `in_consultation` ➔ `completed`.
+  - Auto-drafts consultation fee invoice, snapshot-generates visit summary document (`VS-` numbered), and dispatches system events `appointment.completed` and `invoice.created`.
 * **Test Verification:**
-  - `src/domain/prescription.test.ts` (9 / 9 Passed)
+  - `src/services/document-service.test.ts` (8 / 8 Passed)
   - `npx tsc --noEmit` (0 errors)

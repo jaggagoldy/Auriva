@@ -82,3 +82,14 @@
 * **Rejected Reason:** Free-text paragraphs cause dispensing errors and prevent clinical analytics or interaction checking.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-008: Automated Consultation Fee Invoicing & Visit Summary Generation
+* **Requirement:** `REQ-DOC-003` (1-Click Consultation Sign-off & Automated Invoicing)
+* **Decision:** Execute consultation status completion (`completed`), invoice creation, and visit summary document generation inside an event-sourced transaction on sign-off.
+* **Reason:** Prevents orphaned un-billed visits and ensures clinical summary document (`VS-`) matches invoice charges atomically.
+* **Alternatives Considered:** Require reception to create consultation invoice manually after doctor signs off.
+* **Rejected Reason:** Manual invoicing introduces human omission errors and delays patient checkout.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

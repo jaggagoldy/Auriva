@@ -15,7 +15,7 @@
 - [x] **REQ-REC-005**: Instant 1-Click Cashier Checkout Workspace (`completed`)
 - [x] **REQ-DOC-001**: Uninterrupted Consultation Workbench Charting (`completed`)
 - [x] **REQ-DOC-002**: Structured Prescription Authoring & Printable Rx (`completed`)
-- [ ] **REQ-DOC-003**: 1-Click Consultation Sign-off & Automated Invoicing (`not_started`)
+- [x] **REQ-DOC-003**: 1-Click Consultation Sign-off & Automated Invoicing (`completed`)
 - [ ] **REQ-DOC-004**: Doctor Schedule & Date Time-Blocking Engine (`not_started`)
 - [ ] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`not_started`)
 - [ ] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 7 / 18 (38.9%)
+* **Completed:** 8 / 18 (44.4%)
 * **In Progress:** 0 / 18
-* **Remaining:** 11 / 18
+* **Remaining:** 10 / 18

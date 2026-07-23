@@ -10,15 +10,15 @@
 ## 1. RELEASE METRICS DASHBOARD
 
 * **Total Milestone Requirements:** 18
-* **Completed Requirements:** 7 / 18 (38.9%)
-* **QA Verified Requirements:** 7 / 18
-* **Remaining Requirements:** 11 / 18
+* **Completed Requirements:** 8 / 18 (44.4%)
+* **QA Verified Requirements:** 8 / 18
+* **Remaining Requirements:** 10 / 18
 * **Critical Bugs:** 0
 * **Open Risks:** 0
 * **Breaking Changes:** 0
 * **Schema Migrations:** 0
 * **Feature Flags Active:** 2 (`FEATURE_RECEPTION_EXCELLENCE`, `FEATURE_DOCTOR_EXCELLENCE`)
-* **Release Confidence Score:** **98.5%**
+* **Release Confidence Score:** **98.8%**
 
 ---
 
@@ -27,13 +27,13 @@
 ```
 ==================================================
 POE-001 MILESTONE PROGRESS
-Overall Completion: ███████░░░░░░░░░░░ 7 / 18 Requirements (38.9%)
+Overall Completion: ████████░░░░░░░░░░ 8 / 18 Requirements (44.4%)
 
 Workstream Breakdown:
 • Workstream A (Experience Foundation): ░░░░░░░░░░░░░░░ 0 / 3  Requirements (0%)
-• Workstream B (Operational Excellence):███████████████ 7 / 10 Requirements (70%)
+• Workstream B (Operational Excellence):███████████████ 8 / 10 Requirements (80%)
   - Reception Excellence:              ███████████████ 5 / 5  Requirements (100%) ✅ CERTIFIED
-  - Doctor Excellence:                 ████████░░░░░░░ 2 / 5  Requirements (40%)
+  - Doctor Excellence:                 ███████████░░░░ 3 / 5  Requirements (60%)
   - Scheduling Excellence:             ░░░░░░░░░░░░░░░ 0 / 2  Requirements (0%)
   - Team Operations:                   ░░░░░░░░░░░░░░░ 0 / 3  Requirements (0%)
 • Workstream C (Management Intell.):    ░░░░░░░░░░░░░░░ 0 / 5  Requirements (0%)
@@ -52,7 +52,8 @@ Workstream Breakdown:
 | **REQ-REC-004** | Doctor Transfer & Reorder | Workstream B1 | `9a05892` | `reassign-doctor.test.ts` | 🟢 PASSED | ✅ YES |
 | **REQ-REC-005** | 1-Click Cashier Checkout | Workstream B1 | `eade6d1` | `checkout-service.test.ts` | 🟢 PASSED | ✅ YES |
 | **REQ-DOC-001** | Uninterrupted Charting | Workstream B2 | `a9bc70b` | `consultation-service.test.ts` | 🟢 PASSED | ✅ YES |
-| **REQ-DOC-002** | Structured Prescription | Workstream B2 | Pending | `prescription.test.ts` | 🟢 PASSED | ✅ YES |
+| **REQ-DOC-002** | Structured Prescription | Workstream B2 | `212b2ef` | `prescription.test.ts` | 🟢 PASSED | ✅ YES |
+| **REQ-DOC-003** | 1-Click Sign-off & Invoicing| Workstream B2 | Pending | `document-service.test.ts` | 🟢 PASSED | ✅ YES |
 
 ---
 
