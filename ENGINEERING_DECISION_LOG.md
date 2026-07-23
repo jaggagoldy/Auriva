@@ -60,3 +60,14 @@
 * **Rejected Reason:** Un-reconciled client state causes payment total mismatch and audit failures during financial settlement.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-006: Uninterrupted Single-Surface Consultation Charting
+* **Requirement:** `REQ-DOC-001` (Uninterrupted Consultation Workbench Charting)
+* **Decision:** Consolidate chief complaint, vitals, clinical notes, diagnosis, prescription, and procedure orders on a unified single-surface Consultation Workbench with auto-save draft persistence.
+* **Reason:** Eliminates page reloads and tab navigation during patient consults, achieving < 60-second documentation target.
+* **Alternatives Considered:** Multi-step wizard page navigation for consultation stages.
+* **Rejected Reason:** Multi-step page reloads slow down doctor charting and increase friction during busy clinic hours.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

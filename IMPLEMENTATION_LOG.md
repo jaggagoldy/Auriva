@@ -47,18 +47,24 @@
 * **Requirement ID:** REQ-REC-005
 * **Requirement Name:** Instant 1-Click Cashier Checkout Workspace
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-REC-005 - Instant 1-Click Cashier Checkout Workspace`
+* **Commit Hash:** `eade6d1` (`POE-001: Implement REQ-REC-005 - Instant 1-Click Cashier Checkout Workspace`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 6: REQ-DOC-001 — Uninterrupted Consultation Workbench Charting
+* **Requirement ID:** REQ-DOC-001
+* **Requirement Name:** Uninterrupted Consultation Workbench Charting
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-DOC-001 - Uninterrupted Consultation Workbench Charting`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/services/checkout-service.ts`
-  - `src/app/api/clinic/checkout/route.ts`
-  - `src/services/billing-engine-service.ts`
-  - `src/services/checkout-service.test.ts`
+  - `src/components/doctor/consult-workbench.tsx`
+  - `src/services/consultation-service.ts`
+  - `src/app/api/appointments/[id]/route.ts`
 * **Changes Summary:**
-  - Verified 1-click cashier checkout workspace supporting itemized clinical & administrative charges, concessions, split payment methods, and operational notes.
-  - Automatically transitions invoice to `paid` status and visit billing status to `settled`.
-  - Generates receipt document snapshot (`RC-` numbered).
-  - Emits `billing.payment_received` and `invoice.settled` system events.
+  - Verified single-screen Doctor Workbench allowing doctors to record chief complaints, clinical notes, diagnosis, vitals, and treatment plans without context switching or tab reloading (< 60s documentation throughput).
+  - Integrates left-hand clinical context rail with past visits, chronic conditions, and allergy warnings.
 * **Test Verification:**
-  - `src/services/checkout-service.test.ts` (10 / 10 Passed)
+  - `src/services/consultation-service.test.ts` (7 / 7 Passed)
   - `npx tsc --noEmit` (0 errors)
