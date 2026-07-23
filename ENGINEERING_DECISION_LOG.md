@@ -49,3 +49,14 @@
 * **Rejected Reason:** Preserving foreign tokens breaks sequential calling on target doctor's queue display.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-005: Atomic Invoicing Snapshot & Concession Re-calculation
+* **Requirement:** `REQ-REC-005` (Instant 1-Click Cashier Checkout Workspace)
+* **Decision:** Re-calculate net total via `regenerateInvoice` during checkout concessions and line removals, snapshotting the itemized breakdown into `Invoice.items_json` on receipt generation.
+* **Reason:** Eliminates financial discrepancies between draft invoice lines, payment receipts, and ledger audit logs.
+* **Alternatives Considered:** Store manual invoice line overrides in client state without updating `items_json`.
+* **Rejected Reason:** Un-reconciled client state causes payment total mismatch and audit failures during financial settlement.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

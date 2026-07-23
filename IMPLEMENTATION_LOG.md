@@ -38,18 +38,27 @@
 * **Requirement ID:** REQ-REC-004
 * **Requirement Name:** Drag-and-Drop Queue Reordering & Doctor Transfer
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-REC-004 - Drag-and-Drop Queue Reordering & Doctor Transfer`
+* **Commit Hash:** `9a05892` (`POE-001: Implement REQ-REC-004 - Drag-and-Drop Queue Reordering & Doctor Transfer`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 5: REQ-REC-005 — Instant 1-Click Cashier Checkout Workspace
+* **Requirement ID:** REQ-REC-005
+* **Requirement Name:** Instant 1-Click Cashier Checkout Workspace
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-REC-005 - Instant 1-Click Cashier Checkout Workspace`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/services/reception-service.ts`
-  - `src/app/api/reception/status/route.ts`
-  - `src/components/staff/queue-card.tsx`
-  - `src/services/reassign-doctor.test.ts`
+  - `src/services/checkout-service.ts`
+  - `src/app/api/clinic/checkout/route.ts`
+  - `src/services/billing-engine-service.ts`
+  - `src/services/checkout-service.test.ts`
 * **Changes Summary:**
-  - Verified `reassignDoctor` service for transferring patient between doctors prior to consultation start.
-  - Generates new sequential queue token for target doctor.
-  - Logs `doctor_reassigned` event in `AppointmentEvent` timeline.
-  - Dispatches `reception.doctor_reassigned` system event notification.
+  - Verified 1-click cashier checkout workspace supporting itemized clinical & administrative charges, concessions, split payment methods, and operational notes.
+  - Automatically transitions invoice to `paid` status and visit billing status to `settled`.
+  - Generates receipt document snapshot (`RC-` numbered).
+  - Emits `billing.payment_received` and `invoice.settled` system events.
 * **Test Verification:**
-  - `src/services/reassign-doctor.test.ts` (Passed)
+  - `src/services/checkout-service.test.ts` (10 / 10 Passed)
   - `npx tsc --noEmit` (0 errors)
