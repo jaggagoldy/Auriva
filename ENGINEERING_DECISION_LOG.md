@@ -27,3 +27,14 @@
 * **Rejected Reason:** Forces extra context switching and violates the 1-click zero-training reception principle.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-003: Priority Weight 100 for Emergency Queue Bypass
+* **Requirement:** `REQ-REC-003` (Emergency Patient Queue Bypass & Priority Reordering)
+* **Decision:** Use numerical priority weight `priority = 100` to force emergency appointments to position #1 in queue queries, preserving natural `queue_number` sequence for non-emergencies.
+* **Reason:** Ensures deterministic position #1 placement across queue views while leaving token numbering intact.
+* **Alternatives Considered:** Swap queue token numbers with position #1 patient.
+* **Rejected Reason:** Token number swapping confuses patients waiting with printed physical tokens. Priority weighting reorders queue display without altering issued paper tokens.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

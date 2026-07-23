@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest) {
       return ok(reassigned);
     }
 
-    const updated = await setPriority(appointment_id, auth.clinicId, Number(priority));
+    const updated = await setPriority(appointment_id, auth.clinicId, Number(priority), auth.session.userId);
     return ok(updated);
   } catch (error) {
     return mapDomainError(error) ?? serverError('Error updating reception status', error);

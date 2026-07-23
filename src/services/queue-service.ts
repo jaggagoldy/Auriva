@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export const QUEUE_INCLUDE = {
   // `allergies` (M1 · 4.4) + `health_id`/phone (M2 · 4.1 Quick Peek) — all
@@ -140,17 +141,55 @@ export async function getQueue(params: {
 
 export class QueueAppointmentNotFoundError extends Error {}
 
-/** Persists drag-and-drop queue reordering — a pure ordering change, not a status transition. */
-export async function setPriority(appointmentId: string, clinicId: string, priority: number) {
-  const appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
+/** Persists drag-and-drop queue reordering / emergency bypass — a pure ordering change, not a status transition. */
+export async function setPriority(
+  appointmentId: string,
+  clinicId: string,
+  priority: number,
+  actorUserId?: string | null
+) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: { clinic: { select: { organization_id: true } } },
+  });
   if (!appointment || appointment.clinic_id !== clinicId) {
     throw new QueueAppointmentNotFoundError(`Appointment ${appointmentId} not found.`);
   }
-  return prisma.appointment.update({
+
+  const updated = await prisma.appointment.update({
     where: { id: appointmentId },
     data: { priority },
     include: QUEUE_INCLUDE,
   });
+
+  const isEmergency = priority >= 100;
+  await prisma.appointmentEvent.create({
+    data: {
+      appointment_id: appointmentId,
+      type: isEmergency ? "emergency_priority_set" : "queue_priority_updated",
+      from_status: appointment.status,
+      to_status: appointment.status,
+      note: isEmergency ? "Emergency priority set (queue bypass)" : `Priority updated to ${priority}`,
+      actor_user_id: actorUserId ?? null,
+    },
+  });
+
+  if (appointment.clinic?.organization_id) {
+    await publishEvent({
+      eventType: isEmergency ? "reception.queue.emergency_bypass" : "reception.queue.priority_changed",
+      organizationId: appointment.clinic.organization_id,
+      entityId: appointmentId,
+      correlationId: appointmentId,
+      actorId: actorUserId ?? null,
+      payload: {
+        appointmentId,
+        priority,
+        isEmergency,
+      },
+    });
+  }
+
+  return updated;
 }
 
 /**

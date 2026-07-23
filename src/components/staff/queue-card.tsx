@@ -110,6 +110,27 @@ export default function QueueCard({
     }
   };
 
+  const handleToggleEmergency = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBusy(true);
+    try {
+      const nextPriority = (appointment.priority ?? 0) >= 100 ? 0 : 100;
+      const res = await fetch("/api/reception/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_id: appointment.id, clinic_id: clinicId, priority: nextPriority }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Priority update failed.");
+      toast.success(nextPriority >= 100 ? `Emergency priority active for ${appointment.patient.full_name}` : `Standard queue priority restored`);
+      onChanged();
+    } catch (err: any) {
+      toast.error(err.message || "Priority update failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const isTerminal = TERMINAL_STATUSES.includes(appointment.status);
   const arrived =
     appointment.status === "waiting" ||
@@ -146,6 +167,11 @@ export default function QueueCard({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="truncate text-sm font-medium">{appointment.patient.full_name}</p>
+            {(appointment.priority ?? 0) >= 100 && (
+              <Badge variant="destructive" className="shrink-0 text-[9px] uppercase font-bold tracking-wider">
+                Emergency
+              </Badge>
+            )}
             {appointment.walk_in && (
               <Badge variant="outline" className="shrink-0 text-[9px]">
                 Walk-in
@@ -194,6 +220,12 @@ export default function QueueCard({
                   <DropdownMenuItem onClick={() => setStatus("doctor_ready")}>
                     <Bell />
                     Notify Doctor
+                  </DropdownMenuItem>
+                )}
+                {appointment.status !== "in_consultation" && (
+                  <DropdownMenuItem onClick={handleToggleEmergency}>
+                    <AlertTriangle className="text-destructive" />
+                    {(appointment.priority ?? 0) >= 100 ? "Clear Emergency" : "Set Emergency Priority"}
                   </DropdownMenuItem>
                 )}
                 {/* M2 · 4.2 — reschedule (date/time only; doctor + reason preserved).

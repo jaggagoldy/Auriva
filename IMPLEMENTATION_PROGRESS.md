@@ -10,7 +10,7 @@
 
 - [x] **REQ-REC-001**: 1-Click Patient Check-in (`completed`)
 - [x] **REQ-REC-002**: Rapid Walk-in Registration (`completed`)
-- [ ] **REQ-REC-003**: Emergency Patient Queue Bypass & Priority Reordering (`not_started`)
+- [x] **REQ-REC-003**: Emergency Patient Queue Bypass & Priority Reordering (`completed`)
 - [ ] **REQ-REC-004**: Drag-and-Drop Queue Reordering & Doctor Transfer (`not_started`)
 - [ ] **REQ-REC-005**: Instant 1-Click Cashier Checkout Workspace (`not_started`)
 - [ ] **REQ-DOC-001**: Uninterrupted Consultation Workbench Charting (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 2 / 18 (11.1%)
+* **Completed:** 3 / 18 (16.7%)
 * **In Progress:** 0 / 18
-* **Remaining:** 16 / 18
+* **Remaining:** 15 / 18
