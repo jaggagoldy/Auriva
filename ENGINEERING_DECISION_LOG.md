@@ -8,32 +8,23 @@
 
 ## DECISION RECORDS
 
-### EDR-001 through EDR-010 (Frozen Workstreams B1 & B2)
-* **Status:** 🔒 FROZEN & CERTIFIED (`POE-001-RECEPTION-COMPLETE`, `POE-001-DOCTOR-COMPLETE`)
+### EDR-001 through EDR-013 (Frozen Workstreams B1, B2, & C1)
+* **Status:** 🔒 FROZEN & CERTIFIED (`POE-001-RECEPTION-COMPLETE`, `POE-001-DOCTOR-COMPLETE`, `POE-001-OWNER-COMPLETE`)
 
 ---
 
-### EDR-011: Server-Assembled Role-Shaped Dashboard Payload
-* **Requirement:** `REQ-OWN-001` (Owner Command Center Morning Operational Snapshot)
-* **Decision:** Enforce server-side role resolution (`resolveDashboardRole`) and build payload slices strictly by role on the server, eliminating client-side feature hiding.
-* **Reason:** Guarantees sensitive practice financial metrics (revenue, collections, invoice balances) are never sent to non-owner roles over HTTP.
+### EDR-014: Capability-Based Staff Grant Engine & Conflict Re-assignment
+* **Requirement:** `REQ-TEA-001` (Staff Directory & Capabilities Assignment Engine)
+* **Decision:** Scoped grantable staff capabilities to operational roles (`reception`, `doctor_workspace`), and enforce automatic active appointment re-assignment prior to archiving a staff member.
+* **Reason:** Prevents orphaned appointments assigned to archived staff members and keeps org owner permissions non-transferable.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
 
 ---
 
-### EDR-012: Real-time Ledger Aggregation for Operational KPIs
-* **Requirement:** `REQ-OWN-002` (Real-time Operational Intelligence & Practice KPIs)
-* **Decision:** Compute operational KPIs directly from event-sourced `Invoice` and `Payment` ledgers using `billingDaySummary`, avoiding stored aggregate summary tables.
-* **Reason:** Guarantees KPI accuracy and eliminates data drift or cache invalidation bugs.
-* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
-* **Date:** 2026-07-23
-
----
-
-### EDR-013: Service Catalog Permission-by-Kind Guarding
-* **Requirement:** `REQ-OWN-003` (Treatment Services Catalog & Pricing Engine)
-* **Decision:** Classify services by `kind` (`clinical` vs `financial`), restricting clinical service billing additions to clinical roles (`doctor`) and administrative charges to reception staff.
-* **Reason:** Prevents reception staff from adding unauthorized clinical services while allowing ad-hoc administrative fees.
+### EDR-015: Phone-First Staff Invitation Token Engine with 72h Expiry
+* **Requirement:** `REQ-TEA-002` (Phone-First Staff Invitation & Onboarding Lifecycle)
+* **Decision:** Use 10-digit mobile number as staff invitation identifier with cryptographic 72-hour single-use token generation (`createInvitation`), enforcing subscription seat limits server-side.
+* **Reason:** Aligns with Indian healthcare practice mobile identity patterns and prevents over-inviting beyond paid plan seat ceilings.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23

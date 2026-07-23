@@ -18,11 +18,11 @@
 - [x] **REQ-DOC-003**: 1-Click Consultation Sign-off & Automated Invoicing (`completed` · 🔒 Frozen)
 - [x] **REQ-DOC-004**: Doctor Schedule & Date Time-Blocking Engine (`completed` · 🔒 Frozen)
 - [x] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`completed` · 🔒 Frozen)
-- [x] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`completed`)
-- [x] **REQ-OWN-002**: Real-time Operational Intelligence & Practice KPIs (`completed`)
-- [x] **REQ-OWN-003**: Treatment Services Catalog & Pricing Engine (`completed`)
-- [ ] **REQ-TEA-001**: Staff Directory & Capabilities Assignment Engine (`not_started`)
-- [ ] **REQ-TEA-002**: Phone-First Staff Invitation & Onboarding Lifecycle (`not_started`)
+- [x] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`completed` · 🔒 Frozen)
+- [x] **REQ-OWN-002**: Real-time Operational Intelligence & Practice KPIs (`completed` · 🔒 Frozen)
+- [x] **REQ-OWN-003**: Treatment Services Catalog & Pricing Engine (`completed` · 🔒 Frozen)
+- [x] **REQ-TEA-001**: Staff Directory & Capabilities Assignment Engine (`completed`)
+- [x] **REQ-TEA-002**: Phone-First Staff Invitation & Onboarding Lifecycle (`completed`)
 - [ ] **REQ-PLT-001**: Unified Adaptive Workspace Shell & Information Hubs (`not_started`)
 - [ ] **REQ-PLT-002**: Global Command Palette (`Cmd+K`) & Universal Search (`not_started`)
 - [ ] **REQ-PLT-003**: Design System v2 & Token Standardization (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 13 / 18 (72.2%)
+* **Completed:** 15 / 18 (83.3%)
 * **In Progress:** 0 / 18
-* **Remaining:** 5 / 18
+* **Remaining:** 3 / 18 (Stage 5 — Platform Foundation)
