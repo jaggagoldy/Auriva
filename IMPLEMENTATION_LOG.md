@@ -9,98 +9,60 @@
 
 ### Entry 1: REQ-REC-001 — 1-Click Patient Check-in
 * **Requirement ID:** REQ-REC-001
-* **Requirement Name:** 1-Click Patient Check-in & Queue Entry
-* **Date:** 2026-07-23
-* **Commit Hash:** `4bde47a` (`POE-001: Implement REQ-REC-001 - One Click Patient Check-in`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 2: REQ-REC-002 — Rapid Walk-in Registration
 * **Requirement ID:** REQ-REC-002
-* **Requirement Name:** Rapid Walk-in Registration & Tokening
-* **Date:** 2026-07-23
-* **Commit Hash:** `5c07e98` (`POE-001: Implement REQ-REC-002 - Rapid Walk-in Registration`)
-* **Status:** ✅ Verified & Complete
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
----
-
-### Entry 3: REQ-REC-003 — Emergency Patient Queue Bypass & Priority Reordering
+### Entry 3: REQ-REC-003 — Emergency Patient Queue Bypass
 * **Requirement ID:** REQ-REC-003
-* **Requirement Name:** Emergency Patient Queue Bypass & Priority Reordering
-* **Date:** 2026-07-23
-* **Commit Hash:** `87b039e` (`POE-001: Implement REQ-REC-003 - Emergency Patient Queue Bypass & Priority Reordering`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 4: REQ-REC-004 — Drag-and-Drop Queue Reordering & Doctor Transfer
 * **Requirement ID:** REQ-REC-004
-* **Requirement Name:** Drag-and-Drop Queue Reordering & Doctor Transfer
-* **Date:** 2026-07-23
-* **Commit Hash:** `9a05892` (`POE-001: Implement REQ-REC-004 - Drag-and-Drop Queue Reordering & Doctor Transfer`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 5: REQ-REC-005 — Instant 1-Click Cashier Checkout Workspace
 * **Requirement ID:** REQ-REC-005
-* **Requirement Name:** Instant 1-Click Cashier Checkout Workspace
-* **Date:** 2026-07-23
-* **Commit Hash:** `eade6d1` (`POE-001: Implement REQ-REC-005 - Instant 1-Click Cashier Checkout Workspace`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 6: REQ-DOC-001 — Uninterrupted Consultation Workbench Charting
 * **Requirement ID:** REQ-DOC-001
-* **Requirement Name:** Uninterrupted Consultation Workbench Charting
-* **Date:** 2026-07-23
-* **Commit Hash:** `a9bc70b` (`POE-001: Implement REQ-DOC-001 - Uninterrupted Consultation Workbench Charting`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 7: REQ-DOC-002 — Structured Prescription Authoring & Printable Rx
 * **Requirement ID:** REQ-DOC-002
-* **Requirement Name:** Structured Prescription Authoring & Printable Rx
-* **Date:** 2026-07-23
-* **Commit Hash:** `212b2ef` (`POE-001: Implement REQ-DOC-002 - Structured Prescription Authoring & Printable Rx`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 8: REQ-DOC-003 — 1-Click Consultation Sign-off & Automated Invoicing
 * **Requirement ID:** REQ-DOC-003
-* **Requirement Name:** 1-Click Consultation Sign-off & Automated Invoicing
-* **Date:** 2026-07-23
-* **Commit Hash:** `2d66e15` (`POE-001: Implement REQ-DOC-003 - 1-Click Consultation Sign-off & Automated Invoicing`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 9: REQ-DOC-004 — Doctor Schedule & Date Time-Blocking Engine
 * **Requirement ID:** REQ-DOC-004
-* **Requirement Name:** Doctor Schedule & Date Time-Blocking Engine
-* **Date:** 2026-07-23
-* **Commit Hash:** `585ac69` (`POE-001: Implement REQ-DOC-004 - Doctor Schedule & Date Time-Blocking Engine`)
-* **Status:** ✅ Verified & Complete
-
----
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
 
 ### Entry 10: REQ-DOC-005 — Doctor Leave & Holiday Management Engine (OPS-002 Lite)
 * **Requirement ID:** REQ-DOC-005
-* **Requirement Name:** Doctor Leave & Holiday Management Engine (OPS-002 Lite)
+* **Status:** ✅ Verified & Complete (🔒 Frozen)
+
+---
+
+### Entry 11: REQ-OWN-001 — Owner Command Center Morning Operational Snapshot
+* **Requirement ID:** REQ-OWN-001
+* **Requirement Name:** Owner Command Center Morning Operational Snapshot
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-DOC-005 - Doctor Leave & Holiday Management Engine`
+* **Commit Hash:** `POE-001: Implement REQ-OWN-001 - Owner Command Center Morning Operational Snapshot`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/services/availability-service.ts`
-  - `src/app/api/doctor/availability/route.ts`
-  - `src/services/availability-service.test.ts`
+  - `src/services/dashboard-service.ts`
+  - `src/app/admin/page.tsx`
+  - `src/components/admin/owner-dashboard.tsx`
+  - `src/services/dashboard-service.test.ts`
 * **Changes Summary:**
-  - Verified lightweight Doctor Leave & Operational Holiday Engine (`DoctorTimeBlock`).
-  - Booking engine automatically suppresses patient slot creation on doctor leave dates.
+  - Verified role-shaped Owner Command Center Morning Snapshot payload (`getOwnerDashboardSummary`).
+  - Assembles real-time revenue estimates, today's appointments count, active waiting queue, doctor availability status, and patient outstanding balance.
 * **Test Verification:**
-  - `src/services/availability-service.test.ts` (Passed)
+  - `src/services/dashboard-service.test.ts` (10 / 10 Passed)
   - `npx tsc --noEmit` (0 errors)
