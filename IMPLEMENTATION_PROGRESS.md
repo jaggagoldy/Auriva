@@ -9,7 +9,7 @@
 ## REQUIREMENT CHECKLIST
 
 - [x] **REQ-REC-001**: 1-Click Patient Check-in (`completed`)
-- [ ] **REQ-REC-002**: Rapid Walk-in Registration (`not_started`)
+- [x] **REQ-REC-002**: Rapid Walk-in Registration (`completed`)
 - [ ] **REQ-REC-003**: Emergency Patient Queue Bypass & Priority Reordering (`not_started`)
 - [ ] **REQ-REC-004**: Drag-and-Drop Queue Reordering & Doctor Transfer (`not_started`)
 - [ ] **REQ-REC-005**: Instant 1-Click Cashier Checkout Workspace (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 1 / 18 (5.6%)
+* **Completed:** 2 / 18 (11.1%)
 * **In Progress:** 0 / 18
-* **Remaining:** 17 / 18
+* **Remaining:** 16 / 18
