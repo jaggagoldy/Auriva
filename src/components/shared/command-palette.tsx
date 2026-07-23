@@ -104,7 +104,7 @@ export default function CommandPalette({ surface }: { surface: CommandSurface })
 
   React.useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
+      if (event.key && event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         setOpen((prev) => !prev);
       }
