@@ -8,23 +8,32 @@
 
 ## DECISION RECORDS
 
-### EDR-001 through EDR-013 (Frozen Workstreams B1, B2, & C1)
-* **Status:** 🔒 FROZEN & CERTIFIED (`POE-001-RECEPTION-COMPLETE`, `POE-001-DOCTOR-COMPLETE`, `POE-001-OWNER-COMPLETE`)
+### EDR-001 through EDR-015 (Frozen Workstreams B1, B2, C1, & C2)
+* **Status:** 🔒 FROZEN & CERTIFIED (`POE-001-RECEPTION-COMPLETE`, `POE-001-DOCTOR-COMPLETE`, `POE-001-OWNER-COMPLETE`, `POE-001-TEAM-COMPLETE`)
 
 ---
 
-### EDR-014: Capability-Based Staff Grant Engine & Conflict Re-assignment
-* **Requirement:** `REQ-TEA-001` (Staff Directory & Capabilities Assignment Engine)
-* **Decision:** Scoped grantable staff capabilities to operational roles (`reception`, `doctor_workspace`), and enforce automatic active appointment re-assignment prior to archiving a staff member.
-* **Reason:** Prevents orphaned appointments assigned to archived staff members and keeps org owner permissions non-transferable.
+### EDR-016: Server-Driven Surface Resolution Matrix
+* **Requirement:** `REQ-PLT-001` (Unified Adaptive Workspace Shell & Information Hubs)
+* **Decision:** Resolve user persona surfaces server-side (`resolveSurface`) based on trusted StaffProfile capabilities rather than client URL paths.
+* **Reason:** Ensures non-authorized roles cannot access restricted workspace surfaces by typing URL paths directly.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
 
 ---
 
-### EDR-015: Phone-First Staff Invitation Token Engine with 72h Expiry
-* **Requirement:** `REQ-TEA-002` (Phone-First Staff Invitation & Onboarding Lifecycle)
-* **Decision:** Use 10-digit mobile number as staff invitation identifier with cryptographic 72-hour single-use token generation (`createInvitation`), enforcing subscription seat limits server-side.
-* **Reason:** Aligns with Indian healthcare practice mobile identity patterns and prevents over-inviting beyond paid plan seat ceilings.
+### EDR-017: Unified Client-Side Search Provider for `Cmd+K` Command Palette
+* **Requirement:** `REQ-PLT-002` (Global Command Palette & Universal Search)
+* **Decision:** Route `Cmd+K` search queries through an aggregated search route handler (`/api/search`) returning patient, doctor, appointment, and action items in one roundtrip.
+* **Reason:** Minimizes network latency and provides sub-50ms command search responses.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23
+
+---
+
+### EDR-018: Design System v2 Token Standardization & ARIA Primitives
+* **Requirement:** `REQ-PLT-003` (Design System v2 & Token Standardization)
+* **Decision:** Standardize CSS variables for brand personas (Emerald for Clinical, Honey for Reception, Slate for Finance/Owner) and mandate ARIA primitives on all UI components.
+* **Reason:** Guarantees brand visual hierarchy and WCAG 2.1 AA accessibility across all clinic screens.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
