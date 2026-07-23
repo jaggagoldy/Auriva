@@ -36,11 +36,11 @@ export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
 // reachable from waiting/doctor_ready (i.e. after the patient is already in
 // the active queue), and only recallable to `waiting`.
 const TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
-  scheduled: ["checked_in", "waiting", "in_consultation", "cancelled", "no_show"],
-  checked_in: ["waiting", "in_consultation", "cancelled", "no_show"],
-  waiting: ["doctor_ready", "in_consultation", "skipped", "cancelled", "no_show"],
-  doctor_ready: ["in_consultation", "skipped", "cancelled", "no_show"],
-  skipped: ["waiting", "in_consultation"],
+  scheduled: ["checked_in", "waiting", "doctor_ready", "in_consultation", "completed", "cancelled", "no_show"],
+  checked_in: ["waiting", "doctor_ready", "in_consultation", "completed", "cancelled", "no_show"],
+  waiting: ["doctor_ready", "in_consultation", "completed", "skipped", "cancelled", "no_show"],
+  doctor_ready: ["in_consultation", "completed", "skipped", "cancelled", "no_show"],
+  skipped: ["waiting", "in_consultation", "completed"],
   in_consultation: ["completed"],
   completed: [],
   no_show: [],
@@ -56,7 +56,7 @@ export function canTransition(
   to: AppointmentStatus
 ): boolean {
   if (from === to) return false;
-  return TRANSITIONS[from].includes(to);
+  return TRANSITIONS[from]?.includes(to) ?? false;
 }
 
 /** Timestamp fields to set as a side effect of moving into `to`. Only sets

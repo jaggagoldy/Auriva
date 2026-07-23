@@ -82,10 +82,12 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
       where: { clinic_id: clinicId, invoice: { patient_id: patientId } },
       select: { id: true, amount: true, method: true, received_at: true, invoice: { select: { invoice_number: true } } },
     }),
-    prisma.treatmentPlan.findMany({
-      where: { patient_id: patientId, clinic_id: clinicId },
-      select: { id: true, title: true, status: true, created_at: true, sessions: { select: { status: true } } },
-    }),
+    (prisma as any).treatmentPlan
+      ? (prisma as any).treatmentPlan.findMany({
+          where: { patient_id: patientId, clinic_id: clinicId },
+          select: { id: true, title: true, status: true, created_at: true, sessions: { select: { status: true } } },
+        })
+      : Promise.resolve([]),
     prisma.document.findMany({
       where: { patient_id: patientId, clinic_id: clinicId, status: "issued" },
       select: { id: true, type: true, number: true, generated_at: true, appointment_id: true },
@@ -194,7 +196,7 @@ export async function getPatientTimeline(patientId: string, clinicId: string, op
 
   // C1/C2 — Treatment Plans (one entry per plan; progress in the subtitle).
   for (const p of plans) {
-    const done = p.sessions.filter((s) => s.status === "completed").length;
+    const done = p.sessions.filter((s: { status: string }) => s.status === "completed").length;
     entries.push({
       id: `plan-${p.id}`,
       kind: "treatment_plan",

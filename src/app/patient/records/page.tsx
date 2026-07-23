@@ -8,6 +8,8 @@ import { usePatientSession } from "@/components/patient/patient-session";
 import { HealthVault } from "@/components/patient/health-vault";
 import { Appointment, formatDay, parseMedicines } from "@/shared/queue";
 
+import { PatientVisitDetailModal } from "@/components/patient/patient-visit-detail-modal";
+
 const TABS = [
   { id: "timeline", label: "Timeline" },
   { id: "rx", label: "Rx" },
@@ -41,6 +43,7 @@ function RecordsInner() {
 
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
   const [invoices, setInvoices] = React.useState<InvoiceRow[] | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = React.useState<Appointment | null>(null);
 
   React.useEffect(() => {
     fetch(`/api/appointments?patient_id=${patientProfile.id}`, { cache: "no-store" })
@@ -85,11 +88,17 @@ function RecordsInner() {
       </div>
 
       <div className="px-5 pt-3 pb-6">
-        {tab === "timeline" && <TimelinePane appointments={appointments} timeline={timeline} />}
-        {tab === "rx" && <RxPane loading={appointments === null} prescriptions={prescriptions} />}
+        {tab === "timeline" && <TimelinePane appointments={appointments} timeline={timeline} onSelect={setSelectedAppointment} />}
+        {tab === "rx" && <RxPane loading={appointments === null} prescriptions={prescriptions} onSelect={setSelectedAppointment} />}
         {tab === "bills" && <BillsPane invoices={invoices} />}
         {tab === "tests" && <HealthVault />}
       </div>
+
+      <PatientVisitDetailModal
+        appointment={selectedAppointment}
+        open={Boolean(selectedAppointment)}
+        onOpenChange={(open) => !open && setSelectedAppointment(null)}
+      />
     </div>
   );
 }
@@ -114,9 +123,15 @@ function Skeleton({ n, h }: { n: number; h: number }) {
   );
 }
 
-function Row({ av, avTone, title, meta, right }: { av: React.ReactNode; avTone?: string; title: string; meta: string; right?: React.ReactNode }) {
+function Row({ av, avTone, title, meta, right, onClick }: { av: React.ReactNode; avTone?: string; title: string; meta: string; right?: React.ReactNode; onClick?: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-[15px] border bg-card p-3.5">
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-[15px] border bg-card p-3.5 transition",
+        onClick && "cursor-pointer hover:border-primary/40 hover:bg-muted/30 hover:shadow-sm"
+      )}
+    >
       <span className={cn("grid size-11 shrink-0 place-items-center rounded-[13px] font-heading text-[13px] font-bold", avTone ?? "bg-accent text-accent-foreground")}>
         {av}
       </span>
@@ -129,7 +144,7 @@ function Row({ av, avTone, title, meta, right }: { av: React.ReactNode; avTone?:
   );
 }
 
-function TimelinePane({ appointments, timeline }: { appointments: Appointment[] | null; timeline: Appointment[] }) {
+function TimelinePane({ appointments, timeline, onSelect }: { appointments: Appointment[] | null; timeline: Appointment[]; onSelect: (a: Appointment) => void }) {
   if (appointments === null) return <Skeleton n={3} h={72} />;
   if (timeline.length === 0)
     return <Empty icon={CalendarCheck2} title="Your first visit will appear here" sub="Every visit and report lands here, newest first — nothing to do yet." />;
@@ -147,6 +162,7 @@ function TimelinePane({ appointments, timeline }: { appointments: Appointment[] 
             avTone={done ? "bg-honey-soft text-honey-deep" : "bg-accent text-accent-foreground"}
             title={`${label} · ${a.doctor.full_name}`}
             meta={`${formatDay(a.scheduled_time)} · ${a.doctor.specialty || "General practitioner"}`}
+            onClick={() => onSelect(a)}
           />
         );
       })}
@@ -154,7 +170,7 @@ function TimelinePane({ appointments, timeline }: { appointments: Appointment[] 
   );
 }
 
-function RxPane({ loading, prescriptions }: { loading: boolean; prescriptions: Appointment[] }) {
+function RxPane({ loading, prescriptions, onSelect }: { loading: boolean; prescriptions: Appointment[]; onSelect: (a: Appointment) => void }) {
   if (loading) return <Skeleton n={2} h={96} />;
   if (prescriptions.length === 0)
     return <Empty icon={Pill} title="No prescriptions yet" sub="Signed prescriptions from your visits appear here." />;
@@ -163,10 +179,19 @@ function RxPane({ loading, prescriptions }: { loading: boolean; prescriptions: A
       {prescriptions.map((a) => {
         const meds = parseMedicines(a.prescription_medicines_json);
         return (
-          <div key={a.id} className="rounded-[15px] border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="size-4 text-honey-deep" />
-              <p className="font-heading text-[15px] font-bold">{a.diagnosis || "Consultation"}</p>
+          <div key={a.id} className="rounded-[15px] border bg-card p-4 transition hover:border-primary/40">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Stethoscope className="size-4 text-honey-deep" />
+                <p className="font-heading text-[15px] font-bold">{a.diagnosis || "Consultation Record"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onSelect(a)}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                View &amp; Print →
+              </button>
             </div>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
               {a.doctor.full_name} · {formatDay(a.scheduled_time)}
@@ -188,7 +213,7 @@ function RxPane({ loading, prescriptions }: { loading: boolean; prescriptions: A
                 ))}
               </div>
             )}
-            {a.prescription_notes && <p className="mt-3 text-[12.5px] text-muted-foreground">{a.prescription_notes}</p>}
+            {a.prescription_notes && <p className="mt-3 text-[12.5px] text-muted-foreground line-clamp-2">{a.prescription_notes}</p>}
             {a.follow_up_date && (
               <p className="mt-2 text-[11.5px] font-semibold text-honey-deep">Follow-up: {formatDay(a.follow_up_date)}</p>
             )}

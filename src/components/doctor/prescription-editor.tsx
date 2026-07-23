@@ -5,11 +5,13 @@ import {
   Check,
   FileText,
   Loader2,
+  Lock,
   PenLine,
   Pill,
   Plus,
   Star,
   Trash2,
+  Unlock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,6 +46,8 @@ interface PrescriptionEditorProps {
   doctorId: string;
   recentMedicines: string[];
   updating: boolean;
+  disabled?: boolean;
+  onUnlock?: () => void;
   onSignComplete: (patch: {
     diagnosis: string;
     prescription_notes: string;
@@ -63,6 +67,8 @@ export default function PrescriptionEditor({
   doctorId,
   recentMedicines,
   updating,
+  disabled,
+  onUnlock,
   onSignComplete,
   onSaveDraft,
 }: PrescriptionEditorProps) {
@@ -79,10 +85,20 @@ export default function PrescriptionEditor({
   const [saving, setSaving] = React.useState(false);
   const skipAutosaveRef = React.useRef(true);
 
+  React.useEffect(() => {
+    setDiagnosis(appointment.diagnosis ?? "");
+    setNotes(appointment.prescription_notes ?? "");
+    const parsed = parseMedicines(appointment.prescription_medicines_json);
+    setMedicines(parsed.length ? parsed : [emptyMedicine()]);
+    setFollowUp(appointment.follow_up_date?.slice(0, 10) ?? "");
+    skipAutosaveRef.current = true;
+  }, [appointment]);
+
   const isEmpty =
     !diagnosis.trim() &&
     !notes.trim() &&
-    medicines.every((m) => !m.name.trim() && !m.dosage && !m.frequency && !m.duration);
+    !medicines.some((m) => m.name.trim()) &&
+    !followUp;
 
   const buildPatch = React.useCallback(
     () => ({
@@ -95,6 +111,7 @@ export default function PrescriptionEditor({
   );
 
   const persist = React.useCallback(async () => {
+    if (disabled) return;
     setSaving(true);
     try {
       await onSaveDraft(buildPatch());
@@ -102,30 +119,31 @@ export default function PrescriptionEditor({
     } finally {
       setSaving(false);
     }
-  }, [buildPatch, onSaveDraft]);
+  }, [buildPatch, onSaveDraft, disabled]);
 
   React.useEffect(() => {
     if (skipAutosaveRef.current) {
       skipAutosaveRef.current = false;
       return;
     }
-    if (isEmpty) return;
+    if (disabled) return;
     const timeout = setTimeout(() => {
       persist();
-    }, 800);
+    }, 1000);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diagnosis, notes, medicines, followUp]);
+  }, [diagnosis, notes, medicines, followUp, persist, disabled]);
 
   const toggleFavorite = (name: string) => {
+    if (!name.trim() || disabled) return;
     setFavorites((prev) => {
-      const next = prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name];
+      const next = prev.includes(name) ? prev.filter((n) => n !== name) : [name, ...prev];
       localStorage.setItem(favoritesKey(doctorId), JSON.stringify(next));
       return next;
     });
   };
 
   const setMedicineField = (id: string, field: keyof Omit<PrescriptionMedicine, "id">, value: string) => {
+    if (disabled) return;
     setMedicines((rows) => rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
   };
 
@@ -138,12 +156,20 @@ export default function PrescriptionEditor({
     <section className="rounded-xl border bg-card">
       <header className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <FileText className="size-4 text-muted-foreground" />
+          {disabled ? <Lock className="size-4 text-muted-foreground" /> : <FileText className="size-4 text-muted-foreground" />}
           <h2 className="text-sm font-semibold">Diagnosis &amp; E-Prescription</h2>
         </div>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {saving ? "Saving…" : savedAt ? `Saved ${formatTime(savedAt)}` : "No draft saved"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {saving ? "Saving…" : savedAt ? `Saved ${formatTime(savedAt)}` : "No draft saved"}
+          </span>
+          {disabled && onUnlock && (
+            <Button variant="ghost" size="sm" onClick={onUnlock}>
+              <Unlock className="size-4 mr-2" />
+              Unlock
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="space-y-4 p-4">
@@ -151,6 +177,7 @@ export default function PrescriptionEditor({
           <Label htmlFor="diagnosis">Diagnosis</Label>
           <Input
             id="diagnosis"
+            disabled={disabled}
             value={diagnosis}
             onChange={(e) => setDiagnosis(e.target.value)}
             placeholder="e.g. Viral fever, Hypertension review"
@@ -168,7 +195,7 @@ export default function PrescriptionEditor({
                   variant="ghost"
                   size="xs"
                   onClick={() => setNotes((prev) => prev || t.text)}
-                  disabled={Boolean(notes)}
+                  disabled={Boolean(notes) || disabled}
                 >
                   <PenLine />
                   {t.label}
@@ -178,6 +205,7 @@ export default function PrescriptionEditor({
           </div>
           <Textarea
             id="clinical-notes"
+            disabled={disabled}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder={`Findings and advice for ${appointment.patient.full_name}…`}
@@ -191,13 +219,13 @@ export default function PrescriptionEditor({
               <Pill className="size-3.5 text-muted-foreground" />
               Medicines
             </Label>
-            <Button variant="ghost" size="xs" onClick={() => setMedicines((rows) => [...rows, emptyMedicine()])}>
+            <Button variant="ghost" size="xs" disabled={disabled} onClick={() => setMedicines((rows) => [...rows, emptyMedicine()])}>
               <Plus />
               Add medicine
             </Button>
           </div>
 
-          {(favorites.length > 0 || recentMedicines.length > 0) && (
+          {!disabled && (favorites.length > 0 || recentMedicines.length > 0) && (
             <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed bg-muted/40 p-2">
               {favorites.length > 0 && (
                 <>
@@ -362,37 +390,56 @@ export default function PrescriptionEditor({
           <Input
             id="follow-up"
             type="date"
+            disabled={disabled}
             value={followUp}
             onChange={(e) => setFollowUp(e.target.value)}
             className="h-8 w-44 bg-background text-sm"
           />
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t pt-4">
-          <span className="text-[11px] text-muted-foreground tabular-nums">
-            {notes.length} chars · {medicines.filter((m) => m.name.trim()).length} medicine
-            {medicines.filter((m) => m.name.trim()).length === 1 ? "" : "s"}
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex items-center justify-between gap-2 border-t bg-card/95 backdrop-blur-md p-4 rounded-b-xl shadow-md">
+          <span className="text-[11px] text-muted-foreground tabular-nums flex items-center gap-1.5">
+            {completed && disabled ? (
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <Lock className="size-3.5" /> Record Signed &amp; Locked (Read-Only)
+              </span>
+            ) : (
+              `${notes.length} chars · ${medicines.filter((m) => m.name.trim()).length} medicine${medicines.filter((m) => m.name.trim()).length === 1 ? "" : "s"}`
+            )}
           </span>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isEmpty || saving}
-              onClick={() => {
-                persist();
-                toast.success(`Draft saved for ${appointment.patient.full_name}`);
-              }}
-            >
-              Save Draft
-            </Button>
-            <Button
-              size="sm"
-              disabled={completed || updating}
-              onClick={() => onSignComplete(buildPatch())}
-            >
-              {updating ? <Loader2 className="animate-spin" /> : <Check />}
-              {completed ? "Signed & completed" : "Sign & complete"}
-            </Button>
+            {completed && disabled ? (
+              <Button type="button" variant="outline" size="sm" onClick={onUnlock}>
+                <Unlock className="size-3.5 mr-1" /> Unlock to Edit Record
+              </Button>
+            ) : (
+              <>
+                {!completed && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isEmpty || saving || disabled}
+                    onClick={() => {
+                      persist();
+                      toast.success(`Draft saved for ${appointment.patient.full_name}`);
+                    }}
+                  >
+                    Save Draft
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-primary text-primary-foreground font-semibold shadow-sm"
+                  disabled={updating || disabled}
+                  onClick={() => onSignComplete(buildPatch())}
+                >
+                  {updating ? <Loader2 className="animate-spin" /> : <Check />}
+                  {completed ? "Update & Save Record" : "Sign & complete"}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

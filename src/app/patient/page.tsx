@@ -7,8 +7,9 @@ import { PatientPlans } from "@/components/shared/treatment-plan/treatment-plan"
 import { usePatientSession } from "@/components/patient/patient-session";
 import BookAppointmentDialog from "@/components/patient/book-appointment-dialog";
 import NotificationCenter from "@/components/patient/notification-center";
-import { Appointment, Doctor, formatDay, formatTime, getInitials, parseMedicines } from "@/shared/queue";
+import { Appointment, AppointmentStatus, Doctor, formatDay, formatTime, getInitials, parseMedicines } from "@/shared/queue";
 import { cn } from "@/lib/utils";
+import { PatientVisitDetailModal } from "@/components/patient/patient-visit-detail-modal";
 
 interface InvoiceRow {
   id: string;
@@ -17,7 +18,7 @@ interface InvoiceRow {
   payments: { amount: number }[];
 }
 
-const ACTIVE_STATUSES = ["scheduled", "checked_in", "waiting", "doctor_ready", "in_consultation"];
+const ACTIVE_STATUSES: AppointmentStatus[] = ["scheduled", "checked_in", "waiting", "doctor_ready", "in_consultation"];
 
 interface Recommendation {
   id: string;
@@ -27,10 +28,19 @@ interface Recommendation {
 }
 
 export default function PatientHomePage() {
+  return (
+    <React.Suspense fallback={<div className="p-5 text-sm text-muted-foreground">Loading…</div>}>
+      <PatientDashboardInner />
+    </React.Suspense>
+  );
+}
+
+function PatientDashboardInner() {
   const { patientProfile, linkedProfiles } = usePatientSession();
   const [appointments, setAppointments] = React.useState<Appointment[] | null>(null);
   const [recommendations, setRecommendations] = React.useState<Recommendation[]>([]);
   const [invoices, setInvoices] = React.useState<InvoiceRow[]>([]);
+  const [selectedAppointment, setSelectedAppointment] = React.useState<Appointment | null>(null);
 
   const fetchAppointments = React.useCallback(() => {
     return fetch(`/api/appointments?patient_id=${patientProfile.id}`, { cache: "no-store" })
@@ -267,6 +277,12 @@ export default function PatientHomePage() {
         {/* C2: the patient's active treatment plans (renders only if any). */}
         <div className="mt-6"><PatientPlans /></div>
       </div>
+
+      <PatientVisitDetailModal
+        appointment={selectedAppointment}
+        open={Boolean(selectedAppointment)}
+        onOpenChange={(open) => !open && setSelectedAppointment(null)}
+      />
     </div>
   );
 }

@@ -13,11 +13,11 @@ import {
 // handful of examples, so a future edit to TRANSITIONS can't silently
 // legalize or block a transition without a test failing.
 const LEGAL: Record<AppointmentStatus, AppointmentStatus[]> = {
-  scheduled: ["checked_in", "waiting", "in_consultation", "cancelled", "no_show"],
-  checked_in: ["waiting", "in_consultation", "cancelled", "no_show"],
-  waiting: ["doctor_ready", "in_consultation", "skipped", "cancelled", "no_show"],
-  doctor_ready: ["in_consultation", "skipped", "cancelled", "no_show"],
-  skipped: ["waiting", "in_consultation"],
+  scheduled: ["checked_in", "waiting", "doctor_ready", "in_consultation", "completed", "cancelled", "no_show"],
+  checked_in: ["waiting", "doctor_ready", "in_consultation", "completed", "cancelled", "no_show"],
+  waiting: ["doctor_ready", "in_consultation", "completed", "skipped", "cancelled", "no_show"],
+  doctor_ready: ["in_consultation", "completed", "skipped", "cancelled", "no_show"],
+  skipped: ["waiting", "in_consultation", "completed"],
   in_consultation: ["completed"],
   completed: [],
   no_show: [],

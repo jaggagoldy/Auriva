@@ -52,6 +52,8 @@ interface ConsultWorkbenchProps {
   doctorId: string;
   recentMedicines: string[];
   updating: boolean;
+  nextPatient?: Appointment | null;
+  onSelectNext?: (id: string) => void;
   onUpdateStatus: (appointment: Appointment, next: AppointmentStatus) => void;
   onSaveClinical: (
     appointment: Appointment,
@@ -65,27 +67,35 @@ export default function ConsultWorkbench({
   doctorId,
   recentMedicines,
   updating,
+  nextPatient,
+  onSelectNext,
   onUpdateStatus,
   onSaveClinical,
 }: ConsultWorkbenchProps) {
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [isEditingUnlocked, setIsEditingUnlocked] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsEditingUnlocked(false);
+  }, [appointment?.id]);
 
   if (!appointment) {
     return (
-      <main className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl border bg-muted/50">
-          <Stethoscope className="size-6 text-muted-foreground" />
+      <main className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-center p-6">
+        <div className="flex size-14 items-center justify-center rounded-2xl border bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50">
+          <Check className="size-7" />
         </div>
         <div>
-          <p className="text-sm font-medium">No patient selected</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Select a patient from the queue to open their consultation.
+          <h2 className="text-base font-bold">Queue Complete!</h2>
+          <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+            All patient consultations for today have been completed. Select a patient from the queue rail if you need to view or edit a completed record.
           </p>
         </div>
       </main>
     );
   }
 
+  const isLocked = appointment.status === "completed" && !isEditingUnlocked;
   const meta = STATUS_META[appointment.status];
   const age = ageFromDob(appointment.patient.date_of_birth ?? null);
 
@@ -136,10 +146,19 @@ export default function ConsultWorkbench({
             </Button>
           )}
           {appointment.status === "in_consultation" && (
-            <p className="text-sm text-muted-foreground">Consultation in progress</p>
+            <p className="text-sm text-muted-foreground font-medium">Consultation in progress</p>
           )}
           {appointment.status === "completed" && (
-            <p className="text-sm text-muted-foreground">Consultation completed</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <Check className="size-3.5" /> Consultation completed
+              </span>
+              {nextPatient && (
+                <Button size="sm" className="gap-1 font-semibold" onClick={() => onSelectNext?.(nextPatient.id)}>
+                  Call Next: {nextPatient.patient.full_name} →
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -151,7 +170,7 @@ export default function ConsultWorkbench({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="space-y-5 px-6 py-5">
+        <div className="space-y-5 px-6 py-5 pb-24">
           <dl className="grid grid-cols-4 divide-x rounded-xl border bg-card">
             <DetailCell
               icon={Droplets}
@@ -171,6 +190,7 @@ export default function ConsultWorkbench({
           <IntakeSection
             key={`intake-${appointment.id}`}
             appointment={appointment}
+            disabled={isLocked}
             onSave={(patch) => onSaveClinical(appointment, patch, { silent: true })}
           />
 
@@ -178,11 +198,9 @@ export default function ConsultWorkbench({
             key={`lab-${appointment.id}`}
             appointment={appointment}
             doctorId={doctorId}
+            disabled={isLocked}
           />
 
-          {/* M3B B1b — Doctor Service Capture, at parity with the /clinic
-              workbench (shared component). Available once the consultation is
-              underway, matching when /clinic mounts capture. */}
           {appointment.status === "in_consultation" && (
             <VisitServicesSection key={`svc-${appointment.id}`} appointmentId={appointment.id} />
           )}
@@ -205,11 +223,17 @@ export default function ConsultWorkbench({
             doctorId={doctorId}
             recentMedicines={recentMedicines}
             updating={updating}
+            disabled={isLocked}
+            onUnlock={() => {
+              setIsEditingUnlocked(true);
+              toast.info("Record unlocked for revision.", {
+                description: "Any changes will be saved and recorded to audit history.",
+              });
+            }}
             onSaveDraft={(patch) => onSaveClinical(appointment, patch, { silent: true })}
             onSignComplete={async (patch) => {
               await onSaveClinical(appointment, patch);
               onUpdateStatus(appointment, "completed");
-              toast.success(`Consultation signed & completed for ${appointment.patient.full_name}`);
             }}
           />
         </div>
@@ -388,9 +412,11 @@ function ClinicalSafety({
 function IntakeSection({
   appointment,
   onSave,
+  disabled,
 }: {
   appointment: Appointment;
   onSave: (patch: Record<string, string | null>) => Promise<void>;
+  disabled?: boolean;
 }) {
   const [chiefComplaint, setChiefComplaint] = React.useState(appointment.chief_complaint ?? "");
   const [history, setHistory] = React.useState(appointment.history_notes ?? "");
@@ -403,6 +429,7 @@ function IntakeSection({
       skipRef.current = false;
       return;
     }
+    if (disabled) return;
     const timeout = setTimeout(() => {
       onSave({
         chief_complaint: chiefComplaint,
@@ -412,7 +439,7 @@ function IntakeSection({
     }, 800);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chiefComplaint, history, vitals]);
+  }, [chiefComplaint, history, vitals, disabled]);
 
   return (
     <section className="rounded-xl border bg-card">
@@ -425,6 +452,7 @@ function IntakeSection({
           <Label htmlFor="chief-complaint">Chief complaint</Label>
           <Textarea
             id="chief-complaint"
+            disabled={disabled}
             value={chiefComplaint}
             onChange={(e) => setChiefComplaint(e.target.value)}
             placeholder="What the patient came in for, in their own words…"
@@ -435,6 +463,7 @@ function IntakeSection({
           <Label htmlFor="history">History</Label>
           <Textarea
             id="history"
+            disabled={disabled}
             value={history}
             onChange={(e) => setHistory(e.target.value)}
             placeholder="Relevant medical / surgical / family history…"
@@ -448,11 +477,11 @@ function IntakeSection({
           <Label className="text-[12px]">Vitals</Label>
         </div>
         <div className="grid grid-cols-5 gap-2">
-          <VitalInput label="BP" placeholder="120/80" value={vitals.bp} onChange={(v) => setVitals((s) => ({ ...s, bp: v }))} />
-          <VitalInput label="Pulse" placeholder="72 bpm" value={vitals.pulse} onChange={(v) => setVitals((s) => ({ ...s, pulse: v }))} />
-          <VitalInput label="Temp" placeholder="98.6°F" value={vitals.temp} onChange={(v) => setVitals((s) => ({ ...s, temp: v }))} />
-          <VitalInput label="SpO2" placeholder="98%" value={vitals.spo2} onChange={(v) => setVitals((s) => ({ ...s, spo2: v }))} />
-          <VitalInput label="Weight" placeholder="70 kg" value={vitals.weight} onChange={(v) => setVitals((s) => ({ ...s, weight: v }))} />
+          <VitalInput label="BP" placeholder="120/80" disabled={disabled} value={vitals.bp} onChange={(v) => setVitals((s) => ({ ...s, bp: v }))} />
+          <VitalInput label="Pulse" placeholder="72 bpm" disabled={disabled} value={vitals.pulse} onChange={(v) => setVitals((s) => ({ ...s, pulse: v }))} />
+          <VitalInput label="Temp" placeholder="98.6°F" disabled={disabled} value={vitals.temp} onChange={(v) => setVitals((s) => ({ ...s, temp: v }))} />
+          <VitalInput label="SpO2" placeholder="98%" disabled={disabled} value={vitals.spo2} onChange={(v) => setVitals((s) => ({ ...s, spo2: v }))} />
+          <VitalInput label="Weight" placeholder="70 kg" disabled={disabled} value={vitals.weight} onChange={(v) => setVitals((s) => ({ ...s, weight: v }))} />
         </div>
       </div>
     </section>
@@ -463,17 +492,19 @@ function VitalInput({
   label,
   placeholder,
   value,
+  disabled,
   onChange,
 }: {
   label: string;
   placeholder: string;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-1">
       <Label className="text-[10px] text-muted-foreground uppercase">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-8 bg-background text-[12.5px]" />
+      <Input disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-8 bg-background text-[12.5px]" />
     </div>
   );
 }
@@ -492,9 +523,11 @@ interface WorkbenchLabOrder {
 function LabOrdersSection({
   appointment,
   doctorId,
+  disabled,
 }: {
   appointment: Appointment;
   doctorId: string;
+  disabled?: boolean;
 }) {
   const [orders, setOrders] = React.useState<WorkbenchLabOrder[] | null>(null);
   const [testInput, setTestInput] = React.useState("");
@@ -514,6 +547,7 @@ function LabOrdersSection({
   }, [load]);
 
   const placeOrder = async () => {
+    if (disabled) return;
     const tests = testInput
       .split(",")
       .map((t) => t.trim())
@@ -617,6 +651,7 @@ function LabOrdersSection({
           <Label htmlFor="lab-tests">Order tests</Label>
           <Input
             id="lab-tests"
+            disabled={disabled}
             value={testInput}
             onChange={(e) => setTestInput(e.target.value)}
             placeholder="CBC, CRP, HbA1c…"
@@ -627,13 +662,14 @@ function LabOrdersSection({
           <Label htmlFor="lab-note">Clinical note</Label>
           <Input
             id="lab-note"
+            disabled={disabled}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Why (shown to the lab)"
             className="bg-background text-[13px]"
           />
         </div>
-        <Button disabled={placing} onClick={placeOrder}>
+        <Button disabled={placing || disabled} onClick={placeOrder}>
           {placing ? <Loader2 className="animate-spin" /> : <FlaskConical />}
           Order
         </Button>

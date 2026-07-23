@@ -20,6 +20,7 @@ import { useDoctorSession } from "@/components/doctor/doctor-session";
 import QueueSidebar, { QueueScope } from "@/components/doctor/queue-sidebar";
 import ConsultWorkbench from "@/components/doctor/consult-workbench";
 import ContextPanel from "@/components/doctor/context-panel";
+import { ConsultationCompleteModal } from "@/components/doctor/consultation-complete-modal";
 
 const POLL_INTERVAL_MS = 8_000;
 
@@ -32,10 +33,13 @@ export default function DoctorWorkbenchView() {
   const [search, setSearch] = React.useState("");
   const [updating, setUpdating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  // Focus mode: the doctor can collapse the queue rail and/or the clinical
-  // snapshot to concentrate on the consultation (requested in M2 review).
   const [showQueue, setShowQueue] = React.useState(true);
   const [showContext, setShowContext] = React.useState(true);
+  const [completeModal, setCompleteModal] = React.useState<{
+    open: boolean;
+    completedPatientName: string;
+    nextPatient: Appointment | null;
+  }>({ open: false, completedPatientName: "", nextPatient: null });
 
   const overridesRef = React.useRef(new Map<string, AppointmentStatus>());
 
@@ -117,12 +121,59 @@ export default function DoctorWorkbenchView() {
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
   }, [appointments]);
 
+  const [fetchedHistory, setFetchedHistory] = React.useState<Appointment[]>([]);
+
+  React.useEffect(() => {
+    if (!selected?.patient_id) {
+      setFetchedHistory([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/appointments?patient_id=${selected.patient_id}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Appointment[]) => {
+        if (cancelled) return;
+        setFetchedHistory(data);
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedHistory([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.patient_id]);
+
   const patientHistory = React.useMemo(() => {
     if (!selected) return [];
-    return (appointments ?? [])
-      .filter((a) => a.patient_id === selected.patient_id && a.id !== selected.id)
-      .sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
-  }, [appointments, selected]);
+    const map = new Map<string, Appointment>();
+    for (const a of appointments ?? []) {
+      if (a.patient_id === selected.patient_id && a.id !== selected.id) {
+        map.set(a.id, a);
+      }
+    }
+    for (const a of fetchedHistory) {
+      if (a.id !== selected.id) {
+        map.set(a.id, a);
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime()
+    );
+  }, [appointments, fetchedHistory, selected]);
+
+  const nextPatient = React.useMemo(() => {
+    if (!visible) return null;
+    const remaining = visible.filter(
+      (a) => a.id !== effectiveSelectedId && a.status !== "completed" && a.status !== "cancelled" && a.status !== "no_show"
+    );
+    return (
+      remaining.find((a) => a.status === "in_consultation") ??
+      remaining.find((a) => a.status === "doctor_ready") ??
+      remaining.find((a) => a.status === "waiting") ??
+      remaining.find((a) => a.status === "scheduled") ??
+      null
+    );
+  }, [visible, effectiveSelectedId]);
 
   const handleUpdateStatus = React.useCallback(
     async (appointment: Appointment, next: AppointmentStatus) => {
@@ -139,7 +190,27 @@ export default function DoctorWorkbenchView() {
         });
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         overridesRef.current.delete(appointment.id);
-        toast.success(`${appointment.patient.full_name} is now ${STATUS_META[next].label.toLowerCase()}.`);
+
+        if (next === "completed") {
+          const queueList = visible ?? appointments ?? [];
+          const remaining = queueList.filter(
+            (a) => a.id !== appointment.id && a.status !== "completed" && a.status !== "cancelled" && a.status !== "no_show"
+          );
+          const nextInQueue =
+            remaining.find((a) => a.status === "in_consultation") ??
+            remaining.find((a) => a.status === "doctor_ready") ??
+            remaining.find((a) => a.status === "waiting") ??
+            remaining.find((a) => a.status === "scheduled") ??
+            null;
+
+          setCompleteModal({
+            open: true,
+            completedPatientName: appointment.patient.full_name,
+            nextPatient: nextInQueue,
+          });
+        } else {
+          toast.success(`${appointment.patient.full_name} is now ${STATUS_META[next].label.toLowerCase()}.`);
+        }
         loadQueue();
       } catch {
         overridesRef.current.delete(appointment.id);
@@ -149,7 +220,7 @@ export default function DoctorWorkbenchView() {
         setUpdating(false);
       }
     },
-    [loadQueue]
+    [appointments, visible, loadQueue]
   );
 
   const handleSaveClinical = React.useCallback(
@@ -232,6 +303,8 @@ export default function DoctorWorkbenchView() {
         doctorId={doctor.id}
         recentMedicines={recentMedicines}
         updating={updating}
+        nextPatient={nextPatient}
+        onSelectNext={(id) => setSelectedId(id)}
         onUpdateStatus={handleUpdateStatus}
         onSaveClinical={handleSaveClinical}
       />
@@ -262,6 +335,24 @@ export default function DoctorWorkbenchView() {
             <PanelRightOpen className="size-4" />
           </button>
         ))}
+
+      <ConsultationCompleteModal
+        open={completeModal.open}
+        onOpenChange={(open) => setCompleteModal((s) => ({ ...s, open }))}
+        completedPatientName={completeModal.completedPatientName}
+        nextPatient={completeModal.nextPatient}
+        onCallNext={(nextP) => {
+          setSelectedId(nextP.id);
+          if (nextP.status !== "in_consultation") {
+            handleUpdateStatus(nextP, "in_consultation");
+          }
+        }}
+        onViewQueue={() => {
+          if (completeModal.nextPatient) {
+            setSelectedId(completeModal.nextPatient.id);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -157,7 +157,7 @@ export default function QueueBoard() {
       }
     }
     const doctorDelays = [...behindByDoctor.entries()]
-      .map(([id, m]) => ({ name: doctors.find((d) => d.id === id)?.full_name ?? "A doctor", minutes: Math.round(m / 5) * 5 }))
+      .map(([id, m]) => ({ id, name: doctors.find((d) => d.id === id)?.full_name ?? "A doctor", minutes: Math.round(m / 5) * 5 }))
       .filter((d) => d.minutes >= 5)
       .sort((a, b) => b.minutes - a.minutes)
       .slice(0, 2);
@@ -225,7 +225,7 @@ export default function QueueBoard() {
           )}
           {awareness.doctorDelays.map((d) => (
             <span
-              key={d.name}
+              key={d.id}
               className="inline-flex items-center gap-1.5 rounded-full border border-honey-soft bg-honey-tint px-2 py-0.5 font-medium text-honey-deep"
             >
               <Clock className="size-3.5" />

@@ -1,36 +1,57 @@
-"use client";
-
 import * as React from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Beaker,
   Droplets,
   FlaskConical,
   HeartPulse,
+  Pill,
   Phone,
   Sparkles,
+  ExternalLink,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Appointment, formatDay } from "@/shared/queue";
+import { Appointment, formatDay, parseMedicines } from "@/shared/queue";
 
 interface ContextPanelProps {
   appointment: Appointment;
   history: Appointment[];
 }
 
-// The Doctor Workspace "Clinical Snapshot" (Doctor Excellence Review §4).
-// Every field here is real: allergies/chronic conditions/emergency contact
-// come from PatientProfile (the same fields the Patient app's Health
-// Summary writes to), blood group is the existing field, and the timeline
-// is this doctor's own visit history with this patient. Recent Labs,
-// Insurance and Risk Flags have no backing model yet — shown as one honest
-// deferred note rather than fabricated content.
 export default function ContextPanel({ appointment, history }: ContextPanelProps) {
   const { patient } = appointment;
   const hasAllergies = Boolean(patient.allergies?.trim());
   const hasChronic = Boolean(patient.chronic_conditions?.trim());
-  const lastVisit = history.find((h) => h.diagnosis || h.status === "completed") ?? null;
+
+  // Prioritize last visit with the current doctor, fallback to any past visit
+  const lastVisit =
+    history.find(
+      (h) => (h.status === "completed" || h.diagnosis || h.notes) && h.doctor_id === appointment.doctor_id
+    ) ?? history.find((h) => h.status === "completed" || h.diagnosis || h.notes) ?? null;
+
+  // Extract all active/recent medications across current consultation & past history
+  const currentMedications = React.useMemo(() => {
+    const medsMap = new Map<string, { name: string; dosage?: string; frequency?: string; duration?: string }>();
+    
+    // Check current appointment's prescription
+    const currentMeds = parseMedicines(appointment.prescription_medicines_json);
+    for (const m of currentMeds) {
+      if (m.name?.trim()) medsMap.set(m.name.trim().toLowerCase(), m);
+    }
+    
+    // Check historical prescriptions
+    for (const h of history) {
+      const pastMeds = parseMedicines(h.prescription_medicines_json);
+      for (const m of pastMeds) {
+        if (m.name?.trim() && !medsMap.has(m.name.trim().toLowerCase())) {
+          medsMap.set(m.name.trim().toLowerCase(), m);
+        }
+      }
+    }
+    return Array.from(medsMap.values());
+  }, [appointment, history]);
 
   return (
     <aside className="flex w-[340px] shrink-0 flex-col overflow-y-auto border-l bg-card">
@@ -77,7 +98,23 @@ export default function ContextPanel({ appointment, history }: ContextPanelProps
 
         <div>
           <SectionLabel>Current Medication</SectionLabel>
-          <EmptyNote text="No active prescription on file yet — will populate once e-prescriptions are recorded across visits." />
+          {currentMedications.length > 0 ? (
+            <div className="space-y-1.5">
+              {currentMedications.map((med, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-lg border bg-background px-3 py-2 text-[12px]">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Pill className="size-3.5 text-primary shrink-0" />
+                    <span>{med.name}</span>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {[med.dosage, med.frequency].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyNote text="No active prescription on file yet — will populate once e-prescriptions are recorded across visits." />
+          )}
         </div>
 
         <div>
@@ -91,19 +128,43 @@ export default function ContextPanel({ appointment, history }: ContextPanelProps
         </div>
 
         <div>
-          <SectionLabel>Last visit with me</SectionLabel>
+          <div className="flex items-center justify-between mb-1.5">
+            <SectionLabel>Last visit with me</SectionLabel>
+            <Link
+              href={`/doctor/patients/${patient.id}`}
+              className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1"
+            >
+              Timeline <ExternalLink className="size-2.5" />
+            </Link>
+          </div>
           {lastVisit ? (
-            <div className="rounded-lg border bg-background p-3">
-              <div className="text-[10.5px] text-muted-foreground">{formatDay(lastVisit.scheduled_time)}</div>
-              <div className="mt-0.5 text-[12.5px] font-semibold">
-                {lastVisit.diagnosis || "Consultation"}
+            <Link
+              href={`/doctor/patients/${patient.id}`}
+              className="group block rounded-lg border bg-background p-3 transition-colors hover:border-primary/40 hover:bg-accent/40"
+            >
+              <div className="flex items-center justify-between text-[10.5px] text-muted-foreground">
+                <span>{formatDay(lastVisit.scheduled_time)}</span>
+                <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity font-medium">View full history →</span>
+              </div>
+              <div className="mt-0.5 text-[12.5px] font-semibold text-foreground group-hover:text-primary transition-colors">
+                {lastVisit.diagnosis || lastVisit.notes || lastVisit.chief_complaint || "Consultation"}
               </div>
               {lastVisit.prescription_notes && (
                 <p className="mt-1 line-clamp-2 text-[11.5px] text-muted-foreground">
                   {lastVisit.prescription_notes}
                 </p>
               )}
-            </div>
+              {parseMedicines(lastVisit.prescription_medicines_json).length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {parseMedicines(lastVisit.prescription_medicines_json).map((m, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-[10px] font-normal py-0.5 px-1.5">
+                      <Pill className="size-2.5 mr-1 text-primary" />
+                      {m.name} {m.dosage ? `(${m.dosage})` : ""}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </Link>
           ) : (
             <EmptyNote text="No previous visits with this doctor." />
           )}
@@ -111,13 +172,31 @@ export default function ContextPanel({ appointment, history }: ContextPanelProps
 
         {history.length > 0 && (
           <div>
-            <SectionLabel>Timeline</SectionLabel>
-            <ol className="relative ml-1 space-y-3 border-l pl-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <SectionLabel>Timeline</SectionLabel>
+              <Link
+                href={`/doctor/patients/${patient.id}`}
+                className="text-[11px] font-medium text-primary hover:underline"
+              >
+                View full history →
+              </Link>
+            </div>
+            <ol className="relative ml-1 space-y-2 border-l pl-3">
               {history.slice(0, 5).map((h) => (
                 <li key={h.id} className="relative">
-                  <span className="absolute top-1 -left-[19px] size-1.5 rounded-full bg-primary" />
-                  <div className="text-[10px] text-muted-foreground">{formatDay(h.scheduled_time)}</div>
-                  <div className="text-[11.5px] font-medium">{h.diagnosis || "Consultation"}</div>
+                  <span className="absolute top-1.5 -left-[16.5px] size-1.5 rounded-full bg-primary" />
+                  <Link
+                    href={`/doctor/patients/${patient.id}`}
+                    className="group block rounded-md p-1.5 transition-colors hover:bg-accent/50"
+                  >
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>{formatDay(h.scheduled_time)}</span>
+                      <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+                    </div>
+                    <div className="text-[11.5px] font-medium group-hover:text-primary transition-colors">
+                      {h.diagnosis || h.notes || h.chief_complaint || "Consultation"}
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ol>

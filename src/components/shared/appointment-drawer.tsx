@@ -314,16 +314,27 @@ export default function AppointmentDrawer({
                 ) : (
                   <div className="space-y-2">
                     {previousVisits.slice(0, 4).map((visit) => (
-                      <div key={visit.id} className="rounded-lg border bg-card px-3 py-2 text-sm">
+                      <Link
+                        key={visit.id}
+                        href={`/staff/patients/${appointment.patient.id}`}
+                        className="group block rounded-lg border bg-card px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-accent/40 cursor-pointer"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{visit.diagnosis || "Consultation"}</span>
+                          <span className="font-medium group-hover:text-primary transition-colors">
+                            {visit.diagnosis || visit.notes || "Consultation"}
+                          </span>
                           <span className="text-[11px] text-muted-foreground">{formatDay(visit.scheduled_time)}</span>
                         </div>
-                        <p className="mt-0.5 text-[12px] text-muted-foreground">
-                          {visit.doctor.full_name}
-                          {visit.doctor.specialty ? ` · ${visit.doctor.specialty}` : ""}
-                        </p>
-                      </div>
+                        <div className="mt-0.5 flex items-center justify-between text-[12px] text-muted-foreground">
+                          <span>
+                            {visit.doctor.full_name}
+                            {visit.doctor.specialty ? ` · ${visit.doctor.specialty}` : ""}
+                          </span>
+                          <span className="text-[11px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            View timeline →
+                          </span>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 )}

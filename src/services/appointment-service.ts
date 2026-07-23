@@ -444,7 +444,7 @@ export async function transitionStatus(
     }
 
     const from = appointment.status as AppointmentStatus;
-    if (!canTransition(from, nextStatus)) {
+    if (from !== nextStatus && !canTransition(from, nextStatus)) {
       throw new InvalidTransitionError(
         `Cannot move an appointment from "${from}" to "${nextStatus}".`
       );
