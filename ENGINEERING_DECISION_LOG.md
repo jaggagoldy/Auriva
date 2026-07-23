@@ -93,3 +93,14 @@
 * **Rejected Reason:** Manual invoicing introduces human omission errors and delays patient checkout.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-009: Time-Blocking Engine with Buffer Windows
+* **Requirement:** `REQ-DOC-004` (Doctor Schedule & Date Time-Blocking Engine)
+* **Decision:** Include doctor time-blocks and clinic `buffer_minutes` directly inside `SLOT_OCCUPYING_STATUSES` conflict evaluation during schedule queries.
+* **Reason:** Prevents patient double-booking during doctor procedure or meeting windows across online and reception booking routes.
+* **Alternatives Considered:** Evaluate time-block conflicts only in frontend date pickers.
+* **Rejected Reason:** Client-side only validation allows race conditions when multiple receptionists book simultaneously.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

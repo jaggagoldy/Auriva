@@ -74,17 +74,24 @@
 * **Requirement ID:** REQ-DOC-003
 * **Requirement Name:** 1-Click Consultation Sign-off & Automated Invoicing
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-DOC-003 - 1-Click Consultation Sign-off & Automated Invoicing`
+* **Commit Hash:** `2d66e15` (`POE-001: Implement REQ-DOC-003 - 1-Click Consultation Sign-off & Automated Invoicing`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 9: REQ-DOC-004 — Doctor Schedule & Date Time-Blocking Engine
+* **Requirement ID:** REQ-DOC-004
+* **Requirement Name:** Doctor Schedule & Date Time-Blocking Engine
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-DOC-004 - Doctor Schedule & Date Time-Blocking Engine`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/components/doctor/consultation-complete-modal.tsx`
-  - `src/services/consultation-service.ts`
-  - `src/services/billing-engine-service.ts`
-  - `src/services/document-service.ts`
+  - `src/services/availability-service.ts`
+  - `src/app/api/doctor/availability/route.ts`
+  - `src/services/availability-service.test.ts`
 * **Changes Summary:**
-  - Verified 1-click consultation sign-off modal and completion pipeline.
-  - Automatically transitions appointment status `in_consultation` ➔ `completed`.
-  - Auto-drafts consultation fee invoice, snapshot-generates visit summary document (`VS-` numbered), and dispatches system events `appointment.completed` and `invoice.created`.
+  - Verified doctor schedule availability & time-blocking engine.
+  - Doctors can specify custom operational time-blocks and buffer windows to prevent double-booking.
 * **Test Verification:**
-  - `src/services/document-service.test.ts` (8 / 8 Passed)
+  - `src/services/availability-service.test.ts` (7 / 7 Passed)
   - `npx tsc --noEmit` (0 errors)

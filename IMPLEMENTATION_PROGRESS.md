@@ -16,7 +16,7 @@
 - [x] **REQ-DOC-001**: Uninterrupted Consultation Workbench Charting (`completed`)
 - [x] **REQ-DOC-002**: Structured Prescription Authoring & Printable Rx (`completed`)
 - [x] **REQ-DOC-003**: 1-Click Consultation Sign-off & Automated Invoicing (`completed`)
-- [ ] **REQ-DOC-004**: Doctor Schedule & Date Time-Blocking Engine (`not_started`)
+- [x] **REQ-DOC-004**: Doctor Schedule & Date Time-Blocking Engine (`completed`)
 - [ ] **REQ-DOC-005**: Doctor Leave & Holiday Management Engine (OPS-002 Lite) (`not_started`)
 - [ ] **REQ-OWN-001**: Owner Command Center Morning Operational Snapshot (`not_started`)
 - [ ] **REQ-OWN-002**: Real-time Operational Intelligence & Practice KPIs (`not_started`)
@@ -30,6 +30,6 @@
 ---
 
 ## PROGRESS SUMMARY
-* **Completed:** 8 / 18 (44.4%)
+* **Completed:** 9 / 18 (50.0%)
 * **In Progress:** 0 / 18
-* **Remaining:** 10 / 18
+* **Remaining:** 9 / 18
