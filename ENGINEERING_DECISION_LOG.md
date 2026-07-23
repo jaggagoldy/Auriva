@@ -38,3 +38,14 @@
 * **Rejected Reason:** Token number swapping confuses patients waiting with printed physical tokens. Priority weighting reorders queue display without altering issued paper tokens.
 * **Approved By:** AI Engineering Organization (CTO / Lead Architect)
 * **Date:** 2026-07-23
+
+---
+
+### EDR-004: Atomic Token Re-indexing on Doctor Reassignment
+* **Requirement:** `REQ-REC-004` (Drag-and-Drop Queue Reordering & Doctor Transfer)
+* **Decision:** Re-assign a fresh sequential queue token when transferring an appointment to a target doctor, blocking transfers once consultation has started (`in_consultation`).
+* **Reason:** Guarantees target doctor's queue token sequence remains continuous without gap or duplication.
+* **Alternatives Considered:** Preserve original doctor's queue token number on target doctor's list.
+* **Rejected Reason:** Preserving foreign tokens breaks sequential calling on target doctor's queue display.
+* **Approved By:** AI Engineering Organization (CTO / Lead Architect)
+* **Date:** 2026-07-23

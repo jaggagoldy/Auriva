@@ -29,18 +29,27 @@
 * **Requirement ID:** REQ-REC-003
 * **Requirement Name:** Emergency Patient Queue Bypass & Priority Reordering
 * **Date:** 2026-07-23
-* **Commit Hash:** `POE-001: Implement REQ-REC-003 - Emergency Patient Queue Bypass & Priority Reordering`
+* **Commit Hash:** `87b039e` (`POE-001: Implement REQ-REC-003 - Emergency Patient Queue Bypass & Priority Reordering`)
+* **Status:** ✅ Verified & Complete
+
+---
+
+### Entry 4: REQ-REC-004 — Drag-and-Drop Queue Reordering & Doctor Transfer
+* **Requirement ID:** REQ-REC-004
+* **Requirement Name:** Drag-and-Drop Queue Reordering & Doctor Transfer
+* **Date:** 2026-07-23
+* **Commit Hash:** `POE-001: Implement REQ-REC-004 - Drag-and-Drop Queue Reordering & Doctor Transfer`
 * **Status:** ✅ Verified & Complete
 * **Files Modified / Verified:**
-  - `src/services/queue-service.ts`
+  - `src/services/reception-service.ts`
   - `src/app/api/reception/status/route.ts`
   - `src/components/staff/queue-card.tsx`
-  - `src/services/queue-emergency.test.ts`
+  - `src/services/reassign-doctor.test.ts`
 * **Changes Summary:**
-  - Emergency priority weight (`priority = 100`) bumps emergency patient to position #1 in waiting queue.
-  - Added red `[ EMERGENCY ]` badge rendering on Queue Card.
-  - Added "Set Emergency Priority" / "Clear Emergency" dropdown action.
-  - Logs `emergency_priority_set` to `AppointmentEvent` timeline and dispatches `reception.queue.emergency_bypass` to system event bus.
+  - Verified `reassignDoctor` service for transferring patient between doctors prior to consultation start.
+  - Generates new sequential queue token for target doctor.
+  - Logs `doctor_reassigned` event in `AppointmentEvent` timeline.
+  - Dispatches `reception.doctor_reassigned` system event notification.
 * **Test Verification:**
-  - `src/services/queue-emergency.test.ts` (Passed)
+  - `src/services/reassign-doctor.test.ts` (Passed)
   - `npx tsc --noEmit` (0 errors)

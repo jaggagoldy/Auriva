@@ -121,6 +121,26 @@ export async function reassignDoctor(
       actorUserId,
     });
 
+    const clinic = await tx.clinic.findUnique({
+      where: { id: clinicId },
+      select: { organization_id: true },
+    });
+    if (clinic) {
+      await publishEvent({
+        eventType: "reception.doctor_reassigned",
+        organizationId: clinic.organization_id,
+        entityId: appointmentId,
+        correlationId: appointmentId,
+        actorId: actorUserId ?? null,
+        payload: {
+          appointmentId,
+          fromDoctorId: appointment.doctor_id,
+          toDoctorId: newDoctorId,
+          newQueueNumber,
+        },
+      });
+    }
+
     return result;
   });
 }
