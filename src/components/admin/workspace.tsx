@@ -214,7 +214,6 @@ export default function AdminWorkspace() {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <WhatsNew />
             <ActivityBell organizationId={organizationId} />
             <Button
               variant="outline"

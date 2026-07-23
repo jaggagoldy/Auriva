@@ -66,7 +66,21 @@ export default function UnifiedLoginGateway() {
     if (typeof window === 'undefined') return;
     const as = new URLSearchParams(window.location.search).get('as');
     if (as === 'patient' || as === 'personal') setEntryPath('personal');
-  }, []);
+
+    // Auto-redirect if session is already active (prevents login screen on back button)
+    let cancelled = false;
+    fetch('/api/clinics', { cache: 'no-store' })
+      .then((res) => {
+        if (res.ok && !cancelled) {
+          router.replace('/workspace');
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   // Form states
   const [phoneNumber, setPhoneNumber] = useState('+15550199999');
@@ -185,9 +199,7 @@ export default function UnifiedLoginGateway() {
       return;
     }
     toast.success(`Welcome back, ${data.patientProfile.full_name}!`);
-    // The session cookie is already set server-side by /api/auth/otp/verify
-    // — no client-side storage of identity anymore (APS-029/010 Sprint 1).
-    router.push('/patient');
+    router.replace('/patient');
   };
 
   const handlePatientVerifyOtp = async (e: React.FormEvent) => {
@@ -334,7 +346,7 @@ export default function UnifiedLoginGateway() {
       // A provisioned account (temporary password) must set its own first
       // (UXS-043 Package 1). Otherwise route through the workspace landing hub,
       // which resolves WHICH workspace and the SURFACE it opens into (APS-045 §7).
-      router.push(data.user.must_change_password ? '/change-password' : '/workspace');
+      router.replace(data.user.must_change_password ? '/change-password' : '/workspace');
     } catch {
       setAuthError('We couldn’t sign you in. Check your connection and try again.');
     } finally {

@@ -1,28 +1,26 @@
 "use client";
 
-// Shared Organization Workspace sidebar (Sprint 3, regrouped for APS-031 #6).
-// Extracted so every admin surface shares one canonical navigation instead of
-// each re-declaring their own. Grouped Operate/Manage/Understand/Configure per
-// the APS-031 org-workspace mockup's IA — but only routes that are real today
-// get a link; everything else keeps the existing `soon` disabled pattern
-// rather than pointing at a page that doesn't exist yet.
-
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   Building2,
   CreditCard,
   LayoutDashboard,
+  LogOut,
   Settings,
+  Tag,
   Users,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 
 export type AdminNavKey =
   | "command-center"
   | "workspace"
+  | "services"
   | "departments"
   | "settings"
   | "events"
@@ -36,13 +34,11 @@ interface NavEntry {
   soon?: boolean;
 }
 
-// PKG-2 Owner cockpit — a clean four-item nav (Command · Team · Clinics · Plan).
-// Clinics + Plan are not built yet → shown as "Soon" (no route) until they exist.
 const PRIMARY: NavEntry[] = [
   { key: "command-center", icon: LayoutDashboard, label: "Command", href: "/admin/command-center" },
   { key: "workspace", icon: Users, label: "Team", href: "/admin" },
-  { key: "departments", icon: Building2, label: "Clinics", soon: true },
-  { key: "settings", icon: CreditCard, label: "Plan", soon: true },
+  { key: "services", icon: Tag, label: "Services & Pricing", href: "/admin/services" },
+  { key: "settings", icon: CreditCard, label: "Plan & Settings", href: "/admin/settings" },
 ];
 
 export function AdminSidebar({
@@ -52,6 +48,19 @@ export function AdminSidebar({
   active: AdminNavKey;
   subtitle?: string;
 }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      localStorage.removeItem("aura_b2b_session");
+      toast.success("Signed out successfully");
+      router.replace("/login");
+    } catch {
+      toast.error("Could not sign out");
+    }
+  };
+
   return (
     <aside className="flex w-[212px] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-4">
@@ -66,13 +75,32 @@ export function AdminSidebar({
 
       <nav className="flex-1 space-y-0.5 p-3">
         {PRIMARY.map((item) => (
-          <AdminNavItem key={item.key} icon={item.icon} label={item.label} href={item.href} soon={item.soon} active={item.key === active} />
+          <AdminNavItem
+            key={item.key}
+            icon={item.icon}
+            label={item.label}
+            href={item.href}
+            soon={item.soon}
+            active={item.key === active}
+          />
         ))}
       </nav>
 
-      {/* Only Settings for now (Setup / Event Platform hidden per PKG-2) */}
       <nav className="space-y-0.5 border-t p-3">
-        <AdminNavItem icon={Settings} label="Settings" href="/admin/settings" active={active === "settings"} muted />
+        <AdminNavItem
+          icon={Settings}
+          label="Settings"
+          href="/admin/settings"
+          active={active === "settings"}
+          muted
+        />
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="size-4 shrink-0" />
+          <span>Sign out</span>
+        </button>
       </nav>
     </aside>
   );
