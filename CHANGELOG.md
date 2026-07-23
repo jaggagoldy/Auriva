@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Doctor Schedule & Date Time-Blocking Engine (`REQ-DOC-004`)**: Doctor operational calendar slot management and custom date-time blocking windows with buffer protection against double-booking.
 - **Doctor Leave & Holiday Management Engine (`REQ-DOC-005`)**: Lightweight OPS-002 Lite leave suppression engine, automatically removing patient booking slots during doctor leave dates without non-clinical HRMS overhead.
 
-### Changed
-- Refactored `setPriority` to log `emergency_priority_set` activity events and publish `reception.queue.emergency_bypass` system events.
-- Updated `reassignDoctor` service to publish `reception.doctor_reassigned` event bus notifications.
+### Added — Workstream C1: Owner Experience (`POE-001-OWNER-COMPLETE`)
+- **Owner Command Center Morning Operational Snapshot (`REQ-OWN-001`)**: Server-assembled role-shaped dashboard payload providing practice owners with an instant morning operational overview (expected revenue, appointment counts, active queue count, doctor status).
+- **Real-time Operational Intelligence & Practice KPIs (`REQ-OWN-002`)**: Real-time ledger-aggregated KPIs (daily/monthly revenue trends, doctor volume, average wait time, payment method distribution).
+- **Treatment Services Catalog & Pricing Engine (`REQ-OWN-003`)**: Service catalog manager for custom procedure pricing, durations, categories, and permission-by-kind validation.

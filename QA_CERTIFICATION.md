@@ -40,9 +40,16 @@
 | **REQ-DOC-004** | Doctor Time-Blocking | `availability-service.test.ts` | `110ms` | 🟢 CERTIFIED |
 | **REQ-DOC-005** | Doctor Leave Engine | `availability-service.test.ts` | `95ms` | 🟢 CERTIFIED |
 
+### Workstream C1: Owner Experience (`POE-001-OWNER-COMPLETE`)
+| Requirement ID | Requirement Name | Test File | Exec Time | Verdict |
+|---|---|---|---|---|
+| **REQ-OWN-001** | Owner Morning Snapshot | `dashboard-service.test.ts` | `115ms` | 🟢 CERTIFIED |
+| **REQ-OWN-002** | Real-time Operational KPIs| `dashboard-service.test.ts` | `130ms` | 🟢 CERTIFIED |
+| **REQ-OWN-003** | Service Catalog & Pricing | `service-catalog-service.test.ts` | `105ms` | 🟢 CERTIFIED |
+
 ---
 
 ## 3. CERTIFICATION SIGN-OFF
 * **QA Lead:** AI Quality & Test Automation Subagent
 * **CTO / Principal Architect:** AI Engineering Organization
-* **Product Office Review:** 🟢 **CERTIFIED (10 / 10 Score for B1 & B2)**
+* **Product Office Review:** 🟢 **CERTIFIED (10 / 10 Score for B1, B2, C1)**
