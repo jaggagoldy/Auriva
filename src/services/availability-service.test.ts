@@ -97,3 +97,51 @@ describe("personal time blocking", () => {
     ).rejects.toThrow(AvailabilityInputError);
   });
 });
+
+describe("P2 — recurring breaks and daily patient cap", () => {
+  const fullWeekWith = (extra: { break_start?: string; break_end?: string; max_patients?: number }) =>
+    Array.from({ length: 7 }, (_, d) => ({ day_of_week: d, start_time: "09:00", end_time: "17:00", ...extra }));
+
+  it("removes slots overlapping a recurring daily break", async () => {
+    const doctor = await doctorWithFullWeek();
+    await setAvailability(doctor.id, fullWeekWith({ break_start: "13:00", break_end: "14:00" }));
+
+    // Tomorrow is fully in the future, so its slots aren't clipped by "now".
+    const tomorrow = (await getBookableSlots(doctor.id, { days: 2 }))[1].slots;
+    expect(tomorrow.length).toBeGreaterThan(0);
+
+    const insideBreak = tomorrow.filter((iso) => {
+      const dt = new Date(iso);
+      const minutes = dt.getHours() * 60 + dt.getMinutes();
+      return minutes >= 13 * 60 && minutes < 14 * 60;
+    });
+    expect(insideBreak).toHaveLength(0);
+  });
+
+  it("caps a day's bookable slots at max_patients", async () => {
+    const doctor = await doctorWithFullWeek();
+    await setAvailability(doctor.id, fullWeekWith({ max_patients: 3 }));
+
+    const days = await getBookableSlots(doctor.id, { days: 3 });
+    expect(days[1].slots).toHaveLength(3); // tomorrow, no bookings yet
+    expect(days[2].slots).toHaveLength(3);
+  });
+
+  it("rejects a break that falls outside the working hours", async () => {
+    const doctor = await doctorWithFullWeek();
+    await expect(
+      setAvailability(doctor.id, [
+        { day_of_week: 1, start_time: "09:00", end_time: "17:00", break_start: "08:00", break_end: "09:30" },
+      ])
+    ).rejects.toThrow(AvailabilityInputError);
+  });
+
+  it("rejects a break missing one of its two times", async () => {
+    const doctor = await doctorWithFullWeek();
+    await expect(
+      setAvailability(doctor.id, [
+        { day_of_week: 1, start_time: "09:00", end_time: "17:00", break_start: "13:00" },
+      ])
+    ).rejects.toThrow(AvailabilityInputError);
+  });
+});

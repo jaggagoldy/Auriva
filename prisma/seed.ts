@@ -109,6 +109,16 @@ async function main() {
   });
 
   // 3. Create Doctors & Staff Users & Profiles
+  // 3a. Owner Staff Profile (Managing Doctor & Lead Physician)
+  const ownerDoc = await prisma.staffProfile.create({
+    data: {
+      user_id: adminUser.id,
+      clinic_id: clinicA.id,
+      specialty: 'Chief Medical Officer & Internal Medicine',
+      full_name: 'Dr. Robert Taylor (Owner & Lead Physician)',
+    },
+  });
+
   const doctorUser1 = await prisma.user.create({
     data: {
       role: 'doctor',
@@ -181,9 +191,7 @@ async function main() {
     },
   });
 
-  // 3b. Organization memberships (APS-040, retargeted onto the real
-  // Organization in Sprint 3): the role a person holds inside the
-  // organization — one org, everyone's membership points at org.id now.
+  // 3b. Organization memberships: the roles a person holds inside the organization
   await prisma.organizationMember.createMany({
     data: [
       { organization_id: org.id, user_id: adminUser.id, role: 'owner' },
@@ -224,6 +232,12 @@ async function main() {
   // two clinic-A doctors; Mon/Wed/Fri for the pediatrician at Summit.
   await prisma.doctorAvailability.createMany({
     data: [
+      ...[1, 2, 3, 4, 5, 6].map((day) => ({
+        doctor_id: ownerDoc.id,
+        day_of_week: day,
+        start_time: '08:30',
+        end_time: '18:30',
+      })),
       ...[1, 2, 3, 4, 5].map((day) => ({
         doctor_id: doc1.id,
         day_of_week: day,
@@ -465,6 +479,58 @@ async function main() {
       clinic_id: clinicA.id,
       scheduled_time: new Date(Date.now() + 20 * 60 * 1000), // in 20 min
       status: 'scheduled',
+    },
+  });
+
+  // Clinic A · Dr. Sarah Smith (Cardiologist) — Jordan Lee's past completed visits with Dr. Smith
+  const jordanPastAppt1 = await prisma.appointment.create({
+    data: {
+      patient_id: patient2.id,
+      doctor_id: doc1.id,
+      clinic_id: clinicA.id,
+      scheduled_time: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      status: 'completed',
+      checked_in_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      started_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000),
+      completed_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 25 * 60 * 1000),
+      diagnosis: 'Essential Hypertension & Palpitations',
+      notes: 'Follow-up consultation for blood pressure management and stress response.',
+      prescription_notes: 'Started on Metoprolol Succinate 25mg daily. Low sodium diet recommended.',
+      prescription_medicines_json: JSON.stringify([
+        { name: 'Metoprolol Succinate', dosage: '25mg', frequency: 'Once daily (mornings)', duration: '30 days' },
+        { name: 'Aspirin', dosage: '75mg', frequency: 'Once daily', duration: '30 days' }
+      ]),
+    },
+  });
+
+  await prisma.prescription.create({
+    data: {
+      appointment_id: jordanPastAppt1.id,
+      patient_id: patient2.id,
+      doctor_id: doc1.id,
+      clinic_id: clinicA.id,
+      notes: 'Started on Metoprolol Succinate 25mg daily. Low sodium diet recommended.',
+      medicines_json: JSON.stringify([
+        { name: 'Metoprolol Succinate', dosage: '25mg', frequency: 'Once daily (mornings)', duration: '30 days' },
+        { name: 'Aspirin', dosage: '75mg', frequency: 'Once daily', duration: '30 days' }
+      ]),
+      follow_up_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+    }
+  });
+
+  await prisma.appointment.create({
+    data: {
+      patient_id: patient2.id,
+      doctor_id: doc1.id,
+      clinic_id: clinicA.id,
+      scheduled_time: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+      status: 'completed',
+      checked_in_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      started_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000),
+      completed_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+      diagnosis: 'Initial Cardiology Evaluation',
+      notes: 'Presented with mild shortness of breath during exertion.',
+      prescription_notes: 'ECG and Lipid panel ordered.',
     },
   });
 

@@ -5,6 +5,7 @@ import { createSession, setSessionCookie } from '@/api/session';
 import { verifyPassword } from '@/lib/password';
 import { isPatient } from '@/domain/authorization';
 import { checkRateLimit, clientIp } from '@/lib/rate-limit';
+import { normalizePhone } from '@/lib/phone';
 import { logger, withRequestId } from '@/api/logger';
 import { recordAudit, resolveOrganizationIdForStaffUser } from '@/lib/audit';
 
@@ -24,10 +25,13 @@ export async function POST(request: NextRequest) {
       const { email, phone, password } = await request.json();
 
       const usingEmail = Boolean(email);
+      // Phone identifiers are normalized to E.164 (India default +91), so a
+      // staff member can sign in with their bare 10-digit mobile — the same
+      // value the account is stored under.
       const identifier = usingEmail
         ? String(email).trim().toLowerCase()
         : phone
-          ? String(phone).trim()
+          ? normalizePhone(String(phone))
           : '';
 
       if (!identifier || !password) {
@@ -48,7 +52,7 @@ export async function POST(request: NextRequest) {
 
       const user = await prisma.user.findFirst({
         where: usingEmail ? { email: identifier } : { phone_number: identifier },
-        include: { staffProfile: true },
+        include: { staffProfiles: true },
       });
 
       // One message for "no such user", "patient account" and "wrong password"
@@ -77,7 +81,17 @@ export async function POST(request: NextRequest) {
         return forbidden('This account has been deactivated. Contact your administrator.');
       }
 
-      const { rawToken, expires_at } = await createSession(user.id, user.role);
+      // Batch B: open the session into the caller's workspace. Exactly one
+      // membership auto-opens into it; with several, none is set and the
+      // Workspace Selector picks (UXS-043 Package 1). Owners with no staff
+      // profile carry no active membership.
+      const memberships = user.staffProfiles;
+      const { rawToken, expires_at } = await createSession(
+        user.id,
+        user.role,
+        null,
+        memberships.length === 1 ? memberships[0].id : null
+      );
       await setSessionCookie(rawToken, expires_at);
 
       const organizationId = await resolveOrganizationIdForStaffUser(user.id, user.role);
@@ -96,8 +110,13 @@ export async function POST(request: NextRequest) {
           phone_number: user.phone_number,
           email: user.email,
           role: user.role,
+          // Batch A (APS-044 §9): a provisioned account signs in with a
+          // temporary password and must set its own before any workspace is
+          // usable — the client routes to the Mandatory Password Change screen
+          // (UXS-043 Package 1). Server-enforced too, in requireStaffContext.
+          must_change_password: user.must_change_password,
         },
-        staffProfile: user.staffProfile,
+        staffProfile: memberships[0] ?? null,
       });
     } catch (error) {
       return serverError('Error logging in B2B user', error);

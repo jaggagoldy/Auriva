@@ -1,13 +1,11 @@
 // Milestone 1 (First Clinic Ready), Batch 5 — the solo visit: Today →
-// Consultation → Payment, entirely inside the clinic workspace. This service
+// Consultation → Checkout, entirely inside the clinic workspace. This service
 // ORCHESTRATES existing primitives; it invents no new status machine or ledger:
 //   - transitionStatus (appointment-service) owns every status change,
 //   - updateClinicalRecord (appointment-service) saves the notes/diagnosis/follow-up,
-//   - transitionStatus already auto-drafts the visit invoice on completion,
-//   - setDraftInvoiceItems (billing-service) re-prices that draft to the chosen
-//     Treatment, and recordPayment (billing-service) collects the money.
-// The one solo-specific rule: the visit's charge is the chosen Treatment's
-// price, not the generic consultation fee.
+//   - completion settles the visit's ServiceEvents into the invoice (M3A/B1).
+// S1 Batch A: the legacy single-Treatment re-price + collectVisitPayment wrapper
+// were retired — charges are ServiceEvents (B1), payment is the Checkout Workspace.
 
 import prisma from "@/lib/prisma";
 import {
@@ -15,8 +13,7 @@ import {
   updateClinicalRecord,
   AppointmentNotFoundError,
 } from "@/services/appointment-service";
-import { setDraftInvoiceItems, recordPayment } from "@/services/billing-service";
-import type { InvoiceItem, PaymentMethod } from "@/domain/invoice-status";
+import { recommendTests } from "@/services/test-recommendation-service";
 
 export class ConsultationInputError extends Error {}
 
@@ -28,6 +25,59 @@ async function requireClinicAppointment(appointmentId: string, clinicId: string)
   });
   if (!appointment) throw new AppointmentNotFoundError("Appointment not found in this clinic.");
   return appointment;
+}
+
+/** The left clinical-context rail for the consultation workbench — real,
+ * scoped patient data (no fake vitals): profile allergies/conditions, the
+ * medicines from their most recent visit, and their recent completed visits. */
+export async function getConsultationContext(appointmentId: string, clinicId: string) {
+  const appt = await requireClinicAppointment(appointmentId, clinicId);
+  const [patient, visits] = await Promise.all([
+    prisma.patientProfile.findUnique({
+      where: { id: appt.patient_id },
+      select: { full_name: true, blood_group: true, allergies: true, chronic_conditions: true, date_of_birth: true, gender: true },
+    }),
+    prisma.appointment.findMany({
+      where: { patient_id: appt.patient_id, id: { not: appt.id }, status: "completed" },
+      orderBy: { scheduled_time: "desc" },
+      take: 6,
+      select: { id: true, scheduled_time: true, diagnosis: true, prescription_notes: true, prescription_medicines_json: true, notes: true },
+    }),
+  ]);
+
+  function parseMeds(json: string | null): { name: string; dosage?: string; frequency?: string; duration?: string }[] {
+    if (!json) return [];
+    try {
+      const arr = JSON.parse(json);
+      return Array.isArray(arr) ? arr.filter((m) => m && typeof m.name === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return {
+    // C1: ids the workbench needs to create a Treatment Plan.
+    patient_id: appt.patient_id,
+    doctor_id: appt.doctor_id,
+    patient: patient
+      ? {
+          full_name: patient.full_name,
+          blood_group: patient.blood_group,
+          allergies: patient.allergies,
+          chronic_conditions: patient.chronic_conditions,
+          date_of_birth: patient.date_of_birth ? patient.date_of_birth.toISOString() : null,
+          gender: patient.gender,
+        }
+      : null,
+    // "Current medicines" = what was prescribed at the most recent completed visit.
+    current_medicines: visits.length ? parseMeds(visits[0].prescription_medicines_json) : [],
+    past_visits: visits.map((v) => ({
+      id: v.id,
+      date: v.scheduled_time.toISOString(),
+      title: v.diagnosis?.trim() || "Consultation",
+      subtitle: v.prescription_notes?.trim() || v.notes?.trim() || "",
+    })),
+  };
 }
 
 /** Start seeing the patient: scheduled/waiting → in_consultation. */
@@ -49,39 +99,51 @@ export async function completeVisit(input: {
   appointmentId: string;
   clinicId: string;
   actorUserId: string;
+  chiefComplaint?: string | null;
   notes?: string | null;
   diagnosis?: string | null;
   followUpDate?: string | null;
   prescriptionNotes?: string | null;
-  treatmentId?: string | null;
+  prescriptionMedicinesJson?: string | null;
+  testCodes?: string[] | null;
 }) {
   const appointment = await requireClinicAppointment(input.appointmentId, input.clinicId);
   if (appointment.status === "completed") {
     throw new ConsultationInputError("This visit is already completed.");
   }
 
-  // 1) Validate the chosen treatment BEFORE completing, so a bad id never
-  // leaves a completed-but-mispriced visit behind.
-  let service = null;
-  if (input.treatmentId) {
-    service = await prisma.service.findFirst({
-      where: { id: input.treatmentId, clinic_id: input.clinicId, is_active: true },
-    });
-    if (!service) throw new ConsultationInputError("That treatment isn't available in this clinic.");
-  }
-
-  // 2) Clinical documentation (only if anything was provided).
+  // 2) Clinical documentation (only if anything was provided). Structured
+  // medicines route to Prescription.medicines_json so they flow to the
+  // printable prescription and the patient timeline — not just free text.
   if (
+    input.chiefComplaint !== undefined ||
     input.notes !== undefined ||
     input.diagnosis !== undefined ||
     input.followUpDate !== undefined ||
-    input.prescriptionNotes !== undefined
+    input.prescriptionNotes !== undefined ||
+    input.prescriptionMedicinesJson !== undefined
   ) {
     await updateClinicalRecord(input.appointmentId, {
+      chief_complaint: input.chiefComplaint ?? undefined,
       history_notes: input.notes ?? undefined,
       diagnosis: input.diagnosis ?? undefined,
       follow_up_date: input.followUpDate ?? undefined,
       prescription_notes: input.prescriptionNotes ?? undefined,
+      prescription_medicines_json: input.prescriptionMedicinesJson ?? undefined,
+    });
+  }
+
+  // 2b) Investigations are RECOMMENDED tests (P5) — referral records the
+  // patient acts on from their Health Vault, not lab management. One row per
+  // catalog test; unknown codes are ignored.
+  const testCodes = (input.testCodes ?? []).map((c) => c.trim()).filter(Boolean);
+  if (testCodes.length > 0) {
+    await recommendTests({
+      clinicId: input.clinicId,
+      patientId: appointment.patient_id,
+      doctorId: appointment.doctor_id,
+      appointmentId: appointment.id,
+      testCodes,
     });
   }
 
@@ -94,42 +156,19 @@ export async function completeVisit(input: {
   // Auto-drafts the fee-based invoice in the same txn.
   await transitionStatus(input.appointmentId, "completed", { actorUserId: input.actorUserId });
 
-  const invoice = await prisma.invoice.findUnique({
+  // M3A C3: 1:N link → findFirst. The completion hook has just drafted exactly
+  // one consultation-fee invoice for this appointment; earliest wins for
+  // determinism.
+  const invoice = await prisma.invoice.findFirst({
     where: { appointment_id: input.appointmentId },
+    orderBy: { created_at: "asc" },
   });
   if (!invoice) {
-    // Should never happen (completion always drafts one) — surfaced honestly.
+    // Should never happen (completion always settles/drafts one) — surfaced honestly.
     throw new ConsultationInputError("Visit completed but no invoice was drafted.");
   }
 
-  // 4) Re-price to the chosen treatment (solo-specific rule). If no treatment
-  // was chosen, keep the auto-drafted consultation-fee line as-is.
-  if (service) {
-    const items: InvoiceItem[] = [
-      { description: service.name, qty: 1, unit_price: service.price, amount: service.price },
-    ];
-    const repriced = await setDraftInvoiceItems(invoice.id, input.clinicId, items);
-    return { invoiceId: repriced.id, total: repriced.total, invoiceNumber: repriced.invoice_number };
-  }
-
+  // S1 Batch A: the legacy single-treatment re-price is gone — charges are the
+  // visit's ServiceEvents, settled by the M3A engine on completion (B1).
   return { invoiceId: invoice.id, total: invoice.total, invoiceNumber: invoice.invoice_number };
-}
-
-/** Collect the payment for a visit's invoice — thin wrapper over recordPayment. */
-export async function collectVisitPayment(input: {
-  invoiceId: string;
-  clinicId: string;
-  amount: number;
-  method: PaymentMethod;
-  reference?: string | null;
-  actorUserId: string;
-}) {
-  return recordPayment({
-    invoiceId: input.invoiceId,
-    clinicId: input.clinicId,
-    amount: input.amount,
-    method: input.method,
-    reference: input.reference ?? null,
-    receivedByUserId: input.actorUserId,
-  });
 }

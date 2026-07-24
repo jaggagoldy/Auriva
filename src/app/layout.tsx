@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { OfflineBanner } from "@/components/ui/offline-banner";
 
 // Auriva Design System v1.0 (design/auriva-design-system.html §03): Inter everywhere.
 const inter = Inter({
@@ -33,6 +34,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {/* PKG-6 §4: one calm, non-blocking offline indicator, app-wide */}
+        <OfflineBanner />
         {children}
       </body>
     </html>

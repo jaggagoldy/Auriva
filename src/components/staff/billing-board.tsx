@@ -7,11 +7,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { IndianRupee, Loader2, Plus, Printer, ReceiptText } from "lucide-react";
+import { IndianRupee, Printer, ReceiptText } from "lucide-react";
+import { EmptyState } from "@/components/ui/states";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CheckoutWorkspace } from "@/components/shared/checkout/checkout-workspace";
 import {
   Dialog,
   DialogContent,
@@ -20,15 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -92,7 +85,7 @@ function paidSoFar(invoice: InvoiceRow): number {
 export default function BillingBoard() {
   const [invoices, setInvoices] = React.useState<InvoiceRow[] | null>(null);
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]["id"]>("today");
-  const [payingInvoice, setPayingInvoice] = React.useState<InvoiceRow | null>(null);
+  const [checkoutId, setCheckoutId] = React.useState<string | null>(null); // M3B B2: shared Checkout Workspace
   const [viewingInvoice, setViewingInvoice] = React.useState<InvoiceRow | null>(null);
 
   const load = React.useCallback(async () => {
@@ -125,9 +118,11 @@ export default function BillingBoard() {
     <div className="mx-auto max-w-6xl space-y-4 p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Billing</h1>
+          {/* PKG-4 Desk framing */}
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Cash desk</div>
+          <h1 className="text-xl font-semibold tracking-tight">Collect &amp; close</h1>
           <p className="text-sm text-muted-foreground">
-            Invoices draft automatically when a consultation completes.
+            Visits finished with the doctor, waiting to be billed &mdash; invoices draft themselves on completion.
           </p>
         </div>
       </div>
@@ -172,13 +167,12 @@ export default function BillingBoard() {
               ))}
             </div>
           ) : invoices.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <ReceiptText className="size-10 text-muted-foreground/50" />
-              <p className="text-sm font-medium">No invoices here yet</p>
-              <p className="text-xs text-muted-foreground">
-                Complete a consultation and its invoice drafts itself.
-              </p>
-            </div>
+            <EmptyState
+              icon={ReceiptText}
+              title="Nothing to collect right now"
+              description="You're all caught up. A visit's invoice drafts itself the moment the consultation is completed."
+              className="border-0 py-14"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -194,7 +188,7 @@ export default function BillingBoard() {
               <TableBody>
                 {invoices.map((invoice) => {
                   const balance = invoice.total - paidSoFar(invoice);
-                  const meta = STATUS_META[invoice.status];
+                  const meta = STATUS_META[invoice.status] ?? STATUS_META.draft;
                   const payable = invoice.status === "draft" || invoice.status === "issued";
                   return (
                     <TableRow key={invoice.id}>
@@ -227,9 +221,9 @@ export default function BillingBoard() {
                       </TableCell>
                       <TableCell className="text-right">
                         {payable && (
-                          <Button size="sm" onClick={() => setPayingInvoice(invoice)}>
+                          <Button size="sm" onClick={() => setCheckoutId(invoice.id)}>
                             <IndianRupee className="size-3.5" />
-                            Collect
+                            Checkout
                           </Button>
                         )}
                       </TableCell>
@@ -242,87 +236,37 @@ export default function BillingBoard() {
         </CardContent>
       </Card>
 
-      <PaymentDialog
-        invoice={payingInvoice}
-        onClose={() => setPayingInvoice(null)}
-        onRecorded={() => {
-          setPayingInvoice(null);
-          load();
-        }}
-      />
+      {checkoutId && (
+        <CheckoutWorkspace
+          invoiceId={checkoutId}
+          onClose={() => setCheckoutId(null)}
+          onDone={() => { setCheckoutId(null); load(); }}
+        />
+      )}
 
-      <InvoiceDetailDialog
-        invoice={viewingInvoice}
-        onClose={() => setViewingInvoice(null)}
-        onChanged={(updated) => {
-          setViewingInvoice(updated);
-          load();
-        }}
-      />
+      <InvoiceDetailDialog invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
     </div>
   );
 }
 
+// S1 Batch B: a READ-ONLY invoice inspector. Editing (charge/discount) moved to
+// the Checkout Workspace; Print points at the Document Platform. Kept for one
+// stabilization cycle as a safety net, then retired.
 function InvoiceDetailDialog({
   invoice,
   onClose,
-  onChanged,
 }: {
   invoice: InvoiceRow | null;
   onClose: () => void;
-  onChanged: (updated: InvoiceRow) => void;
 }) {
-  const [description, setDescription] = React.useState("");
-  const [amount, setAmount] = React.useState("");
-  const [kind, setKind] = React.useState<"charge" | "discount">("charge");
-  const [adding, setAdding] = React.useState(false);
-  const amountInputRef = React.useRef<HTMLInputElement>(null);
-
-  const quickFill = (desc: string) => {
-    setDescription(desc);
-    amountInputRef.current?.focus();
-  };
-
-  React.useEffect(() => {
-    setDescription("");
-    setAmount("");
-    setKind("charge");
-  }, [invoice?.id]);
-
   if (!invoice) return null;
   const items = parseItems(invoice.items_json);
-  const canEdit = invoice.status === "draft";
 
-  const addItem = async () => {
-    const desc = description.trim();
-    const value = Number(amount);
-    if (!desc || !Number.isFinite(value) || value <= 0) {
-      toast.error("Enter a description and a positive amount.");
-      return;
-    }
-    setAdding(true);
-    try {
-      const res = await fetch(`/api/billing/invoices/${invoice.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "add_item",
-          description: desc,
-          qty: 1,
-          unit_price: kind === "discount" ? -value : value,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "Could not add line item");
-      toast.success(kind === "discount" ? "Discount applied" : "Charge added");
-      setDescription("");
-      setAmount("");
-      onChanged(data);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add line item");
-    } finally {
-      setAdding(false);
-    }
+  const printDocument = async () => {
+    const res = await fetch(`/api/clinic/documents?invoice_id=${invoice.id}`, { cache: "no-store" });
+    if (!res.ok) { toast.error("No invoice document available."); return; }
+    const doc = await res.json();
+    window.open(`/print/document/${doc.id}`, "_blank");
   };
 
   return (
@@ -330,7 +274,7 @@ function InvoiceDetailDialog({
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>{invoice.invoice_number}</DialogTitle>
-          <DialogDescription>{invoice.patient.full_name}</DialogDescription>
+          <DialogDescription>{invoice.patient.full_name} · read-only</DialogDescription>
         </DialogHeader>
 
         <div className="divide-y rounded-lg border">
@@ -353,59 +297,12 @@ function InvoiceDetailDialog({
             <span className="tabular-nums">{formatINR(invoice.total)}</span>
           </div>
         </div>
-
-        {canEdit && (
-          <div className="space-y-2 rounded-lg border border-dashed p-3">
-            <div className="flex gap-1.5">
-              <Button
-                size="xs"
-                variant={kind === "charge" ? "default" : "outline"}
-                onClick={() => setKind("charge")}
-              >
-                Charge
-              </Button>
-              <Button
-                size="xs"
-                variant={kind === "discount" ? "default" : "outline"}
-                onClick={() => setKind("discount")}
-              >
-                Discount
-              </Button>
-              <div className="ml-auto flex gap-1">
-                <Button size="xs" variant="ghost" onClick={() => quickFill("Lab charge")}>
-                  + Lab
-                </Button>
-                <Button size="xs" variant="ghost" onClick={() => quickFill("Procedure charge")}>
-                  + Procedure
-                </Button>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="h-8"
-              />
-              <Input
-                ref={amountInputRef}
-                placeholder="₹"
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-                className="h-8 w-24"
-              />
-              <Button size="sm" disabled={adding} onClick={addItem}>
-                {adding ? <Loader2 className="animate-spin" /> : <Plus />}
-              </Button>
-            </div>
-          </div>
-        )}
+        <p className="text-xs text-muted-foreground">To change charges or collect payment, use <strong>Checkout</strong>.</p>
 
         <DialogFooter className="!justify-between">
-          <Button variant="outline" nativeButton={false} render={<a href={`/print/invoice/${invoice.id}`} target="_blank" rel="noreferrer" />}>
+          <Button variant="outline" onClick={printDocument}>
             <Printer />
-            Print / Receipt
+            Print / PDF
           </Button>
           <Button variant="ghost" onClick={onClose}>
             Close
@@ -426,117 +323,5 @@ function StatCard({ label, value }: { label: string; value: string }) {
         <div className="mt-0.5 text-lg font-semibold tabular-nums">{value}</div>
       </CardContent>
     </Card>
-  );
-}
-
-function PaymentDialog({
-  invoice,
-  onClose,
-  onRecorded,
-}: {
-  invoice: InvoiceRow | null;
-  onClose: () => void;
-  onRecorded: () => void;
-}) {
-  const balance = invoice ? invoice.total - paidSoFar(invoice) : 0;
-  const [amount, setAmount] = React.useState("");
-  const [method, setMethod] = React.useState("upi");
-  const [reference, setReference] = React.useState("");
-  const [saving, setSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (invoice) {
-      setAmount(String(balance));
-      setMethod("upi");
-      setReference("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoice?.id]);
-
-  const submit = async () => {
-    if (!invoice) return;
-    const value = Number(amount);
-    if (!Number.isInteger(value) || value <= 0) {
-      toast.error("Enter a whole-rupee amount");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/billing/invoices/${invoice.id}/payments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: value, method, reference: reference || null }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "Payment failed");
-      toast.success(
-        data.status === "paid"
-          ? `${invoice.invoice_number} fully paid`
-          : `Payment recorded — ${formatINR(invoice.total - paidSoFar(invoice) - value)} remaining`
-      );
-      onRecorded();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Payment failed");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={!!invoice} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle>Collect payment</DialogTitle>
-          <DialogDescription>
-            {invoice?.invoice_number} · {invoice?.patient.full_name} · balance{" "}
-            {formatINR(balance)}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="pay-amount">Amount (INR)</Label>
-            <Input
-              id="pay-amount"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
-              autoFocus
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Method</Label>
-            <Select value={method} onValueChange={(value) => value && setMethod(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="upi">UPI</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {method !== "cash" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="pay-ref">Reference (optional)</Label>
-              <Input
-                id="pay-ref"
-                placeholder="UPI ref / card slip"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={saving}>
-            {saving ? "Recording…" : "Record payment"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

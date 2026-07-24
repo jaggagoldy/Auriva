@@ -6,7 +6,39 @@
 
 export type OrganizationType = "clinic_network";
 
-export type OrganizationRole = "owner" | "doctor" | "receptionist";
+// Batch D · D4: the org-membership role vocabulary is the six professional
+// roles (plus the implicit "owner"). A member's role is now always explicit —
+// stored on Organization_Members.role and Users.role by provisioning / role
+// assignment — never inferred from their specialty.
+export type OrganizationRole =
+  | "owner"
+  | "doctor"
+  | "receptionist"
+  | "practice_manager"
+  | "nurse"
+  | "technician";
+
+const ORGANIZATION_ROLES: readonly OrganizationRole[] = [
+  "owner",
+  "doctor",
+  "receptionist",
+  "practice_manager",
+  "nurse",
+  "technician",
+];
+
+/**
+ * Coerces a stored role string to a known OrganizationRole. Batch D · D4: this
+ * REPLACES the specialty heuristic as the tolerant fallback — a null/blank or
+ * unrecognised value degrades to the least-privileged non-clinical role
+ * ("receptionist"), never guesses "doctor" from a specialty. Every live account
+ * carries an explicit role, so this only ever fires for legacy/corrupt rows.
+ */
+export function asOrganizationRole(role: string | null | undefined): OrganizationRole {
+  return role && (ORGANIZATION_ROLES as readonly string[]).includes(role)
+    ? (role as OrganizationRole)
+    : "receptionist";
+}
 
 export interface Organization {
   id: string;
@@ -145,15 +177,3 @@ export interface OrganizationMember {
   isActive: boolean;
 }
 
-/**
- * @deprecated APS-040: Organization_Members rows are now the role source of
- * truth (backfilled by migration `aps040_credentials_and_memberships`, which
- * applied this heuristic one final time). This function survives ONLY as a
- * fallback for staff profiles that predate the backfill or cached payloads
- * without a role; new code must read the membership row.
- */
-export function memberRoleFromSpecialty(
-  specialty: string | null | undefined
-): Extract<OrganizationRole, "doctor" | "receptionist"> {
-  return specialty ? "doctor" : "receptionist";
-}

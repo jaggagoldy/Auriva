@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { badRequest, mapDomainError, ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { createClinic } from '@/services/onboarding-service';
 
 // POST — adds a second (or third...) clinic/branch to an organization
@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const body = await request.json();

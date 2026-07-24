@@ -130,6 +130,25 @@ export async function findOrCreateAccountForPhone(phone: string) {
  * AccountProfileLink alone, never through user_id. A profile already
  * claimed by a DIFFERENT account is never reassigned here either way.
  */
+/**
+ * Read-only: has this Account ever linked to this Healthcare Profile before?
+ * Used to distinguish a genuine "we found your profile" discovery moment
+ * (a clinic registered them first; this is their first time confirming it's
+ * them) from an ordinary returning-patient login, without changing any
+ * write behavior — call BEFORE linkAccountToProfile's upsert.
+ */
+export async function hasExistingAccountProfileLink(accountUserId: string, profileId: string) {
+  const link = await prisma.accountProfileLink.findUnique({
+    where: {
+      account_user_id_healthcare_profile_id: {
+        account_user_id: accountUserId,
+        healthcare_profile_id: profileId,
+      },
+    },
+  });
+  return link != null;
+}
+
 export async function linkAccountToProfile(
   accountUserId: string,
   profileId: string,

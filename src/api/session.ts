@@ -11,19 +11,19 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { forbidden, unauthorized } from "@/api/http";
+import { resolveActiveMembership } from "@/services/workspace-service";
 import {
   isSuperAdmin,
   isPatient,
   isDoctor,
   canAccessReception,
+  canAccessAdminPortal,
   effectiveCapabilities,
   type Capability,
 } from "@/domain/authorization";
 
 export const SESSION_COOKIE_NAME = "auriva_staff_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours — a work shift
-
-export type StaffRole = "receptionist" | "super_admin";
 
 function hashToken(rawToken: string): string {
   return createHash("sha256").update(rawToken).digest("hex");
@@ -38,7 +38,12 @@ function hashToken(rawToken: string): string {
 export async function createSession(
   userId: string,
   role: string,
-  activeHealthcareProfileId?: string | null
+  activeHealthcareProfileId?: string | null,
+  // Batch A · A3: which membership (workspace) a staff session opens into. Set
+  // at login to the caller's membership (their StaffProfile) — exactly one
+  // today; the Workspace Selector picks among several after Batch B. Null for
+  // patients and for owners with no staff profile.
+  activeMembershipId?: string | null
 ) {
   const rawToken = randomBytes(32).toString("hex");
   const expires_at = new Date(Date.now() + SESSION_TTL_MS);
@@ -50,6 +55,7 @@ export async function createSession(
       token_hash: hashToken(rawToken),
       expires_at,
       active_healthcare_profile_id: activeHealthcareProfileId ?? null,
+      active_membership_id: activeMembershipId ?? null,
     },
   });
 
@@ -105,6 +111,7 @@ interface ActiveSession {
   userId: string;
   role: string;
   activeHealthcareProfileId: string | null;
+  activeMembershipId: string | null;
 }
 
 /** For Server Components (layouts/pages) guarding a route — no Request object available there. */
@@ -127,6 +134,7 @@ async function readSession(): Promise<ActiveSession | null> {
     userId: session.user_id,
     role: session.role,
     activeHealthcareProfileId: session.active_healthcare_profile_id,
+    activeMembershipId: session.active_membership_id,
   };
 }
 
@@ -164,6 +172,20 @@ export async function setActiveHealthcareProfile(sessionId: string, profileId: s
   await prisma.session.update({
     where: { id: sessionId },
     data: { active_healthcare_profile_id: profileId },
+  });
+}
+
+/**
+ * Batch A · A3: changes which membership (workspace) a staff session is acting
+ * in — the staff twin of setActiveHealthcareProfile. Callers must have already
+ * verified the account actually holds `membershipId` (see
+ * workspace-service.switchWorkspace, which resolves it scoped to the caller);
+ * this never trusts a client-supplied membership id on its own.
+ */
+export async function setActiveMembership(sessionId: string, membershipId: string) {
+  await prisma.session.update({
+    where: { id: sessionId },
+    data: { active_membership_id: membershipId },
   });
 }
 
@@ -212,17 +234,35 @@ export async function requireStaffContext(
   // profile also carries their capability grants (Batch 2), so it is loaded
   // before the authorization decision.
   if (!isSuperAdmin(session.role)) {
-    const staffProfile = await prisma.staffProfile.findUnique({
-      where: { user_id: session.userId },
-    });
-    if (!staffProfile) {
+    // Batch B: resolve the membership this session is acting under — via the
+    // session's active_membership_id (scoped to the caller, so it can never
+    // resolve a membership they don't hold), falling back to their single
+    // active membership. This is what scopes a clinic-bound staff member to the
+    // CLINIC OF THEIR ACTIVE WORKSPACE once a person can hold several (APS-044
+    // §13a). StaffProfile is today's backing store (SAD-043 §9.3) — this code
+    // depends on the ResolvedMembership shape, not on it.
+    const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+    if (!membership) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
     }
-    const capabilities = effectiveCapabilities(session.role, staffProfile.capabilities);
+    // Batch A (APS-044 §9): a provisioned account must set its own password
+    // before any workspace is usable — enforced at the request boundary, not
+    // only in the UI. The change-password endpoint uses the raw session, not
+    // this guard, so the member can still clear the flag.
+    if (membership.mustChangePassword) {
+      return { ok: false, response: forbidden("Set a new password to continue.") };
+    }
+    // BRD-043 Sprint 4: a suspended or archived membership is denied here
+    // regardless of a still-live session — and, per §13a, this is PER-MEMBERSHIP
+    // (suspended in one clinic never affects another).
+    if (membership.membershipStatus !== "active") {
+      return { ok: false, response: forbidden("This account is not active. Contact your practice owner.") };
+    }
+    const capabilities = effectiveCapabilities(session.role, membership.capabilitiesRaw);
     if (!isStaffAuthorized(authorize, session.role, capabilities)) {
       return { ok: false, response: forbidden("Your role cannot access this resource.") };
     }
-    return { ok: true, session, clinicId: staffProfile.clinic_id, capabilities };
+    return { ok: true, session, clinicId: membership.clinicId, capabilities };
   }
 
   // super_admin: holds every default capability; must operate within a clinic
@@ -259,16 +299,15 @@ export async function requireStaffContext(
  * unauthenticated or profile-less non-owner account.
  */
 export async function getEffectiveCapabilitiesForSession(
-  session: Pick<ActiveSession, "userId" | "role">
+  session: Pick<ActiveSession, "userId" | "role" | "activeMembershipId">
 ): Promise<Capability[]> {
   if (isSuperAdmin(session.role)) {
     return effectiveCapabilities(session.role, null);
   }
-  const staffProfile = await prisma.staffProfile.findUnique({
-    where: { user_id: session.userId },
-    select: { capabilities: true },
-  });
-  return effectiveCapabilities(session.role, staffProfile?.capabilities ?? null);
+  // Batch B: capabilities come from the ACTIVE membership (via the seam), so a
+  // multi-clinic member's grants track the workspace they're in.
+  const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+  return effectiveCapabilities(session.role, membership?.capabilitiesRaw ?? null);
 }
 
 type AppointmentScope =
@@ -318,16 +357,16 @@ export async function requireAppointmentAccess(requested: {
   }
 
   if (isDoctor(session.role)) {
-    const staffProfile = await prisma.staffProfile.findUnique({
-      where: { user_id: session.userId },
-    });
-    if (!staffProfile) {
+    // Batch B: a doctor's "own appointments" are scoped to the membership they
+    // are acting under (the active workspace), resolved via the seam.
+    const membership = await resolveActiveMembership(session.userId, session.activeMembershipId);
+    if (!membership) {
       return { ok: false, response: forbidden("No staff profile is linked to this account.") };
     }
-    if (requested.doctorId && requested.doctorId !== staffProfile.id) {
+    if (requested.doctorId && requested.doctorId !== membership.membershipId) {
       return { ok: false, response: forbidden("You may only access your own appointments.") };
     }
-    return { ok: true, session, scope: { kind: "doctor", doctorId: staffProfile.id } };
+    return { ok: true, session, scope: { kind: "doctor", doctorId: membership.membershipId } };
   }
 
   if (canAccessReception(session.role)) {
@@ -342,16 +381,25 @@ export async function requireAppointmentAccess(requested: {
 }
 
 type OrganizationAuthResult =
-  | { ok: true; session: ActiveSession; organizationId: string }
+  | { ok: true; session: ActiveSession; organizationId: string; isLegalOwner: boolean }
   | { ok: false; response: NextResponse };
 
 /**
  * Sprint 3 (OPS-001): the organization-level counterpart to
- * requireStaffContext — resolves which Organization the caller may operate
- * on (owner-only today, mirroring canAccessAdminPortal), instead of which
- * Clinic. Use this for org-wide operations (invitations, org settings,
- * departments, org-wide command center); keep using requireStaffContext,
- * unchanged, for anything clinic-scoped (reception, billing, queue).
+ * requireStaffContext — resolves which Organization the caller may operate on,
+ * instead of which Clinic. Use this for org-wide operations (invitations, org
+ * settings, departments, org-wide command center); keep using
+ * requireStaffContext, unchanged, for anything clinic-scoped.
+ *
+ * Batch D · D3 (Ownership & Operational Authority): resolution is now
+ * authority-aware. The LEGAL-owner path (Organization.owner_user_id) is tried
+ * first and is unchanged, so the owner behaves exactly as before and the result
+ * carries `isLegalOwner: true`. Failing that, an OPERATIONAL member (a Practice
+ * Manager, or an operational owner) resolves the org they belong to via their
+ * active membership — scoped to their own user id, so they can never resolve an
+ * org they don't belong to (APS-044 §13a) — with `isLegalOwner: false`. Callers
+ * that must be the legal owner (plan, ownership transfer, deletion) assert
+ * `isLegalOwner` or use requireLegalOwnerContext.
  */
 export async function requireOrganizationContext(
   authorize: (role: string) => boolean,
@@ -365,24 +413,52 @@ export async function requireOrganizationContext(
     return { ok: false, response: forbidden("Your role cannot access this resource.") };
   }
 
-  if (requestedOrganizationId) {
-    const organization = await prisma.organization.findFirst({
-      where: { id: requestedOrganizationId, owner_user_id: session.userId },
-    });
-    if (!organization) {
-      return { ok: false, response: forbidden("You do not have access to this organization.") };
-    }
-    return { ok: true, session, organizationId: organization.id };
-  }
-
-  const firstOrganization = await prisma.organization.findFirst({
-    where: { owner_user_id: session.userId },
+  // 1) Legal-owner path (unchanged): an org this caller owns via owner_user_id.
+  const owned = await prisma.organization.findFirst({
+    where: requestedOrganizationId
+      ? { id: requestedOrganizationId, owner_user_id: session.userId }
+      : { owner_user_id: session.userId },
     orderBy: { name: "asc" },
   });
-  if (!firstOrganization) {
-    return { ok: false, response: forbidden("No organization is associated with this account.") };
+  if (owned) {
+    return { ok: true, session, organizationId: owned.id, isLegalOwner: true };
   }
-  return { ok: true, session, organizationId: firstOrganization.id };
+
+  // 2) Operational path (D3): resolve via the caller's own active membership
+  //    (StaffProfile → clinic → organization). Scoped by user_id, so the org is
+  //    always one they actually belong to; a requested id must match it.
+  const profile = await prisma.staffProfile.findFirst({
+    where: {
+      user_id: session.userId,
+      membership_status: "active",
+      ...(requestedOrganizationId ? { clinic: { organization_id: requestedOrganizationId } } : {}),
+    },
+    select: { clinic: { select: { organization_id: true } } },
+    orderBy: { id: "asc" },
+  });
+  if (profile) {
+    return { ok: true, session, organizationId: profile.clinic.organization_id, isLegalOwner: false };
+  }
+
+  return { ok: false, response: forbidden("No organization is associated with this account.") };
+}
+
+/**
+ * Batch D · D3: the LEGAL-owner-only counterpart — for the never-delegated
+ * actions (plan/subscription, ownership transfer, organization deletion). The
+ * caller must be the single legal owner (Organization.owner_user_id) of the
+ * resolved org; an operational owner or Practice Manager is refused even though
+ * they administer everything else.
+ */
+export async function requireLegalOwnerContext(
+  requestedOrganizationId?: string | null
+): Promise<OrganizationAuthResult> {
+  const auth = await requireOrganizationContext(canAccessAdminPortal, requestedOrganizationId);
+  if (!auth.ok) return auth;
+  if (!auth.isLegalOwner) {
+    return { ok: false, response: forbidden("Only the practice owner can perform this action.") };
+  }
+  return auth;
 }
 
 type PlatformAdminAuthResult =

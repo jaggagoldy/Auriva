@@ -34,10 +34,18 @@ model User {
   // set from any customer-facing signup/invite flow.
   is_platform_admin Boolean    @default(false)
 
+  // Phase 0 (APS-046 §4) — DORMANT additive columns for APS-044/SAD-043 §9.
+  // Nothing reads these yet; they are wired in Batch A (managed provisioning
+  // + "remember last workspace"). Nullable/defaulted → every existing row is
+  // unchanged and behaviour is identical until the feature flag turns on.
+  must_change_password Boolean  @default(false) // forces a password reset on first login (managed provisioning)
+  password_set_at      DateTime?                // temp-password rotation / audit
+  last_workspace_id    String?                  // "remember last workspace" (APS-045 §10)
+
   // Relations
   clinics      Clinic[]        @relation("ClinicSuperAdmin")
   ownedOrganizations Organization[] @relation("OrganizationOwner")
-  staffProfile StaffProfile?
+  staffProfiles StaffProfile[]
   patientProfile PatientProfile?
   sessions     Session[]
   memberships  OrganizationMember[]
@@ -83,6 +91,13 @@ model Organization {
   // volatile content for organizations where this is true and never touches a
   // real customer org. Default false = every real org is untouched/unchanged.
   is_demo       Boolean  @default(false)
+  // BRD-043 US-501 (Sprint 1): 'solo' | 'professional' | 'enterprise'.
+  // Every pre-existing org backfills to 'solo' — no behavior change until
+  // FEATURE_PROFESSIONAL_PLAN is on (Sprint 5) and seat enforcement
+  // (US-503, Sprint 2) starts reading it. Seat ceilings themselves are NOT
+  // stored per-org (no custom permissions per BRD-043's frozen scope) —
+  // they are plan-wide constants, see src/domain/subscription.ts.
+  plan          String   @default("solo")
   owner_user_id String
   created_at    DateTime @default(now())
 
@@ -112,6 +127,9 @@ model OrganizationMember {
   user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, user_id])
+  // Phase 0 (APS-046 §4): the Workspace Selector lists "my memberships" by
+  // user_id; the composite unique above can't serve a user_id-only lookup.
+  @@index([user_id])
   @@map("Organization_Members")
 }
 
@@ -133,6 +151,12 @@ model Session {
   // Account_Profile_Links server-side, never trusted from the client. Null
   // for staff/doctor/admin sessions (not patient-scoped).
   active_healthcare_profile_id String?
+
+  // Phase 0 (APS-046 §4) — DORMANT. The staff twin of
+  // active_healthcare_profile_id: which membership (workspace) a staff session
+  // is currently acting in. Nothing reads it yet; wired in Batch A, and it
+  // becomes the cross-tenant scoping key in Batch B (SAD-043 §6).
+  active_membership_id String?
 
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -178,6 +202,12 @@ model Clinic {
   // link / share). Backs the "Share your booking page" guided-checklist item
   // as a REAL signal rather than a guessed one — null = not shared yet.
   booking_shared_at                 DateTime?
+  // M3A Revenue Foundation — clinic-wide billing policy (validated in
+  // domain/billing-policy.ts). Default 'postpaid' = today's behaviour for every
+  // existing clinic (zero change). New clinics set 'prepaid' at creation (C2/3B).
+  // The engine only READS this in 3A; policy timing activates in 3B.
+  billing_policy                    String   @default("postpaid")
+  prepaid_hard_gate                 Boolean  @default(false) // M3B B4: prepaid/hybrid — hard-block consult start until the fee is collected (else soft warn+override)
   default_slot_duration_minutes     Int?     @default(15)
   buffer_minutes                    Int?     @default(0)
   max_appointments_per_doctor_per_day Int?   // null = unlimited
@@ -194,6 +224,21 @@ model Clinic {
   latitude    Float?
   longitude   Float?
 
+  // --- P3 Practice Setup (clinic profile) ---
+  // Image URLs are opaque handles produced by the StorageService (local today,
+  // object storage later) — the UI just renders them. Gallery/documents are
+  // JSON arrays of { url, caption? }. Facilities/social are small JSON blobs.
+  logo_url           String?
+  cover_url          String?
+  about              String?   // longer clinic description
+  facilities_json    String?   // ["Wheelchair access", "Pharmacy", ...]
+  gallery_json       String?   // [{ url, caption? }]
+  documents_json     String?   // [{ url, name }] — awards / certificates / registrations
+  social_json        String?   // { website, instagram, facebook, youtube, ... }
+  reception_contact  String?   // front-desk phone (distinct from the public `phone`)
+  email              String?
+  website            String?
+
   // Relations
   organization   Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   superAdmin     User           @relation("ClinicSuperAdmin", fields: [super_admin_id], references: [id], onDelete: Cascade)
@@ -202,7 +247,12 @@ model Clinic {
   appointments   Appointment[]
   prescriptions  Prescription[]
   labOrders      LabOrder[]
+  testRecommendations TestRecommendation[]
+  clinicalTemplates ClinicalTemplate[]
   invoices       Invoice[]
+  serviceEvents  ServiceEvent[]
+  documents      Document[]
+  treatmentPlans TreatmentPlan[]
   invitations    Invitation[]
   departments    Department[]
   // APS-029/010: profiles this org registered (registration provenance —
@@ -245,6 +295,14 @@ model DoctorAvailability {
   start_time  String  // "09:00"
   end_time    String  // "17:00"
   is_active   Boolean @default(true)
+  // P2 (Doctor Calendar & Availability): a recurring within-day break (e.g.
+  // lunch 13:00–14:00) and an optional per-day booking cap. Both nullable and
+  // additive — a day with no break/cap behaves exactly as before. getBookableSlots
+  // removes slots overlapping the break and stops offering slots once the day's
+  // booked count reaches max_patients.
+  break_start String? // "13:00" — null = no break that day
+  break_end   String? // "14:00"
+  max_patients Int?   // null = uncapped
 
   doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
 
@@ -293,7 +351,12 @@ model AuditLog {
 
 model StaffProfile {
   id           String        @id @default(uuid())
-  user_id      String        @unique
+  // Batch B (APS-044 P6 / SAD-043 §9.3): relaxed 1:1 → 1:N so one identity can
+  // hold a membership per clinic. Was @unique; now indexed. A 2nd profile for an
+  // existing user is not created by any code path yet (provision/accept both mint
+  // a new user), so the single-profile invariant still holds and re-adding the
+  // unique is a safe rollback until the "join another clinic" capability ships.
+  user_id      String
   clinic_id    String
   specialty    String?       // e.g., 'Cardiologist'
   full_name    String        // Added for UI display (Lead Dev decision)
@@ -304,10 +367,23 @@ model StaffProfile {
   qualifications       String?
   registration_number String?
   consultation_fee    Int?      // INR, per Q5: fee lives per practice location (single clinic today)
+  // P3 Practice Setup: doctor profile photo. Stored via StorageService — the
+  // value is an opaque URL the UI renders; where the bytes live (local today,
+  // object storage later) is the storage layer's concern, not this column's.
+  photo_url           String?
   // Sprint 3 (OPS-001)
   follow_up_fee       Int?      // falls back to consultation_fee when null (a follow-up visit costs less, typically)
   department_id       String?
   is_active           Boolean   @default(true) // deactivated staff can't log in (enforced at the User level too) or appear in active rosters
+  // BRD-043 US-101 (Sprint 1): the Team Management lifecycle state —
+  // 'active' | 'suspended' | 'archived' — distinct from is_active on
+  // purpose (Product Office decision: do not overload the existing login
+  // gate). Every pre-existing row backfills to 'active'. Suspend/Reactivate/
+  // Archive (Sprint 4) are the only writers of this field until then; no
+  // other Sprint 1 code branches on its value except doctor-resolution's
+  // "active doctor" filter (src/services/doctor-resolution.ts), which reads
+  // it in addition to is_active as forward-compatible scaffolding.
+  membership_status   String    @default("active")
   // Batch 2 (Adaptive Workspace): capabilities GRANTED beyond this profile's
   // base-role defaults, as a JSON string array of capability keys (see
   // src/domain/authorization.ts WORKSPACE_CAPABILITIES). Null = role defaults
@@ -323,11 +399,14 @@ model StaffProfile {
   appointments  Appointment[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
+  testRecommendations TestRecommendation[]
+  clinicalTemplates ClinicalTemplate[]
   availability  DoctorAvailability[]
   timeBlocks    DoctorTimeBlock[]
   reviews       Review[]
   favoritedBy   PatientFavoriteDoctor[]
 
+  @@index([user_id])
   @@map("Staff_Profiles")
 }
 
@@ -351,10 +430,17 @@ model Service {
   buffer_minutes   Int?     // null = use the clinic's buffer_minutes
   is_active        Boolean  @default(true)
   sort_order       Int      @default(0)
+  // M3A Revenue Foundation — the catalog gains billing meaning. Defaults keep the
+  // migration safe on existing rows; validated in domain/service-catalog.ts.
+  // Explicit values are required at the service layer (Checkpoint 2 / 3B).
+  category         String   @default("Consultation") // Consultation|Procedure|Lab|Radiology|Vaccination|Injection|Therapy|Consumable|Administrative|Package
+  kind             String   @default("clinical")     // 'clinical' | 'financial'
+  version          Int      @default(1)              // bumped on material change; snapshotted by ServiceEvent
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  clinic        Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  serviceEvents ServiceEvent[]
 
   @@index([clinic_id, is_active])
   @@map("Services")
@@ -441,7 +527,10 @@ model PatientProfile {
   appointments  Appointment[]
   prescriptions Prescription[]
   labOrders     LabOrder[]
+  testRecommendations TestRecommendation[]
   invoices      Invoice[]
+  serviceEvents ServiceEvent[]
+  documents      Document[]
   reviews       Review[]
   favoriteDoctors PatientFavoriteDoctor[]
   notifications Notification[]
@@ -530,7 +619,10 @@ model Appointment {
   events         AppointmentEvent[]
   prescription   Prescription?
   labOrders      LabOrder[]
-  invoice        Invoice?
+  testRecommendations TestRecommendation[]
+  invoices       Invoice[]      // M3A C3: relaxed 1:1 → 1:N (multi-invoice settlement)
+  serviceEvents  ServiceEvent[]
+  documents      Document[]
   review         Review?
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
   followUpBooking Appointment? @relation("AppointmentFollowUp")
@@ -559,14 +651,33 @@ model Invitation {
   // than one clinic. Backfilled to organization_id for pre-existing rows
   // (valid, since organization_id === clinic_id before Sprint 3).
   clinic_id       String
-  email           String
+  // BRD-043 US-201/US-202 (Sprint 2): invitations are now phone-first
+  // (WhatsApp/copy-link delivery per ADR-003 — the design contract invite
+  // form captures a mobile number, not an email). `phone` is the identity a
+  // phone-based invite is keyed on and the number the accepted account's
+  // User.phone_number is created with. `email` is widened to nullable: it
+  // stays populated for the legacy email-based /admin invite path (still
+  // live, multi-clinic, out of this initiative's scope but not broken), and
+  // is null for the new solo phone-based invites. Exactly one of phone/email
+  // is set per row (enforced in the service, not the schema — the two paths
+  // coexist).
+  email           String?
+  phone           String?
   full_name       String
   role            String    // 'doctor' | 'receptionist'
   specialty       String?
   token           String    @unique
-  status          String    @default("pending") // 'pending' | 'accepted' | 'revoked'
+  status          String    @default("pending") // 'pending' | 'accepted' | 'revoked' | 'expired'
   created_at      DateTime  @default(now())
   accepted_at     DateTime?
+  // BRD-043 US-102 (Sprint 1): 72h invitation window, set at creation
+  // (created_at + 72h). Checked lazily on read/accept, not event-driven (no
+  // scheduled-job infra exists or is needed — see EEP-043 §9). Migration
+  // backfills existing 'pending' rows to created_at + 72h (most already in
+  // the past — closing a real gap where old invitations had no expiry at
+  // all); 'accepted'/'revoked' rows stay null since expiry is meaningless
+  // once resolved. See docs/brd-043-governance-addendum.md §2.
+  expires_at      DateTime?
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   clinic       Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
@@ -600,6 +711,59 @@ model Prescription {
 
 // APS-042: lab order — the MVP loop is ordered → resulted (or cancelled);
 // sample tracking and routing are post-MVP (WF-09/10 full shape).
+// P5 Diagnostics — a test a doctor RECOMMENDED during a consult. This is a
+// referral/recommendation record the PATIENT then acts on (books it wherever
+// they like, gets it done, uploads the report) — Auriva does not run the lab.
+// Status is patient-driven: pending → booked → completed → report_uploaded.
+model TestRecommendation {
+  id                String    @id @default(uuid())
+  clinic_id         String
+  patient_id        String
+  doctor_id         String
+  appointment_id    String?
+  test_code         String    // catalog code snapshot (src/domain/diagnostics-catalog.ts)
+  test_name         String    // name snapshot — stays stable if the catalog changes
+  category          String
+  prep_instructions String?   // patient-facing prep note, snapshotted from the catalog
+  status            String    @default("pending") // 'pending' | 'booked' | 'completed' | 'report_uploaded'
+  report_url        String?   // StorageService url once the patient uploads their report
+  recommended_at    DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor      StaffProfile   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+
+  @@map("Test_Recommendations")
+}
+
+// P6 Clinical Templates — reusable consult notes a doctor drops into a visit
+// (SOAP + advice/exercises/follow-up). Owned by a doctor within a clinic;
+// clinic_id is present so "share across the clinic" is a future flag flip, not
+// a schema change.
+model ClinicalTemplate {
+  id             String   @id @default(uuid())
+  clinic_id      String
+  doctor_id      String
+  name           String
+  subjective     String?  // → chief complaint
+  objective      String?  // → examination & notes
+  assessment     String?  // → diagnosis (comma/line separated)
+  plan           String?  // → plan / advice
+  advice         String?
+  exercises      String?
+  follow_up_days Int?
+  is_favourite   Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  clinic Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  doctor StaffProfile @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@map("Clinical_Templates")
+}
+
 model LabOrder {
   id                  String    @id @default(uuid())
   appointment_id      String?
@@ -632,10 +796,14 @@ model Invoice {
   invoice_number String
   clinic_id      String
   patient_id     String
-  appointment_id String?   @unique
+  // M3A Checkpoint 3: relaxed from @unique (1:1) to 1:N. An appointment may now
+  // own multiple invoices (multi-invoice settlement). Existing consumers were
+  // migrated in C3 (findUnique→findFirst; Appointment.invoice→invoices[]).
+  appointment_id String?
   status         String    @default("draft") // 'draft' | 'issued' | 'paid' | 'void'
-  items_json     String    // [{ description, qty, unit_price, amount }]
+  items_json     String    // frozen print snapshot generated from InvoiceLine rows (M3A)
   total          Int
+  checkout_notes String?    // M3B B2: reception operational notes (NOT clinical) — "paid by spouse", "concession approved by Dr X"; audited
   created_at     DateTime  @default(now())
   issued_at      DateTime?
   paid_at        DateTime?
@@ -645,6 +813,8 @@ model Invoice {
   patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
   clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
   payments    Payment[]
+  lines       InvoiceLine[]  // M3A: source of truth for the invoice's charges
+  creditNotes CreditNote[]   // M3B B5: compensating corrections (invoice stays immutable)
 
   @@unique([clinic_id, invoice_number])
   @@map("Invoices")
@@ -668,6 +838,70 @@ model Payment {
   // this index makes it an indexed, already-ordered SEARCH.
   @@index([clinic_id, received_at])
   @@map("Payments")
+}
+
+// M3A Revenue Foundation — the atomic clinical/financial fact ("a service was
+// added to a visit"). Snapshots the catalog so later price/definition changes
+// never rewrite history. Status is domain/service-event-status.ts. The keystone
+// the future (packages, insurance, GST, analytics, inventory, AI) hangs off of.
+model ServiceEvent {
+  id                   String    @id @default(uuid())
+  clinic_id            String
+  patient_id           String
+  appointment_id       String    // active relationship (M3)
+  encounter_id         String?   // FUTURE-PROOF — nullable, unused in M3
+  service_id           String?   // catalog link; null = ad-hoc
+  service_version      Int?      // snapshot of Service.version (null for ad-hoc)
+  name                 String    // snapshot
+  category             String    // snapshot
+  kind                 String    // snapshot: 'clinical' | 'financial'
+  unit_price           Int       // snapshot
+  qty                  Int       @default(1)
+  amount               Int       // snapshot = unit_price * qty
+  currency             String    @default("INR") // snapshot; INR-only today, future-proofed (C3 refinement)
+  status               String    @default("draft") // draft | finalized | removed | reversed
+  needs_catalog_review Boolean   @default(false)   // ad-hoc flag → admin converts later
+  reversal_reason      String?   // required when reversed (post-payment); audited
+  added_by_user_id     String?
+  added_by_role        String    // 'doctor' | 'reception'
+  added_at             DateTime  @default(now())
+  finalized_at         DateTime?
+  removed_at           DateTime?
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment Appointment    @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  service     Service?       @relation(fields: [service_id], references: [id], onDelete: SetNull)
+  invoiceLine InvoiceLine?   // back-relation; the FK lives on InvoiceLine.service_event_id
+
+  @@index([clinic_id, status])
+  @@index([appointment_id])
+  @@map("Service_Events")
+}
+
+// M3A — the relational invoice line (source of truth for the invoice's charges).
+// items_json on Invoice is a generated snapshot of these. tax/discount/net are
+// added now (nullable) so GST/discounts never need another migration.
+model InvoiceLine {
+  id               String   @id @default(uuid())
+  invoice_id       String
+  service_event_id String?  @unique // the event this line bills (null for legacy/consult-fee)
+  origin           String   // ServiceEvent | LegacyMigration | ManualAdjustment | Package | CreditNote
+  description      String   // snapshot
+  category         String?  // snapshot for reporting
+  qty              Int
+  unit_price       Int
+  amount           Int
+  tax_amount       Int?     // NULL in 3A (tax activates later)
+  discount_amount  Int?     // NULL in 3A (Adjustments land in 3B)
+  net_amount       Int?     // NULL in 3A
+  created_at       DateTime @default(now())
+
+  invoice      Invoice       @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  serviceEvent ServiceEvent? @relation(fields: [service_event_id], references: [id], onDelete: SetNull)
+
+  @@index([invoice_id])
+  @@map("Invoice_Lines")
 }
 
 // Activity timeline for Sprint 1 (Epic 8), and the seed of the future
@@ -864,3 +1098,119 @@ model OtpChallenge {
   @@map("Otp_Challenges")
 }
 
+
+// M3B B3 — Clinical Document Platform Foundation. A Document is a permanent,
+// immutable clinical artifact: generated from a source (invoice/visit/payments),
+// snapshotted into content_json, versioned (regenerate → new version, prior
+// superseded), and categorized. Reprints render the snapshot (never live data).
+// Extensible: new document types add a `type` + renderer + assembler, no model
+// change. `category`/`status` carry reserved values for the future platform.
+model Document {
+  id                   String   @id @default(uuid())
+  clinic_id            String
+  patient_id           String
+  appointment_id       String?
+  invoice_id           String?  // for financial documents (invoice/receipt)
+  type                 String   // visit_summary | invoice | receipt (+ future: prescription, certificate, referral, lab_request, radiology_request, ...)
+  category             String   // Financial | Clinical | Diagnostic | Administrative (B3 uses Financial + Clinical)
+  number               String   // unified human ref: INV-2026-0003 | RCPT-2026-0003 | VS-2026-0003 | (future CERT/LAB/RAD/REF)
+  version              Int      @default(1) // regenerate → version+1; prior kept as superseded
+  status               String   @default("issued") // draft(reserved) | issued | superseded | void
+  content_json         String   // immutable rendered snapshot — the single render input
+  generated_at         DateTime @default(now())
+  generated_by_user_id String?
+
+  clinic      Clinic         @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  patient     PatientProfile @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment Appointment?   @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+
+  @@index([appointment_id])
+  @@index([clinic_id, type])
+  @@map("Documents")
+}
+
+// M3B B5 — Financial Corrections Framework. A paid invoice is IMMUTABLE;
+// corrections are compensating artifacts, never edits. A CreditNote reduces the
+// receivable against an original Invoice (kept forever); a Refund records money
+// physically returned against a CreditNote. Both are also generated as Documents
+// (credit_note / refund_receipt) via the B3 platform.
+model CreditNote {
+  id                  String   @id @default(uuid())
+  clinic_id           String   // plain FK (queried); invoice relation carries cascade
+  patient_id          String
+  invoice_id          String
+  number              String   // CN-YYYY-NNNN (unified document numbering)
+  amount              Int      // credited amount (positive)
+  reason              String
+  status              String   @default("issued") // issued | refunded | void
+  created_by_user_id  String?
+  created_at          DateTime @default(now())
+
+  invoice Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  refunds Refund[]
+
+  @@index([invoice_id])
+  @@map("Credit_Notes")
+}
+
+model Refund {
+  id                  String   @id @default(uuid())
+  clinic_id           String
+  credit_note_id      String
+  amount              Int      // refunded amount (positive)
+  method              String   // 'cash' | 'upi' | 'card'
+  reference           String?
+  created_by_user_id  String?
+  created_at          DateTime @default(now())
+
+  creditNote CreditNote @relation(fields: [credit_note_id], references: [id], onDelete: Cascade)
+
+  @@index([credit_note_id])
+  @@map("Refunds")
+}
+
+// C1 — Treatment Planning. A plan is a sequence of sessions against one catalog
+// service (a physio course, a dental root-canal course, etc.) — NOT a new
+// ledger. Each performed session becomes a ServiceEvent charged by the existing
+// engine, so unattended sessions never charge. The doctor owns clinical content
+// (service/count/notes); reception only books/reschedules/cancels sessions.
+model TreatmentPlan {
+  id                    String   @id @default(uuid())
+  clinic_id             String
+  patient_id            String
+  doctor_id             String
+  origin_appointment_id String?  // the consult where it was created
+  parent_plan_id        String?  // RESERVED (multi-phase plans) — no logic in C1
+  title                 String
+  service_id            String   // the catalog service each session bills (priced/named)
+  sessions_planned      Int
+  notes                 String?  // clinical notes — doctor-owned
+  status                String   @default("draft") // draft | active | completed | archived | cancelled
+  created_by_user_id    String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  clinic   Clinic                 @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  sessions TreatmentPlanSession[]
+
+  @@index([clinic_id, patient_id])
+  @@map("Treatment_Plans")
+}
+
+model TreatmentPlanSession {
+  id               String   @id @default(uuid())
+  plan_id          String
+  sequence         Int      // 1..N
+  status           String   @default("planned") // planned | completed | cancelled | needs_rebook (C2)
+  appointment_id   String?  // set when booked
+  service_event_id String?  // set when performed (the charge)
+  clinical_note    String?  // C2: doctor-owned session note
+  operational_note String?  // C2: reception-owned session note
+  created_at       DateTime @default(now())
+
+  plan TreatmentPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+  @@index([appointment_id])
+  @@map("Treatment_Plan_Sessions")
+}

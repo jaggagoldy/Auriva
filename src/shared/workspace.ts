@@ -1,7 +1,6 @@
 // Shared types and helpers for the Super Admin workspace console.
 // Shapes mirror the responses of GET /api/clinics and GET /api/doctors.
 
-import { memberRoleFromSpecialty } from "@/domain/organization";
 import { Doctor } from "@/shared/queue";
 
 export interface ClinicSummary {
@@ -13,7 +12,22 @@ export interface ClinicSummary {
   staffProfiles: { id: string; full_name: string; specialty: string | null; is_active: boolean }[];
 }
 
-export type StaffRole = "super_admin" | "doctor" | "receptionist";
+export type StaffRole =
+  | "super_admin"
+  | "doctor"
+  | "receptionist"
+  | "practice_manager"
+  | "nurse"
+  | "technician";
+
+const STAFF_ROLES: readonly StaffRole[] = [
+  "super_admin",
+  "doctor",
+  "receptionist",
+  "practice_manager",
+  "nurse",
+  "technician",
+];
 
 export interface PendingInvite {
   id: string;
@@ -49,8 +63,8 @@ export function pendingInviteFromApi(row: {
 
 export const ROLE_META: Record<StaffRole, { label: string; badge: string }> = {
   super_admin: {
-    label: "Super Admin",
-    badge: "bg-info/10 text-info dark:text-info",
+    label: "Owner",
+    badge: "bg-primary/10 text-primary",
   },
   doctor: {
     label: "Doctor",
@@ -60,16 +74,27 @@ export const ROLE_META: Record<StaffRole, { label: string; badge: string }> = {
     label: "Receptionist",
     badge: "bg-info/10 text-info dark:text-info",
   },
+  practice_manager: {
+    label: "Practice Manager",
+    badge: "bg-primary/10 text-primary",
+  },
+  nurse: {
+    label: "Nurse",
+    badge: "bg-success/10 text-success dark:text-success",
+  },
+  technician: {
+    label: "Technician",
+    badge: "bg-info/10 text-info dark:text-info",
+  },
 };
 
 /**
- * APS-040: GET /api/doctors now exposes the membership role; the specialty
- * heuristic in src/domain/organization.ts survives only as a fallback for
- * responses that predate the backfill (e.g. cached payloads).
+ * D4: the member's role is read from the explicit role the API exposes
+ * (Organization_Members.role / Users.role) — the legacy specialty heuristic is
+ * gone. An unknown/missing role degrades to the least-privileged "receptionist".
  */
 export function roleOf(staff: Doctor & { role?: string }): StaffRole {
-  if (staff.role === "doctor" || staff.role === "receptionist" || staff.role === "super_admin") {
-    return staff.role;
-  }
-  return memberRoleFromSpecialty(staff.specialty);
+  return staff.role && (STAFF_ROLES as readonly string[]).includes(staff.role)
+    ? (staff.role as StaffRole)
+    : "receptionist";
 }

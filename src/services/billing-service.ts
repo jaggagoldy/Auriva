@@ -28,8 +28,9 @@ function sumItems(items: InvoiceItem[]): number {
   return items.reduce((total, item) => total + item.amount, 0);
 }
 
-/** Next sequential invoice number for a clinic: INV-<year>-<n>. */
-async function nextInvoiceNumber(
+/** Next sequential invoice number for a clinic: INV-<year>-<n>. Exported so the
+ *  M3A billing engine reuses the exact same scheme (no duplicated numbering). */
+export async function nextInvoiceNumber(
   tx: Prisma.TransactionClient,
   clinicId: string
 ): Promise<string> {
@@ -51,7 +52,7 @@ async function nextInvoiceNumber(
  * separate "fee table" — every link is a field that already exists on its
  * natural owner.
  */
-async function resolveConsultationFee(
+export async function resolveConsultationFee(
   tx: Prisma.TransactionClient,
   input: { doctorId: string; isFollowUp: boolean }
 ): Promise<{ fee: number; doctorName: string }> {
@@ -94,52 +95,6 @@ async function resolveConsultationFee(
   return { fee: DEFAULT_CONSULT_FEE, doctorName };
 }
 
-/**
- * Auto-drafts the visit invoice when a consultation completes (WF-17: charges
- * assemble from the encounter). Runs inside the caller's transaction so the
- * status change and its invoice commit together. Idempotent per appointment
- * (the schema's unique appointment link).
- */
-export async function draftInvoiceForAppointment(
-  tx: Prisma.TransactionClient,
-  appointment: {
-    id: string;
-    clinic_id: string;
-    patient_id: string;
-    doctor_id: string;
-    follow_up_source_appointment_id?: string | null;
-  }
-) {
-  const existing = await tx.invoice.findUnique({
-    where: { appointment_id: appointment.id },
-  });
-  if (existing) return existing;
-
-  const { fee, doctorName } = await resolveConsultationFee(tx, {
-    doctorId: appointment.doctor_id,
-    isFollowUp: Boolean(appointment.follow_up_source_appointment_id),
-  });
-  const items: InvoiceItem[] = [
-    {
-      description: `${appointment.follow_up_source_appointment_id ? "Follow-up consultation" : "Consultation"} — ${doctorName}`,
-      qty: 1,
-      unit_price: fee,
-      amount: fee,
-    },
-  ];
-
-  return tx.invoice.create({
-    data: {
-      invoice_number: await nextInvoiceNumber(tx, appointment.clinic_id),
-      clinic_id: appointment.clinic_id,
-      patient_id: appointment.patient_id,
-      appointment_id: appointment.id,
-      status: "draft",
-      items_json: JSON.stringify(items),
-      total: sumItems(items),
-    },
-  });
-}
 
 export interface InvoiceSearchFilters {
   clinicId: string;
@@ -208,83 +163,6 @@ export async function createInvoice(input: {
   );
 }
 
-/**
- * Sprint 2: adds one line item (a lab charge, a procedure charge, or a
- * discount — modeled as a negative unit_price) to a still-draft invoice.
- * `amount` is always computed server-side from qty*unit_price, never
- * trusted from the caller. Only legal while draft — once issued, a
- * correction is a void + new invoice (APS-018 E1), never an edit, same rule
- * transitionInvoice already enforces for status.
- */
-export async function addInvoiceItem(
-  invoiceId: string,
-  clinicId: string,
-  item: { description: string; qty: number; unit_price: number }
-) {
-  if (!item.description.trim() || !Number.isFinite(item.qty) || item.qty <= 0 || !Number.isFinite(item.unit_price)) {
-    throw new InvalidPaymentError("A line item needs a description, a positive quantity, and a unit price.");
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, clinic_id: clinicId } });
-    if (!invoice) throw new InvoiceNotFoundError(`Invoice ${invoiceId} not found.`);
-    if (invoice.status !== "draft") {
-      throw new InvalidInvoiceTransitionError(
-        `Cannot add a line item to a "${invoice.status}" invoice — issue a correction as a new invoice instead.`
-      );
-    }
-
-    const items: InvoiceItem[] = JSON.parse(invoice.items_json);
-    const amount = item.qty * item.unit_price;
-    const nextItems: InvoiceItem[] = [...items, { description: item.description.trim(), qty: item.qty, unit_price: item.unit_price, amount }];
-    const total = sumItems(nextItems);
-    if (total < 0) {
-      throw new InvalidPaymentError("An invoice's total cannot go below zero — reduce the discount.");
-    }
-
-    return tx.invoice.update({
-      where: { id: invoiceId },
-      data: { items_json: JSON.stringify(nextItems), total },
-      include: INVOICE_INCLUDE,
-    });
-  });
-}
-
-/**
- * Milestone 1 Batch 5: replaces a DRAFT invoice's line items wholesale — used
- * by the solo consultation flow to set the visit's charge to the chosen
- * Treatment (name + price) instead of the generic consultation-fee line that
- * transitionStatus auto-drafts on completion. Draft-only (same rule as
- * addInvoiceItem: once issued, a correction is a void + new invoice, never an
- * edit). Total is recomputed server-side, never trusted from the caller.
- */
-export async function setDraftInvoiceItems(
-  invoiceId: string,
-  clinicId: string,
-  items: InvoiceItem[]
-) {
-  if (!items.length) {
-    throw new InvalidPaymentError("An invoice needs at least one line item.");
-  }
-  return prisma.$transaction(async (tx) => {
-    const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, clinic_id: clinicId } });
-    if (!invoice) throw new InvoiceNotFoundError(`Invoice ${invoiceId} not found.`);
-    if (invoice.status !== "draft") {
-      throw new InvalidInvoiceTransitionError(
-        `Cannot change the charges on a "${invoice.status}" invoice — issue a correction as a new invoice instead.`
-      );
-    }
-    const total = sumItems(items);
-    if (total < 0) {
-      throw new InvalidPaymentError("An invoice's total cannot be negative.");
-    }
-    return tx.invoice.update({
-      where: { id: invoiceId },
-      data: { items_json: JSON.stringify(items), total },
-      include: INVOICE_INCLUDE,
-    });
-  });
-}
 
 /** Status changes (issue / void) — the only legal path between states. */
 export async function transitionInvoice(

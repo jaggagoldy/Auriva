@@ -1,0 +1,275 @@
+// M3B B3 — the pure Document renderer. Renders a Document's immutable snapshot
+// (branding + per-type body + metadata) for BOTH the on-screen viewer and the
+// bare print route — one renderer, no screen/print divergence. Branding exposes
+// optional slots (logo now; signature/stamp/footer reserved). A new document
+// type adds a body to BODIES — no other change.
+
+import * as React from "react";
+import { formatMedicine, type PrescriptionMedicine } from "@/domain/prescription";
+
+export interface DocumentDetail {
+  id: string;
+  type: string;
+  category: string;
+  number: string;
+  version: number;
+  status: string;
+  generated_at: string;
+  generated_by: string | null;
+  supersedes_version: number | null;
+  content: {
+    branding: { clinic_name: string; address: string | null; phone: string | null; logo_url: string | null };
+    meta: { patient_name: string; token: number | null; doctor_name: string | null; appointment_type: string; date: string | null };
+    body: Record<string, unknown>;
+  };
+}
+
+const TYPE_LABEL: Record<string, string> = { invoice: "Invoice", receipt: "Receipt", visit_summary: "Visit Summary", credit_note: "Credit Note", refund_receipt: "Refund Receipt", treatment_plan: "Treatment Plan", prescription: "Prescription" };
+const inr = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
+const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+
+export function DocumentRenderer({ doc }: { doc: DocumentDetail }) {
+  const Body = BODIES[doc.type] ?? UnknownBody;
+  return (
+    <article className="text-[13px] leading-relaxed text-black">
+      <DocumentBranding doc={doc} />
+      <div className="mt-4 flex flex-wrap justify-between gap-2 border-y py-2 text-[12px]">
+        <span><strong>Patient:</strong> {doc.content.meta.patient_name}{doc.content.meta.token != null ? ` · Token ${doc.content.meta.token}` : ""}</span>
+        {doc.content.meta.doctor_name && <span>{doc.content.meta.doctor_name}</span>}
+        <span>{fmtDate(doc.content.meta.date)}</span>
+      </div>
+      <div className="mt-4"><Body body={doc.content.body} /></div>
+      {/* Reserved branding slots (optional; empty until enabled) */}
+      <DocumentFooter doc={doc} />
+      <DocumentInfo doc={doc} />
+    </article>
+  );
+}
+
+function DocumentBranding({ doc }: { doc: DocumentDetail }) {
+  const b = doc.content.branding;
+  return (
+    <header className="flex items-start justify-between gap-4">
+      <div className="flex items-center gap-3">
+        {/* logo slot */}
+        {b.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={b.logo_url} alt="" className="h-12 w-12 rounded object-contain" />
+        ) : (
+          <div className="grid h-12 w-12 place-items-center rounded bg-neutral-100 text-sm font-bold text-neutral-500">
+            {b.clinic_name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div>
+          <div className="text-base font-bold">{b.clinic_name}</div>
+          {b.address && <div className="text-[11px] text-neutral-600">{b.address}</div>}
+          {b.phone && <div className="text-[11px] text-neutral-600">{b.phone}</div>}
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="text-sm font-semibold uppercase tracking-wide">{TYPE_LABEL[doc.type] ?? doc.type}</div>
+        <div className="text-[12px] font-medium">{doc.number}</div>
+        <div className="text-[11px] text-neutral-600">
+          Version {doc.version}{doc.supersedes_version ? ` · supersedes v${doc.supersedes_version}` : ""}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Reserved slots — signature / clinic stamp / footer. Rendered empty (no data)
+// so the layout is ready when these are enabled; invisible until then.
+function DocumentFooter({ doc }: { doc: DocumentDetail }) {
+  if (!["visit_summary", "invoice", "receipt", "credit_note", "refund_receipt", "prescription"].includes(doc.type)) return null;
+  return (
+    <footer className="mt-10 flex items-end justify-between">
+      <div className="text-[10px] text-neutral-400">{/* footer slot (reserved) */}</div>
+      <div className="text-center">
+        <div className="h-10 w-40 border-b border-neutral-300" />{/* signature / stamp slot (reserved) */}
+        <div className="mt-1 text-[10px] text-neutral-500">Authorised signatory</div>
+      </div>
+    </footer>
+  );
+}
+
+function DocumentInfo({ doc }: { doc: DocumentDetail }) {
+  return (
+    <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-1 border-t pt-3 text-[10.5px] text-neutral-500 sm:grid-cols-4 print:text-neutral-500">
+      <Info label="Version" value={String(doc.version)} />
+      <Info label="Generated" value={fmtDateTime(doc.generated_at)} />
+      <Info label="Generated by" value={doc.generated_by ?? "—"} />
+      <Info label="Document ID" value={doc.id.slice(0, 8)} />
+    </dl>
+  );
+}
+function Info({ label, value }: { label: string; value: string }) {
+  return <div><dt className="uppercase tracking-wide">{label}</dt><dd className="font-medium text-neutral-700">{value}</dd></div>;
+}
+
+// ---- per-type bodies --------------------------------------------------------
+type BodyProps = { body: Record<string, unknown> };
+const BODIES: Record<string, React.FC<BodyProps>> = {
+  invoice: InvoiceBody,
+  receipt: ReceiptBody,
+  visit_summary: VisitSummaryBody,
+  credit_note: CreditNoteBody,
+  refund_receipt: RefundReceiptBody,
+  treatment_plan: TreatmentPlanBody,
+  prescription: PrescriptionBody,
+};
+
+function TreatmentPlanBody({ body }: BodyProps) {
+  const sessions = (body.sessions as { sequence: number; status: string }[]) ?? [];
+  return (
+    <div className="space-y-3 text-[12px]">
+      <div className="text-base font-semibold">{String(body.title ?? "")}</div>
+      <Sec label="Service">{String(body.service ?? "")} · {inr(Number(body.service_price ?? 0))} per session</Sec>
+      <Sec label="Progress">{Number(body.sessions_completed ?? 0)} of {Number(body.sessions_planned ?? 0)} sessions</Sec>
+      {body.notes ? <Sec label="Notes">{String(body.notes)}</Sec> : null}
+      <div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">Sessions</div>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {sessions.map((s) => (
+            <span key={s.sequence} className={`rounded border px-2 py-0.5 ${s.status === "completed" ? "border-neutral-400 bg-neutral-100" : s.status === "cancelled" ? "text-neutral-400 line-through" : ""}`}>
+              {s.sequence}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CreditNoteBody({ body }: BodyProps) {
+  return (
+    <div className="space-y-2 text-[12px]">
+      <div className="text-neutral-600">Credit against invoice {String(body.original_invoice ?? "")}</div>
+      <Sec label="Reason">{String(body.reason ?? "")}</Sec>
+      <div className="mt-3 flex items-center justify-between border-t pt-2">
+        <span className="font-semibold">Credited</span>
+        <span className="font-bold tabular-nums">{inr(Number(body.amount ?? 0))}</span>
+      </div>
+    </div>
+  );
+}
+
+function RefundReceiptBody({ body }: BodyProps) {
+  return (
+    <div className="space-y-2 text-[12px]">
+      <div className="text-neutral-600">Refund against credit note {String(body.credit_note_number ?? "")}</div>
+      <div className="capitalize">Method: {String(body.method ?? "")}{body.reference ? ` · ${String(body.reference)}` : ""}</div>
+      <div className="mt-3 flex items-center justify-between border-t pt-2">
+        <span className="font-semibold">Refunded</span>
+        <span className="font-bold tabular-nums">{inr(Number(body.amount ?? 0))}</span>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceBody({ body }: BodyProps) {
+  const lines = (body.lines as { description: string; qty: number; unit_price: number; amount: number }[]) ?? [];
+  const total = Number(body.total ?? 0);
+  return (
+    <table className="w-full text-[12px]">
+      <thead>
+        <tr className="border-b text-left text-neutral-500">
+          <th className="py-1.5">Description</th><th className="py-1.5 text-right">Qty</th><th className="py-1.5 text-right">Rate</th><th className="py-1.5 text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {lines.map((l, i) => (
+          <tr key={i} className="border-b border-neutral-100">
+            <td className="py-1.5">{l.description}</td><td className="py-1.5 text-right tabular-nums">{l.qty}</td>
+            <td className="py-1.5 text-right tabular-nums">{inr(l.unit_price)}</td><td className="py-1.5 text-right tabular-nums">{inr(l.amount)}</td>
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr><td colSpan={3} className="py-2 text-right font-semibold">Total</td><td className="py-2 text-right font-bold tabular-nums">{inr(total)}</td></tr>
+      </tfoot>
+    </table>
+  );
+}
+
+function ReceiptBody({ body }: BodyProps) {
+  const payments = (body.payments as { method: string; amount: number; reference: string | null; received_at: string }[]) ?? [];
+  const total = Number(body.total_paid ?? 0);
+  return (
+    <div className="text-[12px]">
+      <div className="mb-2 text-neutral-600">Against invoice {String(body.invoice_number ?? "")}</div>
+      <table className="w-full">
+        <tbody>
+          {payments.map((p, i) => (
+            <tr key={i} className="border-b border-neutral-100">
+              <td className="py-1.5 capitalize">{p.method}{p.reference ? ` · ${p.reference}` : ""}</td>
+              <td className="py-1.5 text-right text-neutral-500">{fmtDateTime(p.received_at)}</td>
+              <td className="py-1.5 text-right font-medium tabular-nums">{inr(p.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot><tr><td colSpan={2} className="py-2 font-semibold">Total received</td><td className="py-2 text-right font-bold tabular-nums">{inr(total)}</td></tr></tfoot>
+      </table>
+    </div>
+  );
+}
+
+function VisitSummaryBody({ body }: BodyProps) {
+  const medicines = (body.medicines as { name: string; dosage?: string; frequency?: string; duration?: string }[]) ?? [];
+  const services = (body.services as { name: string; category: string }[]) ?? [];
+  return (
+    <div className="space-y-3 text-[12px]">
+      {body.chief_complaint ? <Sec label="Chief complaint">{String(body.chief_complaint)}</Sec> : null}
+      {body.diagnosis ? <Sec label="Diagnosis">{String(body.diagnosis)}</Sec> : null}
+      {medicines.length > 0 && (
+        <Sec label="Prescription">
+          <ul className="list-disc pl-4">
+            {medicines.map((m, i) => <li key={i}>{[m.name, m.dosage, m.frequency, m.duration].filter(Boolean).join(" · ")}</li>)}
+          </ul>
+        </Sec>
+      )}
+      {services.length > 0 && <Sec label="Services performed">{services.map((s) => s.name).join(", ")}</Sec>}
+      {body.advice ? <Sec label="Advice">{String(body.advice)}</Sec> : null}
+      {body.follow_up_date ? <Sec label="Follow-up">{fmtDate(String(body.follow_up_date))}</Sec> : null}
+    </div>
+  );
+}
+// C4 — the printed Prescription handed to the patient. Renders through the
+// SHARED formatter (A4: identical to the editor preview) with PATIENT labels
+// (A6: "Three times daily", never "TDS").
+function PrescriptionBody({ body }: BodyProps) {
+  const medicines = (body.medicines as PrescriptionMedicine[]) ?? [];
+  return (
+    <div className="space-y-3 text-[12px]">
+      {body.diagnosis ? <Sec label="Diagnosis">{String(body.diagnosis)}</Sec> : null}
+      <Sec label="Medicines">
+        {medicines.length === 0 ? (
+          <span className="text-neutral-500">No medicines prescribed.</span>
+        ) : (
+          <ol className="space-y-1.5">
+            {medicines.map((m, i) => {
+              const { name, directions } = formatMedicine(m, "patient");
+              return (
+                <li key={i} className="flex gap-2">
+                  <span className="text-neutral-400 tabular-nums">{i + 1}.</span>
+                  <span>
+                    <span className="font-medium text-neutral-800">{name}</span>
+                    {directions ? <span className="text-neutral-600"> — {directions}</span> : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </Sec>
+      {body.advice ? <Sec label="Advice">{String(body.advice)}</Sec> : null}
+      {body.follow_up_date ? <Sec label="Follow-up">{fmtDate(String(body.follow_up_date))}</Sec> : null}
+    </div>
+  );
+}
+function Sec({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><div className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">{label}</div><div className="mt-0.5">{children}</div></div>;
+}
+function UnknownBody() {
+  return <div className="text-neutral-500">This document type isn&apos;t renderable yet.</div>;
+}

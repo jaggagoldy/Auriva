@@ -11,7 +11,8 @@ import {
   timestampPatchFor,
 } from "@/domain/appointment-status";
 import { createAppointmentEvent } from "@/repositories/appointment-repository";
-import { draftInvoiceForAppointment } from "@/services/billing-service";
+import { capturePlanSessionCharge, completeVisitInvoicing, reflectSessionAttendance, settleAllForAppointment } from "@/services/billing-engine-service";
+import { evaluateConsultationGate, PrepaidGateError } from "@/services/billing-policy-service";
 import { publishEvent } from "@/lib/events";
 
 export class AppointmentNotFoundError extends Error {}
@@ -443,10 +444,22 @@ export async function transitionStatus(
     }
 
     const from = appointment.status as AppointmentStatus;
-    if (!canTransition(from, nextStatus)) {
+    if (from !== nextStatus && !canTransition(from, nextStatus)) {
       throw new InvalidTransitionError(
         `Cannot move an appointment from "${from}" to "${nextStatus}".`
       );
+    }
+
+    // M3B B4: prepaid/hybrid HARD gate — block starting the consultation until
+    // the consultation fee is collected. Soft gate is enforced in the UI (warn +
+    // audited override); this backend block covers all surfaces. Postpaid inert.
+    if (nextStatus === "in_consultation") {
+      const gate = await evaluateConsultationGate(appointmentId, appointment.clinic_id);
+      if (gate.hardBlock) {
+        throw new PrepaidGateError(
+          `This clinic collects the consultation fee before the visit (prepaid). Collect ₹${gate.consultationFee} to start.`
+        );
+      }
     }
 
     // Sprint 3: the clinic's own cancellation-window policy — e.g. "no
@@ -484,9 +497,22 @@ export async function transitionStatus(
     // WF-17 / APS-041: a completed consultation auto-drafts its invoice —
     // same transaction, so the visit and its charge can never diverge.
     if (nextStatus === "completed") {
-      const invoice = await draftInvoiceForAppointment(tx, updated);
-      generatedInvoiceId = invoice.id;
+      // C1: if this visit is a booked Treatment Plan session, its charge is the
+      // plan's service (captured here) — settle that (+ any captured extras)
+      // with NO separate consultation fee. Otherwise the normal event-sourced
+      // completion (ensure-consultation + settle). Same transaction throughout.
+      const isPlanSession = await capturePlanSessionCharge(tx, updated.id);
+      const invoice = isPlanSession
+        ? await settleAllForAppointment(tx, updated.id)
+        : await completeVisitInvoicing(tx, updated);
+      generatedInvoiceId = invoice?.id ?? null;
       await scheduleFollowUpIfRequested(tx, updated);
+    }
+
+    // C2: a plan session's visit that no-showed or was cancelled returns the
+    // session to "needs re-book" — attendance stays truthful.
+    if (nextStatus === "no_show" || nextStatus === "cancelled") {
+      await reflectSessionAttendance(tx, updated.id);
     }
 
     return updated;

@@ -2,7 +2,22 @@ import { NextRequest } from "next/server";
 import { badRequest, mapDomainError, ok, serverError } from "@/api/http";
 import { requireStaffContext } from "@/api/session";
 import { withRequestId } from "@/api/logger";
-import { startConsultation, completeVisit } from "@/services/consultation-service";
+import { startConsultation, completeVisit, getConsultationContext } from "@/services/consultation-service";
+
+// The consultation workbench's left clinical rail:
+//   GET ?appointment_id= → { patient, current_medicines, past_visits }
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await requireStaffContext("reception");
+    if (!auth.ok) return auth.response;
+    const appointmentId = new URL(request.url).searchParams.get("appointment_id") ?? "";
+    if (!appointmentId) return badRequest("appointment_id is required.");
+    const context = await getConsultationContext(appointmentId, auth.clinicId);
+    return ok(context);
+  } catch (error) {
+    return mapDomainError(error) ?? serverError("Error loading consultation context", error);
+  }
+}
 
 // Milestone 1 Batch 5: the solo visit's clinical steps, inside /clinic.
 //   POST { action: "start", appointment_id }
@@ -35,11 +50,16 @@ export async function POST(request: NextRequest) {
           appointmentId,
           clinicId: auth.clinicId,
           actorUserId: auth.session.userId,
+          chiefComplaint: typeof body.chief_complaint === "string" ? body.chief_complaint : undefined,
           notes: typeof body.notes === "string" ? body.notes : undefined,
           diagnosis: typeof body.diagnosis === "string" ? body.diagnosis : undefined,
           followUpDate: typeof body.follow_up_date === "string" ? body.follow_up_date : undefined,
           prescriptionNotes: typeof body.prescription_notes === "string" ? body.prescription_notes : undefined,
-          treatmentId: typeof body.treatment_id === "string" ? body.treatment_id : null,
+          prescriptionMedicinesJson:
+            typeof body.prescription_medicines_json === "string" ? body.prescription_medicines_json : undefined,
+          testCodes: Array.isArray(body.test_codes)
+            ? body.test_codes.filter((t: unknown): t is string => typeof t === "string")
+            : undefined,
         });
         return ok({ success: true, ...result });
       }

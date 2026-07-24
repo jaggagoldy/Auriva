@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
-import { defaultWorkspacePathForRole } from "@/domain/authorization";
 
 interface InvitationView {
-  email: string;
+  email: string | null;
+  phone: string | null;
   full_name: string;
   role: string;
   specialty: string | null;
@@ -71,7 +71,10 @@ export default function JoinPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Could not accept invitation");
       toast.success(`Welcome to ${invitation?.organization.name}`);
-      router.push(defaultWorkspacePathForRole(data.user.role) ?? "/login");
+      // F1: route through the capability-driven resolver (same as login), so an
+      // invited doctor/receptionist lands on their correct surface — not the
+      // legacy "everyone → /clinic" default.
+      router.push("/workspace");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not accept invitation");
     } finally {
@@ -117,7 +120,11 @@ export default function JoinPage() {
                 <span className="font-medium capitalize">{invitation.role}</span>
                 {invitation.specialty ? ` · ${invitation.specialty}` : ""}
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">{invitation.email}</p>
+              {invitation.phone || invitation.email ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {invitation.phone ?? invitation.email}
+                </p>
+              ) : null}
             </div>
 
             <form onSubmit={submit} className="mt-5 space-y-4">

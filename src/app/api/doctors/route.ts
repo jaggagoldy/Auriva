@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ok, serverError, unauthorized } from '@/api/http';
 import { findStaffProfiles } from '@/repositories/staff-repository';
-import { memberRoleFromSpecialty } from '@/domain/organization';
+import { asOrganizationRole } from '@/domain/organization';
 import { getCurrentSession } from '@/api/session';
 import { getDoctorRatingSummaries } from '@/services/review-service';
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       return {
         ...profile,
         user,
-        role: membership?.role ?? memberRoleFromSpecialty(profile.specialty),
+        role: asOrganizationRole(membership?.role ?? user.role),
         ratingAvg: rating.average,
         reviewCount: rating.count,
       };

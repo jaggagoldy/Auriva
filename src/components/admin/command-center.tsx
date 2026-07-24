@@ -11,10 +11,11 @@ import {
   AlertTriangle,
   CalendarDays,
   ClipboardList,
-  Clock,
   ListChecks,
   ReceiptText,
+  Settings,
   Stethoscope,
+  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -147,6 +148,33 @@ export default function CommandCenter() {
 
   const t = snapshot?.tiles;
 
+  // PKG-2 "Needs your attention" (Rule #3): existing operational signals shown
+  // together — no rule engine, no prediction. Every item is already-queried data.
+  const attention = t
+    ? ([
+        t.pending_unpaid_invoices > 0 && {
+          label: `${t.pending_unpaid_invoices} invoice${t.pending_unpaid_invoices > 1 ? "s" : ""} awaiting payment`,
+          sub: `${inr(t.outstanding_total)} outstanding at the front desk`,
+          href: "/staff/billing",
+          action: "Review",
+        },
+        t.pending_lab_results > 0 && {
+          label: `${t.pending_lab_results} lab result${t.pending_lab_results > 1 ? "s" : ""} pending upload`,
+          sub: "Patients waiting on their reports",
+          href: "/staff/lab",
+          action: "Review",
+        },
+        t.in_queue_now > 0 && {
+          label: `${t.in_queue_now} patient${t.in_queue_now > 1 ? "s" : ""} waiting now`,
+          sub: "In the queue to be seen",
+          href: "/staff/queue",
+          action: "Open queue",
+        },
+      ].filter(Boolean) as { label: string; sub: string; href: string; action: string }[])
+    : [];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <AdminSidebar active="command-center" subtitle={org?.name ?? "Command Center"} />
@@ -175,69 +203,88 @@ export default function CommandCenter() {
           </div>
         ) : (
           <main className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Tile
-                icon={Users}
-                label="Active patients"
-                value={t?.active_patients}
-                hint="in consultation now"
-                href="/staff/queue"
-              />
-              <Tile
-                icon={ListChecks}
-                label="Current queue"
-                value={t?.in_queue_now}
-                hint="waiting to be seen"
-                href="/staff/queue"
-              />
-              <Tile
-                icon={Stethoscope}
-                label="Doctors on floor"
-                value={t ? `${t.doctors_on_floor}/${t.doctors_total}` : undefined}
-                hint="active right now"
-                href="/doctor"
-              />
-              <Tile
-                icon={Clock}
-                label="Avg wait today"
-                value={t ? (t.avg_wait_minutes === null ? "—" : `${t.avg_wait_minutes}m`) : undefined}
-                hint="check-in to consult"
-                href="/staff/dashboard"
-              />
-              <Tile
-                icon={ReceiptText}
-                label="Collected today"
-                value={t ? inr(t.collected_today) : undefined}
-                hint="payments received"
-                href="/staff/billing"
-              />
-              <Tile
-                icon={ClipboardList}
-                label="Outstanding"
-                value={t ? inr(t.outstanding_total) : undefined}
-                hint="unpaid invoices"
-                href="/staff/billing"
-                tone={t && t.outstanding_total > 0 ? "warn" : undefined}
-              />
-              <Tile
-                icon={AlertTriangle}
-                label="Critical alerts"
-                value={t?.critical_alerts}
-                hint="need attention"
-                tone={t && t.critical_alerts > 0 ? "danger" : undefined}
-              />
-              <Tile
-                icon={CalendarDays}
-                label="Pending tasks"
-                value={t?.pending_tasks}
-                hint={
-                  t
-                    ? `${t.pending_unpaid_invoices} bills · ${t.pending_lab_results} labs`
-                    : undefined
-                }
-                href="/staff/billing"
-                tone={t && t.pending_tasks > 0 ? "warn" : undefined}
-              />
+            {/* PKG-2: Practice Health summary — calm status, structured metrics */}
+            <section className="rounded-xl border bg-card p-5">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                  attention.length === 0
+                    ? "bg-success/10 text-success"
+                    : "bg-amber-500/10 text-amber-600"
+                )}
+              >
+                <span className={cn("size-1.5 rounded-full", attention.length === 0 ? "bg-success" : "bg-amber-500")} />
+                {attention.length === 0 ? "Running smoothly" : "Needs a look"}
+              </span>
+              <h2 className="mt-2 font-display text-lg font-bold tracking-tight">
+                {greeting}{org?.name ? `, ${org.name}` : ""}
+              </h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <HealthMetric label="Appointments today" value={t?.appointments_today} />
+                <HealthMetric label="Patients waiting" value={t?.in_queue_now} />
+                <HealthMetric label="Collected today" value={t ? inr(t.collected_today) : undefined} />
+                <HealthMetric
+                  label="Team available"
+                  value={t ? `${t.doctors_on_floor}/${t.doctors_total}` : undefined}
+                />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {attention.length === 0
+                  ? "Nothing needs your attention right now."
+                  : `${attention.length} item${attention.length > 1 ? "s" : ""} need${attention.length > 1 ? "" : "s"} your attention today.`}
+              </p>
+            </section>
+
+            {/* PKG-2: Needs your attention — FIRST + prominent (existing signals) */}
+            {attention.length > 0 && (
+              <section className="rounded-xl border border-amber-500/25 bg-amber-500/[0.03]">
+                <header className="flex items-center gap-2 border-b border-amber-500/20 px-5 py-3">
+                  <AlertTriangle className="size-4 text-amber-600" />
+                  <h2 className="text-sm font-semibold">Needs your attention</h2>
+                  <span className="ml-auto rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                    {attention.length}
+                  </span>
+                </header>
+                <div className="divide-y divide-amber-500/10">
+                  {attention.map((a) => (
+                    <div key={a.label} className="flex items-center gap-3 px-5 py-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{a.label}</div>
+                        <div className="truncate text-xs text-muted-foreground">{a.sub}</div>
+                      </div>
+                      <Link
+                        href={a.href}
+                        className="shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-primary/40 hover:text-primary"
+                      >
+                        {a.action}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* PKG-2: Quick actions */}
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Quick actions</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <QuickAction icon={UserPlus} label="Invite team member" href="/admin" />
+                <QuickAction icon={Stethoscope} label="Add doctor" href="/admin" />
+                <QuickAction icon={Users} label="Register patient" href="/staff/queue" />
+                <QuickAction icon={ClipboardList} label="Open reception" href="/staff/dashboard" />
+                <QuickAction icon={Settings} label="Settings" href="/admin/settings" />
+              </div>
+            </div>
+
+            {/* PKG-2: Practice at a glance */}
+            <div>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Practice at a glance</p>
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Tile icon={CalendarDays} label="Appointments today" value={t?.appointments_today} hint="scheduled + walk-ins" href="/staff/queue" />
+                <Tile icon={ListChecks} label="In queue now" value={t?.in_queue_now} hint="waiting to be seen" href="/staff/queue" />
+                <Tile icon={Stethoscope} label="Doctors on floor" value={t ? `${t.doctors_on_floor}/${t.doctors_total}` : undefined} hint="active right now" href="/doctor" />
+                <Tile icon={ReceiptText} label="Collected today" value={t ? inr(t.collected_today) : undefined} hint="payments received" href="/staff/billing" />
+              </div>
             </div>
 
             {snapshot && snapshot.branches.length > 1 && (
@@ -272,7 +319,7 @@ export default function CommandCenter() {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <section className="rounded-xl border bg-card">
                 <header className="border-b px-5 py-3">
-                  <h2 className="text-sm font-semibold">Doctor status</h2>
+                  <h2 className="text-sm font-semibold">On the floor now</h2>
                 </header>
                 <div className="divide-y">
                   {!snapshot ? (
@@ -351,6 +398,41 @@ export default function CommandCenter() {
         )}
       </div>
     </div>
+  );
+}
+
+// PKG-2 Practice Health metric — a compact labelled number.
+function HealthMetric({ label, value }: { label: string; value: number | string | undefined }) {
+  return (
+    <div className="rounded-lg border bg-background/60 p-3">
+      <div className="font-display text-xl font-extrabold tabular-nums">
+        {value ?? <span className="text-muted-foreground">—</span>}
+      </div>
+      <div className="mt-0.5 text-[11px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+// PKG-2 Quick action — a labelled shortcut to an existing surface.
+function QuickAction({
+  icon: Icon,
+  label,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition-colors hover:border-primary/40"
+    >
+      <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <span className="text-xs font-medium">{label}</span>
+    </Link>
   );
 }
 

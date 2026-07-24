@@ -13,10 +13,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { defaultWorkspacePathForRole } from '@/domain/authorization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,13 @@ function errorMessage(err: unknown): string | undefined {
 function ageFromDob(dob: string | null): number | null {
   if (!dob) return null;
   return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+}
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return phone;
+  const last2 = digits.slice(-2);
+  return `${phone.slice(0, phone.length - digits.length)}${digits.slice(0, -2).replace(/\d/g, '•')}${last2}`;
 }
 
 // APS-031 Part 3 — the four-role picker (Patient/Superadmin/Doctor/Staff) is
@@ -46,7 +54,7 @@ export default function UnifiedLoginGateway() {
   // Modern SaaS convention: "Sign in" lands directly on the login form.
   // The path chooser (Organization / Professional / Personal) belongs to the
   // Start Free / Get Started journey, not to returning-user sign-in.
-  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'onboarding'>('auth');
+  const [step, setStep] = useState<'role' | 'auth' | 'otp' | 'profile-select' | 'profile-found' | 'onboarding'>('auth');
   const [entryPath, setEntryPath] = useState<EntryPath | null>('professional');
   const [showForgotHelp, setShowForgotHelp] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -58,16 +66,43 @@ export default function UnifiedLoginGateway() {
     if (typeof window === 'undefined') return;
     const as = new URLSearchParams(window.location.search).get('as');
     if (as === 'patient' || as === 'personal') setEntryPath('personal');
-  }, []);
+
+    // Auto-redirect if session is already active (prevents login screen on back button)
+    let cancelled = false;
+    fetch('/api/clinics', { cache: 'no-store' })
+      .then((res) => {
+        if (res.ok && !cancelled) {
+          router.replace('/workspace');
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   // Form states
   const [phoneNumber, setPhoneNumber] = useState('+15550199999');
   const [otpCode, setOtpCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('password123'); // seed mock password
+  const [showPassword, setShowPassword] = useState(false); // PKG-1: password show/hide toggle
+  const [authError, setAuthError] = useState<string | null>(null); // PKG-1: inline credential error
 
   // AUTH-004 onboarding — held until the profile is completed, then persisted.
   const [pendingSession, setPendingSession] = useState<{ patientProfile: any; user: any } | null>(null);
+
+  // "We found your profile" — held when otp/verify reports this Account's
+  // first-ever confirmation of a PRE-EXISTING Healthcare Profile (a clinic
+  // registered them before they ever signed in themselves). The login is
+  // already complete server-side; this is a confirmation interstitial before
+  // finishLogin navigates on, matching design/mockups/auriva-auth.html's
+  // "PROFILE FOUND (account linking)" screen.
+  const [foundProfileData, setFoundProfileData] = useState<{
+    patientProfile: { onboarding_completed: boolean; full_name: string; gender: string | null; date_of_birth: string | null };
+    user: unknown;
+  } | null>(null);
   const [onboardName, setOnboardName] = useState('');
   const [onboardDob, setOnboardDob] = useState('');
   const [onboardGender, setOnboardGender] = useState('');
@@ -133,7 +168,8 @@ export default function UnifiedLoginGateway() {
         description: 'See the verification panel for your code.'
       });
     } catch (err) {
-      toast.error(errorMessage(err) ?? 'Something went wrong');
+      // PKG-6: plain, actionable fallback — never a bare "Something went wrong".
+      toast.error(errorMessage(err) ?? "Couldn't send the code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -163,9 +199,7 @@ export default function UnifiedLoginGateway() {
       return;
     }
     toast.success(`Welcome back, ${data.patientProfile.full_name}!`);
-    // The session cookie is already set server-side by /api/auth/otp/verify
-    // — no client-side storage of identity anymore (APS-029/010 Sprint 1).
-    router.push('/patient');
+    router.replace('/patient');
   };
 
   const handlePatientVerifyOtp = async (e: React.FormEvent) => {
@@ -187,6 +221,12 @@ export default function UnifiedLoginGateway() {
         return;
       }
 
+      if (data.existing_profile_found) {
+        setFoundProfileData({ patientProfile: data.patientProfile, user: data.user });
+        setStep('profile-found');
+        return;
+      }
+
       finishLogin(data);
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Verification failed. Request a new code and try again.');
@@ -199,11 +239,38 @@ export default function UnifiedLoginGateway() {
     setLoading(true);
     try {
       const data = await submitOtpVerify(profileId);
+      if (data.existing_profile_found) {
+        setFoundProfileData({ patientProfile: data.patientProfile, user: data.user });
+        setStep('profile-found');
+        return;
+      }
       finishLogin(data);
     } catch (err) {
       toast.error(errorMessage(err) ?? 'Could not sign in as that profile.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // "Yes, that's me — continue" — the login already succeeded server-side;
+  // this just proceeds past the confirmation interstitial.
+  const handleConfirmFoundProfile = () => {
+    if (!foundProfileData) return;
+    finishLogin(foundProfileData);
+  };
+
+  // "Not you? Use a different number" — this session cookie already belongs
+  // to the discovered account, so sign them back out before starting fresh.
+  const handleRejectFoundProfile = async () => {
+    setFoundProfileData(null);
+    setOtpCode('');
+    setPhoneNumber('');
+    setStep('auth');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // best-effort — a stray session cookie here is harmless (login is
+      // idempotent and re-verifying overwrites it), never block the UI on it.
     }
   };
 
@@ -234,7 +301,8 @@ export default function UnifiedLoginGateway() {
       toast.success(`Welcome to Auriva, ${updatedProfile.full_name}!`);
       router.push('/patient');
     } catch (err) {
-      toast.error(errorMessage(err) ?? 'Something went wrong');
+      // PKG-6: plain, actionable fallback.
+      toast.error(errorMessage(err) ?? "Couldn't save your profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -242,8 +310,10 @@ export default function UnifiedLoginGateway() {
 
   const handleB2BLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    // PKG-1: authentication errors belong to the form (inline callout), not a toast.
+    setAuthError(null);
     if (!email.trim() || !password) {
-      toast.error('Email and password are required');
+      setAuthError('Enter your email or phone and password.');
       return;
     }
 
@@ -262,22 +332,23 @@ export default function UnifiedLoginGateway() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Authentication failed');
+      if (!res.ok) {
+        // PKG-1 credential-error copy — never reveal which part failed.
+        setAuthError('Incorrect email/phone or password. Please try again.');
+        return;
+      }
 
-      toast.success(`Authenticated successfully as ${data.user.role}`);
       localStorage.setItem('aura_b2b_session', JSON.stringify({
         user: data.user,
         profile: data.staffProfile
       }));
 
-      // Redirect based on the server-confirmed role (map centralized in
-      // src/domain/authorization)
-      const workspacePath = defaultWorkspacePathForRole(data.user.role);
-      if (workspacePath) {
-        router.push(workspacePath);
-      }
-    } catch (err) {
-      toast.error(errorMessage(err) ?? 'Failed to authenticate');
+      // A provisioned account (temporary password) must set its own first
+      // (UXS-043 Package 1). Otherwise route through the workspace landing hub,
+      // which resolves WHICH workspace and the SURFACE it opens into (APS-045 §7).
+      router.replace(data.user.must_change_password ? '/change-password' : '/workspace');
+    } catch {
+      setAuthError('We couldn’t sign you in. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -522,6 +593,18 @@ export default function UnifiedLoginGateway() {
                   ) : (
                     /* Clinical/Staff login route (Email / Password) */
                     <form onSubmit={handleB2BLogin} className="space-y-4">
+                      {/* PKG-1: inline credential error — auth errors belong to the form */}
+                      {authError && (
+                        <div
+                          role="alert"
+                          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="shrink-0">
+                            <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                          </svg>
+                          <span>{authError}</span>
+                        </div>
+                      )}
                       <div className="space-y-1.5">
                         <Label htmlFor="email">Email or phone</Label>
                         <div className="relative">
@@ -553,21 +636,30 @@ export default function UnifiedLoginGateway() {
                           <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             id="pass"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 pr-9"
                             required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
 
                       {showForgotHelp && (
-                        <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                          Password resets aren&apos;t self-service yet — ask your organization owner to
-                          reset it for you from People &rarr; Staff.
-                        </p>
+                        <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+                          <Lock className="mt-0.5 size-3.5 shrink-0" />
+                          {/* SEC-4 deferred (Product Office): assisted reset, not self-service. */}
+                          <span>Password reset is not yet self-service. Please contact your Practice Owner or Administrator.</span>
+                        </div>
                       )}
 
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
@@ -575,9 +667,15 @@ export default function UnifiedLoginGateway() {
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="size-4 rounded border-border accent-primary"
+                          className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
                         />
-                        Remember me on this device
+                        {/* PKG-1: "Keep me signed in" + shared-computer caution */}
+                        <span>
+                          Keep me signed in on this device
+                          <span className="block text-xs text-muted-foreground/80">
+                            Leave this off on shared clinic computers.
+                          </span>
+                        </span>
                       </label>
 
                       <Button type="submit" disabled={loading} className="w-full">
@@ -590,25 +688,44 @@ export default function UnifiedLoginGateway() {
                           </>
                         )}
                       </Button>
-
-                      <button
-                        type="button"
-                        onClick={() => setEntryPath('personal')}
-                        className="block w-full text-center text-xs font-medium text-primary hover:underline"
-                      >
-                        I&apos;m a patient — sign in with OTP
-                      </button>
                     </form>
                   )}
                 </CardContent>
 
-                <div className="border-t border-border px-6 py-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    New to Auriva?{' '}
-                    <Link href="/get-started" className="font-semibold text-primary hover:underline">
-                      Create an account
-                    </Link>
-                  </p>
+                {/* PKG-1 card foot — patient actions + staff note + start-your-practice */}
+                <div className="space-y-1.5 border-t border-border px-6 py-4 text-center">
+                  {entryPath === 'professional' ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Patient?{' '}
+                        <button
+                          type="button"
+                          onClick={() => { setAuthError(null); setEntryPath('personal'); }}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          Sign in with OTP
+                        </button>
+                        {' · '}
+                        <Link href="/get-started?as=patient" className="font-medium text-primary hover:underline">
+                          Create a patient account
+                        </Link>
+                      </p>
+                      <p className="text-xs text-muted-foreground/80">Staff accounts are created by your practice.</p>
+                      <p className="text-xs text-muted-foreground/80">
+                        Opening a new clinic?{' '}
+                        <Link href="/register-org" className="font-medium text-primary hover:underline">
+                          Start your practice &rarr;
+                        </Link>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      New to Auriva?{' '}
+                      <Link href="/get-started" className="font-semibold text-primary hover:underline">
+                        Create an account
+                      </Link>
+                    </p>
+                  )}
                 </div>
               </Card>
             </motion.div>
@@ -737,6 +854,73 @@ export default function UnifiedLoginGateway() {
                       <Loader2 className="size-4 animate-spin text-muted-foreground" />
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 3c: "We found your profile" — first-ever confirmation of a
+              profile a clinic already registered (design/mockups/auriva-auth.html,
+              "PROFILE FOUND"). The server-side login already succeeded; this is
+              a confirmation moment, not another auth step. */}
+          {step === 'profile-found' && foundProfileData && (
+            <motion.div
+              key="profile-found-step"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Card className="overflow-hidden rounded-2xl shadow-sm">
+                <CardHeader className="px-6 pt-6 pb-2">
+                  <div className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-honey-soft px-2.5 py-1 text-xs font-semibold text-honey-deep">
+                    <Sparkles className="size-3" /> Welcome back
+                  </div>
+                  <CardTitle className="text-lg">We found your profile</CardTitle>
+                  <CardDescription>
+                    Good news — a clinic you visited already registered you. Nothing to fill in.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4 px-6 py-4">
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="flex items-center gap-3 border-b pb-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-honey-soft text-sm font-bold text-honey-deep">
+                        {foundProfileData.patientProfile.full_name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{foundProfileData.patientProfile.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{maskPhone(phoneNumber)}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10.5px] font-semibold text-success">
+                        Verified
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-3">
+                      <div>
+                        <p className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Gender</p>
+                        <p className="text-sm font-semibold">{foundProfileData.patientProfile.gender ?? 'Not set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">Age</p>
+                        <p className="text-sm font-semibold">
+                          {ageFromDob(foundProfileData.patientProfile.date_of_birth) ?? 'Not set'}
+                          {ageFromDob(foundProfileData.patientProfile.date_of_birth) !== null ? ' yrs' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full" disabled={loading} onClick={handleConfirmFoundProfile}>
+                    Yes, that&apos;s me — continue <ArrowRight />
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={handleRejectFoundProfile}
+                    className="w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    Not you? Use a different number
+                  </button>
                 </CardContent>
               </Card>
             </motion.div>

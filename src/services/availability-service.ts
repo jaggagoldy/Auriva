@@ -16,6 +16,10 @@ export interface AvailabilityEntry {
   day_of_week: number; // 0=Sunday .. 6=Saturday
   start_time: string; // "HH:MM"
   end_time: string; // "HH:MM"
+  // P2: optional recurring within-day break + per-day booking cap.
+  break_start?: string | null; // "HH:MM"
+  break_end?: string | null; // "HH:MM"
+  max_patients?: number | null;
 }
 
 export function getAvailability(doctorId: string) {
@@ -42,6 +46,26 @@ export async function setAvailability(doctorId: string, entries: AvailabilityEnt
     if (entry.start_time >= entry.end_time) {
       throw new AvailabilityInputError("Start time must be before end time.");
     }
+    // A break is all-or-nothing and must sit inside the working window.
+    const hasBreakStart = !!entry.break_start;
+    const hasBreakEnd = !!entry.break_end;
+    if (hasBreakStart !== hasBreakEnd) {
+      throw new AvailabilityInputError("A break needs both a start and an end time.");
+    }
+    if (hasBreakStart && hasBreakEnd) {
+      if (!TIME_PATTERN.test(entry.break_start!) || !TIME_PATTERN.test(entry.break_end!)) {
+        throw new AvailabilityInputError("Break times must be in HH:MM 24-hour format.");
+      }
+      if (entry.break_start! >= entry.break_end!) {
+        throw new AvailabilityInputError("Break start must be before break end.");
+      }
+      if (entry.break_start! < entry.start_time || entry.break_end! > entry.end_time) {
+        throw new AvailabilityInputError("The break must fall within the working hours.");
+      }
+    }
+    if (entry.max_patients != null && (!Number.isInteger(entry.max_patients) || entry.max_patients < 1)) {
+      throw new AvailabilityInputError("Maximum patients must be a positive whole number.");
+    }
   }
 
   return prisma.$transaction(async (tx) => {
@@ -53,6 +77,9 @@ export async function setAvailability(doctorId: string, entries: AvailabilityEnt
         day_of_week: e.day_of_week,
         start_time: e.start_time,
         end_time: e.end_time,
+        break_start: e.break_start ?? null,
+        break_end: e.break_end ?? null,
+        max_patients: e.max_patients ?? null,
       })),
     });
     return tx.doctorAvailability.findMany({
@@ -119,6 +146,14 @@ export async function getBookableSlots(
     select: { scheduled_time: true },
   });
   const bookedTimes = booked.map((b) => b.scheduled_time.getTime());
+  // Per-day booked counts feed the P2 max_patients cap (local Y-M-D keys to
+  // match how each day's dateKey is built below).
+  const bookedPerDay = new Map<string, number>();
+  for (const b of booked) {
+    const d = b.scheduled_time;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    bookedPerDay.set(key, (bookedPerDay.get(key) ?? 0) + 1);
+  }
 
   const conflicts = (candidate: Date) => {
     if (allowDoubleBooking) return false;
@@ -164,15 +199,42 @@ export async function getBookableSlots(
     const dayEnd = new Date(day);
     dayEnd.setHours(endHour, endMinute, 0, 0);
 
+    // P2: a recurring within-day break (e.g. lunch) — any slot overlapping
+    // [breakStart, breakEnd) is removed, half-open so a slot ending exactly
+    // when the break starts is kept.
+    let breakStartMs: number | null = null;
+    let breakEndMs: number | null = null;
+    if (window.break_start && window.break_end) {
+      const [bsH, bsM] = window.break_start.split(":").map(Number);
+      const [beH, beM] = window.break_end.split(":").map(Number);
+      const bs = new Date(day); bs.setHours(bsH, bsM, 0, 0);
+      const be = new Date(day); be.setHours(beH, beM, 0, 0);
+      breakStartMs = bs.getTime();
+      breakEndMs = be.getTime();
+    }
+    const overlapsBreak = (candidate: Date) => {
+      if (breakStartMs == null || breakEndMs == null) return false;
+      const slotStart = candidate.getTime();
+      const slotEnd = slotStart + durationMinutes * 60_000;
+      return slotStart < breakEndMs && slotEnd > breakStartMs;
+    };
+
+    // P2: per-day booking cap — remaining capacity after already-booked visits.
+    const remaining = window.max_patients == null
+      ? Infinity
+      : Math.max(0, window.max_patients - (bookedPerDay.get(dateKey) ?? 0));
+
     const slots: string[] = [];
     for (
       let candidate = new Date(dayStart);
       candidate.getTime() + durationMinutes * 60_000 <= dayEnd.getTime();
       candidate = new Date(candidate.getTime() + durationMinutes * 60_000)
     ) {
+      if (slots.length >= remaining) break; // day is at its patient cap
       if (candidate.getTime() <= now.getTime()) continue; // no slots in the past, incl. today
       if (conflicts(candidate)) continue;
-      if (isBlocked(candidate)) continue; // personal time block (lunch, leave, ...)
+      if (isBlocked(candidate)) continue; // personal time block (leave, ...)
+      if (overlapsBreak(candidate)) continue; // recurring daily break
       slots.push(candidate.toISOString());
     }
     result.push({ date: dateKey, slots });

@@ -1,16 +1,16 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Building2,
-  CalendarDays,
-  ChevronRight,
   MapPin,
   Plus,
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,17 +59,31 @@ async function fetchWorkspaceData(clinicId: string, organizationId: string) {
   const invites: PendingInvite[] = inviteRes.ok
     ? (await inviteRes.json()).map(pendingInviteFromApi)
     : [];
-  return {
-    staff,
-    invites,
-    todayCount: appointments.filter((a) => isToday(a.scheduled_time)).length,
-  };
+
+  // PKG-2: what each doctor is doing today — seen / booked + "in consult",
+  // from the appointments already loaded (owner's live team view).
+  const today = appointments.filter((a) => isToday(a.scheduled_time));
+  const activity: Record<string, DoctorActivity> = {};
+  for (const a of today) {
+    const d = (activity[a.doctor_id] ??= { seen: 0, total: 0, inConsult: false });
+    d.total += 1;
+    if (a.status === "completed") d.seen += 1;
+    if (a.status === "in_consultation") d.inConsult = true;
+  }
+  return { staff, invites, todayCount: today.length, activity };
+}
+
+export interface DoctorActivity {
+  seen: number;
+  total: number;
+  inConsult: boolean;
 }
 
 export default function AdminWorkspace() {
   const [clinics, setClinics] = React.useState<ClinicSummary[] | null>(null);
   const [clinicId, setClinicId] = React.useState<string | null>(null);
   const [staff, setStaff] = React.useState<Doctor[] | null>(null);
+  const [activity, setActivity] = React.useState<Record<string, DoctorActivity>>({});
   const [todayCount, setTodayCount] = React.useState<number | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [invites, setInvites] = React.useState<PendingInvite[]>([]);
@@ -113,6 +127,7 @@ export default function AdminWorkspace() {
     (data: Awaited<ReturnType<typeof fetchWorkspaceData>>) => {
       setStaff(data.staff);
       setInvites(data.invites);
+      setActivity(data.activity);
       setTodayCount(data.todayCount);
       setError(null);
     },
@@ -192,17 +207,13 @@ export default function AdminWorkspace() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div>
-            <h1 className="text-sm font-semibold">People</h1>
+            {/* PKG-2 Team */}
+            <h1 className="text-sm font-semibold">Your people</h1>
             <p className="text-[11px] text-muted-foreground">
-              Clinic profile, staff and role access
+              Who&apos;s on your team, what they can do, and their status
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <CalendarDays className="size-3.5" />
-              <span>{formatDay(new Date())}</span>
-            </div>
-            <WhatsNew />
             <ActivityBell organizationId={organizationId} />
             <Button
               variant="outline"
@@ -213,24 +224,45 @@ export default function AdminWorkspace() {
             >
               <RefreshCw />
             </Button>
+            {/* PKG-2 top bar: Invite staff + profile avatar */}
+            {clinicId && organizationId && (
+              <InviteStaffDialog
+                clinicName={clinic?.name ?? "this clinic"}
+                organizationId={organizationId}
+                clinics={(clinics ?? []).map((c) => ({ id: c.id, name: c.name }))}
+                defaultClinicId={clinicId}
+                onInvited={handleInvited}
+              />
+            )}
+            <Link href="/admin/settings" aria-label="Profile & settings">
+              <Avatar className="size-8">
+                <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
+                  AR
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
         </header>
 
-        <div className="flex h-10 shrink-0 items-center gap-1.5 border-b bg-muted/30 px-6 text-sm">
-          <span className="text-muted-foreground">Organization Workspace</span>
-          <ChevronRight className="size-3.5 text-muted-foreground/60" />
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-muted/30 px-6 text-sm">
+          {/* UXS-043 F2 — the canonical workspace switcher chip, same shape as
+              Doctor/Reception (`[mark] Clinic · Role ▾`); here it drives the
+              owner's branch switch (behaviour unchanged, presentation only). */}
           <Select
             value={clinicId}
             onValueChange={(value) => handleClinicChange(value as string)}
           >
             <SelectTrigger
-              className="h-7 w-auto gap-1.5 border-none bg-transparent px-2 font-medium shadow-none hover:bg-muted"
-              aria-label="Branch"
+              className="h-auto w-auto gap-2 rounded-lg border bg-card px-2.5 py-1.5 font-normal shadow-none hover:bg-muted"
+              aria-label="Clinic workspace"
             >
               <SelectValue>
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Building2 className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{clinic?.name ?? "Select branch"}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+                    {(clinic?.name ?? "S").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="truncate font-medium">{clinic?.name ?? "Select clinic"}</span>
+                  <span className="text-muted-foreground">· Owner</span>
                 </span>
               </SelectValue>
             </SelectTrigger>
@@ -348,6 +380,7 @@ export default function AdminWorkspace() {
               <StaffTable
                 staff={staff}
                 invites={invites}
+                activity={activity}
                 organizationId={organizationId}
                 onRevokeInvite={handleRevokeInvite}
                 onStaffChanged={handleRefresh}

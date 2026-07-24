@@ -1,0 +1,134 @@
+// P2 (Doctor Calendar) — the read model behind the Day/Week/Month calendar.
+// Range-queryable (unlike getTodayAppointments, which is today-only, and
+// getBookableSlots, which is anchored at "now"): returns the clinic's booked
+// appointments and the doctor's time blocks grouped by local calendar day for
+// any window. Available-slot overlay + quick-block layer on top of this.
+
+import prisma from "@/lib/prisma";
+import { AmbiguousDoctorError, resolveClinicDoctor } from "@/services/doctor-resolution";
+import { logger } from "@/api/logger";
+
+export class ScheduleInputError extends Error {}
+
+export interface ScheduleAppointment {
+  id: string;
+  time: string; // ISO
+  patient_name: string;
+  status: string;
+  walk_in: boolean;
+  invoice_status: string | null;
+  plan_label: string | null; // C2: "Title (Session n/N)" for plan-session appointments
+}
+export interface ScheduleBlock {
+  id: string;
+  start: string; // ISO
+  end: string; // ISO
+  reason: string | null;
+}
+export interface ScheduleDay {
+  date: string; // "YYYY-MM-DD" (local)
+  appointments: ScheduleAppointment[];
+  blocks: ScheduleBlock[];
+}
+
+function localDateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * The clinic's schedule over [startDate, startDate + days). `startDate` is a
+ * local "YYYY-MM-DD"; days is clamped to [1, 42] (a month view is at most six
+ * weeks). Reuses the same clinic-doctor resolution as the overview.
+ */
+export async function getClinicSchedule(
+  clinicId: string,
+  ownerUserId: string,
+  startDate: string,
+  days: number
+): Promise<ScheduleDay[]> {
+  const dayCount = Math.min(Math.max(Math.trunc(days) || 7, 1), 42);
+
+  const rangeStart = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(rangeStart.getTime())) {
+    throw new ScheduleInputError("start must be a valid YYYY-MM-DD date.");
+  }
+  rangeStart.setHours(0, 0, 0, 0);
+  const rangeEnd = new Date(rangeStart);
+  rangeEnd.setDate(rangeEnd.getDate() + dayCount);
+
+  // BRD-043 US-104 (P0): never silently substitute a wrong doctor's time
+  // blocks. Ambiguity degrades to "no doctor blocks shown" (same as the
+  // pre-existing "no doctor at all" branch below), not a guess.
+  let doctor;
+  try {
+    doctor = await resolveClinicDoctor(clinicId, ownerUserId);
+  } catch (error) {
+    if (!(error instanceof AmbiguousDoctorError)) throw error;
+    logger.warn("clinic_schedule.ambiguous_doctor", { clinicId });
+    doctor = null;
+  }
+
+  const [appts, blocks] = await Promise.all([
+    prisma.appointment.findMany({
+      where: { clinic_id: clinicId, scheduled_time: { gte: rangeStart, lt: rangeEnd } },
+      select: {
+        id: true,
+        scheduled_time: true,
+        status: true,
+        walk_in: true,
+        patient: { select: { full_name: true } },
+        // M3A C3: 1:N link. The board shows one representative status per visit;
+        // latest invoice wins (identical to the old single-invoice behaviour).
+        invoices: { select: { status: true }, orderBy: { created_at: "desc" }, take: 1 },
+      },
+      orderBy: { scheduled_time: "asc" },
+    }),
+    doctor
+      ? prisma.doctorTimeBlock.findMany({
+          where: { doctor_id: doctor.id, end_at: { gt: rangeStart }, start_at: { lt: rangeEnd } },
+          orderBy: { start_at: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const daysArr: ScheduleDay[] = [];
+  for (let i = 0; i < dayCount; i++) {
+    const d = new Date(rangeStart);
+    d.setDate(d.getDate() + i);
+    daysArr.push({ date: localDateKey(d), appointments: [], blocks: [] });
+  }
+  const byDate = new Map(daysArr.map((d) => [d.date, d]));
+
+  // C2: label plan-session appointments "Title (Session n/N)".
+  const apptIds = appts.map((a) => a.id);
+  const planSessions = apptIds.length
+    ? await prisma.treatmentPlanSession.findMany({
+        where: { appointment_id: { in: apptIds } },
+        select: { appointment_id: true, sequence: true, plan: { select: { title: true, sessions_planned: true } } },
+      })
+    : [];
+  const planLabelByAppt = new Map(planSessions.map((s) => [s.appointment_id!, `${s.plan.title} (Session ${s.sequence}/${s.plan.sessions_planned})`]));
+
+  for (const a of appts) {
+    const day = byDate.get(localDateKey(a.scheduled_time));
+    if (!day) continue;
+    day.appointments.push({
+      id: a.id,
+      time: a.scheduled_time.toISOString(),
+      patient_name: a.patient?.full_name ?? "Patient",
+      status: a.status,
+      walk_in: a.walk_in,
+      invoice_status: a.invoices[0]?.status ?? null,
+      plan_label: planLabelByAppt.get(a.id) ?? null,
+    });
+  }
+
+  // A block is attached to the day it starts (a full-day holiday is a single
+  // day; multi-day blocks — rare — show on their start day for now).
+  for (const b of blocks) {
+    const day = byDate.get(localDateKey(b.start_at));
+    if (day) day.blocks.push({ id: b.id, start: b.start_at.toISOString(), end: b.end_at.toISOString(), reason: b.reason });
+  }
+
+  return daysArr;
+}

@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import {
+  AlertTriangle,
+  Banknote,
   Building2,
+  Check,
   ClipboardList,
   Droplets,
   FlaskConical,
@@ -11,6 +14,7 @@ import {
   Loader2,
   MessageSquareText,
   Play,
+  ShieldCheck,
   Stethoscope,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,10 +34,13 @@ import {
   formatRelative,
   formatTime,
   getInitials,
+  parseMedicines,
   parseVitals,
 } from "@/shared/queue";
 import AppointmentDrawer from "@/components/shared/appointment-drawer";
 import PrescriptionEditor from "@/components/doctor/prescription-editor";
+import { ServicesCaptureView, useServiceCapture } from "@/components/shared/service-capture";
+import { TreatmentPlanCreate } from "@/components/shared/treatment-plan/treatment-plan";
 
 function ageFromDob(dob: string | null): number | null {
   if (!dob) return null;
@@ -45,6 +52,8 @@ interface ConsultWorkbenchProps {
   doctorId: string;
   recentMedicines: string[];
   updating: boolean;
+  nextPatient?: Appointment | null;
+  onSelectNext?: (id: string) => void;
   onUpdateStatus: (appointment: Appointment, next: AppointmentStatus) => void;
   onSaveClinical: (
     appointment: Appointment,
@@ -58,27 +67,35 @@ export default function ConsultWorkbench({
   doctorId,
   recentMedicines,
   updating,
+  nextPatient,
+  onSelectNext,
   onUpdateStatus,
   onSaveClinical,
 }: ConsultWorkbenchProps) {
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [isEditingUnlocked, setIsEditingUnlocked] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsEditingUnlocked(false);
+  }, [appointment?.id]);
 
   if (!appointment) {
     return (
-      <main className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl border bg-muted/50">
-          <Stethoscope className="size-6 text-muted-foreground" />
+      <main className="flex min-w-0 flex-1 flex-col items-center justify-center gap-3 text-center p-6">
+        <div className="flex size-14 items-center justify-center rounded-2xl border bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50">
+          <Check className="size-7" />
         </div>
         <div>
-          <p className="text-sm font-medium">No patient selected</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Select a patient from the queue to open their consultation.
+          <h2 className="text-base font-bold">Queue Complete!</h2>
+          <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+            All patient consultations for today have been completed. Select a patient from the queue rail if you need to view or edit a completed record.
           </p>
         </div>
       </main>
     );
   }
 
+  const isLocked = appointment.status === "completed" && !isEditingUnlocked;
   const meta = STATUS_META[appointment.status];
   const age = ageFromDob(appointment.patient.date_of_birth ?? null);
 
@@ -129,16 +146,31 @@ export default function ConsultWorkbench({
             </Button>
           )}
           {appointment.status === "in_consultation" && (
-            <p className="text-sm text-muted-foreground">Consultation in progress</p>
+            <p className="text-sm text-muted-foreground font-medium">Consultation in progress</p>
           )}
           {appointment.status === "completed" && (
-            <p className="text-sm text-muted-foreground">Consultation completed</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <Check className="size-3.5" /> Consultation completed
+              </span>
+              {nextPatient && (
+                <Button size="sm" className="gap-1 font-semibold" onClick={() => onSelectNext?.(nextPatient.id)}>
+                  Call Next: {nextPatient.patient.full_name} →
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
 
+      {/* PKG-3 sub-header: progress stepper + read-only clinical safety */}
+      <div className="space-y-3 border-b px-6 py-3.5">
+        <ConsultStepper appointment={appointment} />
+        <ClinicalSafety patient={appointment.patient} vitals={parseVitals(appointment.vitals_json)} />
+      </div>
+
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="space-y-5 px-6 py-5">
+        <div className="space-y-5 px-6 py-5 pb-24">
           <dl className="grid grid-cols-4 divide-x rounded-xl border bg-card">
             <DetailCell
               icon={Droplets}
@@ -158,6 +190,7 @@ export default function ConsultWorkbench({
           <IntakeSection
             key={`intake-${appointment.id}`}
             appointment={appointment}
+            disabled={isLocked}
             onSave={(patch) => onSaveClinical(appointment, patch, { silent: true })}
           />
 
@@ -165,7 +198,24 @@ export default function ConsultWorkbench({
             key={`lab-${appointment.id}`}
             appointment={appointment}
             doctorId={doctorId}
+            disabled={isLocked}
           />
+
+          {appointment.status === "in_consultation" && (
+            <VisitServicesSection key={`svc-${appointment.id}`} appointmentId={appointment.id} />
+          )}
+
+          {appointment.status === "in_consultation" && (
+            <section className="rounded-xl border bg-card">
+              <header className="flex items-center gap-2 border-b px-4 py-3">
+                <Banknote className="size-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Treatment Plan</h2>
+              </header>
+              <div className="px-4 py-3">
+                <TreatmentPlanCreate appointmentId={appointment.id} patientId={appointment.patient.id} doctorId={doctorId} />
+              </div>
+            </section>
+          )}
 
           <PrescriptionEditor
             key={`rx-${appointment.id}`}
@@ -173,11 +223,17 @@ export default function ConsultWorkbench({
             doctorId={doctorId}
             recentMedicines={recentMedicines}
             updating={updating}
+            disabled={isLocked}
+            onUnlock={() => {
+              setIsEditingUnlocked(true);
+              toast.info("Record unlocked for revision.", {
+                description: "Any changes will be saved and recorded to audit history.",
+              });
+            }}
             onSaveDraft={(patch) => onSaveClinical(appointment, patch, { silent: true })}
             onSignComplete={async (patch) => {
               await onSaveClinical(appointment, patch);
               onUpdateStatus(appointment, "completed");
-              toast.success(`Consultation signed & completed for ${appointment.patient.full_name}`);
             }}
           />
         </div>
@@ -188,12 +244,179 @@ export default function ConsultWorkbench({
   );
 }
 
+// M3B B1b — the Services section on the /doctor surface, in the doctor-surface
+// section chrome but with the SAME shared capture body as /clinic (parity).
+function VisitServicesSection({ appointmentId }: { appointmentId: string }) {
+  const capture = useServiceCapture(appointmentId);
+  return (
+    <section className="rounded-xl border bg-card">
+      <header className="flex items-center gap-2 border-b px-4 py-3">
+        <Banknote className="size-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold">Clinical Services</h2>
+      </header>
+      <div className="px-4 py-3">
+        <ServicesCaptureView capture={capture} />
+      </div>
+    </section>
+  );
+}
+
+// PKG-3 progress stepper — derived purely from what's been recorded on the
+// appointment (no inference): arrival → consultation captured → prescription →
+// complete. Presentation of existing state, not a new workflow.
+function ConsultStepper({ appointment }: { appointment: Appointment }) {
+  const arrived = appointment.status !== "scheduled";
+  const consultDone = Boolean(
+    appointment.chief_complaint?.trim() ||
+      appointment.history_notes?.trim() ||
+      appointment.diagnosis?.trim() ||
+      appointment.prescription_notes?.trim()
+  );
+  const rxDone = parseMedicines(appointment.prescription_medicines_json).some((m) => m.name.trim());
+  const completed = appointment.status === "completed";
+
+  const steps = [
+    { label: "Patient ready", done: arrived, active: !arrived },
+    { label: "Consultation", done: consultDone, active: arrived && !consultDone },
+    { label: "Prescription", done: rxDone, active: consultDone && !rxDone },
+    { label: "Complete", done: completed, active: consultDone && rxDone && !completed },
+  ];
+
+  return (
+    <ol className="flex items-center gap-1">
+      {steps.map((step, i) => (
+        <li key={step.label} className="flex flex-1 items-center gap-2">
+          <span
+            className={cn(
+              "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums",
+              step.done
+                ? "bg-primary text-primary-foreground"
+                : step.active
+                  ? "border-2 border-primary text-primary"
+                  : "border border-border text-muted-foreground"
+            )}
+          >
+            {step.done ? <Check className="size-3" strokeWidth={3} /> : i + 1}
+          </span>
+          <span
+            className={cn(
+              "whitespace-nowrap text-[12px] font-medium",
+              step.done || step.active ? "text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {step.label}
+          </span>
+          {i < steps.length - 1 && (
+            <span className={cn("h-px flex-1", step.done ? "bg-primary/40" : "bg-border")} />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// PKG-3 clinical safety — factual, read-only summary of what's already on the
+// record (allergies, chronic conditions, recorded vitals outside the standard
+// reference range). No AI, no recommendation. The AI "Suggested protocol" card
+// from the prototype is deferred (Category-C — see RELEASE-CANDIDATE.md).
+function abnormalVitals(vitals: ReturnType<typeof parseVitals>): string[] {
+  if (!vitals) return [];
+  const flags: string[] = [];
+  const bp = vitals.bp?.trim();
+  if (bp) {
+    const m = bp.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+    if (m) {
+      const sys = Number(m[1]);
+      const dia = Number(m[2]);
+      if (sys >= 140 || dia >= 90) flags.push(`BP ${bp} · above range`);
+      else if (sys < 90 || dia < 60) flags.push(`BP ${bp} · below range`);
+    }
+  }
+  const pulse = parseInt(vitals.pulse ?? "", 10);
+  if (!Number.isNaN(pulse)) {
+    if (pulse > 100) flags.push(`Pulse ${pulse} · above range`);
+    else if (pulse < 50) flags.push(`Pulse ${pulse} · below range`);
+  }
+  const temp = parseFloat(vitals.temp ?? "");
+  if (!Number.isNaN(temp) && temp >= 100.4) flags.push(`Temp ${vitals.temp} · fever range`);
+  const spo2 = parseInt(vitals.spo2 ?? "", 10);
+  if (!Number.isNaN(spo2) && spo2 < 94) flags.push(`SpO₂ ${spo2}% · below range`);
+  return flags;
+}
+
+function SafetyChip({
+  tone,
+  icon: Icon,
+  children,
+}: {
+  tone: "crit" | "warn" | "ok";
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+        tone === "crit" && "border-destructive/30 bg-destructive/10 text-destructive",
+        tone === "warn" && "border-honey-soft bg-honey-tint text-honey-deep",
+        tone === "ok" && "border-success/30 bg-success/10 text-success"
+      )}
+    >
+      <Icon className="size-3" />
+      {children}
+    </span>
+  );
+}
+
+function ClinicalSafety({
+  patient,
+  vitals,
+}: {
+  patient: Appointment["patient"];
+  vitals: ReturnType<typeof parseVitals>;
+}) {
+  const allergies = (patient.allergies ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const chronic = (patient.chronic_conditions ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const vitalFlags = abnormalVitals(vitals);
+  const hasAny = allergies.length + chronic.length + vitalFlags.length > 0;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="mr-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+        Clinical safety
+      </span>
+      {allergies.map((a) => (
+        <SafetyChip key={`al-${a}`} tone="crit" icon={AlertTriangle}>
+          Allergy: {a}
+        </SafetyChip>
+      ))}
+      {chronic.map((c) => (
+        <SafetyChip key={`ch-${c}`} tone="warn" icon={HeartPulse}>
+          {c}
+        </SafetyChip>
+      ))}
+      {vitalFlags.map((v) => (
+        <SafetyChip key={`vt-${v}`} tone="crit" icon={AlertTriangle}>
+          {v}
+        </SafetyChip>
+      ))}
+      {!hasAny && (
+        <SafetyChip tone="ok" icon={ShieldCheck}>
+          No alerts on file
+        </SafetyChip>
+      )}
+    </div>
+  );
+}
+
 function IntakeSection({
   appointment,
   onSave,
+  disabled,
 }: {
   appointment: Appointment;
   onSave: (patch: Record<string, string | null>) => Promise<void>;
+  disabled?: boolean;
 }) {
   const [chiefComplaint, setChiefComplaint] = React.useState(appointment.chief_complaint ?? "");
   const [history, setHistory] = React.useState(appointment.history_notes ?? "");
@@ -206,6 +429,7 @@ function IntakeSection({
       skipRef.current = false;
       return;
     }
+    if (disabled) return;
     const timeout = setTimeout(() => {
       onSave({
         chief_complaint: chiefComplaint,
@@ -215,7 +439,7 @@ function IntakeSection({
     }, 800);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chiefComplaint, history, vitals]);
+  }, [chiefComplaint, history, vitals, disabled]);
 
   return (
     <section className="rounded-xl border bg-card">
@@ -228,6 +452,7 @@ function IntakeSection({
           <Label htmlFor="chief-complaint">Chief complaint</Label>
           <Textarea
             id="chief-complaint"
+            disabled={disabled}
             value={chiefComplaint}
             onChange={(e) => setChiefComplaint(e.target.value)}
             placeholder="What the patient came in for, in their own words…"
@@ -238,6 +463,7 @@ function IntakeSection({
           <Label htmlFor="history">History</Label>
           <Textarea
             id="history"
+            disabled={disabled}
             value={history}
             onChange={(e) => setHistory(e.target.value)}
             placeholder="Relevant medical / surgical / family history…"
@@ -251,11 +477,11 @@ function IntakeSection({
           <Label className="text-[12px]">Vitals</Label>
         </div>
         <div className="grid grid-cols-5 gap-2">
-          <VitalInput label="BP" placeholder="120/80" value={vitals.bp} onChange={(v) => setVitals((s) => ({ ...s, bp: v }))} />
-          <VitalInput label="Pulse" placeholder="72 bpm" value={vitals.pulse} onChange={(v) => setVitals((s) => ({ ...s, pulse: v }))} />
-          <VitalInput label="Temp" placeholder="98.6°F" value={vitals.temp} onChange={(v) => setVitals((s) => ({ ...s, temp: v }))} />
-          <VitalInput label="SpO2" placeholder="98%" value={vitals.spo2} onChange={(v) => setVitals((s) => ({ ...s, spo2: v }))} />
-          <VitalInput label="Weight" placeholder="70 kg" value={vitals.weight} onChange={(v) => setVitals((s) => ({ ...s, weight: v }))} />
+          <VitalInput label="BP" placeholder="120/80" disabled={disabled} value={vitals.bp} onChange={(v) => setVitals((s) => ({ ...s, bp: v }))} />
+          <VitalInput label="Pulse" placeholder="72 bpm" disabled={disabled} value={vitals.pulse} onChange={(v) => setVitals((s) => ({ ...s, pulse: v }))} />
+          <VitalInput label="Temp" placeholder="98.6°F" disabled={disabled} value={vitals.temp} onChange={(v) => setVitals((s) => ({ ...s, temp: v }))} />
+          <VitalInput label="SpO2" placeholder="98%" disabled={disabled} value={vitals.spo2} onChange={(v) => setVitals((s) => ({ ...s, spo2: v }))} />
+          <VitalInput label="Weight" placeholder="70 kg" disabled={disabled} value={vitals.weight} onChange={(v) => setVitals((s) => ({ ...s, weight: v }))} />
         </div>
       </div>
     </section>
@@ -266,17 +492,19 @@ function VitalInput({
   label,
   placeholder,
   value,
+  disabled,
   onChange,
 }: {
   label: string;
   placeholder: string;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-1">
       <Label className="text-[10px] text-muted-foreground uppercase">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-8 bg-background text-[12.5px]" />
+      <Input disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-8 bg-background text-[12.5px]" />
     </div>
   );
 }
@@ -295,9 +523,11 @@ interface WorkbenchLabOrder {
 function LabOrdersSection({
   appointment,
   doctorId,
+  disabled,
 }: {
   appointment: Appointment;
   doctorId: string;
+  disabled?: boolean;
 }) {
   const [orders, setOrders] = React.useState<WorkbenchLabOrder[] | null>(null);
   const [testInput, setTestInput] = React.useState("");
@@ -317,6 +547,7 @@ function LabOrdersSection({
   }, [load]);
 
   const placeOrder = async () => {
+    if (disabled) return;
     const tests = testInput
       .split(",")
       .map((t) => t.trim())
@@ -420,6 +651,7 @@ function LabOrdersSection({
           <Label htmlFor="lab-tests">Order tests</Label>
           <Input
             id="lab-tests"
+            disabled={disabled}
             value={testInput}
             onChange={(e) => setTestInput(e.target.value)}
             placeholder="CBC, CRP, HbA1c…"
@@ -430,13 +662,14 @@ function LabOrdersSection({
           <Label htmlFor="lab-note">Clinical note</Label>
           <Input
             id="lab-note"
+            disabled={disabled}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Why (shown to the lab)"
             className="bg-background text-[13px]"
           />
         </div>
-        <Button disabled={placing} onClick={placeOrder}>
+        <Button disabled={placing || disabled} onClick={placeOrder}>
           {placing ? <Loader2 className="animate-spin" /> : <FlaskConical />}
           Order
         </Button>

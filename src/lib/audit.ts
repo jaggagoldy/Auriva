@@ -18,6 +18,7 @@
 
 import prisma from "@/lib/prisma";
 import { logger } from "@/api/logger";
+import { isSuperAdmin } from "@/domain/authorization";
 
 export async function recordAudit(input: {
   organizationId: string | null | undefined;
@@ -56,7 +57,7 @@ export async function resolveOrganizationIdForStaffUser(
   userId: string,
   role: string
 ): Promise<string | null> {
-  if (role === "super_admin") {
+  if (isSuperAdmin(role)) {
     const organization = await prisma.organization.findFirst({
       where: { owner_user_id: userId },
       orderBy: { name: "asc" },
@@ -64,7 +65,10 @@ export async function resolveOrganizationIdForStaffUser(
     });
     return organization?.id ?? null;
   }
-  const staffProfile = await prisma.staffProfile.findUnique({
+  // Batch B: a person may hold several memberships (one per clinic). This
+  // resolves the org for an audit tag at login, before any workspace is chosen,
+  // so any of their memberships' org is acceptable — findFirst, not findUnique.
+  const staffProfile = await prisma.staffProfile.findFirst({
     where: { user_id: userId },
     select: { clinic: { select: { organization_id: true } } },
   });

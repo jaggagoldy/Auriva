@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { HeartPulse, Loader2, Search, Star } from "lucide-react";
+import { EmptyState } from "@/components/ui/states";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -85,11 +86,13 @@ export default function DoctorPatients() {
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <p className="text-sm font-medium">No patients found</p>
-          <p className="text-xs text-muted-foreground">
-            {patients.length === 0 ? "You haven't seen any patients yet." : "Nothing matches your search."}
-          </p>
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={HeartPulse}
+            title="No patients found"
+            description={patients.length === 0 ? "You haven't seen any patients yet." : "Nothing matches your search."}
+            className="border-0"
+          />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto p-4">
@@ -126,7 +129,7 @@ export default function DoctorPatients() {
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Star className="size-3.5" />
-            Favourites, high-risk and follow-up-due filters are coming soon.
+            Advanced patient filters will be available in a future release.
           </div>
         </div>
       )}

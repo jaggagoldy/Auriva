@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auriva Experience 2.0 — Unified Clinic Cockpit</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Outfit (headings) & Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            primary: '#073D34',      // Forest Pine
+            secondary: '#FAF9F5',    // Warm Paper Ground
+            accent: '#0C4A41',       // Pine Tint
+            honey: {
+              soft: '#FEF3C7',       // Soft Honey Tint
+              DEFAULT: '#D97706',    // Amber Honey
+              deep: '#4A3413',       // Dark Honey Text
+            },
+            ink: '#1C201E',          // Deep Charcoal Ink
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FAF9F5;
+      color: #1C201E;
+    }
+    .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Ambient double-shadow Stripe/Linear style */
+    .premium-card {
+      background: #ffffff;
+      border: 1px solid rgba(229, 231, 235, 0.8);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(28, 32, 30, 0.03);
+      border-radius: 12px;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #D1D5DB;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-6 shrink-0 z-10">
+    <div class="flex items-center gap-6">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12h3l2-6 4 12 2-6h4" />
+          </svg>
+        </span>
+        <span class="font-heading text-lg font-bold tracking-tight text-primary">Auriva</span>
+        <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 ml-1">v2.0</span>
+      </div>
+      
+      <!-- Organization / Clinic Selectors -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-gray-400">/</span>
+        <button class="flex items-center gap-1 text-xs font-semibold hover:bg-gray-50 px-2.5 py-1.5 rounded-md border border-gray-100 transition">
+          <span>Aegis Family Clinic</span>
+          <svg class="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="text-right">
+        <p class="text-xs font-medium">Dr. Sarah Smith</p>
+        <p class="text-[10px] text-gray-500 font-semibold uppercase">Managing Doctor</p>
+      </div>
+      <div class="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20">
+        SS
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Split -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="w-56 border-r border-gray-200 bg-white flex flex-col justify-between p-4 shrink-0">
+      <div class="space-y-6">
+        <!-- TODAY Section -->
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 px-2">Today</p>
+          <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-lg border border-primary/5">
+              <span>🎟️</span>
+              <span>Queue</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>📅</span>
+              <span>Calendar</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>👥</span>
+              <span>Patients</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>🥼</span>
+              <span>Doctors</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- DEPARTMENTS Section -->
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 px-2">Departments</p>
+          <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>🛎️</span>
+              <span>Reception</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>💳</span>
+              <span>Billing</span>
+            </a>
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>📈</span>
+              <span>Reports</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- CONFIGURATION Section -->
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 px-2">Configuration</p>
+          <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
+              <span>⚙️</span>
+              <span>Settings</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Live Roster Card -->
+      <div class="p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+        <p class="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-2">Duty Roster</p>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-gray-700">Dr. S. Smith</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-green-100 text-green-800">OPD</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-gray-700">Dr. E. Patel</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-green-100 text-green-800">OPD</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-gray-700">Nina Torres</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">Front</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 flex overflow-hidden">
+      
+      <!-- Middle Panel: Today's Token Queue (Front-Desk) -->
+      <section class="w-80 border-r border-gray-200 bg-white flex flex-col overflow-hidden shrink-0">
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <div>
+            <h2 class="font-heading font-bold text-gray-900">Today's Queue</h2>
+            <span class="text-[10px] text-primary font-bold uppercase tracking-wider bg-primary/5 px-2 py-0.5 rounded">Token Mode Active</span>
+          </div>
+          <button class="h-7 px-2.5 bg-primary text-white font-medium text-xs rounded-md shadow-sm hover:bg-primary/95 flex items-center gap-1.5 transition">
+            <span>+</span>
+            <span>Walk-in</span>
+          </button>
+        </div>
+        
+        <!-- Queue List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+          
+          <!-- Token #12 (In Consultation) -->
+          <div class="p-3 border-2 border-primary bg-primary/[0.02] rounded-xl flex flex-col gap-2 relative">
+            <span class="absolute top-2.5 right-3 px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-bold uppercase">Active</span>
+            <div class="flex items-center gap-2">
+              <span class="font-heading text-lg font-bold text-primary">#12</span>
+              <div>
+                <p class="text-xs font-semibold text-ink">Priya Sharma</p>
+                <p class="text-[10px] text-gray-500">OPD Consultation · Dr. Patel</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between border-t border-primary/10 pt-2 text-[10px]">
+              <span class="text-gray-400">Pre-Consult Fee: <strong class="text-green-700 font-semibold">Paid</strong></span>
+              <span class="text-gray-400">Elapsed: <strong>8 mins</strong></span>
+            </div>
+          </div>
+
+          <!-- Token #13 (Waiting) -->
+          <div class="p-3 border border-gray-200 hover:border-gray-300 bg-white rounded-xl flex flex-col gap-2 transition cursor-pointer">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-heading text-lg font-bold text-gray-500">#13</span>
+                <div>
+                  <p class="text-xs font-semibold text-ink">Aarav Patel</p>
+                  <p class="text-[10px] text-gray-500">Follow-up · Dr. Smith</p>
+                </div>
+              </div>
+              <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 text-[9px] font-bold uppercase">Waiting</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-gray-100 pt-2 text-[10px]">
+              <span class="text-gray-400">Pre-Consult Fee: <strong class="text-green-700 font-semibold">Paid</strong></span>
+              <span class="text-gray-400">Checked-In: <strong>09:30 AM</strong></span>
+            </div>
+          </div>
+
+          <!-- Token #14 (Checked In - Payment Pending) -->
+          <div class="p-3 border border-amber-200 bg-amber-50/20 hover:border-amber-300 rounded-xl flex flex-col gap-2 transition cursor-pointer">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-heading text-lg font-bold text-amber-700">#14</span>
+                <div>
+                  <p class="text-xs font-semibold text-ink">Nina Gupta</p>
+                  <p class="text-[10px] text-gray-500">Consultation · Dr. Patel</p>
+                </div>
+              </div>
+              <span class="px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-100 text-[9px] font-bold uppercase">Unpaid</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-amber-100 pt-2 text-[10px] gap-2">
+              <span class="text-gray-500 font-medium">Pending: <strong>₹500</strong></span>
+              <button class="h-5 px-2 bg-amber-600 text-white rounded text-[9px] font-semibold hover:bg-amber-700 flex items-center gap-0.5">
+                <span>Collect</span>
+              </button>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- Center & Right Panel: Unified EMR Workbench + Billing Actions -->
+      <section class="flex-1 flex overflow-hidden bg-secondary">
+        
+        <!-- Clinical EMR Workbench Column -->
+        <div class="flex-1 flex flex-col overflow-hidden p-6 gap-6">
+          
+          <!-- Patient Summary Header Card -->
+          <div class="premium-card p-4 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4">
+              <div class="h-12 w-12 rounded-xl bg-primary text-white font-heading text-lg font-bold flex items-center justify-center">
+                #12
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h1 class="font-heading font-bold text-lg text-ink">Priya Sharma</h1>
+                  <span class="text-xs text-gray-500">28 years · Female · O+ Positive</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px] text-gray-500">
+                  <span class="font-semibold text-primary">ID: AUR-98317</span>
+                  <span>·</span>
+                  <span>Allergies: <strong class="text-red-600 font-semibold">Penicillin</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="h-8 px-3 border border-gray-200 text-gray-600 font-medium text-xs rounded-md bg-white hover:bg-gray-50 transition flex items-center gap-1.5">
+                <span>📁</span>
+                <span>Past History</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Main SOAP Workbench Grid -->
+          <div class="flex-1 grid grid-cols-5 gap-6 overflow-hidden">
+            
+            <!-- SOAP Inputs Form Panel -->
+            <div class="col-span-3 premium-card p-5 flex flex-col gap-4 overflow-hidden">
+              <div class="flex items-center justify-between border-b border-gray-100 pb-2 shrink-0">
+                <h3 class="font-heading font-bold text-gray-900">Clinical Consultation Notes</h3>
+                <div class="flex items-center gap-1.5">
+                  <button class="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">SOAP Mode</button>
+                  <button class="text-[10px] font-semibold text-gray-500 hover:bg-gray-50 px-2 py-0.5 rounded">Free Text</button>
+                </div>
+              </div>
+              
+              <!-- SOAP fields scroll area -->
+              <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                
+                <!-- Vitals Entry Group -->
+                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200/60 flex items-center justify-between gap-4">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] uppercase font-bold text-gray-400">Blood Pressure</span>
+                    <input type="text" value="120/80" class="w-16 bg-transparent border-b border-gray-300 focus:border-primary text-xs font-bold text-ink outline-none" />
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] uppercase font-bold text-gray-400">Heart Rate</span>
+                    <input type="text" value="78 bpm" class="w-14 bg-transparent border-b border-gray-300 focus:border-primary text-xs font-bold text-ink outline-none" />
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] uppercase font-bold text-gray-400">Temperature</span>
+                    <input type="text" value="98.6 °F" class="w-16 bg-transparent border-b border-gray-300 focus:border-primary text-xs font-bold text-ink outline-none" />
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] uppercase font-bold text-gray-400">SpO2</span>
+                    <input type="text" value="99%" class="w-12 bg-transparent border-b border-gray-300 focus:border-primary text-xs font-bold text-ink outline-none" />
+                  </div>
+                </div>
+
+                <!-- Subjective -->
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">S: Subjective (Chief Complaint)</label>
+                  <textarea placeholder="e.g. Throat pain for 3 days, dry cough..." class="w-full h-16 p-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none">Severe throat irritation for 3 days. Difficulty swallowing solids. Low-grade fever yesterday evening.</textarea>
+                </div>
+
+                <!-- Objective -->
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">O: Objective (Examination Findings)</label>
+                  <textarea placeholder="e.g. Throat congested, lungs clear..." class="w-full h-16 p-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none">Erythema on pharyngeal walls. Bilateral tonsillar hypertrophy (2+), no visible exudates yet. Tender anterior cervical lymph nodes.</textarea>
+                </div>
+
+                <!-- Assessment -->
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">A: Assessment (Diagnosis)</label>
+                  <div class="flex flex-wrap gap-1.5 mb-1.5">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
+                      <span>Pharyngitis</span>
+                      <button class="hover:text-red-700">×</button>
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
+                      <span>Tonsillitis</span>
+                      <button class="hover:text-red-700">×</button>
+                    </span>
+                  </div>
+                  <input type="text" placeholder="Add diagnosis tag..." class="w-full p-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none" />
+                </div>
+
+                <!-- Plan -->
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">P: Plan (Instructions & Follow-up)</label>
+                  <textarea placeholder="e.g. Warm gargles, follow up in 3 days..." class="w-full h-16 p-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none">Drink warm fluids. Warm water saline gargles 3-4 times a day. Follow up if fever spikes above 101F.</textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- E-Prescription & Recommendations Panel -->
+            <div class="col-span-2 flex flex-col gap-6 overflow-hidden">
+              
+              <!-- Structured Prescription Builder -->
+              <div class="flex-1 premium-card p-4 flex flex-col gap-3 overflow-hidden">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-1.5 shrink-0">
+                  <h3 class="font-heading font-bold text-gray-900">Prescription (Rx)</h3>
+                  <button class="text-[10px] text-primary font-bold hover:underline">Apply Template</button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                  <!-- Medicine Item 1 -->
+                  <div class="p-2 border border-gray-100 bg-gray-50/50 rounded-lg flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-semibold">Tab. Amoxicillin 500mg</span>
+                      <button class="text-gray-400 hover:text-red-500 text-xs">×</button>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-gray-500">
+                      <span>Frequency: <strong>1-0-1 (BID)</strong></span>
+                      <span>Duration: <strong>5 Days</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Medicine Item 2 -->
+                  <div class="p-2 border border-gray-100 bg-gray-50/50 rounded-lg flex flex-col gap-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-semibold">Tab. Paracetamol 650mg</span>
+                      <button class="text-gray-400 hover:text-red-500 text-xs">×</button>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-gray-500">
+                      <span>Frequency: <strong>1-0-1 (PRN)</strong></span>
+                      <span>Duration: <strong>3 Days</strong></span>
+                    </div>
+                  </div>
+                </div>
+                
+                <button class="w-full h-8 border border-dashed border-gray-300 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 transition flex items-center justify-center gap-1">
+                  <span>+</span>
+                  <span>Add Medicine</span>
+                </button>
+              </div>
+
+              <!-- Diagnostic / Procedure Recommendations -->
+              <div class="h-44 premium-card p-4 flex flex-col gap-3 shrink-0">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-1.5">
+                  <h3 class="font-heading font-bold text-gray-900">Referrals & Procedures</h3>
+                </div>
+                <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+                  <label class="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input type="checkbox" checked class="rounded border-gray-300 text-primary focus:ring-primary size-3.5" />
+                    <span>CBC Test (Complete Blood Count)</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input type="checkbox" checked class="rounded border-gray-300 text-primary focus:ring-primary size-3.5" />
+                    <span>Throat Swab Culture (Diagnostics)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Consultation Workbench bottom buttons -->
+          <div class="flex items-center justify-between shrink-0">
+            <span class="text-[10px] text-gray-400">EMR compliance verification: <strong class="text-green-700">Satisfied</strong></span>
+            <div class="flex items-center gap-2">
+              <button class="h-9 px-4 border border-gray-200 text-gray-600 font-medium text-xs rounded-md bg-white hover:bg-gray-50 transition">
+                Draft
+              </button>
+              <button class="h-9 px-5 bg-primary text-white font-semibold text-xs rounded-md shadow hover:bg-primary/95 transition">
+                Sign &amp; Complete (Token #12)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Panel: Checkout Desk & Payments -->
+        <aside class="w-72 border-l border-gray-200 bg-white flex flex-col overflow-hidden shrink-0">
+          <div class="p-4 border-b border-gray-100 shrink-0">
+            <h2 class="font-heading font-bold text-gray-900">Billing &amp; Payments</h2>
+            <p class="text-[10px] text-gray-400">Billing agent desk: Nina Torres</p>
+          </div>
+
+          <!-- Billing Items Scroll Area -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+            
+            <!-- In-Flight Consultation Bill Summary -->
+            <div class="space-y-3">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Current Cart Items</p>
+              
+              <div class="space-y-2">
+                <!-- Consultation Fee Item -->
+                <div class="flex items-center justify-between text-xs bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                  <div>
+                    <p class="font-medium">OPD Consultation</p>
+                    <p class="text-[10px] text-gray-500">Dr. Sarah Smith</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold">₹500</p>
+                    <span class="inline-block text-[9px] font-semibold text-green-700 bg-green-50 border border-green-100 px-1 rounded">Paid</span>
+                  </div>
+                </div>
+
+                <!-- Diagnostics Item -->
+                <div class="flex items-center justify-between text-xs bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                  <div>
+                    <p class="font-medium">CBC Lab Referral</p>
+                    <p class="text-[10px] text-gray-500">Aegis Diagnostics</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold">₹450</p>
+                    <span class="inline-block text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-1 rounded">Unpaid</span>
+                  </div>
+                </div>
+
+                <!-- Procedure Item -->
+                <div class="flex items-center justify-between text-xs bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                  <div>
+                    <p class="font-medium">Throat Swab Culture</p>
+                    <p class="text-[10px] text-gray-500">Laboratory test</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold">₹350</p>
+                    <span class="inline-block text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-1 rounded">Unpaid</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ledger/Taxes -->
+            <div class="border-t border-gray-100 pt-3 space-y-1.5 text-xs text-gray-500">
+              <div class="flex justify-between">
+                <span>Subtotal</span>
+                <span>₹1,300</span>
+              </div>
+              <div class="flex justify-between">
+                <span>CGST (2.5%)</span>
+                <span>₹32.50</span>
+              </div>
+              <div class="flex justify-between">
+                <span>SGST (2.5%)</span>
+                <span>₹32.50</span>
+              </div>
+              <div class="flex justify-between font-bold text-gray-900 border-t border-gray-100 pt-2 text-sm">
+                <span>Total Amount</span>
+                <span>₹1,365</span>
+              </div>
+            </div>
+            
+            <!-- UPI QR Code Placeholder -->
+            <div class="p-3 bg-gray-50 rounded-xl border border-gray-200/80 flex flex-col items-center gap-2">
+              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">UPI QR Code Scanner</p>
+              <div class="h-32 w-32 bg-white border border-gray-300 rounded-lg flex items-center justify-center p-2">
+                <!-- QR Code placeholder vector graphic -->
+                <svg viewBox="0 0 100 100" class="h-full w-full text-primary">
+                  <path fill="currentColor" d="M10,10 h30 v30 h-30 z M15,15 h20 v20 h-20 z M10,60 h30 v30 h-30 z M15,65 h20 v20 h-20 z M60,10 h30 v30 h-30 z M65,15 h20 v20 h-20 z M20,20 h10 v10 h-10 z M20,70 h10 v10 h-10 z M70,20 h10 v10 h-10 z M50,50 h10 v10 h-10 z M60,60 h10 v10 h-10 z M70,70 h15 v15 h-15 z M80,60 h10 v10 h-10 z M50,70 h10 v20 h-10 z" />
+                </svg>
+              </div>
+              <p class="text-[9px] text-gray-500 font-medium">Scan to pay ₹1,365 directly</p>
+            </div>
+
+          </div>
+
+          <!-- Checkout Action Bottom Bar -->
+          <div class="p-4 border-t border-gray-100 space-y-2 shrink-0">
+            <button class="w-full h-9 bg-honey text-white font-bold text-xs rounded-md shadow hover:bg-honey/95 transition flex items-center justify-center gap-1">
+              <span>💳</span>
+              <span>Collect ₹1,365</span>
+            </button>
+            <button class="w-full h-8 border border-gray-200 text-gray-500 font-medium text-[10px] rounded hover:bg-gray-50 transition flex items-center justify-center gap-1">
+              <span>🖨️</span>
+              <span>Print Thermal Receipt</span>
+            </button>
+          </div>
+        </aside>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+</html>

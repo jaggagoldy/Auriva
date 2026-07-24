@@ -36,6 +36,13 @@ export interface Appointment {
   prescription_medicines_json: string | null;
   follow_up_date: string | null;
   events?: AppointmentEvent[];
+  // Milestone 1 (1.2/1.6/4.4) — reception board context, computed server-side from
+  // billing/appointment data (display only). Optional: only the reception queue
+  // payload populates them.
+  is_returning?: boolean;
+  patient_outstanding_balance?: number;
+  invoice_balance?: number;
+  last_visit_at?: string | null;
   patient: {
     id: string;
     full_name: string;
@@ -171,8 +178,9 @@ export const STATUS_META: Record<
   },
   waiting: {
     label: "Waiting",
-    dot: "bg-[#D97706]",
-    badge: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] dark:bg-[#D97706]/15 dark:text-[#FBBF24] dark:border-[#D97706]/30",
+    // Honey — the warm accent from the PKG design system (--honey / --honey-deep).
+    dot: "bg-honey",
+    badge: "bg-honey-tint text-honey-deep border border-honey-soft",
   },
   skipped: {
     label: "Skipped",
@@ -233,6 +241,11 @@ export function formatTime(date: string | Date): string {
 
 export function formatDay(date: string | Date): string {
   return dayFormat.format(new Date(date));
+}
+
+/** Indian-rupee amount, e.g. ₹1,200. Shared so board/peek/Desk never drift. */
+export function formatINR(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN")}`;
 }
 
 export function isToday(date: string | Date): boolean {

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { badRequest, mapDomainError, ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { assignStaffDepartment } from '@/services/department-service';
 import { setStaffActive, setStaffCapabilities } from '@/services/onboarding-service';
 import { WORKSPACE_CAPABILITIES, type Capability } from '@/domain/authorization';
@@ -15,7 +15,7 @@ export async function PATCH(
 ) {
   try {
     const { id, staffId } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const text = await request.text();

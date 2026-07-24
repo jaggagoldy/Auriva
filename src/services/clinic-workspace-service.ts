@@ -7,6 +7,8 @@
 
 import prisma from "@/lib/prisma";
 import { billingDaySummary } from "@/services/billing-service";
+import { AmbiguousDoctorError, resolveClinicDoctor } from "@/services/doctor-resolution";
+import { logger } from "@/api/logger";
 
 export interface ReadyStep {
   key: string;
@@ -43,17 +45,28 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
       accepting_bookings: true,
       booking_shared_at: true,
       // Batch 6: surfaces the Demo Mode banner + one-click Reset in /clinic.
-      organization: { select: { is_demo: true } },
+      // BRD-043 Sprint 2: organization id is also needed for the Team/invite
+      // flow (invitations are org-scoped: /api/organizations/[id]/...).
+      organization: { select: { id: true, is_demo: true, plan: true } },
     },
   });
   if (!clinic) return null;
 
   // The solo owner's own doctor profile (their bookable identity + profile
-  // fields). Fall back to any doctor of the clinic so the booking link still
-  // resolves if the owner isn't the practitioner.
-  const ownerProfile =
-    (await prisma.staffProfile.findFirst({ where: { user_id: ownerUserId, clinic_id: clinicId } })) ??
-    (await prisma.staffProfile.findFirst({ where: { clinic_id: clinicId } }));
+  // fields), or the clinic's one unambiguous doctor if the owner isn't the
+  // practitioner. BRD-043 US-104 (P0): a clinic with 2+ doctors and no
+  // caller-owned profile has no correct guess here — degrade to "no default
+  // booking identity yet" (null) rather than silently picking one; Sprint 3's
+  // Adaptive Dashboard is where an Owner explicitly sees all doctors instead
+  // of this single-identity shortcut.
+  let ownerProfile;
+  try {
+    ownerProfile = await resolveClinicDoctor(clinicId, ownerUserId);
+  } catch (error) {
+    if (!(error instanceof AmbiguousDoctorError)) throw error;
+    logger.warn("clinic_overview.ambiguous_doctor", { clinicId });
+    ownerProfile = null;
+  }
 
   const [activeTreatments, appointmentCount, paymentCount] = await Promise.all([
     prisma.service.count({ where: { clinic_id: clinicId, is_active: true } }),
@@ -96,6 +109,9 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
       accepting_bookings: clinic.accepting_bookings,
       is_demo: clinic.organization.is_demo,
     },
+    // BRD-043 Sprint 2: org id + plan for the Team/invite flow.
+    organizationId: clinic.organization.id,
+    plan: clinic.organization.plan,
     doctorId: ownerProfile?.id ?? null,
     bookingPath: ownerProfile ? `/book/${ownerProfile.id}` : null,
     ready: { steps, completed, total: steps.length, percent, nextStep, goal },
@@ -121,26 +137,57 @@ export async function markBookingShared(clinicId: string) {
  * name for the greeting). No charts/KPIs, just what to do next. Local calendar
  * day, not UTC — matches getBookableSlots' timezone handling.
  */
-export async function getTodayAppointments(clinicId: string, ownerUserId?: string) {
+export type ScheduleScope = "today" | "upcoming" | "all";
+
+const APPOINTMENT_LIST_SELECT = {
+  id: true,
+  scheduled_time: true,
+  status: true,
+  queue_number: true,
+  walk_in: true,
+  notes: true, // visit reason — shown under the "next patient" hero
+  follow_up_source_appointment_id: true,
+  patient: { select: { id: true, full_name: true } },
+  // M3A C3: dropped a dead `invoice` select (nothing read it; the money summary
+  // comes from billingDaySummary). Also no longer type-resolves under 1:N.
+} as const;
+
+export async function getTodayAppointments(
+  clinicId: string,
+  ownerUserId?: string,
+  scope: ScheduleScope = "today",
+) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
+  const now = new Date();
 
-  const [appointments, money, owner] = await Promise.all([
+  // The displayed list follows the scope; the hero summary (seen/remaining/
+  // money) is always about *today*, so it's computed from a separate today
+  // query regardless of which tab is showing.
+  const listWhere =
+    scope === "today"
+      ? { clinic_id: clinicId, scheduled_time: { gte: start, lt: end } }
+      : scope === "upcoming"
+        ? { clinic_id: clinicId, scheduled_time: { gte: now }, status: { notIn: ["completed", "cancelled", "no_show"] } }
+        : { clinic_id: clinicId };
+
+  const [list, todaySummaryRows, futureCount, money, owner] = await Promise.all([
+    prisma.appointment.findMany({
+      where: listWhere,
+      orderBy: { scheduled_time: scope === "all" ? "desc" : "asc" },
+      take: scope === "all" ? 200 : undefined,
+      select: APPOINTMENT_LIST_SELECT,
+    }),
     prisma.appointment.findMany({
       where: { clinic_id: clinicId, scheduled_time: { gte: start, lt: end } },
-      orderBy: { scheduled_time: "asc" },
-      select: {
-        id: true,
-        scheduled_time: true,
-        status: true,
-        queue_number: true,
-        walk_in: true,
-        notes: true, // visit reason — shown under the "next patient" hero
-        follow_up_source_appointment_id: true,
-        patient: { select: { id: true, full_name: true } },
-      },
+      select: { status: true, follow_up_source_appointment_id: true },
+    }),
+    // Appointments on a future day (tomorrow onward) still to happen — powers
+    // the "no one today, but N upcoming" hint so the empty state never lies.
+    prisma.appointment.count({
+      where: { clinic_id: clinicId, scheduled_time: { gte: end }, status: { notIn: ["completed", "cancelled", "no_show"] } },
     }),
     billingDaySummary(clinicId),
     ownerUserId
@@ -148,15 +195,18 @@ export async function getTodayAppointments(clinicId: string, ownerUserId?: strin
       : Promise.resolve(null),
   ]);
 
-  const completed = appointments.filter((a) => a.status === "completed").length;
-  const followUps = appointments.filter((a) => a.follow_up_source_appointment_id != null).length;
+  const total = todaySummaryRows.length;
+  const completed = todaySummaryRows.filter((a) => a.status === "completed").length;
+  const followUps = todaySummaryRows.filter((a) => a.follow_up_source_appointment_id != null).length;
 
   return {
-    appointments,
-    total: appointments.length,
+    scope,
+    appointments: list,
+    total,
     completed,
-    remaining: appointments.length - completed,
+    remaining: total - completed,
     follow_ups: followUps,
+    upcoming_count: futureCount,
     collected_today: money.collected_today,
     outstanding_total: money.outstanding_total,
     owner_name: owner?.full_name ?? null,

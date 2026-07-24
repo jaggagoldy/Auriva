@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ok, serverError } from '@/api/http';
 import { requireOrganizationContext } from '@/api/session';
-import { canAccessAdminPortal } from '@/domain/authorization';
+import { canAdministerOrganization } from '@/domain/authorization';
 import { getOrganization, updateOrganization } from '@/services/organization-service';
 
 // GET/PATCH the organization's own profile (Sprint 3) — name, address,
@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     return ok(await getOrganization(auth.organizationId));
@@ -28,7 +28,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const auth = await requireOrganizationContext(canAccessAdminPortal, id);
+    const auth = await requireOrganizationContext(canAdministerOrganization, id);
     if (!auth.ok) return auth.response;
 
     const body = await request.json();

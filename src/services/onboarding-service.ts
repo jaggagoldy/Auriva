@@ -7,11 +7,19 @@
 // carry the org-level role ("owner" | "doctor" | "receptionist").
 
 import { randomBytes } from "crypto";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
-import { isOrgArchetype, memberRoleFromSpecialty, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
+import { isOrgArchetype, ORG_ARCHETYPES, type OrgArchetype } from "@/domain/organization";
 import { type Capability } from "@/domain/authorization";
+import { checkSeatAvailability, type SeatUsage } from "@/domain/subscription";
 import { publishEvent } from "@/lib/events";
+import { logger } from "@/api/logger";
+
+// BRD-043 US-102 (Sprint 1): the invitation acceptance window. See
+// docs/brd-043-governance-addendum.md §2 for the migration/backfill this
+// pairs with.
+const INVITATION_EXPIRY_MS = 72 * 60 * 60 * 1000;
 
 // Batch 2 (Adaptive Workspace): the capabilities an owner may GRANT to a staff
 // member through staff management. Deliberately excludes `admin_portal` (that
@@ -23,6 +31,17 @@ export const GRANTABLE_CAPABILITIES: Capability[] = ["reception", "doctor_worksp
 export class EmailInUseError extends Error {}
 export class InvitationNotFoundError extends Error {}
 export class InvitationNotPendingError extends Error {}
+// BRD-043 US-102 (Sprint 1): distinct from InvitationNotPendingError (that
+// one covers already-accepted/revoked) — this is specifically the 72h
+// window lapsing on an otherwise-still-pending row.
+export class InvitationExpiredError extends Error {}
+// BRD-043 US-205 (Sprint 2): server-side belt-and-suspenders for the inline
+// duplicate-phone UI check — an active member cannot be invited again even
+// via a direct API call that bypasses the form.
+export class DuplicateActiveMemberError extends Error {}
+// BRD-043 US-503 (Sprint 2): the plan's seat ceiling is reached — enforced
+// server-side, computed live, never bypassable from the client.
+export class SeatLimitReachedError extends Error {}
 export class OnboardingInputError extends Error {}
 // DATA-2/3: distinct from OnboardingInputError's 400-shaped cases — a
 // duplicate clinic name within the same organization is a 409-shaped
@@ -182,27 +201,131 @@ export async function createClinic(input: {
   });
 }
 
-/** Owner invites a staff member (WF-23/24). Returns the pending invitation. */
+/** Digits-only form of a phone number, for tolerant comparison in the UI's
+ * inline check. Storage/matching against User.phone_number stays exact
+ * (consistent with login/quick-setup), so this is used only where the
+ * prototype itself compares on digits. */
+function phoneDigits(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
+/**
+ * BRD-043 US-503 (Sprint 2): live seat usage for a clinic — computed, never
+ * cached. The OWNER never consumes a seat (excluded by user_id), so a solo
+ * clinic whose owner is also the practising doctor still reads 0 doctor
+ * seats used until a *second*, invited doctor joins — matching the frozen
+ * "Solo = owner + 1 doctor + 1 receptionist" edition and the prototype's
+ * "2/2" indicator. Non-owner members are classified doctor-vs-receptionist
+ * by `specialty` (reliable here precisely because the owner — the one
+ * profile that can lack a specialty — is excluded). Pending, unexpired
+ * invitations count toward their role so the cap can't be out-invited.
+ * Suspended/archived members (membership_status != 'active') are excluded.
+ */
+async function seatUsage(
+  db: Prisma.TransactionClient | typeof prisma,
+  clinicId: string,
+  ownerUserId: string
+): Promise<SeatUsage> {
+  const [doctorMembers, receptionistMembers, pending] = await Promise.all([
+    db.staffProfile.count({
+      where: { clinic_id: clinicId, membership_status: "active", user_id: { not: ownerUserId }, specialty: { not: null } },
+    }),
+    db.staffProfile.count({
+      where: { clinic_id: clinicId, membership_status: "active", user_id: { not: ownerUserId }, specialty: null },
+    }),
+    db.invitation.findMany({
+      where: { clinic_id: clinicId, status: "pending" },
+      select: { role: true, expires_at: true },
+    }),
+  ]);
+  const now = Date.now();
+  const live = pending.filter((i) => !i.expires_at || i.expires_at.getTime() > now);
+  return {
+    doctors: doctorMembers + live.filter((i) => i.role === "doctor").length,
+    receptionists: receptionistMembers + live.filter((i) => i.role === "receptionist").length,
+  };
+}
+
+/**
+ * BRD-043 US-202 (Sprint 2): the inline duplicate-phone check behind the
+ * invite form's live validation. Read-only, cheap. Returns which of the
+ * prototype's three states applies to a phone number for this org.
+ */
+export async function checkInvitePhone(
+  organizationId: string,
+  phone: string
+): Promise<{ status: "available" | "invited" | "active" }> {
+  const trimmed = phone?.trim();
+  if (!trimmed || phoneDigits(trimmed).length < 7) return { status: "available" };
+
+  const existingUser = await prisma.user.findFirst({
+    where: { phone_number: trimmed },
+    include: {
+      memberships: { where: { organization_id: organizationId } },
+      staffProfiles: { select: { membership_status: true } },
+    },
+  });
+  if (existingUser && existingUser.memberships.length > 0) {
+    const sp = existingUser.staffProfiles[0];
+    if (!sp || sp.membership_status === "active") return { status: "active" };
+  }
+
+  const pending = await prisma.invitation.findFirst({
+    where: { organization_id: organizationId, phone: trimmed, status: "pending" },
+    select: { expires_at: true },
+  });
+  if (pending && (!pending.expires_at || pending.expires_at.getTime() > Date.now())) {
+    return { status: "invited" };
+  }
+  return { status: "available" };
+}
+
+/**
+ * Owner invites a staff member (WF-23/24). Phone-first (BRD-043 / ADR-003:
+ * WhatsApp/copy-link delivery), with the legacy email path kept for the
+ * pre-existing /admin multi-clinic flow. The seat count (US-503) and the
+ * invitation insert run in ONE transaction so two concurrent invites can't
+ * both slip past the cap; the event is published only after commit.
+ */
 export async function createInvitation(input: {
   organizationId: string;
   clinicId: string;
-  email: string;
+  email?: string | null;
+  phone?: string | null;
   fullName: string;
   role: string;
   specialty?: string | null;
   actorUserId?: string | null;
 }) {
-  const email = input.email?.trim().toLowerCase();
   const fullName = input.fullName?.trim();
+  const email = input.email?.trim().toLowerCase() || null;
+  const phone = input.phone?.trim() || null;
 
   if (!fullName || fullName.length < 2) {
     throw new OnboardingInputError("A full name is required.");
   }
-  if (!email || !EMAIL_PATTERN.test(email)) {
-    throw new OnboardingInputError("A valid email is required.");
-  }
   if (!isInviteRole(input.role)) {
     throw new OnboardingInputError("Role must be doctor or receptionist.");
+  }
+  // Captured after the guard so the narrowed role survives into the
+  // transaction closure below (property narrowing on input.role doesn't).
+  const role: InviteRole = input.role;
+  if (!phone && !email) {
+    throw new OnboardingInputError("A mobile number is required.");
+  }
+  if (email && !EMAIL_PATTERN.test(email)) {
+    throw new OnboardingInputError("A valid email is required.");
+  }
+  if (phone && phoneDigits(phone).length < 7) {
+    throw new OnboardingInputError("A valid mobile number is required.");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: input.organizationId },
+    select: { owner_user_id: true, plan: true },
+  });
+  if (!organization) {
+    throw new OnboardingInputError("Organization not found.");
   }
 
   const clinic = await prisma.clinic.findFirst({
@@ -212,31 +335,64 @@ export async function createInvitation(input: {
     throw new OnboardingInputError("That clinic does not belong to this organization.");
   }
 
-  // Already a member of this org?
+  // US-205: reject re-inviting someone who is already an ACTIVE member of the
+  // org (server-side, independent of the inline UI check). Matches identity
+  // exactly, the same convention login/quick-setup use.
   const existingUser = await prisma.user.findFirst({
-    where: { email },
-    include: { memberships: { where: { organization_id: input.organizationId } } },
+    where: phone ? { phone_number: phone } : { email: email! },
+    include: {
+      memberships: { where: { organization_id: input.organizationId } },
+      staffProfiles: { select: { membership_status: true } },
+    },
   });
   if (existingUser && existingUser.memberships.length > 0) {
-    throw new EmailInUseError("This person is already a member of the organization.");
+    const sp = existingUser.staffProfiles[0];
+    if (!sp || sp.membership_status === "active") {
+      throw new DuplicateActiveMemberError("This person is already an active member of your team.");
+    }
+    // A suspended/archived former member CAN be re-invited (re-onboarding) —
+    // fall through.
   }
 
-  // Supersede any prior pending invite for the same email + org.
-  await prisma.invitation.updateMany({
-    where: { organization_id: input.organizationId, email, status: "pending" },
-    data: { status: "revoked" },
-  });
+  const invitation = await prisma.$transaction(async (tx) => {
+    // Supersede any prior pending invite for the same identity + org, so
+    // resending doesn't double-count that person against the seat cap below.
+    await tx.invitation.updateMany({
+      where: {
+        organization_id: input.organizationId,
+        status: "pending",
+        ...(phone ? { phone } : { email: email! }),
+      },
+      data: { status: "revoked" },
+    });
 
-  const invitation = await prisma.invitation.create({
-    data: {
-      organization_id: input.organizationId,
-      clinic_id: input.clinicId,
-      email,
-      full_name: fullName,
-      role: input.role,
-      specialty: input.role === "doctor" ? (input.specialty?.trim() || null) : null,
-      token: randomBytes(24).toString("hex"),
-    },
+    // US-503: computed inside the transaction, after the supersede, so the
+    // count reflects exactly what will exist post-commit.
+    const usage = await seatUsage(tx, input.clinicId, organization.owner_user_id);
+    const decision = checkSeatAvailability(organization.plan, role, usage);
+    if (!decision.allowed) {
+      logger.warn("seat.limit_exceeded", {
+        organizationId: input.organizationId,
+        currentPlan: organization.plan,
+        seatCount: usage.doctors + usage.receptionists,
+      });
+      throw new SeatLimitReachedError(decision.reason ?? "Your plan's team limit has been reached.");
+    }
+
+    return tx.invitation.create({
+      data: {
+        organization_id: input.organizationId,
+        clinic_id: input.clinicId,
+        email,
+        phone,
+        full_name: fullName,
+        role,
+        specialty: role === "doctor" ? (input.specialty?.trim() || null) : null,
+        token: randomBytes(24).toString("hex"),
+        // US-102: resending always starts a fresh 72h window.
+        expires_at: new Date(Date.now() + INVITATION_EXPIRY_MS),
+      },
+    });
   });
 
   await publishEvent({
@@ -245,10 +401,28 @@ export async function createInvitation(input: {
     entityId: invitation.id,
     correlationId: invitation.id,
     actorId: input.actorUserId,
-    payload: { invitationId: invitation.id, email: invitation.email, role: invitation.role },
+    payload: { invitationId: invitation.id, role: invitation.role },
   });
+  logger.info("invite.created", { organizationId: input.organizationId, invitationId: invitation.id, role: invitation.role });
 
   return invitation;
+}
+
+/**
+ * Lazy expiry check (US-102) — no scheduled job; a stale pending invitation
+ * is only ever discovered the next time it's read or an accept is attempted.
+ * Marks the row 'expired' the first time this is detected (idempotent —
+ * status is 'pending' at most once) so listPendingInvitations stops showing
+ * it without needing its own filter, and throws so the caller can't proceed.
+ * A null `expires_at` (rows that predate this field with no backfilled
+ * value) is treated as "no expiry enforced," never as expired.
+ */
+async function assertInvitationLive(invitation: { id: string; status: string; expires_at: Date | null }) {
+  if (invitation.status !== "pending") return;
+  if (!invitation.expires_at || invitation.expires_at.getTime() > Date.now()) return;
+  await prisma.invitation.update({ where: { id: invitation.id }, data: { status: "expired" } });
+  logger.warn("invite.expired", { invitationId: invitation.id });
+  throw new InvitationExpiredError("This invitation has expired.");
 }
 
 export function listPendingInvitations(organizationId: string) {
@@ -276,6 +450,7 @@ export async function getInvitationByToken(token: string) {
     include: { organization: { select: { id: true, name: true, address: true } } },
   });
   if (!invitation) throw new InvitationNotFoundError("This invitation link is invalid.");
+  await assertInvitationLive(invitation);
   return invitation;
 }
 
@@ -291,11 +466,23 @@ export async function acceptInvitation(input: { token: string; password: string 
 
   const invitation = await prisma.invitation.findUnique({ where: { token: input.token } });
   if (!invitation) throw new InvitationNotFoundError("This invitation link is invalid.");
+  // US-102: server-checked regardless of what the acceptance page showed
+  // when it was first opened — throws InvitationExpiredError if lapsed.
+  await assertInvitationLive(invitation);
   if (invitation.status !== "pending") {
     throw new InvitationNotPendingError("This invitation has already been used or revoked.");
   }
-  if (await prisma.user.findFirst({ where: { email: invitation.email } })) {
-    throw new EmailInUseError("An account with this email already exists — please sign in.");
+  // Identity uniqueness: a phone-based invite must not collide with an
+  // existing account's phone (the login identity); an email-based (legacy
+  // /admin) invite checks email as before.
+  if (invitation.phone) {
+    if (await prisma.user.findFirst({ where: { phone_number: invitation.phone } })) {
+      throw new EmailInUseError("An account with this mobile number already exists — please sign in.");
+    }
+  } else if (invitation.email) {
+    if (await prisma.user.findFirst({ where: { email: invitation.email } })) {
+      throw new EmailInUseError("An account with this email already exists — please sign in.");
+    }
   }
 
   const password_hash = await hashPassword(input.password);
@@ -307,7 +494,9 @@ export async function acceptInvitation(input: { token: string; password: string 
         role,
         email: invitation.email,
         password_hash,
-        phone_number: `staff:${randomBytes(8).toString("hex")}`,
+        // Phone-based invite → the invited mobile IS the login identity.
+        // Legacy email invite → a synthetic phone (they sign in by email).
+        phone_number: invitation.phone ?? `staff:${randomBytes(8).toString("hex")}`,
       },
     });
 
@@ -324,9 +513,9 @@ export async function acceptInvitation(input: { token: string; password: string 
       data: {
         organization_id: invitation.organization_id,
         user_id: user.id,
-        // Trust the invite's role; keep it consistent with the heuristic for
-        // doctors (specialty ⇒ doctor) as a defensive default.
-        role: role === "doctor" ? "doctor" : memberRoleFromSpecialty(invitation.specialty),
+        // D4: the invite already carries an explicit role — store it directly,
+        // no specialty inference.
+        role,
       },
     });
 
@@ -345,7 +534,133 @@ export async function acceptInvitation(input: { token: string; password: string 
     });
 
     return { user, invitation: accepted };
+  }).then((result) => {
+    logger.info("invite.accepted", { organizationId: invitation.organization_id, invitationId: invitation.id, role: invitation.role });
+    return result;
   });
+}
+
+export interface ProvisionResult {
+  user: { id: string; phone_number: string; role: string; full_name: string };
+  /** The one-time temporary password — returned ONCE for the owner to relay. */
+  temporaryPassword: string;
+}
+
+/**
+ * Managed provisioning (APS-044 §9 / ERA-001 C5): an Organization creates a
+ * staff account DIRECTLY, rather than sending an invite link. The account is
+ * created with a TEMPORARY password + must_change_password=true; the owner
+ * relays the temp password out-of-band (no SMS — ADR-003). On first sign-in the
+ * member is forced to set their own (Milestone A1: credential-service +
+ * requireStaffContext gate). Same seat (US-503) + identity guards as
+ * createInvitation, in one transaction; the event is published after commit.
+ *
+ * A provisioned member is immediately ACTIVE (no accept step), so
+ * membership_status defaults to "active" and they count toward the seat cap at
+ * once — computed inside the transaction so concurrent provisions can't both
+ * slip past the ceiling.
+ */
+export async function provisionStaff(input: {
+  organizationId: string;
+  clinicId: string;
+  fullName: string;
+  phone: string;
+  role: string;
+  specialty?: string | null;
+  actorUserId?: string | null;
+}): Promise<ProvisionResult> {
+  const fullName = input.fullName?.trim();
+  const phone = input.phone?.trim();
+
+  if (!fullName || fullName.length < 2) {
+    throw new OnboardingInputError("A full name is required.");
+  }
+  if (!isInviteRole(input.role)) {
+    throw new OnboardingInputError("Role must be doctor or receptionist.");
+  }
+  const role: InviteRole = input.role;
+  if (!phone || phoneDigits(phone).length < 7) {
+    throw new OnboardingInputError("A valid mobile number is required.");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: input.organizationId },
+    select: { owner_user_id: true, plan: true },
+  });
+  if (!organization) throw new OnboardingInputError("Organization not found.");
+
+  const clinic = await prisma.clinic.findFirst({
+    where: { id: input.clinicId, organization_id: input.organizationId },
+  });
+  if (!clinic) throw new OnboardingInputError("That clinic does not belong to this organization.");
+
+  // The provisioned mobile IS the login identity — it must be free (same
+  // phone-uniqueness invariant login/quick-setup/accept-invitation rely on).
+  if (await prisma.user.findFirst({ where: { phone_number: phone } })) {
+    throw new DuplicateActiveMemberError("An account with this mobile number already exists.");
+  }
+
+  // A readable one-time temporary password (>= the 8-char staff floor) the
+  // owner relays; replaced on first sign-in.
+  const temporaryPassword = randomBytes(9).toString("base64url"); // ~12 chars
+  const password_hash = await hashPassword(temporaryPassword);
+
+  const user = await prisma.$transaction(async (tx) => {
+    const usage = await seatUsage(tx, input.clinicId, organization.owner_user_id);
+    const decision = checkSeatAvailability(organization.plan, role, usage);
+    if (!decision.allowed) {
+      logger.warn("seat.limit_exceeded", {
+        organizationId: input.organizationId,
+        currentPlan: organization.plan,
+        seatCount: usage.doctors + usage.receptionists,
+      });
+      throw new SeatLimitReachedError(decision.reason ?? "Your plan's team limit has been reached.");
+    }
+
+    const created = await tx.user.create({
+      data: {
+        role,
+        phone_number: phone,
+        password_hash,
+        must_change_password: true,
+      },
+    });
+    await tx.staffProfile.create({
+      data: {
+        user_id: created.id,
+        clinic_id: input.clinicId,
+        full_name: fullName,
+        specialty: role === "doctor" ? input.specialty?.trim() || null : null,
+      },
+    });
+    await tx.organizationMember.create({
+      data: { organization_id: input.organizationId, user_id: created.id, role },
+    });
+    await tx.auditLog.create({
+      data: {
+        organization_id: input.organizationId,
+        actor_user_id: input.actorUserId ?? null,
+        action: "staff_provisioned",
+        detail: `${fullName} (${role}) provisioned`,
+      },
+    });
+    return created;
+  });
+
+  await publishEvent({
+    eventType: "staff.provisioned",
+    organizationId: input.organizationId,
+    entityId: user.id,
+    correlationId: user.id,
+    actorId: input.actorUserId,
+    payload: { userId: user.id, role },
+  });
+  logger.info("staff.provisioned", { organizationId: input.organizationId, userId: user.id, role });
+
+  return {
+    user: { id: user.id, phone_number: user.phone_number, role: user.role, full_name: fullName },
+    temporaryPassword,
+  };
 }
 
 /**

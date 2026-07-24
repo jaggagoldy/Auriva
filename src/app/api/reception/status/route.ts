@@ -4,18 +4,19 @@ import { badRequest, mapDomainError, notFound, ok, serverError } from '@/api/htt
 import { requireStaffContext } from '@/api/session';
 import { transitionStatus } from '@/services/appointment-service';
 import { setPriority } from '@/services/queue-service';
+import { reassignDoctor } from '@/services/reception-service';
 import { isAppointmentStatus } from '@/domain/appointment-status';
 
-// Also accepts a `priority`-only body (no `status`) to persist drag-and-drop
-// queue reordering — a pure ordering change, not a state transition, so it
-// doesn't go through transitionStatus().
+// Also accepts a `priority`-only body (drag-and-drop reorder) or a `doctor_id`-
+// only body (Milestone 2 · 3.4 reassignment) — both field updates, not state
+// transitions, so neither goes through transitionStatus().
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { appointment_id, status, clinic_id, note, priority } = body;
+    const { appointment_id, status, clinic_id, note, priority, doctor_id } = body;
 
-    if (!appointment_id || (status === undefined && priority === undefined)) {
-      return badRequest('appointment_id and either status or priority are required.');
+    if (!appointment_id || (status === undefined && priority === undefined && doctor_id === undefined)) {
+      return badRequest('appointment_id and one of status, priority, or doctor_id are required.');
     }
     if (status !== undefined && !isAppointmentStatus(status)) {
       return badRequest('status must be a valid appointment status.');
@@ -40,7 +41,12 @@ export async function PATCH(request: NextRequest) {
       return ok(updated);
     }
 
-    const updated = await setPriority(appointment_id, auth.clinicId, Number(priority));
+    if (doctor_id !== undefined) {
+      const reassigned = await reassignDoctor(appointment_id, String(doctor_id), auth.clinicId, auth.session.userId);
+      return ok(reassigned);
+    }
+
+    const updated = await setPriority(appointment_id, auth.clinicId, Number(priority), auth.session.userId);
     return ok(updated);
   } catch (error) {
     return mapDomainError(error) ?? serverError('Error updating reception status', error);

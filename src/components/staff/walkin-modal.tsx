@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DoctorOption } from "@/components/staff/doctor-filter";
+import DoctorPicker from "@/components/shared/doctor-picker";
 
 interface WalkInModalProps {
   clinicId: string;
@@ -91,7 +92,9 @@ export default function WalkInModal({
     if (next) {
       setStep("search");
       setResults([]);
-      setForm(EMPTY_STATE);
+      // M2 · 4.3 — a single-doctor clinic pre-selects the doctor so reception
+      // never has to touch the picker; keyboard-first from here.
+      setForm(doctors.length === 1 ? { ...EMPTY_STATE, doctorId: doctors[0].id } : EMPTY_STATE);
     }
   };
 
@@ -223,6 +226,12 @@ export default function WalkInModal({
                   id="search-phone"
                   value={form.searchPhone}
                   onChange={(e) => patch({ searchPhone: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runSearch();
+                    }
+                  }}
                   placeholder="+1 555-019-9999"
                   autoFocus
                 />
@@ -233,6 +242,12 @@ export default function WalkInModal({
                   id="search-name"
                   value={form.searchName}
                   onChange={(e) => patch({ searchName: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      runSearch();
+                    }
+                  }}
                   placeholder="e.g. Priya Rivera"
                 />
               </div>
@@ -399,25 +414,7 @@ export default function WalkInModal({
 
             <div className="space-y-1.5">
               <Label>Doctor</Label>
-              <Select value={form.doctorId} onValueChange={(v) => patch({ doctorId: v as string })}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {form.doctorId ? (
-                      doctors.find((d) => d.id === form.doctorId)?.full_name
-                    ) : (
-                      <span className="text-muted-foreground">Select a doctor</span>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      {doctor.full_name}
-                      {doctor.specialty ? ` · ${doctor.specialty}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <DoctorPicker doctors={doctors} value={form.doctorId} onChange={(v) => patch({ doctorId: v })} />
             </div>
 
             <div className="space-y-1.5">

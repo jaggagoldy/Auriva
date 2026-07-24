@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getCurrentSession } from "@/api/session";
 import { effectiveCapabilities, hasCapability } from "@/domain/authorization";
+import { requirePasswordChanged } from "@/lib/require-password-changed";
 import DoctorShell from "@/components/doctor/doctor-shell";
+import CommandPalette from "@/components/shared/command-palette";
 
 export default async function DoctorLayout({
   children,
@@ -14,10 +16,17 @@ export default async function DoctorLayout({
   if (!session) {
     redirect("/login");
   }
+  await requirePasswordChanged(session.userId);
 
-  const staffProfile = await prisma.staffProfile.findUnique({
-    where: { user_id: session.userId },
+  // Batch B: resolve the doctor's ACTIVE membership (workspace) — the session's
+  // active_membership_id, scoped to the caller, else their single active
+  // membership.
+  const staffProfile = await prisma.staffProfile.findFirst({
+    where: session.activeMembershipId
+      ? { id: session.activeMembershipId, user_id: session.userId }
+      : { user_id: session.userId, membership_status: "active" },
     include: { clinic: { select: { id: true, name: true, address: true } } },
+    orderBy: { id: "asc" },
   });
   if (!staffProfile) {
     redirect("/login");
@@ -42,6 +51,7 @@ export default async function DoctorLayout({
       capabilities={capabilities}
     >
       {children}
+      <CommandPalette surface="doctor" />
     </DoctorShell>
   );
 }

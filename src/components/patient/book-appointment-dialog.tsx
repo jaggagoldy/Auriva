@@ -207,7 +207,7 @@ export default function BookAppointmentDialog({
                 className="w-full"
                 onClick={() => {
                   setOpen(false);
-                  router.push("/patient/care");
+                  router.push("/patient");
                 }}
               >
                 View appointment

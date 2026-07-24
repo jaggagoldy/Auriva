@@ -3,9 +3,9 @@
 import * as React from "react";
 import {
   Activity,
-  ArrowLeft,
   Banknote,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   Circle,
   Copy,
@@ -25,24 +25,40 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { ConsultationWorkbench } from "@/components/clinic/consultation-workbench";
+import { CheckoutWorkspace } from "@/components/shared/checkout/checkout-workspace";
+import { TreatmentFollowups } from "@/components/shared/treatment-plan/treatment-plan";
+import { ClinicCalendar } from "@/components/clinic/clinic-calendar";
+import { PracticeSetup } from "@/components/clinic/practice-setup";
+import { BillingPolicySettings } from "@/components/clinic/billing-policy-settings";
+import { ConsultationGateDialog } from "@/components/clinic/consultation-gate-dialog";
+import { AvailabilitySettings } from "@/components/clinic/availability-settings";
+import { TimeOffSettings } from "@/components/clinic/time-off-settings";
+import { TeamPanel } from "@/components/clinic/team-panel";
+import { DashboardView } from "@/components/clinic/dashboard-view";
+import { PlanScreen } from "@/components/clinic/plan-screen";
 
 // Milestone 1 Batch 5: the defining workflow — Today → Consultation → Payment,
 // entirely inside /clinic. Every screen answers one question and always offers
 // one obvious next action.
 
-type View = "home" | "today" | "treatments" | "payments" | "settings";
+// BRD-043 Sprint 5 (US-601): the flat "settings" view is replaced by a
+// Settings GROUP — Practice / Team / Plan.
+type View = "home" | "today" | "followups" | "calendar" | "treatments" | "payments" | "practice" | "team" | "plan";
+const SETTINGS_VIEWS: View[] = ["practice", "team", "plan"];
 type Save = "idle" | "saving" | "saved";
-type Method = "cash" | "upi" | "card";
 
 interface ReadyStep { key: string; label: string; done: boolean; }
 interface Overview {
   clinic: { id: string; name: string; phone: string | null; accepting_bookings: boolean; is_demo: boolean };
+  organizationId: string;
+  plan: string;
   doctorId: string | null;
   bookingPath: string | null;
   ready: {
@@ -57,11 +73,13 @@ interface Service {
 interface Appt {
   id: string; scheduled_time: string; status: string; walk_in: boolean; notes: string | null;
   patient: { id: string; full_name: string } | null;
+  invoice?: { status: string; total: number } | null;
 }
 interface Today {
-  appointments: Appt[]; total: number; completed: number; remaining: number;
-  follow_ups: number; collected_today: number; outstanding_total: number; owner_name: string | null;
+  scope?: Scope; appointments: Appt[]; total: number; completed: number; remaining: number;
+  follow_ups: number; upcoming_count: number; collected_today: number; outstanding_total: number; owner_name: string | null;
 }
+type Scope = "today" | "upcoming" | "all";
 interface Visit {
   step: "consult" | "pay";
   appointmentId: string; patientName: string;
@@ -69,7 +87,7 @@ interface Visit {
 }
 
 const STEP_TARGET: Record<string, View> = {
-  treatment: "treatments", patient: "today", payment: "today", share: "home", profile: "settings",
+  treatment: "treatments", patient: "today", payment: "today", share: "home", profile: "practice",
 };
 
 function SaveBadge({ state }: { state: Save }) {
@@ -83,6 +101,18 @@ export default function MyClinicWorkspace() {
   const [ov, setOv] = React.useState<Overview | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [visit, setVisit] = React.useState<Visit | null>(null);
+  const [pendingStart, setPendingStart] = React.useState<{ appointmentId: string; patientName: string } | null>(null); // M3B B4 gate
+  // BRD-043 Sprint 3: the caller's dashboard role drives the adaptive nav.
+  // Fetched from the role-shaped /api/clinic/dashboard (works for every staff
+  // role, unlike /api/clinic/overview which is reception-scoped). `null` while
+  // loading. clinicName comes from here too, so a plain Doctor (who has no
+  // owner-overview) still gets a titled shell.
+  const [role, setRole] = React.useState<string | null>(null);
+  const [clinicName, setClinicName] = React.useState<string>("My Clinic");
+  // Bumped after a visit completes so Today re-fetches (the schedule sits under
+  // the consult overlay and would otherwise show the just-seen patient as still
+  // scheduled — the "booking not marked complete" bug).
+  const [todayKey, setTodayKey] = React.useState(0);
 
   const refreshOverview = React.useCallback(() => {
     return fetch("/api/clinic/overview", { cache: "no-store" })
@@ -92,10 +122,21 @@ export default function MyClinicWorkspace() {
 
   React.useEffect(() => {
     let cancelled = false;
-    fetch("/api/clinic/overview", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) setOv(d); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    // Dashboard first (works for every staff role) → gives role + clinic name.
+    // Overview is supplementary owner/reception data (booking path, readiness)
+    // and is reception-scoped, so we only fetch it for roles that can read it —
+    // a plain Doctor would 403, so we skip it for them entirely (no stray
+    // console error).
+    (async () => {
+      const dash = await fetch("/api/clinic/dashboard", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+      if (cancelled) return;
+      if (dash) { setRole(dash.role); setClinicName(dash.clinic_name); }
+      if (dash && dash.role !== "doctor") {
+        const overview = await fetch("/api/clinic/overview", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+        if (!cancelled && overview) setOv(overview);
+      }
+      if (!cancelled) setLoading(false);
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -126,13 +167,40 @@ export default function MyClinicWorkspace() {
     } else toast.error("Couldn't update booking status.");
   }
 
-  const NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
-    { key: "home", label: "My Clinic", q: "Am I ready?", icon: <Home className="size-4" /> },
+  // BRD-043 Sprint 3 — adaptive navigation. One /clinic surface; the nav
+  // items adapt to the caller's role (no per-role routes, no workspace
+  // switching). Owner/Managing-Doctor get the full set; a Receptionist gets
+  // the front-desk subset; a Doctor gets their clinical dashboard (the richer
+  // per-view clinical tools remain future scope). "home" is the adaptive
+  // Dashboard for every role.
+  const ALL_NAV: { key: View; label: string; q: string; icon: React.ReactNode }[] = [
+    { key: "home", label: "Dashboard", q: "What needs me today?", icon: <Home className="size-4" /> },
     { key: "today", label: "Today", q: "What do I do next?", icon: <CalendarDays className="size-4" /> },
+    { key: "followups", label: "Follow-ups", q: "Who needs attention today?", icon: <Activity className="size-4" /> },
+    { key: "calendar", label: "Calendar", q: "When am I free?", icon: <CalendarRange className="size-4" /> },
     { key: "treatments", label: "Treatments", q: "What do I offer?", icon: <Stethoscope className="size-4" /> },
     { key: "payments", label: "Payments", q: "What have I collected?", icon: <Banknote className="size-4" /> },
-    { key: "settings", label: "Settings", q: "How do I run my clinic?", icon: <SettingsIcon className="size-4" /> },
   ];
+  // BRD-043 US-601: the Settings group (Practice/Team/Plan). Server-driven
+  // role scoping — a Doctor/Receptionist's role simply has none of these in
+  // their allowed set, so the whole group is OMITTED from their rendered DOM
+  // (not merely hidden), the same philosophy as the dashboard payload.
+  const SETTINGS_NAV: { key: View; label: string }[] = [
+    { key: "practice", label: "Practice" },
+    { key: "team", label: "Team" },
+    { key: "plan", label: "Plan" },
+  ];
+  const NAV_BY_ROLE: Record<string, View[]> = {
+    managing_doctor: ["home", "today", "followups", "calendar", "treatments", "payments", "practice", "team", "plan"],
+    practice_owner: ["home", "today", "followups", "calendar", "treatments", "payments", "practice", "team", "plan"],
+    receptionist: ["home", "today", "followups", "payments"],
+    doctor: ["home"],
+  };
+  const allowed = NAV_BY_ROLE[role ?? ""] ?? ["home"];
+  const NAV = ALL_NAV.filter((n) => allowed.includes(n.key));
+  const settingsNav = SETTINGS_NAV.filter((n) => allowed.includes(n.key));
+  const isOwnerRole = role === "managing_doctor" || role === "practice_owner";
+  const inSettings = SETTINGS_VIEWS.includes(view);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -158,48 +226,101 @@ export default function MyClinicWorkspace() {
         <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r bg-background p-3 sm:flex">
           <div className="flex items-center gap-2 px-2 py-3">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground"><Activity className="size-4" /></div>
-            <div className="text-sm font-semibold leading-tight">{ov?.clinic.name ?? "My Clinic"}</div>
+            <div className="text-sm font-semibold leading-tight">{ov?.clinic.name ?? clinicName}</div>
           </div>
           {NAV.map((n) => (
             <button key={n.key} onClick={() => setView(n.key)}
               className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                view === n.key ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted")}>
+                view === n.key ? "bg-honey-soft text-honey-deep" : "text-foreground hover:bg-muted")}>
               {n.icon}
               <span className="flex-1">{n.label}
                 <span className="block text-[11px] font-normal text-muted-foreground">{n.q}</span>
               </span>
-              {n.key === "home" && ov && (
+              {n.key === "home" && isOwnerRole && ov && ov.ready.percent < 100 && (
                 <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">{ov.ready.percent}%</span>
               )}
             </button>
           ))}
+          {/* US-601: Settings group — only rendered for roles that have it. */}
+          {settingsNav.length > 0 && (
+            <>
+              <div className="mt-3 flex items-center gap-2 px-2.5 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <SettingsIcon className="size-3.5" /> Settings
+              </div>
+              {settingsNav.map((n) => (
+                <button key={n.key} onClick={() => setView(n.key)}
+                  className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 pl-8 text-left text-sm font-medium transition-colors",
+                    view === n.key ? "bg-honey-soft text-honey-deep" : "text-foreground hover:bg-muted")}>
+                  {n.label}
+                </button>
+              ))}
+            </>
+          )}
         </aside>
 
-        <main className="flex-1 pb-16 sm:pb-0">
-          <Header ov={ov} onToggle={toggleAccepting} />
+        <main className="min-w-0 flex-1 pb-16 sm:pb-0">
+          <Header ov={ov} onToggle={toggleAccepting} showControls={isOwnerRole || role === "receptionist"} />
           <div className="p-5">
-            {loading ? (
+            {loading || !role ? (
               <div className="flex justify-center py-24 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+            ) : view === "home" ? (
+              // Adaptive dashboard is the home for EVERY role (self-fetches its
+              // role-shaped payload). For an owner whose clinic isn't fully set
+              // up yet, the existing Clinic-Ready onboarding checklist stacks
+              // above it — preserving the frozen solo "first successful day"
+              // flow without hiding the operational dashboard.
+              <div className="space-y-5">
+                {isOwnerRole && ov && ov.ready.percent < 100 && (
+                  <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
+                )}
+                <DashboardView goto={(v) => setView(v as View)} />
+              </div>
             ) : !ov ? (
               <Card className="p-8 text-center text-sm text-muted-foreground">Couldn&apos;t load your clinic.</Card>
-            ) : view === "home" ? (
-              <HomeView ov={ov} goto={setView} onShared={refreshOverview} />
             ) : view === "today" ? (
-              <TodayView bookingPath={ov.bookingPath} onStart={(appt, name) => setVisit({ step: "consult", appointmentId: appt, patientName: name })} />
+              <TodayView key={todayKey} bookingPath={ov.bookingPath} onBooked={refreshOverview} onStart={(appt, name) => setPendingStart({ appointmentId: appt, patientName: name })} />
+            ) : view === "followups" ? (
+              <div className="space-y-4">
+                <div><h1 className="text-xl font-semibold tracking-tight">Treatment Follow-ups</h1><p className="text-sm text-muted-foreground">Patients mid-course who need a session booked or re-booked.</p></div>
+                <TreatmentFollowups />
+              </div>
+            ) : view === "calendar" ? (
+              <ClinicCalendar doctorId={ov.doctorId} />
             ) : view === "treatments" ? (
               <TreatmentsView onChanged={refreshOverview} />
             ) : view === "payments" ? (
               <PaymentsView />
-            ) : (
-              <SettingsView ov={ov} onChanged={refreshOverview} onToggle={toggleAccepting} />
-            )}
+            ) : inSettings ? (
+              // US-601: Practice / Team / Plan under one Settings group, with a
+              // secondary tab bar (mobile-first — the sidebar shows the group on
+              // desktop, this keeps it switchable on small screens).
+              <div className="space-y-4">
+                <div className="flex gap-1 rounded-lg border bg-background p-1 sm:hidden">
+                  {settingsNav.map((n) => (
+                    <button key={n.key} onClick={() => setView(n.key)}
+                      className={cn("flex-1 rounded-md px-3 py-1.5 text-sm font-medium",
+                        view === n.key ? "bg-honey-soft text-honey-deep" : "text-muted-foreground")}>
+                      {n.label}
+                    </button>
+                  ))}
+                </div>
+                {view === "practice" ? (
+                  <PracticeView ov={ov} onChanged={refreshOverview} onToggle={toggleAccepting} />
+                ) : view === "team" ? (
+                  <TeamPanel organizationId={ov.organizationId} clinicId={ov.clinic.id} clinicName={ov.clinic.name} />
+                ) : (
+                  <PlanScreen />
+                )}
+              </div>
+            ) : null}
           </div>
         </main>
       </div>
 
       {/* B6 (Founder MVP Audit F1): /clinic had no navigation fallback below
-          `sm` — the sidebar above is sm:flex only. Same NAV/setView the
-          sidebar uses, just rendered as a fixed bottom bar on mobile. */}
+          `sm` — the sidebar above is sm:flex only. On mobile the Settings
+          group collapses to a single entry (→ Practice); the Practice/Team/
+          Plan tab bar inside the settings views handles the rest (US-601). */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background sm:hidden">
         {NAV.map((n) => (
           <button
@@ -208,41 +329,71 @@ export default function MyClinicWorkspace() {
             aria-current={view === n.key ? "page" : undefined}
             className={cn(
               "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
-              view === n.key ? "text-primary" : "text-muted-foreground"
+              view === n.key ? "text-honey-deep" : "text-muted-foreground"
             )}
           >
             {n.icon}
             {n.label}
-            {n.key === "home" && ov && ov.ready.percent < 100 && (
+            {n.key === "home" && isOwnerRole && ov && ov.ready.percent < 100 && (
               <span className="absolute top-1 right-[calc(50%-16px)] size-2 rounded-full bg-primary" />
             )}
           </button>
         ))}
+        {settingsNav.length > 0 && (
+          <button
+            onClick={() => setView("practice")}
+            aria-current={inSettings ? "page" : undefined}
+            className={cn(
+              "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
+              inSettings ? "text-honey-deep" : "text-muted-foreground"
+            )}
+          >
+            <SettingsIcon className="size-4" />
+            Settings
+          </button>
+        )}
       </nav>
+
+      {pendingStart && (
+        <ConsultationGateDialog
+          appointmentId={pendingStart.appointmentId}
+          patientName={pendingStart.patientName}
+          onProceed={() => { setVisit({ step: "consult", appointmentId: pendingStart.appointmentId, patientName: pendingStart.patientName }); setPendingStart(null); }}
+          onCancel={() => setPendingStart(null)}
+        />
+      )}
 
       {visit && (
         <VisitOverlay
           visit={visit}
+          clinicName={ov?.clinic.name ?? "My Clinic"}
           onClose={() => setVisit(null)}
           onAdvance={(v) => setVisit(v)}
-          onDone={() => { setVisit(null); setView("today"); refreshOverview(); }}
+          onDone={() => { setVisit(null); setView("today"); refreshOverview(); setTodayKey((k) => k + 1); }}
         />
       )}
     </div>
   );
 }
 
-function Header({ ov, onToggle }: { ov: Overview | null; onToggle: () => void }) {
+function Header({ ov, onToggle, showControls }: { ov: Overview | null; onToggle: () => void; showControls: boolean }) {
   const accepting = ov?.clinic.accepting_bookings ?? true;
+  // BRD-043 Sprint 3: the patient search + booking toggle are front-desk/owner
+  // controls. A plain Doctor's header shows neither (their APIs are
+  // reception-gated) — just a clean bar.
+  if (!showControls) {
+    return <header className="flex items-center gap-3 border-b bg-background px-5 py-3.5" />;
+  }
   return (
     <header className="flex items-center gap-3 border-b bg-background px-5 py-3">
-      <PatientSearch />
-      <div className="flex-1" />
+      <div className="min-w-0 flex-1 sm:max-w-xs sm:flex-none"><PatientSearch /></div>
+      <div className="hidden flex-1 sm:block" />
       <button onClick={onToggle}
-        className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
+        className={cn("flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap",
           accepting ? "border-primary/30 bg-primary/5 text-primary" : "border-destructive/30 bg-destructive/5 text-destructive")}>
-        <span className={cn("size-2 rounded-full", accepting ? "bg-primary" : "bg-destructive")} />
-        {accepting ? "Accepting bookings" : "Bookings paused"}
+        <span className={cn("size-2 shrink-0 rounded-full", accepting ? "bg-primary" : "bg-destructive")} />
+        <span className="hidden sm:inline">{accepting ? "Accepting bookings" : "Bookings paused"}</span>
+        <span className="sm:hidden">{accepting ? "Accepting" : "Paused"}</span>
       </button>
     </header>
   );
@@ -290,9 +441,9 @@ function PatientSearch() {
 function Ring({ percent }: { percent: number }) {
   return (
     <div className="grid size-20 shrink-0 place-items-center rounded-full"
-      style={{ background: `conic-gradient(var(--color-primary, #0d9488) ${percent}%, var(--color-border, #e2e8f0) 0)` }}>
-      <div className="grid place-items-center rounded-full bg-background" style={{ width: 60, height: 60 }}>
-        <span className="text-lg font-bold text-primary">{percent}%</span>
+      style={{ background: `conic-gradient(#E8A24C ${percent}%, rgba(255,255,255,.18) 0)` }}>
+      <div className="grid place-items-center rounded-full bg-[#0B4A41]" style={{ width: 60, height: 60 }}>
+        <span className="font-heading text-lg font-bold text-honey">{percent}%</span>
       </div>
     </div>
   );
@@ -319,34 +470,38 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
 
   return (
     <div className="space-y-4">
-      <Card className="p-5">
+      <Card className="relative overflow-hidden border-none bg-[#0B4A41] p-5 text-white">
+        <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 size-[220px] rounded-full" style={{ background: "radial-gradient(circle, rgba(232,162,76,.22), transparent 62%)" }} />
         {next ? (
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center gap-4">
             <Ring percent={ov.ready.percent} />
-            <div className="flex-1">
-              <h2 className="text-base font-semibold">Clinic Ready</h2>
-              <div className="mt-1 rounded-lg bg-primary/5 p-3">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next step</div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <span className="flex-1 text-sm font-medium">{next.label}</span>
-                  <Button size="sm" onClick={() => (next.key === "share" ? copyLink() : goto(STEP_TARGET[next.key]))}>Complete</Button>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold">Get your clinic ready</h2>
+              <div className="mt-2 rounded-[12px] bg-white/10 p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-honey">Next step</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="min-w-0 flex-1 text-sm font-medium">{next.label}</span>
+                  <button onClick={() => (next.key === "share" ? copyLink() : goto(STEP_TARGET[next.key]))}
+                    className="shrink-0 rounded-[10px] bg-white px-3 py-1.5 text-[13px] font-semibold text-[#083F37] transition hover:brightness-95">
+                    Complete
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="grid size-20 shrink-0 place-items-center rounded-full bg-primary/10"><Trophy className="size-8 text-primary" /></div>
-            <div className="flex-1">
-              <h2 className="text-base font-semibold">Your clinic is ready 🎉</h2>
+          <div className="relative flex items-center gap-4">
+            <div className="grid size-20 shrink-0 place-items-center rounded-full bg-honey/20"><Trophy className="size-8 text-honey" /></div>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold">Your clinic is ready 🎉</h2>
               {ov.ready.goal && (
-                <div className="mt-1 rounded-lg bg-primary/5 p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">Next goal</div>
+                <div className="mt-2 rounded-[12px] bg-white/10 p-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-honey">Next goal</div>
                   <div className="mt-0.5 text-sm font-medium">See {ov.ready.goal.target} patients</div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border">
-                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.round((ov.ready.goal.seen / ov.ready.goal.target) * 100))}%` }} />
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+                    <div className="h-full bg-honey" style={{ width: `${Math.min(100, Math.round((ov.ready.goal.seen / ov.ready.goal.target) * 100))}%` }} />
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{ov.ready.goal.seen} of {ov.ready.goal.target} seen</div>
+                  <div className="mt-1 text-xs text-white/70">{ov.ready.goal.seen} of {ov.ready.goal.target} seen</div>
                 </div>
               )}
             </div>
@@ -361,10 +516,10 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
           <div className="divide-y">
             {ov.ready.steps.map((s) => (
               <button key={s.key} onClick={() => (s.done ? undefined : s.key === "share" ? copyLink() : goto(STEP_TARGET[s.key]))}
-                className="flex w-full items-center gap-3 py-2.5 text-left">
-                {s.done ? <CheckCircle2 className="size-5 text-primary" /> : <Circle className="size-5 text-muted-foreground/40" />}
-                <span className={cn("flex-1 text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.label}</span>
-                {!s.done && <span className="text-xs font-medium text-primary">Do this →</span>}
+                className="flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:bg-muted/40">
+                {s.done ? <CheckCircle2 className="size-5 shrink-0 text-honey-deep" /> : <Circle className="size-5 shrink-0 text-muted-foreground/40" />}
+                <span className={cn("min-w-0 flex-1 text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.label}</span>
+                {!s.done && <span className="shrink-0 text-xs font-semibold text-honey-deep">Do this →</span>}
               </button>
             ))}
           </div>
@@ -372,7 +527,9 @@ function HomeView({ ov, goto, onShared }: { ov: Overview; goto: (v: View) => voi
       )}
 
       <Card className="p-5">
-        <h3 className="mb-1 text-sm font-semibold">Your booking page is live</h3>
+        <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+          <span className="inline-block size-2 rounded-full bg-success" /> Your booking page is live
+        </h3>
         <p className="mb-3 text-xs text-muted-foreground">Share it and patients book themselves.</p>
         <div className="mb-3 truncate rounded-lg border bg-muted/40 p-2.5 text-xs font-medium text-primary">{bookingUrl || "—"}</div>
         <div className="flex flex-wrap gap-2">
@@ -391,229 +548,288 @@ function greetingFor(hour: number) {
   return "Good evening";
 }
 
-function TodayView({ bookingPath, onStart }: { bookingPath: string | null; onStart: (appointmentId: string, patientName: string) => void }) {
+const SCOPES: { id: Scope; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "upcoming", label: "Upcoming" },
+  { id: "all", label: "All" },
+];
+
+function dayHeading(iso: string): string {
+  const d = new Date(iso);
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - t.getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+
+function computeDefaultWhen(): string {
+  const d = new Date(Date.now() + 15 * 60 * 1000);
+  d.setSeconds(0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function TodayView({ bookingPath, onBooked, onStart }: { bookingPath: string | null; onBooked: () => void; onStart: (appointmentId: string, patientName: string) => void }) {
   const [data, setData] = React.useState<Today | null>(null);
+  const [scope, setScope] = React.useState<Scope>("today");
   const [nextId, setNextId] = React.useState<string | null>(null);
   const [greeting, setGreeting] = React.useState("Hello");
+  // Holds the default datetime string while the Book dialog is open; null = closed.
+  const [bookingDefault, setBookingDefault] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    fetch("/api/clinic/today", { cache: "no-store" })
+  const load = React.useCallback((s: Scope) => {
+    return fetch(`/api/clinic/today?scope=${s}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: Today | null) => {
-        if (cancelled || !d) return;
+        if (!d) return;
         setData(d);
         setGreeting(greetingFor(new Date().getHours()));
-        const now = Date.now();
-        const n = d.appointments.find((a) => new Date(a.scheduled_time).getTime() >= now && a.status !== "completed");
-        setNextId(n?.id ?? null);
+        // Next patient (today's soonest active) computed here, not in render,
+        // so no impure clock read during paint.
+        if (s === "today") {
+          const now = Date.now();
+          const n = d.appointments.find((a) => new Date(a.scheduled_time).getTime() >= now && a.status !== "completed");
+          setNextId(n?.id ?? null);
+        } else {
+          setNextId(null);
+        }
       });
-    return () => { cancelled = true; };
   }, []);
+
+  React.useEffect(() => { load(scope); }, [scope, load]);
 
   if (!data) return <div className="flex justify-center py-16 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>;
 
-  const nextAppt = data.appointments.find((a) => a.id === nextId) ?? null;
+  const stale = data.scope !== scope; // fetch for the newly-selected tab in flight
+  const nextAppt = scope === "today" ? data.appointments.find((a) => a.id === nextId) ?? null : null;
+
+  // Group the list by calendar day for Upcoming/All.
+  const groups: { day: string; items: Appt[] }[] = [];
+  for (const a of data.appointments) {
+    const day = dayHeading(a.scheduled_time);
+    const g = groups[groups.length - 1];
+    if (g && g.day === day) g.items.push(a);
+    else groups.push({ day, items: [a] });
+  }
 
   return (
     <div className="space-y-4">
-      {/* Hero: the single most important thing is first — who's next and one
-          obvious action. Everything else (counts, money) sits underneath. */}
-      <Card className="p-5">
-        <p className="text-sm text-muted-foreground">{greeting}{data.owner_name ? `, ${data.owner_name}` : ""}.</p>
-        {nextAppt ? (
-          <div className="mt-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-primary">Your next patient</div>
-            <div className="mt-1.5 flex items-start gap-3">
-              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                {(nextAppt.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-lg font-semibold leading-tight">{nextAppt.patient?.full_name ?? "Patient"}</div>
-                <div className="text-sm text-muted-foreground">
-                  {new Date(nextAppt.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                  {nextAppt.notes ? <span className="line-clamp-1"> · {nextAppt.notes}</span> : null}
+      {/* Hero */}
+      <Card className="relative overflow-hidden border-none bg-[#0B4A41] p-5 text-white">
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-[240px] rounded-full" style={{ background: "radial-gradient(circle, rgba(232,162,76,.22), transparent 62%)" }} />
+        <div className="relative">
+          <p className="text-[13px] text-white/70">{greeting}{data.owner_name ? `, ${data.owner_name}` : ""}.</p>
+          {nextAppt ? (
+            <div className="mt-2">
+              <div className="text-[11px] font-bold tracking-[0.12em] text-honey uppercase">Your next patient</div>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="grid size-11 shrink-0 place-items-center rounded-[13px] bg-white/15 font-heading text-sm font-bold">
+                  {(nextAppt.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-heading text-lg leading-tight font-bold">{nextAppt.patient?.full_name ?? "Patient"}</div>
+                  <div className="truncate text-[13px] text-[#CFE3DC]">
+                    {new Date(nextAppt.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                    {nextAppt.notes ? ` · ${nextAppt.notes}` : ""}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => onStart(nextAppt.id, nextAppt.patient?.full_name ?? "Patient")}
+                className="mt-3 inline-flex h-10 items-center justify-center rounded-[12px] bg-white px-4 text-[14px] font-semibold text-[#083F37] transition hover:brightness-95"
+              >
+                Start consultation
+              </button>
             </div>
-            <Button className="mt-3 w-full sm:w-auto" onClick={() => onStart(nextAppt.id, nextAppt.patient?.full_name ?? "Patient")}>
-              Start consultation
-            </Button>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">
-            {data.total === 0 ? "You have no appointments today." : "All caught up — no one else waiting."}
-          </p>
-        )}
+          ) : (
+            <p className="mt-1.5 text-[14px] text-white/85">
+              {data.total === 0
+                ? data.upcoming_count > 0
+                  ? `No appointments today — you have ${data.upcoming_count} upcoming.`
+                  : "No appointments today."
+                : "All caught up — no one else waiting."}
+            </p>
+          )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
-          <span><strong className="text-foreground">{data.remaining}</strong> remaining</span>
-          <span><strong className="text-foreground">{data.completed}</strong> seen</span>
-          {data.follow_ups > 0 && <span><strong className="text-foreground">{data.follow_ups}</strong> follow-up{data.follow_ups === 1 ? "" : "s"}</span>}
-          <span><strong className="text-foreground">₹{data.collected_today.toLocaleString()}</strong> collected</span>
-          {data.outstanding_total > 0 && <span><strong className="text-foreground">₹{data.outstanding_total.toLocaleString()}</strong> outstanding</span>}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-white/15 pt-3 text-[12px] text-white/70">
+            <span><strong className="text-white">{data.remaining}</strong> remaining</span>
+            <span><strong className="text-white">{data.completed}</strong> seen</span>
+            {data.follow_ups > 0 && <span><strong className="text-white">{data.follow_ups}</strong> follow-up{data.follow_ups === 1 ? "" : "s"}</span>}
+            <span><strong className="text-white">₹{data.collected_today.toLocaleString()}</strong> collected</span>
+            {data.outstanding_total > 0 && <span><strong className="text-white">₹{data.outstanding_total.toLocaleString()}</strong> outstanding</span>}
+          </div>
         </div>
       </Card>
 
-      {data.total === 0 ? (
-        <Card className="space-y-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Your day is clear. Get your first patient in.</p>
-          {bookingPath && <Button onClick={() => window.open(bookingPath, "_blank")}>Book first patient</Button>}
-        </Card>
-      ) : (
-        <Card className="p-5">
-          <h3 className="mb-2 text-sm font-semibold">Today&apos;s schedule</h3>
-          <div className="divide-y">
-            {data.appointments.map((a) => {
-              const done = a.status === "completed";
-              return (
-                <div key={a.id} className="flex items-center gap-3 py-3">
-                  <div className={cn("grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold",
-                    done ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
-                    {(a.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{a.patient?.full_name ?? "Patient"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(a.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                      {a.walk_in ? " · walk-in" : ""} · {a.status.replace(/_/g, " ")}
-                    </div>
-                  </div>
-                  {done ? (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">Seen</span>
-                  ) : (
-                    <Button size="sm" variant={a.id === nextId ? "default" : "outline"} onClick={() => onStart(a.id, a.patient?.full_name ?? "Patient")}>
-                      Start consultation
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+      {/* Schedule with Today / Upcoming / All */}
+      <Card className="p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex gap-1 rounded-[12px] bg-secondary p-1">
+            {SCOPES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setScope(s.id)}
+                className={cn("rounded-[9px] px-3 py-1.5 text-[13px] font-semibold transition", scope === s.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}
+              >
+                {s.label}
+                {s.id === "upcoming" && data.upcoming_count > 0 && <span className="ml-1.5 text-honey-deep">{data.upcoming_count}</span>}
+              </button>
+            ))}
           </div>
-        </Card>
+          <Button size="sm" onClick={() => setBookingDefault(computeDefaultWhen())}><Plus className="size-4" /> Book</Button>
+        </div>
+
+        {stale ? (
+          <div className="flex justify-center py-10 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+        ) : data.appointments.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              {scope === "today"
+                ? data.upcoming_count > 0 ? "Nothing today. Check Upcoming for your next patients." : "Your day is clear. Get your first patient in."
+                : scope === "upcoming" ? "No upcoming appointments." : "No appointments yet."}
+            </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button onClick={() => setBookingDefault(computeDefaultWhen())}><Plus className="size-4" /> Book a patient</Button>
+              {bookingPath && (
+                <Button variant="outline" onClick={() => window.open(bookingPath, "_blank")}>
+                  <ExternalLink className="size-4" /> Share booking page
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groups.map((g) => (
+              <div key={g.day}>
+                {scope !== "today" && <p className="mb-1.5 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">{g.day}</p>}
+                <div className="divide-y">
+                  {g.items.map((a) => {
+                    const done = a.status === "completed";
+                    const cancelled = a.status === "cancelled" || a.status === "no_show";
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 py-3">
+                        <div className={cn("grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold", done || cancelled ? "bg-muted text-muted-foreground" : "bg-honey-soft text-honey-deep")}>
+                          {(a.patient?.full_name ?? "?").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{a.patient?.full_name ?? "Patient"}</div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {scope !== "today" ? `${new Date(a.scheduled_time).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ` : ""}
+                            {new Date(a.scheduled_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                            {a.walk_in ? " · walk-in" : ""} · {a.status.replace(/_/g, " ")}
+                          </div>
+                        </div>
+                        {done ? (
+                          a.invoice?.status === "paid" ? (
+                            <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">Seen · Paid</span>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-honey-soft px-2 py-0.5 text-[11px] font-semibold text-honey-deep">Payment due</span>
+                          )
+                        ) : cancelled ? (
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground capitalize">{a.status.replace(/_/g, " ")}</span>
+                        ) : (
+                          <Button size="sm" variant={a.id === nextAppt?.id ? "default" : "outline"} onClick={() => onStart(a.id, a.patient?.full_name ?? "Patient")}>
+                            Start
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {bookingDefault !== null && (
+        <BookPatientDialog
+          defaultWhen={bookingDefault}
+          onClose={() => setBookingDefault(null)}
+          onBooked={() => { setBookingDefault(null); load(scope); onBooked(); }}
+        />
       )}
     </div>
   );
 }
 
-function VisitOverlay({ visit, onClose, onAdvance, onDone }: {
-  visit: Visit; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
-}) {
-  const [services, setServices] = React.useState<Service[]>([]);
-  const [treatmentId, setTreatmentId] = React.useState("");
-  const [notes, setNotes] = React.useState("");
-  const [diagnosis, setDiagnosis] = React.useState("");
-  const [followUp, setFollowUp] = React.useState("");
-  const [method, setMethod] = React.useState<Method>("cash");
-  const [amount, setAmount] = React.useState("");
+// In-clinic booking — a patient by name + phone at a chosen time, no public
+// link, no new tab. On success it refreshes Today and the readiness checklist.
+function BookPatientDialog({ defaultWhen, onClose, onBooked }: { defaultWhen: string; onClose: () => void; onBooked: () => void }) {
+  const [name, setName] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [when, setWhen] = React.useState(defaultWhen);
+  const [reason, setReason] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    fetch("/api/services", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).then((d) => { if (!cancelled) setServices(d); });
-    return () => { cancelled = true; };
-  }, []);
-
-  // Esc closes the flow (keyboard-first).
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  async function complete() {
+  async function submit() {
+    if (name.trim().length < 2) return toast.error("Enter the patient's name.");
+    if (phone.replace(/\D/g, "").length < 7) return toast.error("Enter a valid phone number.");
+    if (!when) return toast.error("Pick a date and time.");
     setBusy(true);
     try {
-      const res = await fetch("/api/clinic/consultation", {
+      const res = await fetch("/api/clinic/book", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "complete", appointment_id: visit.appointmentId,
-          notes, diagnosis, follow_up_date: followUp || undefined, treatment_id: treatmentId || undefined,
-        }),
+        body: JSON.stringify({ patient_name: name.trim(), patient_phone: phone.trim(), scheduled_time: new Date(when).toISOString(), notes: reason.trim() || undefined }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(d.message ?? "Couldn't complete the visit."); return; }
-      setAmount(String(d.total ?? ""));
-      onAdvance({ ...visit, step: "pay", invoiceId: d.invoiceId, total: d.total });
-    } finally { setBusy(false); }
-  }
-
-  async function pay() {
-    const amt = Number(amount);
-    if (!Number.isInteger(amt) || amt <= 0) return toast.error("Enter a valid amount.");
-    setBusy(true);
-    try {
-      const res = await fetch("/api/clinic/payment", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoice_id: visit.invoiceId, amount: amt, method }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(d.message ?? "Couldn't record the payment."); return; }
-      toast.success(`₹${amt.toLocaleString()} received from ${visit.patientName}`);
-      onDone();
+      if (!res.ok) { toast.error(d.message ?? "Couldn't book the patient."); return; }
+      toast.success(`Booked ${name.trim()}${d.is_new_patient ? " (new patient)" : ""}`);
+      onBooked();
     } finally { setBusy(false); }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
-      <Card className="w-full max-w-lg space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
-        {visit.step === "consult" ? (
-          <>
-            <div className="flex items-center gap-2">
-              <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /></button>
-              <div>
-                <h2 className="text-base font-semibold">Consultation</h2>
-                <p className="text-xs text-muted-foreground">{visit.patientName}</p>
-              </div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="notes">Notes</Label>
-              <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visit notes" autoFocus /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5"><Label htmlFor="dx">Diagnosis</Label>
-                <Input id="dx" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Optional" /></div>
-              <div className="space-y-1.5"><Label htmlFor="fu">Follow-up date</Label>
-                <Input id="fu" type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} /></div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="tx">Treatment (sets the price)</Label>
-              <select id="tx" value={treatmentId} onChange={(e) => setTreatmentId(e.target.value)}
-                className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-                <option value="">Consultation (default fee)</option>
-                {services.map((s) => <option key={s.id} value={s.id}>{s.name} — ₹{s.price.toLocaleString()}</option>)}
-              </select>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={onClose}>Cancel <span className="ml-1 text-[11px] text-muted-foreground">Esc</span></Button>
-              <Button disabled={busy} onClick={complete}>{busy && <Loader2 className="size-4 animate-spin" />} Complete &amp; collect payment</Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <h2 className="text-base font-semibold">Collect payment</h2>
-              <p className="text-xs text-muted-foreground">{visit.patientName}</p>
-            </div>
-            <div className="text-3xl font-bold">₹{Number(amount || visit.total || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Amount comes from the treatment — you can adjust it. This <strong>records</strong> a payment you received; Auriva doesn&apos;t process the money.</p>
-            <div className="space-y-1.5"><Label htmlFor="amt">Amount (₹)</Label>
-              <Input id="amt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></div>
-            <div className="space-y-1.5"><Label>How did they pay?</Label>
-              <div className="inline-flex overflow-hidden rounded-lg border">
-                {(["cash", "upi", "card"] as Method[]).map((m) => (
-                  <button key={m} onClick={() => setMethod(m)}
-                    className={cn("px-4 py-2 text-sm font-medium capitalize", method === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}>{m}</button>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" onClick={onDone}>Skip</Button>
-              <Button disabled={busy} onClick={pay}>{busy && <Loader2 className="size-4 animate-spin" />} Record ₹{Number(amount || 0).toLocaleString()} received</Button>
-            </div>
-          </>
-        )}
+      <Card className="w-full max-w-md space-y-4 p-6" onClick={(e) => e.stopPropagation()}>
+        <div>
+          <h2 className="font-heading text-base font-semibold">Book a patient</h2>
+          <p className="text-xs text-muted-foreground">New or returning — we match the phone number to an existing record.</p>
+        </div>
+        <div className="space-y-1.5"><Label htmlFor="bp-name">Patient name</Label>
+          <Input id="bp-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Priya Sharma" autoFocus /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-phone">Mobile number</Label>
+          <Input id="bp-phone" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 98450 12210" /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-when">When</Label>
+          <Input id="bp-when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label htmlFor="bp-reason">Reason <span className="font-normal text-muted-foreground">(optional)</span></Label>
+          <Input id="bp-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Tooth pain" /></div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button disabled={busy} onClick={submit}>{busy && <Loader2 className="size-4 animate-spin" />} Book patient</Button>
+        </div>
       </Card>
     </div>
   );
 }
+
+function VisitOverlay({ visit, clinicName, onClose, onAdvance, onDone }: {
+  visit: Visit; clinicName: string; onClose: () => void; onAdvance: (v: Visit) => void; onDone: () => void;
+}) {
+  if (visit.step === "consult") {
+    return (
+      <ConsultationWorkbench
+        appointmentId={visit.appointmentId}
+        patientName={visit.patientName}
+        clinicName={clinicName}
+        onCancel={onClose}
+        onCompleted={(inv) => onAdvance({ ...visit, step: "pay", invoiceId: inv.invoiceId, total: inv.total })}
+      />
+    );
+  }
+
+  // M3B B2: the shared Checkout Workspace replaces the old single-amount PaymentStep.
+  return <CheckoutWorkspace invoiceId={visit.invoiceId ?? ""} onClose={onClose} onDone={onDone} />;
+}
+
 
 function PaymentsView() {
   const [data, setData] = React.useState<{ payments: { id: string; amount: number; method: string; received_at: string; invoice: { invoice_number: string; patient: { full_name: string } | null } | null }[]; summary: { collected_today: number; payments_today: number; outstanding_total: number; open_invoices: number } } | null>(null);
@@ -782,34 +998,18 @@ function TreatmentsView({ onChanged }: { onChanged: () => void }) {
   );
 }
 
-function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
-  const [phone, setPhone] = React.useState(ov.clinic.phone ?? "");
-  const [phoneSave, setPhoneSave] = React.useState<Save>("idle");
-  const [bio, setBio] = React.useState("");
-  const [reg, setReg] = React.useState("");
-  const [profileSave, setProfileSave] = React.useState<Save>("idle");
-
-  function flash(set: (s: Save) => void) { set("saved"); setTimeout(() => set("idle"), 1500); }
-
-  async function saveContact() {
-    setPhoneSave("saving");
-    const res = await fetch(`/api/clinics/${ov.clinic.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
-    if (res.ok) { flash(setPhoneSave); onChanged(); } else { setPhoneSave("idle"); toast.error("Couldn't save contact number."); }
-  }
-  async function saveProfile() {
-    if (!ov.doctorId) return toast.error("No profile to update.");
-    setProfileSave("saving");
-    const res = await fetch(`/api/doctors/${ov.doctorId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio, registration_number: reg }) });
-    if (res.ok) { flash(setProfileSave); onChanged(); } else { setProfileSave("idle"); toast.error("Couldn't save profile."); }
-  }
-
+// BRD-043 US-601: the "Practice" tab of the Settings group — clinic + doctor
+// profile, online-bookings toggle, availability, time off. Team and Plan are
+// now their own tabs (TeamPanel / PlanScreen), and the old "grow to
+// multi-clinic → contact sales" card is superseded by the Plan screen.
+function PracticeView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: () => void; onToggle: () => void }) {
   return (
     <div className="space-y-4">
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Clinic contact number</h2><SaveBadge state={phoneSave} /></div>
-        <p className="text-xs text-muted-foreground">Shown on your booking page. This is <strong>separate from your login</strong> — changing it never affects how you sign in.</p>
-        <div className="flex gap-2"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98450 12345" /><Button onClick={saveContact}>Save</Button></div>
-      </Card>
+      {/* P3 Practice Setup — the complete clinic + doctor profile module */}
+      <PracticeSetup onSaved={onChanged} />
+
+      {/* M3B B4 — Billing Policy */}
+      <BillingPolicySettings />
 
       <Card className="space-y-3 p-5">
         <h2 className="text-base font-semibold">Online bookings</h2>
@@ -822,35 +1022,9 @@ function SettingsView({ ov, onChanged, onToggle }: { ov: Overview; onChanged: ()
         </div>
       </Card>
 
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center justify-between"><h2 className="text-base font-semibold">Your profile</h2><SaveBadge state={profileSave} /></div>
-        <p className="text-xs text-muted-foreground">A short bio and registration number build patient trust on your booking page.</p>
-        <div className="space-y-1.5"><Label htmlFor="reg">Registration number</Label><Input id="reg" value={reg} onChange={(e) => setReg(e.target.value)} placeholder="e.g. KA-PT-10482" /></div>
-        <div className="space-y-1.5"><Label htmlFor="bio">Short bio</Label><Input id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="e.g. Physiotherapist, 12 years in sports & post-op rehab." /></div>
-        <Button onClick={saveProfile}>Save profile</Button>
-      </Card>
+      <AvailabilitySettings doctorId={ov.doctorId} clinicId={ov.clinic.id} />
 
-      {/* Scale path — a solo owner can see and act on growing to multi-clinic.
-          Multi-doctor is the next edition (Coming soon); the request routes to a
-          real contact flow, on the same account — never a migration. */}
-      <Card className="space-y-3 border-primary/25 bg-primary/[0.03] p-5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary" />
-          <h2 className="text-base font-semibold">Growing your practice?</h2>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Right now you run everything yourself — that&apos;s Auriva Solo, free forever. When you add a
-          second doctor or a front desk, Auriva grows into the <strong>multi-clinic edition</strong> on this
-          same account. Same patients, same history — you never migrate.
-        </p>
-        <a
-          href="/contact-sales?from=solo-upgrade"
-          className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2")}
-        >
-          Talk to us about multi-clinic
-          <ExternalLink className="size-4" />
-        </a>
-      </Card>
+      <TimeOffSettings doctorId={ov.doctorId} />
     </div>
   );
 }

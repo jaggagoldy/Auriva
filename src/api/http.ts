@@ -44,11 +44,23 @@ import {
 } from "@/services/lab-service";
 import {
   ClinicNameConflictError,
+  DuplicateActiveMemberError,
   EmailInUseError,
+  InvitationExpiredError,
   InvitationNotFoundError,
   InvitationNotPendingError,
+  SeatLimitReachedError,
   OnboardingInputError,
 } from "@/services/onboarding-service";
+import { AmbiguousDoctorError } from "@/services/doctor-resolution";
+import {
+  InvalidReassignmentError,
+  InvalidRoleError,
+  MemberNotFoundError,
+  OwnerProtectedError,
+  ReconciliationRequiredError,
+} from "@/services/membership-service";
+import { PlanInputError } from "@/services/subscription-service";
 import { ClinicInputError } from "@/services/clinic-service";
 import {
   DepartmentInputError,
@@ -225,12 +237,50 @@ export function mapDomainError(error: unknown): NextResponse | null {
   if (
     error instanceof EmailInUseError ||
     error instanceof InvitationNotPendingError ||
-    error instanceof ClinicNameConflictError
+    error instanceof ClinicNameConflictError ||
+    // BRD-043 Sprint 2: re-inviting an already-active member (US-205) and
+    // exceeding the plan's seat ceiling (US-503) are both 409 conflicts —
+    // the request is well-formed but conflicts with current team state.
+    error instanceof DuplicateActiveMemberError ||
+    error instanceof SeatLimitReachedError
   ) {
+    return conflict(error.message);
+  }
+  // BRD-043 US-102 (Sprint 1): 72h invitation window, enforced server-side
+  // regardless of what the acceptance page showed when it was opened.
+  if (error instanceof InvitationExpiredError) {
     return conflict(error.message);
   }
   if (error instanceof OnboardingInputError) {
     return badRequest(error.message);
+  }
+  // BRD-043 US-104 (P0, Sprint 1): a clinic has 2+ active doctors and the
+  // caller didn't say which one — refusing to guess is a 409, not a 500.
+  if (error instanceof AmbiguousDoctorError) {
+    return conflict(error.message);
+  }
+  // BRD-043 Sprint 4: membership lifecycle.
+  if (error instanceof OwnerProtectedError) {
+    return forbidden(error.message);
+  }
+  if (error instanceof MemberNotFoundError) {
+    return notFound(error.message);
+  }
+  if (
+    error instanceof InvalidReassignmentError ||
+    error instanceof InvalidRoleError ||
+    error instanceof PlanInputError
+  ) {
+    return badRequest(error.message);
+  }
+  // Archive blocked until every conflict is reassigned — 409 carrying the
+  // conflict list so the UI can render the reconciliation dialog even if the
+  // POST was reached without a prior conflict-check.
+  if (error instanceof ReconciliationRequiredError) {
+    return NextResponse.json(
+      { error: "Conflict", message: error.message, conflicts: error.conflicts },
+      { status: 409 }
+    );
   }
   // Sprint 3 (OPS-001): organization/clinic/department/availability config.
   if (error instanceof DepartmentNotFoundError) {
