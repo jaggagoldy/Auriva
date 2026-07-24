@@ -109,6 +109,16 @@ async function main() {
   });
 
   // 3. Create Doctors & Staff Users & Profiles
+  // 3a. Owner Staff Profile (Managing Doctor & Lead Physician)
+  const ownerDoc = await prisma.staffProfile.create({
+    data: {
+      user_id: adminUser.id,
+      clinic_id: clinicA.id,
+      specialty: 'Chief Medical Officer & Internal Medicine',
+      full_name: 'Dr. Robert Taylor (Owner & Lead Physician)',
+    },
+  });
+
   const doctorUser1 = await prisma.user.create({
     data: {
       role: 'doctor',
@@ -181,9 +191,7 @@ async function main() {
     },
   });
 
-  // 3b. Organization memberships (APS-040, retargeted onto the real
-  // Organization in Sprint 3): the role a person holds inside the
-  // organization — one org, everyone's membership points at org.id now.
+  // 3b. Organization memberships: the roles a person holds inside the organization
   await prisma.organizationMember.createMany({
     data: [
       { organization_id: org.id, user_id: adminUser.id, role: 'owner' },
@@ -224,6 +232,12 @@ async function main() {
   // two clinic-A doctors; Mon/Wed/Fri for the pediatrician at Summit.
   await prisma.doctorAvailability.createMany({
     data: [
+      ...[1, 2, 3, 4, 5, 6].map((day) => ({
+        doctor_id: ownerDoc.id,
+        day_of_week: day,
+        start_time: '08:30',
+        end_time: '18:30',
+      })),
       ...[1, 2, 3, 4, 5].map((day) => ({
         doctor_id: doc1.id,
         day_of_week: day,
