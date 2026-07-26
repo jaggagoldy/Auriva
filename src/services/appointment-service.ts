@@ -3,7 +3,8 @@
 // /api/reception/status, /api/reception/checkin) call transitionStatus()
 // so the business rules in appointment-status.ts are enforced once.
 
-import type { Prisma } from "@prisma/client";
+import { randomUUID } from "crypto";
+import { BookingChannel, VisitType, PaymentStatus, type Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import {
   AppointmentStatus,
@@ -228,6 +229,10 @@ export async function scheduleAppointment(input: {
   scheduledTime: unknown;
   status?: unknown;
   notes?: unknown;
+  bookingChannel?: BookingChannel;
+  visitType?: VisitType;
+  paymentStatus?: PaymentStatus;
+  manageToken?: string;
 }) {
   const patient = await prisma.patientProfile.findUnique({
     where: { id: input.patientId },
@@ -286,6 +291,10 @@ export async function scheduleAppointment(input: {
         scheduled_time: parsedDate,
         status: finalStatus,
         notes: typeof input.notes === "string" && input.notes.trim() ? input.notes.trim() : null,
+        booking_channel: input.bookingChannel ?? BookingChannel.DIRECT,
+        visit_type: input.visitType ?? VisitType.IN_PERSON,
+        payment_status: input.paymentStatus ?? PaymentStatus.PENDING,
+        manage_token: input.manageToken ?? randomUUID(),
       },
       include: { patient: true, doctor: true, clinic: true },
     });

@@ -73,6 +73,7 @@ async function main() {
   const clinicA = await prisma.clinic.create({
     data: {
       name: 'Aegis Family Clinic',
+      slug: 'aegis-family-clinic',
       address: '742 Evergreen Terrace, Springfield',
       super_admin_id: adminUser.id,
       organization_id: org.id,
@@ -92,6 +93,7 @@ async function main() {
   const clinicB = await prisma.clinic.create({
     data: {
       name: 'Summit Medical Center',
+      slug: 'summit-medical-center',
       address: '100 Pinnacle Way, Suite 400',
       super_admin_id: adminUser.id,
       organization_id: org.id,

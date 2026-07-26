@@ -11,6 +11,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum VisitType {
+  IN_PERSON
+  VIDEO
+}
+
+enum BookingChannel {
+  DIRECT
+  GOOGLE
+  WHATSAPP
+  WALK_IN
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  WAIVED
+  REFUNDED
+}
+
 model User {
   id           String          @id @default(uuid())
   role         String          // Enum: 'patient', 'super_admin', 'doctor', 'receptionist'
@@ -215,6 +235,12 @@ model Clinic {
   allow_walk_ins                    Boolean  @default(true)
   cancellation_window_hours         Int?     // null = no restriction
   default_consultation_fee          Int?     // falls back to StaffProfile.consultation_fee, then this, then the global default
+
+  // M2 Public Online Booking handle & feature flags
+  slug                              String?  @unique // e.g. "aegis-family-clinic"
+  online_booking_enabled            Boolean  @default(true)
+  self_service_enabled              Boolean  @default(true) // Governs patient self-service cancel/reschedule
+  notifications_enabled             Boolean  @default(true) // Governs automated WhatsApp/SMS alerts
 
   // Find Care marketplace fields — geo is fabricated-but-consistent (seeded
   // literals scattered around the platform's fictional "Springfield" — real
@@ -593,6 +619,12 @@ model Appointment {
   priority       Int            @default(0)
   walk_in        Boolean        @default(false)
   notes          String?        // visit reason, set at booking/check-in
+
+  // M2 Digital Patient Journey fields & extensibility hooks
+  visit_type      VisitType      @default(IN_PERSON)
+  booking_channel BookingChannel @default(DIRECT)
+  payment_status  PaymentStatus  @default(PENDING)
+  manage_token    String?        @unique
 
   // Consult Workbench clinical record (APS-011/Doctor Excellence Review).
   // Free-text on purpose — structured clinical taxonomies (ICD codes, discrete
