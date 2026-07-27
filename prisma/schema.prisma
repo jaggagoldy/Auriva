@@ -621,10 +621,15 @@ model Appointment {
   notes          String?        // visit reason, set at booking/check-in
 
   // M2 Digital Patient Journey fields & extensibility hooks
-  visit_type      VisitType      @default(IN_PERSON)
-  booking_channel BookingChannel @default(DIRECT)
-  payment_status  PaymentStatus  @default(PENDING)
-  manage_token    String?        @unique
+  visit_type        VisitType      @default(IN_PERSON)
+  booking_channel   BookingChannel @default(DIRECT)
+  payment_status    PaymentStatus  @default(PENDING)
+  manage_token      String?        @unique
+  reschedule_count  Int            @default(0)
+  token_invalidated Boolean        @default(false)
+  token_expires_at  DateTime?
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @default(now()) @updatedAt
 
   // Consult Workbench clinical record (APS-011/Doctor Excellence Review).
   // Free-text on purpose — structured clinical taxonomies (ICD codes, discrete

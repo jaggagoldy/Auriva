@@ -63,7 +63,7 @@ type ClinicPolicy = {
  * (widen the conflict window on both sides of the requested time, so two
  * bookings closer together than the clinic's own buffer also conflict).
  */
-async function assertNoDoctorSlotConflict(
+export async function assertNoDoctorSlotConflict(
   doctorId: string,
   doctorName: string,
   scheduledTime: Date,
