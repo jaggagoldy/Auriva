@@ -265,4 +265,9 @@ export function registerEventHandlers() {
   // B3: SMS delivery — exactly two triggers, per the approved batch scope.
   eventRegistry.subscribe("appointment.booked", "SmsDeliveryHandler", smsDeliveryHandler);
   eventRegistry.subscribe("appointment.reminder_due", "SmsDeliveryHandler", smsDeliveryHandler);
+
+  // M2 Package 3 Communication Platform Subscriptions
+  eventRegistry.subscribe("scheduling.appointment.booked", "CommunicationPlatformHandler", smsDeliveryHandler);
+  eventRegistry.subscribe("scheduling.appointment.rescheduled", "CommunicationPlatformHandler", smsDeliveryHandler);
+  eventRegistry.subscribe("scheduling.appointment.cancelled", "CommunicationPlatformHandler", smsDeliveryHandler);
 }

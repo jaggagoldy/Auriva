@@ -31,6 +31,21 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum CommunicationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+  IN_APP
+}
+
+enum CommunicationStatus {
+  PENDING
+  SENDING
+  DELIVERED
+  FAILED
+  DEAD_LETTER
+}
+
 model User {
   id           String          @id @default(uuid())
   role         String          // Enum: 'patient', 'super_admin', 'doctor', 'receptionist'
@@ -241,6 +256,9 @@ model Clinic {
   online_booking_enabled            Boolean  @default(true)
   self_service_enabled              Boolean  @default(true) // Governs patient self-service cancel/reschedule
   notifications_enabled             Boolean  @default(true) // Governs automated WhatsApp/SMS alerts
+  whatsapp_enabled                  Boolean  @default(true) // Governs WhatsApp channel dispatch
+  sms_enabled                       Boolean  @default(true) // Governs SMS channel dispatch
+  reminders_enabled                 Boolean  @default(true) // Governs T-24h/T-2h automated reminders
 
   // Find Care marketplace fields — geo is fabricated-but-consistent (seeded
   // literals scattered around the platform's fictional "Springfield" — real
@@ -270,6 +288,7 @@ model Clinic {
   superAdmin     User           @relation("ClinicSuperAdmin", fields: [super_admin_id], references: [id], onDelete: Cascade)
   staffProfiles  StaffProfile[]
   services       Service[]
+  communicationLogs CommunicationLog[]
   appointments   Appointment[]
   prescriptions  Prescription[]
   labOrders      LabOrder[]
@@ -661,6 +680,7 @@ model Appointment {
   serviceEvents  ServiceEvent[]
   documents      Document[]
   review         Review?
+  communicationLogs CommunicationLog[]
   followUpSourceAppointment Appointment? @relation("AppointmentFollowUp", fields: [follow_up_source_appointment_id], references: [id], onDelete: SetNull)
   followUpBooking Appointment? @relation("AppointmentFollowUp")
 
@@ -1250,4 +1270,34 @@ model TreatmentPlanSession {
   @@index([plan_id])
   @@index([appointment_id])
   @@map("Treatment_Plan_Sessions")
+}
+
+model CommunicationLog {
+  id                  String               @id @default(uuid())
+  appointment_id      String?
+  patient_id          String
+  clinic_id           String
+  channel             CommunicationChannel
+  status              CommunicationStatus  @default(PENDING)
+  provider            String               @default("mock")
+  recipient           String
+  template_key        String
+  template_version    String               @default("v1")
+  payload_json        String
+  rendered_text       String
+  retry_count         Int                  @default(0)
+  max_retries         Int                  @default(3)
+  error_detail        String?
+  provider_message_id String?
+  scheduled_at        DateTime             @default(now())
+  sent_at             DateTime?
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @default(now()) @updatedAt
+
+  appointment Appointment? @relation(fields: [appointment_id], references: [id], onDelete: SetNull)
+  clinic      Clinic       @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduled_at])
+  @@index([patient_id])
+  @@map("Communication_Logs")
 }
