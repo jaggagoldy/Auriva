@@ -97,7 +97,7 @@ describe("configureQuickSetup", () => {
       closesAt: "18:00",
     });
 
-    expect(result.bookingPath).toBe(`/book/${doctorProfile.id}`);
+    expect(result.bookingPath).toBe(`/book/doctor/${doctorProfile.id}`);
 
     const clinic = await prisma.clinic.findUnique({ where: { id: result.clinicId } });
     expect(clinic?.name).toBe("Rao Physiotherapy & Rehab");

@@ -73,7 +73,7 @@ describe("getClinicOverview — Clinic Ready", () => {
     const ov = await getClinicOverview(clinic.id, owner.id);
     expect(ov!.ready.steps.find((s) => s.key === "profile")?.done).toBe(true);
     // The doctor becomes the resolved booking identity.
-    expect(ov!.bookingPath).toBe(`/book/${staffProfile.id}`);
+    expect(ov!.bookingPath).toBe(`/book/doctor/${staffProfile.id}`);
   });
 
   it("returns null for a clinic that doesn't exist", async () => {

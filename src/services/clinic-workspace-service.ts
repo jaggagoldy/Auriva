@@ -113,7 +113,7 @@ export async function getClinicOverview(clinicId: string, ownerUserId: string) {
     organizationId: clinic.organization.id,
     plan: clinic.organization.plan,
     doctorId: ownerProfile?.id ?? null,
-    bookingPath: ownerProfile ? `/book/${ownerProfile.id}` : null,
+    bookingPath: ownerProfile ? `/book/doctor/${ownerProfile.id}` : null,
     ready: { steps, completed, total: steps.length, percent, nextStep, goal },
   };
 }

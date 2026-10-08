@@ -218,6 +218,6 @@ export async function configureQuickSetup(input: ConfigureQuickSetupInput) {
   return {
     clinicId: clinic.id,
     doctorId: doctorProfile.id,
-    bookingPath: `/book/${doctorProfile.id}`,
+    bookingPath: `/book/doctor/${doctorProfile.id}`,
   };
 }
